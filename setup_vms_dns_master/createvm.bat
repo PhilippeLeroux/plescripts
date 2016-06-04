@@ -1,0 +1,32 @@
+rem Répertoire contenant les binaires VirtualBox
+set PATH=%PATH%;"C:\Program Files\Oracle\VirtualBox"
+
+rem Répertoire qui contiendra les VMs
+set VM_PATH=C:\Users\kangs\VirtualBox VMs
+
+rem Chemin complet de l'ISO Linux Ã  utiliser
+set ISO_PATH=C:\Users\kangs\Desktop\iso_linux\V100082-01.iso
+
+VBoxManage createvm --name %VM_NAME% --register
+VBoxManage modifyvm %VM_NAME% --ostype Oracle_64
+VBoxManage modifyvm %VM_NAME% --acpi on
+VBoxManage modifyvm %VM_NAME% --ioapic on
+VBoxManage modifyvm %VM_NAME% --memory %VM_MEMORY%
+VBoxManage modifyvm %VM_NAME% --vram 12
+VBoxManage modifyvm %VM_NAME% --cpus 4
+VBoxManage modifyvm %VM_NAME% --rtcuseutc on
+if %VM_NAME% == K2 (VBoxManage modifyvm %VM_NAME% --nic1 bridged) else VBoxManage modifyvm %VM_NAME% --nic1 intnet
+VBoxManage modifyvm %VM_NAME% --nictype1 virtio
+if %VM_NAME% == K2 (VBoxManage modifyvm %VM_NAME% --bridgeadapter1 "Realtek RTL8188CU Wireless LAN 802.11n USB 2.0 Network Adapter") else VBoxManage modifyvm %VM_NAME% --cableconnected1 off
+VBoxManage modifyvm %VM_NAME% --nic2 intnet
+VBoxManage modifyvm %VM_NAME% --nictype2 virtio
+VBoxManage modifyvm %VM_NAME% --nic3 intnet
+VBoxManage modifyvm %VM_NAME% --nictype3 virtio
+VBoxManage modifyvm %VM_NAME% --audio dsound
+VBoxManage modifyvm %VM_NAME% --usb on
+VBoxManage modifyvm %VM_NAME% --usbehci on
+VBoxManage storagectl %VM_NAME% --name IDE --add IDE --controller PIIX4 
+VBoxManage storageattach %VM_NAME% --storagectl IDE --port 0 --device 0 --type dvddrive --medium "%ISO_PATH%"
+VBoxManage createhd --filename "%VM_PATH%\%VM_NAME%\%VM_NAME%.vdi" --size 131072
+VBoxManage storagectl %VM_NAME% --name SATA --add SATA --controller IntelAhci --portcount 1
+VBoxManage storageattach %VM_NAME% --storagectl SATA --port 0 --device 0 --type hdd --medium "%VM_PATH%\%VM_NAME%\%VM_NAME%.vdi"

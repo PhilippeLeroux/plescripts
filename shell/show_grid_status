@@ -1,0 +1,50 @@
+#!/bin/sh
+
+#	ts=4 sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
+EXEC_CMD_ACTION=EXEC
+
+. ~/plescripts/global.cfg
+
+typeset -r ME=$0
+
+typeset -r str_usage="Usage : $ME [-db=<str>]"
+
+typeset db=undef
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-db=*)
+			db=${1##*=}
+			shift
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info $str_usage
+			exit 1
+			;;
+	esac
+done
+
+[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
+exit_if_param_undef db
+
+node=srv${db}01
+wait_server $node
+[ $? -ne 0 ] && exit 1
+
+start_s=$SECONDS
+while [ 0 -eq 0 ]
+do
+	exec_cmd -c "ssh grid@$node \". ~/.profile; crsctl stat res -t\""
+	[ $? -eq 0 ] && exit 0
+	info -n "Waiting : "; pause_in_secs 10
+	duration=$(( $SECONDS - $start_s ))
+	echo -e ", ${YELLOW}Total wait $(fmt_seconds $duration)${NORM} -> again..."
+	LN
+done

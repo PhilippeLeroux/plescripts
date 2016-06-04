@@ -1,0 +1,72 @@
+
+if [ -f ~/.kshrc ]
+then
+      . ~/.kshrc
+fi
+
+export LANG=en_US.UTF-8
+
+export ORACLE_SID=NOSID
+export ORACLE_UNQNAME=TO_DEFINE
+
+
+. ./grid_env
+
+export ORACLE_BASE=$GRID_ROOT/app/oracle
+export ORACLE_HOME=$ORACLE_BASE/RELEASE_ORACLE/dbhome_1
+export ORACLE_PATH=/u01/app/common/oracle/sql
+#export SQLPATH=/u01/app/common/oracle/sql
+export ORACLE_TERM=xterm
+export NLS_DATE_FORMAT="DD-MON-YYYY HH24:MI:SS"
+export TNS_ADMIN=$ORACLE_HOME/network/admin
+export ORA_NLSZZ=$ORACLE_HOME/nls/data
+
+LD_LIBRARY_PATH=$ORACLE_HOME/lib
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$ORACLE_HOME/oracm/lib
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/lib:/usr/lib:/usr/local/lib
+export LD_LIBRARY_PATH
+
+
+export JAVA_HOME=/usr/local/java
+PATH=${JAVA_HOME}/bin:${PATH}:$HOME/bin:$ORACLE_HOME/bin:$GRID_HOME/bin
+PATH=${PATH}:/usr/bin:/bin:/usr/bin/X11:/usr/local/bin
+PATH=${PATH}:/u01/app/common/oracle/bin
+export PATH
+
+CLASSPATH=$ORACLE_HOME/JRE
+CLASSPATH=${CLASSPATH}:$ORACLE_HOME/jlib
+CLASSPATH=${CLASSPATH}:$ORACLE_HOME/rdbms/jlib
+CLASSPATH=${CLASSPATH}:$ORACLE_HOME/network/jlib
+export CLASSPATH
+
+
+export TEMP=/tmp
+export TMPDIR=/tmp
+
+export PS1="${USER}@${HOSTNAME%%.*}:\${ORACLE_SID}:\${PWD##*/}> "
+export EDITOR=vi
+
+alias ll='ls -rtl'
+
+export THREADS_FLAG=native
+
+instance=$(ps -ef |  grep pmon | grep -vE "ASM|grep" | cut -d_ -f3)
+if [ x"$instance" != x ]
+then
+    grep "$instance" /etc/oratab >/dev/null 2>&1
+    if [ $? -eq 0 ]
+    then
+        ORAENV_ASK=NO
+        ORACLE_SID=$instance
+        . oraenv
+        unset ORAENV_ASK
+    fi
+fi
+
+#	Become grid
+alias sugrid='sudo -u grid -i'
+
+#	Execute asmcmd
+alias asmcmd='sudo -u grid -i asmcmd'
+
+umask 022

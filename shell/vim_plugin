@@ -1,0 +1,205 @@
+#!/bin/sh
+
+#	ts=4	sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+typeset -r str_usage=\
+"Usage : $ME
+           -url=<url>
+           -show
+           -del=<path>
+           -init
+"
+
+typeset url=undef
+typeset action=install_plugin
+
+[ $# -eq 0 ] && info "$str_usage" && exit 1
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			first_args=-emul
+			shift
+			;;
+
+		-init)
+			action=init
+			shift
+			;;
+
+		-url=*)
+			url=${1##*=}
+			shift
+			;;
+
+		-show)
+			action=show
+			shift
+			;;
+
+		-del=*)
+			plugin_path=${1##*=}
+			action=uninstall_plugin
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
+
+function exit_if_pathogen_not_installed
+{
+	if [ ! -f ~/.vim/autoload/pathogen.vim ]
+	then
+		error "Pathogen not installed."
+		error "$ME -init to install all plugins"
+		exit 1
+	fi
+}
+
+function clean_tod_vim
+{
+	typeset -r backup="~/vim_$(date +"%Y%m%d_%Hh%M")"
+
+	if [ -d ~/.vim ]
+	then
+		info "Backup ~/.vim to $backup"
+		exec_cmd "mv ~/.vim $backup"
+		LN
+	fi
+
+	exec_cmd "mkdir -p ~/.vim/autoload"
+}
+
+function install_plugin
+{
+	typeset -r	url=${1#https:}
+	typeset		name=${url##*/}; name=${name%.git}
+
+	info "git  : $url"
+	info "name : $name"
+
+	exec_cmd "cd ~/.vim && git submodule add git:$url bundle/$name"
+	exec_cmd "cd ~/.vim && git submodule init && git submodule update"
+}
+
+function uninstall_plugin
+{
+	typeset -r plugin_path=$1
+
+	exec_cmd "cd ~/.vim && git submodule deinit -f $plugin_path"
+	exec_cmd "cd ~/.vim && git rm  -f $plugin_path"
+}
+
+function install_pathogen
+{
+	info "Install Pathogen"
+	exec_cmd "cd ~/ && git clone git://github.com/tpope/vim-pathogen.git pathogen"
+	exec_cmd "mv ~/pathogen/autoload/* ~/.vim/autoload/"
+	exec_cmd "rm -rf ~/pathogen"
+	LN
+
+	info "Init Pathogen"
+	exec_cmd "cd .vim && git init && git add  . && git commit -m \"Initial commit\""
+	LN
+
+	grep "pathogen#infect" ~/.vimrc >/dev/null 2>&1
+	if [ $? -ne 0 ]
+	then
+		info "Update ~/.vimrc"
+		exec_cmd "sed -i \"1i\\call pathogen#infect()\" ~/.vimrc"
+		exec_cmd "sed -i \"2i\\call pathogen#helptags()\" ~/.vimrc"
+		LN
+	fi
+}
+
+function install_all
+{
+	typeset -r list_file=~/plescripts/shell/vim_plugin_list.txt
+	exit_if_file_not_exists $list_file
+
+	clean_tod_vim
+	LN
+
+	install_pathogen
+	LN
+
+	while read line
+	do
+		case ${line:0:1} in
+			'#')
+				info "${line:1}"
+				;;
+
+			'/'|'h')
+				install_plugin $line
+				;;
+
+			'')
+				LN
+				;;
+
+			*)
+				warning "'${line:0:1}' : $line"
+				;;
+		esac
+	done<<<"$( cat $list_file )"
+}
+
+#	======================================================================
+#	MAIN
+#	======================================================================
+case $action in
+	init)
+		install_all
+		LN
+		exec_cmd "cd ~/.vim && git status"
+		LN
+
+		exec_cmd "mkdir ~/.vim/spell"
+		exec_cmd "cd ~/.vim/spell/; wget http://ftp.vim.org/vim/runtime/spell/fr.utf-8.spl"
+		exec_cmd "cd ~/.vim/spell/; wget http://ftp.vim.org/vim/runtime/spell/fr.utf-8.sug"
+		LN
+		;;
+
+	show)
+		exec_cmd "cat ~/.vim/.gitmodules"
+		;;
+
+	install_plugin)
+		exit_if_pathogen_not_installed
+		install_plugin $url
+		LN
+		exec_cmd "cd ~/.vim && git status"
+		LN
+		;;
+
+	uninstall_plugin)
+		uninstall_plugin $plugin_path
+		LN
+		exec_cmd "cd ~/.vim && git status"
+		LN
+		;;
+
+	*)
+		error "Unknow action $action"
+		exit 1
+esac

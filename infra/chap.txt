@@ -1,0 +1,27 @@
+ 
+iscsiadm -m node --targetname iqn.1988-12.com.oracle:b8ffc1b1292e --portal 10.10.10.5 --op=update --name node.session.auth.authmethod --value=CHAP
+iscsiadm -m node --targetname iqn.1988-12.com.oracle:b8ffc1b1292e --portal 10.10.10.5 --op=update --name node.session.auth.username --value=moi
+iscsiadm -m node --targetname iqn.1988-12.com.oracle:b8ffc1b1292e --portal 10.10.10.5 --op=update --name node.session.auth.password --value=moi
+
+iscsiadm -m node --targetname iqn.1988-12.com.oracle:b8ffc1b1292e --portal 10.10.10.5 --op=update --name discovery.sendtargets.auth.authmethod --value=CHAP
+iscsiadm -m node --targetname iqn.1988-12.com.oracle:b8ffc1b1292e --portal 10.10.10.5 --op=update --name discovery.sendtargets.auth.username --value=moi
+iscsiadm -m node --targetname iqn.1988-12.com.oracle:b8ffc1b1292e --portal 10.10.10.5 --op=update --name discovery.sendtargets.auth.password --value=moi
+
+#discovery.sendtargets.auth.authmethod = CHAP
+
+# To set a discovery session CHAP username and password for the initiator
+# authentication by the target(s), uncomment the following lines:
+#discovery.sendtargets.auth.username = moi
+#discovery.sendtargets.auth.password = moi
+
+# To set a discovery session CHAP username and password for target(s)
+# authentication by the initiator, uncomment the following lines:
+#discovery.sendtargets.auth.username_in = moi
+#discovery.sendtargets.auth.password_in = moi
+
+
+sous acls
+ set auth userid=iqn.1988-12.com.oracle:b8ffc1b1292e password=moi mutual_userid=iqn.1988-12.com.oracle:srv mutual_password=moi
+
+sous iscsi
+set discovery_auth enable=1 userid=moi password=moi  mutual_userid=moi mutual_password=moi

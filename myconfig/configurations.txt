@@ -1,0 +1,12 @@
+Pour que les exports NFS fonctionnent correctement ajouter comment=systemd.automount
+mydns:/root/scripts /mnt/scripts nfs rsize=8192,wsize=8192,timeo=14,intr,comment=systemd.automount
+
+vim_plugin -init installe tout mes plugins.
+
+Faire en plus :
+cd ~/.vim/spell/
+wget http://ftp.vim.org/vim/runtime/spell/fr.utf-8.spl
+wget http://ftp.vim.org/vim/runtime/spell/fr.utf-8.sug
+Présent par défaut : wget http://ftp.vim.org/vim/runtime/spell/en.utf-8.spl
+Présent par défaut : wget http://ftp.vim.org/vim/runtime/spell/en.utf-8.sug
+

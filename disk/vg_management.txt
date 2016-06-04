@@ -1,0 +1,8 @@
+Add disk to vg :
+	 vgextend vg_linruuu02 /dev/vdb
+
+Resize lv to max size :
+	 lvextend -l +100%FREE /dev/vg_linruuu02/lv_root
+
+Resize fs on lv :
+	resize2fs /dev/mapper/vg_linruuu02-lv_root

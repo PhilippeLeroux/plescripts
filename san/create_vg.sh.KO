@@ -1,0 +1,137 @@
+#!/bin/sh
+
+. ~/scripts/mylib.sh
+. ~/scripts/diskslib.sh
+. ~/scripts/global.cfg
+
+EXEC_CMD_ACTION=EXEC
+
+
+typeset -r ME=$0
+typeset -r str_usage="Usage : $ME -vg_name=<name> -disk=<name>
+		-vg_name : nom du vg à créer.
+		-disk    : disque à utiliser (Ex : sdc)"
+
+typeset disk=undef
+typeset vg_name=undef
+
+while [ $# -ne 0 ]
+do
+    case $1 in
+        -real)
+            EXEC_CMD_ACTION=EXEC
+            shift
+            ;;
+
+        -vg_name=*)
+            vg_name=${1##*=}
+            shift
+            ;;
+
+        -disk=*)
+            disk=${1##*=}
+            shift
+            ;;
+
+        *)
+            error "Arg '$1' invalid."
+            LN
+            info "$str_usage"
+            exit 1
+            ;;
+    esac
+done
+
+exit_if_param_undef vg_name	"$str_usage"
+exit_if_param_undef disk	"$str_usage"
+
+typeset vg_size_mb
+typeset vg_used_mb
+typeset vg_free_mb
+
+function conv_2_mb # $1 value $2 unit GiB MiB B
+{
+	case $2 in
+		GiB)
+			echo "scale=0; $1 * 1024" | bc
+			;;
+
+		MiB)
+			echo $1
+			;;
+
+		B)
+			echo "scale=0; $1 / 1024" | bc
+			;;
+
+		*)
+			error "$0 unité '$2' inconnue, doit être GiB, MiB ou B"
+			exit 1
+	esac
+}
+
+function load_vg_sizes_info #	$1 vg_name
+{
+	typeset str=$(vgdisplay -s $1 | tr "," ".")
+	read -a array <<<"$str"
+	vg_size_mb=$(conv_2_mb ${array[1]} ${array[2]})
+	vg_used_mb=$(conv_2_mb ${array[3]:1} ${array[4]})
+	vg_free_mb=$(conv_2_mb ${array[7]} ${array[8]})
+}
+
+
+function exit_if_disk_used # $1 disk name
+{
+	mount | grep $1 2>&1 >/dev/null
+	[ $? -eq 0 ] && error "Disk $1 used : fstab" && exit 1
+
+	lvmdiskscan | grep $1 2>1 >/dev/null
+	[ $? -eq 0 ] && error "Disk $1 used : pv" && exit 1
+}
+
+function create_vg
+{
+	vgdisplay $vg_name 
+	if [ $? -eq 0 ]
+	then
+		info "VG $vg_name exists."
+		exit 0
+	fi
+
+	if [ ! -b /dev/$disk ]
+	then
+		error "Disk /dev/$disk not exist or not mode block."
+		exit 1
+	fi
+
+	# Marche trop mal
+	# exit_if_disk_used $disk
+
+	info "Création d'une partition"
+	add_partition_to $disk
+	exec_cmd fdisk -l /dev/$disk
+	LN
+
+	part_name=${disk}1
+
+	exec_cmd pvcreate /dev/$part_name
+	LN
+
+	exec_cmd vgcreate $vg_name /dev/$part_name
+}
+
+create_vg
+
+#	lvmdiskscan
+#	pvcreate /dev/sdb
+#	vgcreate --physicalextentsize 64M asm01 /dev/sdb
+
+exit
+load_vg_sizes_info ol
+info "Size ${vg_size_mb}mb"
+info "Used ${vg_used_mb}mb"
+info "Free ${vg_free_mb}mb"
+
+
+
+

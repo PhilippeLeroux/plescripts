@@ -1,0 +1,33 @@
+export GRID_ROOT=/u01
+export GRID_BASE=$GRID_ROOT/app/grid
+export GRID_HOME=
+
+function crs_mon # $1 wait in second
+{
+	typeset -i wait_in_seconds=30
+	if [ $# -ne 0 ]
+	then
+		wait_in_seconds=$1
+	fi
+
+	typeset -i count_loops=0
+	while [ true ]
+	do
+		clear
+		count_loops=count_loops+1
+		crsctl stat res -t
+
+		printf "$(date)\tloops : $count_loops\tpause "
+		typeset -i wait_time=0
+		while [ $wait_time -lt $wait_in_seconds ]
+		do
+			wait_time=wait_time+1
+			buffer=$(printf "%ds/%ds" $wait_time $wait_in_seconds)
+			printf "$buffer"
+			sleep 1
+
+			for i in $( seq 1 ${#buffer} ); do printf "\b"; done
+		done
+	done
+}
+

@@ -1,0 +1,12 @@
+# .kshrc
+
+# Source global definitions
+if [ -f /etc/kshrc ]; then
+	. /etc/kshrc
+fi
+
+# use vi editing mode by default
+set -o vi
+
+# User specific aliases and functions
+

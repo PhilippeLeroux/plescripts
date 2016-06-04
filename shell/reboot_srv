@@ -1,0 +1,59 @@
+#!/bin/sh
+
+#	ts=4 sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
+EXEC_CMD_ACTION=EXEC
+
+. ~/plescripts/global.cfg
+
+typeset -r ME=$0
+
+typeset -r str_usage="Usage : $ME [-db=<str>]"
+
+typeset db=undef
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-db=*)
+			db=${1##*=}
+			shift
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info $str_usage
+			exit 1
+			;;
+	esac
+done
+
+[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
+
+exit_if_param_undef db
+
+typeset -r cfg_path=~/plescripts/infra/$db
+
+typeset -r max_nodes=$(ls -1 $cfg_path/node* | wc -l)
+
+for i in $(seq 1 $max_nodes)
+do
+	node=$(printf "srv%s%02d" $db $i)
+	info "reboot $node"
+	ssh root@${node} "reboot"
+	LN
+done
+
+info -n "Temporisation : "; pause_in_secs 30; LN
+
+if [ $max_nodes -eq 1 ]
+then
+	wait_server $(printf "srv%s%02d" $db 1)
+else
+	wait_rac_nodes -db=$db
+fi
+
+

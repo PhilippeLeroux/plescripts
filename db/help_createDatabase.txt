@@ -1,0 +1,61 @@
+Create a database by specifying the following parameters:
+	-createDatabase
+		-templateName <name of an existing template in default location or the complete template path>
+		[-cloneTemplate]
+		-gdbName <global database name>
+		[-ignorePreReqs] <ignore prerequisite checks for current operation>
+		[-databaseConfType < SINGLE | RAC | RACONENODE >]
+			-RACOneNodeServiceName  <Service name for the service to be created for RAC One Node database.>]
+		[-policyManaged | -adminManaged <Policy managed or Admin managed Database, default is Admin managed database>]
+			[-createServerPool <To create Server Pool which will be used by the database to be created>]
+			[-force <To create server pool by force when adequate free servers are not available. This may affect already running database>]
+			-serverPoolName <Specify single server pool name in case of create server pool and comma separated list in case of existing server pools>
+			-[cardinality <Specify cardinality for new server pool to be created, default is the number of qualified nodes>]
+		[-runCVUChecks <Specify "true" in order to run Cluster Verification Utility checks periodically in Cluster environment>]
+		[-sid <database system identifier prefix>]
+		[-createAsContainerDatabase <true|false>]
+			[-numberOfPDBs <Number of Pluggable databases to be created, default is 0>]
+			[-pdbName <New Pluggable Database Name>]
+			[-pdbAdminPassword <PDB Administrator user Password, required only when creating new PDB>]
+		[-sysPassword <SYS user password>]
+		[-systemPassword <SYSTEM user password>]
+		[-emConfiguration <DBEXPRESS|CENTRAL|BOTH|NONE>]
+			-dbsnmpPassword     <DBSNMP user password>
+			[-omsHost     <EM management server host name>
+			-omsPort     <EM management server port number>
+			-emUser     <EM Admin username to add or modify targets>
+			-emPassword     <EM Admin user password>
+			-emExpressPort     <EM Database Express port number>]]
+		[-dvConfiguration <true | false Specify "true" to configure and enable Database Vault 
+			-dvUserName     <Specify Database Vault Owner user name>
+			-dvUserPassword     <Specify Database Vault Owner password>
+			-dvAccountManagerName     <Specify separate Database Vault Account Manager >
+			-dvAccountManagerPassword     <Specify Database Vault Account Manager password>]
+		[-olsConfiguration <true | false Specify "true" to configure and enable Oracle Label Security >
+		[-datafileDestination <destination directory for all database files.> | 
+ -datafileNames <a text file containing database objects such as controlfiles, tablespaces, redo log files and spfile to their corresponding raw device file names mappings in name=value format.>]
+		[-redoLogFileSize <size of each redo log file in megabytes>]
+		[-recoveryAreaDestination <destination directory for all recovery files. Specify "NONE" for disabling Fast Recovery Area.>]
+		[-datafileJarLocation  <location of the data file jar, used only for clone database creation>]
+		[-storageType < CFS | ASM > 
+			[-asmsnmpPassword     <ASMSNMP password for ASM monitoring>]
+			 -diskGroupName   <database area disk group name>
+			 -recoveryGroupName       <recovery area disk group name>
+		[-nodelist <node names separated by comma for the database>]
+		[-characterSet <character set for the database>]
+		[-nationalCharacterSet  <national character set for the database>]
+		[-registerWithDirService <true | false> 
+			-dirServiceUserName    <user name for directory service>
+			-dirServicePassword    <password for directory service >
+			-walletPassword    <password for database wallet >]
+		[-listeners  <list of listeners to configure the database with>]
+		[-variablesFile   <file name for the variable-value pair for variables in the template>]]
+		[-variables  <comma separated list of name=value pairs>]
+		[-initParams <comma separated list of name=value pairs>]
+		[-sampleSchema  <true | false> ]
+		[-memoryPercentage <percentage of physical memory for Oracle>]
+		[-automaticMemoryManagement <true | false> ]
+		[-totalMemory <memory allocated for Oracle in MB>]
+		[-databaseType <MULTIPURPOSE|DATA_WAREHOUSING|OLTP>]]
+
+

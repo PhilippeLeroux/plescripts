@@ -1,0 +1,894 @@
+
+#	ts=4 sw=4
+[ x"$plelib_banner" != x ] && return 0
+
+typeset -ri plelib_release=3
+typeset -r	plelib_banner=$(printf "plelib V%02d" $plelib_release)
+
+#*< Active les effets visuels couleurs et autres.
+function enable_markers
+{
+	## Reset to normal:
+	NORM="\e[0m"
+
+	## Colors:
+	BLACK="\e[0;30m"
+	GRAY="\e[1;30m"
+	RED="\e[0;31m"
+	LRED="\e[1;31m"
+	GREEN="\e[0;32m"
+	LGREEN="\e[1;32m"
+	YELLOW="\e[0;33m"
+	LYELLOW="\e[1;33m"
+	BLUE="\e[0;34m"
+	LBLUE="\e[1;34m"
+	PURPLE="\e[0;35m"
+	PINK="\e[1;35m"
+	CYAN="\e[0;36m"
+	LCYAN="\e[1;36m"
+	LGRAY="\e[0;37m"
+	WHITE="\e[1;37m"
+
+	## Backgrounds
+	BLACKB="\e[0;40m"
+	REDB="\e[0;41m"
+	GREENB="\e[0;42m"
+	YELLOWB="\e[0;43m"
+	BLUEB="\e[0;44m"
+	PURPLEB="\e[0;45m"
+	CYANB="\e[0;46m"
+	GREYB="\e[0;47m"
+
+	## Attributes:
+	UNDERLINE="\e[4m"
+	BOLD="\e[1m"
+	INVERT="\e[7m"
+	BLINK="\e[5m"
+
+	#	Clear End Of Line
+	CEOL="\e[K"
+}
+
+#*< Désactive les effets visuels couleurs et autres.
+function disable_markers
+{
+	## Reset to normal:
+	NORM=
+
+	## Colors:
+	BLACK=
+	GRAY=
+	RED=
+	LRED=
+	GREEN=
+	LGREEN=
+	YELLOW=
+	LYELLOW=
+	BLUE=
+	LBLUE=
+	PURPLE=
+	PINK=
+	CYAN=
+	LCYAN=
+	LGRAY=
+	WHITE=
+
+	## Backgrounds
+	BLACKB=
+	REDB=
+	GREENB=
+	YELLOWB=
+	BLUEB=
+	PURPLEB=
+	CYANB=
+	GREYB=
+
+	## Attributes:
+	UNDERLINE=
+	BOLD=
+	INVERT=
+}
+
+#	Valeurs de PLELIB_OUTPUT
+#		- ENABLE	: Effets d'affichage
+#		- DISABLE	: Aucun effets d'affichage
+#		- FILE		: Effet d'affichage et écriture dans la log définie par PLELIB_LOG_FILE
+#
+#	Si PLELIB_LOG_FILE est définie alors PLE_OUTPUT sera positionné à FILE
+
+
+[ x"$PLELIB_OUTPUT" = x ] && PLELIB_OUTPUT=ENABLE
+
+typeset -r PLELOG_ROOT=~/plescripts/logs
+if [ ! -d $PLELOG_ROOT ]
+then
+	mkdir $PLELOG_ROOT >/dev/null 2>&1
+	chmod ug=rwx,o=rx $PLELOG_ROOT >/dev/null 2>&1
+fi
+
+typeset -r PLELOG_PATH=$PLELOG_ROOT/$(date +"%Y-%m-%d")
+if [ ! -d $PLELOG_PATH ]
+then
+	mkdir $PLELOG_PATH >/dev/null 2>&1
+	chmod ug=rwx,o=rx $PLELOG_PATH >/dev/null 2>&1
+fi
+
+if [ "$PLELIB_OUTPUT" = "FILE" ] && [ x"$PLELIB_LOG_FILE" = x ]
+then
+	PLELIB_LOG_FILE=${0##*/}
+	PLELIB_LOG_FILE=$PLELOG_PATH/$(date +"%Hh%Mmn%S")_$(hostname -s)_${PLELIB_LOG_FILE%.*}.log
+fi
+
+[ x"$PLELIB_LOG_FILE" != x ] && PLELIB_OUTPUT=FILE
+
+#[ ! -t 1 ] || [ ! -t 2 ] && PLELIB_OUTPUT=DISABLE
+
+[ "$PLELIB_OUTPUT" = DISABLE ] && disable_markers || enable_markers
+
+#*> Remove all visual makers from file $1
+function clean_log_file
+{
+	echo "clean_log_file $1"
+	if [ -f "$1" ]
+	then
+		sed -i "s/\[[0-9]m//g" "$1"
+		sed -i "s/\[[0-9]*;[0-9]*m//g" "$1"
+		sed -i "s/\r//g" "$1"
+	fi
+}
+
+#*< Remove all visual makers for log file generate by plelib
+function clean_plelib_log_file
+{
+	clean_log_file "$PLELIB_LOG_FILE"
+}
+
+[ x"$PLELIB_LOG_FILE" != x ] && trap clean_plelib_log_file EXIT
+
+[ x"$EXEC_CMD_ACTION" = x ] && typeset EXEC_CMD_ACTION=NOP
+
+#*> get_initiator_for <db> <#node>
+#*> return initiator name for <db> and node <#node>
+function get_initiator_for
+{
+	typeset -r db=$1
+	typeset -r num_node=$2
+
+	printf "%s%s:%02d" $iscsi_initiator_prefix $db $num_node
+}
+
+#*> Hide cursor
+function hide_cursor
+{
+	tput civis
+}
+
+#*> Show cursor
+function show_cursor
+{
+	tput cnorm
+}
+
+#*> return number of col for the terminal
+function term_cols
+{
+	tput cols
+}
+
+#*< Show cursor on Ctrl+c
+function ctrl_c
+{
+	show_cursor
+	exit 1
+}
+
+trap ctrl_c INT
+
+#*> Double symbol % from $@.
+function double_symbol_percent
+{
+	sed "s/%/%%/g" <<< "$@"
+}
+
+#*> Escape " from $@
+function escape_2xquotes
+{
+	sed 's/"/\\\"/g' <<< "$@"
+}
+
+#*> Escape / from $@
+function escape_slash
+{
+	sed "s/\//\\\\\//g" <<< "$@"
+}
+
+#*> Escape \ from $@
+function escape_anti_slash
+{
+	sed 's/\\/\\\\/g' <<<"$@"
+}
+
+#*< Used by fonctions info, warning and error.
+#*< Action depand of PLELIB_OUTPUT
+#*<		DISABLE : no visual effects.
+#*<		ENABLE	: visual effects
+#*<		FILE	: write into $PLELIB_LOG_FILE without any effects and canal 1 with visual effects.
+function my_echo
+{
+	EOL="\n"
+	[ "$1" = "-n" ] && EOL="" && shift
+	typeset -r	color="$1"
+	typeset		symbol="$2"
+	[ "$symbol" = no_symbol ] && symbol=""
+	shift 2
+
+	# Laisser les 2 lignes, sinon l'affichaged de MSG est foireux.
+	MSG="$@"
+	MSG=$(double_symbol_percent "$MSG")
+
+	# Escape tous les \1, \2 jusque \9
+	MSG=$(sed 's!\\\([1-9]\)!\\\\\1!g' <<< "$MSG")
+
+	case "$PLELIB_OUTPUT" in
+		"DISABLE")
+			printf "${symbol}${MSG}$EOL"
+			;;
+
+		"ENABLE")
+			printf "${color}${symbol}${NORM}${MSG}$EOL"
+			;;
+
+		"FILE")
+			[ -z PLELIB_LOG_FILE ] && echo "PLELIB_LOG_FILE not defined.">&2 && exit 1
+			printf "${color}${symbol}${NORM}${MSG}$EOL"
+			printf "${symbol}${MSG}$EOL" >> $PLELIB_LOG_FILE
+			;;
+
+		*)
+			echo "PLELIB_OUTPUT='$PLELIB_OUTPUT' invalid.">&2
+			exit 1
+			;;
+	esac
+}
+
+#*> Print error message
+function error
+{
+	my_echo "${RED}${BLINK}" "*" " $@"
+}
+
+#*> Print warning message
+function warning
+{
+	my_echo "${LGREEN}${INVERT}" "<" " $@"
+}
+
+#*> Write mark info
+#*> Usage :
+#*> mark_info; printf "Hellow %s\n" name
+function mark_info
+{
+	my_echo -n "${PURPLE}" "# "
+}
+
+typeset -r OK="${GREEN}ok${NORM}"
+typeset -r KO="${RED}ko${NORM}"
+
+#*> return 0 if cmd $1 exists else return 1
+function test_if_cmd_exists
+{
+	which $1 >/dev/null 2>&1
+}
+
+#*>	Print normal message
+#*> Options
+#*>   -n no new line
+#*>   -f don't print info marker. (Useful after info -n)
+function info
+{
+	first_arg=""
+	symbol="# "
+	case "$1" in
+		"-n")
+			first_arg="-n"
+			shift
+			;;
+
+		"-f")
+			symbol="no_symbol"
+			shift
+			;;
+	esac
+
+	my_echo $first_arg "${PURPLE}" "$symbol" "$@"
+}
+
+#*> line_separator [car]
+#*> Fill line with charactere = or specified charactere
+function line_separator
+{
+	[ $# -eq 0 ] && car="=" || car="$1"
+
+	info $(fill "$car" $(tput cols)-3)
+}
+
+#*> New line
+function LN
+{
+	my_echo "${NORM}" ""
+}
+
+#*> Upper case "$@"
+function to_upper
+{
+	tr [:lower:] [:upper:] <<< "$@"
+}
+
+#*> Lower case "$@"
+function to_lower
+{
+	tr [:upper:] [:lower:] <<< "$@"
+}
+
+#*> Upper case the first caractere of $1
+function initcap
+{
+	sed 's/\(.\)/\U\1/' <<< "$@"
+}
+
+#*> return string :
+#*>	  true	if $1 in( y, yes )
+#*>   false if $1 in( n, no )
+function yn_to_bool
+{
+	case $1 in
+		y|yes)	echo true
+				;;
+
+		n|no)	echo false
+				;;
+	esac
+}
+
+#*> Eval an arithmetic expression
+#*> Flags
+#*>    -l : use real numbers
+#*>    -i : remove all decimals
+function compute
+{
+	bc_args=""
+	return_int=no
+
+	while [ $# -ne 0 ]
+	do
+		case "$1" in
+			"-l")
+				bc_args="-l"
+				shift
+				;;
+
+			"-i")
+				return_int=yes
+				shift
+				;;
+			*)
+				break
+		esac
+	done
+
+	val=$(bc $bc_args <<< "$@")
+	[ $return_int = yes ] && echo ${val%%.*} || echo $val
+}
+
+#*> fmt_seconds <seconds>
+#*> <seconds> formated to the better format
+function fmt_seconds # $1 seconds
+{
+	typeset -ri seconds=$1
+
+	typeset -i minutes=$seconds/60
+
+	if [ $minutes -eq 0 ]
+	then
+		printf "%ds\n" $seconds
+	elif [ $minutes -lt 60 ]
+	then
+		typeset -i modulo=$(( seconds % 60 ))
+		printf "%dmn%02ds\n" $minutes $modulo
+	else
+		typeset -i hours=$minutes/60
+		typeset -i rem_mn=$(( minutes - hours*60 ))
+		typeset -i rem_sec=$(( seconds - (hours*60*60 + rem_mn*60) ))
+		printf "%dh%02dmn%02ds\n" $hours $rem_mn $rem_sec
+	fi
+}
+
+#*> Fake exec_cmd command
+#*> Command printed but not executed.
+#*> return :
+#*>    1 if EXEC_CMD_ACTION = NOP
+#*>    0 if EXEC_CMD_ACTION = EXEC
+function fake_exec_cmd
+{
+	case $EXEC_CMD_ACTION in
+		NOP)
+			my_echo "${YELLOW}" "nop > " "$@"
+			return 1
+			;;
+
+		EXEC)
+			my_echo "${YELLOW}" "$(date +"%Hh%M")> " "$@"
+			return 0
+	esac
+}
+
+#*< Extrait la commande de "$@"
+#*< Si la première commande est ssh alors recherche la commande exécutée par ssh
+function get_ssh_command
+{
+	read -a argv <<<"$@"
+
+	if [ ${argv[0]} != ssh ] || [ ${#argv} -eq 1 ]
+	then	# Ce n'est pas ssh ou il n'y a qu'une seule commande
+		echo ${argv[0]}
+		return 0
+	fi
+
+	# Passe tous les arguments de ssh
+	typeset -i argc=1
+	while [ $argc -ne ${#argv} ]
+	do
+		arg=${argv[$argc]}
+		[ ${arg:0:1} != - ] && break
+
+		argc=argc+1
+	done
+
+	# Ici argc pointe sur la chaîne de connexion.
+	# La commande est donc sur argc+1
+	typeset cmd=${argv[argc+1]}
+
+	# Si la commande débute par une " elle est supprimée.
+	[ ${cmd:0:1} = \" ] && cmd=${cmd:1} || true
+
+	echo "$cmd (ssh)"
+}
+
+#*> exec_cmd
+#*> if EXEC_CMD_ACTION
+#*>    == NOP  : command is printed (No Operation)
+#*>    == EXEC : command is printed & executed
+#*>
+#*> If command failed stop the scripts.
+#*>
+#*> Parameters:
+#*>		-f EXEC_CMD_ACTION is ignored.
+#*>		-c continue on errror.
+#*>		-ci like -c but not print error message.
+#*>
+#*> Show execution time after 60s.
+function exec_cmd
+{
+	# Mémo : ne jamais utiliser $1 $2 ... mais uniquement $@
+	#	exec_cmd ls -rtl	est valable
+	#	exec_cmd "ls -rtl"	l'est aussi.
+	typeset force=NO
+	typeset continue_on_error=NO
+
+	while [ 0 -eq 0 ]	# forever
+	do
+		case "$1" in
+			"-f")
+				shift
+				if [ $EXEC_CMD_ACTION = NOP ]
+				then
+					EXEC_CMD_ACTION=EXEC
+					force=YES
+				fi
+				;;
+
+			"-cont"|"-c")	# Affiche un message si la commande échoue
+				shift
+				continue_on_error=YES
+				;;
+
+			"-ci")			# N'affiche pas de message si la commande échoue
+				shift
+				continue_on_error=YES_AND_HIDE_MESSAGE
+				;;
+
+			*)
+				break
+				;;
+		esac
+	done
+
+	case $EXEC_CMD_ACTION in
+		NOP)
+			my_echo "${YELLOW}" "nop > " "$@"
+			;;
+
+		EXEC)
+			[ $force = YES ] && COL=$RED || COL=$YELLOW
+			my_echo "$COL" "$(date +"%Hh%M")> " "$@"
+
+			eval_start_at=$SECONDS
+			if [ x"$PLELIB_LOG_FILE" = x ]
+			then
+				eval "$@"
+				eval_return=$?
+			else
+				eval "$@" 2>&1 | tee -a $PLELIB_LOG_FILE
+				eval_return=${PIPESTATUS[0]}
+
+				#	BUG workaround :
+				[ x"$eval_return" = x ] &&	eval_return=0
+			fi
+			eval_duration=$(( $SECONDS - $eval_start_at ))
+			if [ $eval_duration -gt 60 ]
+			then
+				my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$(get_ssh_command "$@") running time : $(fmt_seconds $eval_duration)"
+			fi
+
+			if [ $eval_return -ne 0 ]
+			then
+				typeset -r user_cmd=$(cut -d' ' -f1 <<< "$@")
+				if [ $continue_on_error = NO ]
+				then
+					error "$user_cmd return $eval_return"
+				else
+					[ $continue_on_error = YES ] && warning "$user_cmd return $eval_return"
+				fi
+
+				[ $force = YES ] && EXEC_CMD_ACTION=NOP
+
+				[ $continue_on_error = NO ] && exit 1
+			fi
+			;;
+
+		*)
+			error "Bad value for EXEC_CMD_ACTION = '$EXEC_CMD_ACTION'"
+			exit 1
+			;;
+	esac
+
+	[ $force = YES ] && EXEC_CMD_ACTION=NOP
+
+	return $eval_return
+}
+
+#*> exit_if_file_not_exists <name> [message]
+#*> if file <name> not exists, script aborted.
+#*> Print [message] if specified.
+function exit_if_file_not_exists
+{
+	if [ ! -f $1 ]
+	then
+		error "File '$1' not exists."
+		shift
+		while [ $# -ne 0 ]
+		do
+			error "$1"
+			shift
+		done
+		exit 1
+	fi
+}
+
+#*> exit_if_dir_not_exists <name> [message]
+#*> if directory <name> not exits, script aborted.
+#*> Print [message] if specified.
+function exit_if_dir_not_exists
+{
+	if [ ! -d $1 ]
+	then
+		error "Directory '$1' not exists."
+		shift
+		while [ $# -ne 0 ]
+		do
+			error "$1"
+			shift
+		done
+		exit 1
+	fi
+}
+
+#*<	Test if a variable exists, format ^var\\s*=\\s*value
+#*<	1	variable name
+#*<	2	file name
+function exist_var
+{
+	grep -E "^${1}\s*=\s*" "$2" >/dev/null 2>&1
+}
+
+#*< change_value <var> <value> <file>
+#*<	Format ^var\\s*=\\s*value
+function change_value
+{
+	typeset -r var_name=$(escape_slash "$1")
+	typeset -r file=$3
+	[ "$2" = "empty" ] && new_val="" || new_val=$(escape_slash "$2")
+
+	exec_cmd "sed -i 's/^\(${var_name}\s*=\s*\).*/\1$new_val/' $file"
+}
+
+#*< add_value <var> <value> <file>
+#*< Format : var=value
+#*< If <value> == empty no value specified.
+function add_value
+{
+	typeset -r var_name="$1"
+	[ "$2" = "empty" ] && new_val="" || new_val="$2"
+	typeset -r file="$3"
+
+	exec_cmd "echo \"$var_name=$new_val\" >> $file"
+}
+
+#*> update_value <var> <value> <file>
+#*>	Update variable <var> from file <file> with value <value>
+#*> If variable doesn't exist, it's added.
+#*> If value = empty reset value but not remove variable.
+#*>
+#*<	Format ^var\\s*=\\s*value
+#*>
+#*> If file doesn't exist script aborted.
+function update_value
+{
+	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exists "$3" "Call function update_value"
+
+	typeset -r var_name="$1"
+	typeset -r var_value="$2"
+	typeset -r file="$3"
+
+	exist_var "$var_name" "$file"
+	if [ $? -eq 0 ]
+	then
+		change_value "$var_name" "$var_value" "$file"
+	else
+		add_value "$var_name" "$var_value" "$file"
+	fi
+}
+
+#*> remove_value <var> <file>
+#*>
+#*> Remove variable <var> from file <file>
+#*>		Format ^war\s*=.*
+#*>
+#*> If file doesn't exist script aborted.
+function remove_value
+{
+	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exists "$2" "Call function remove_value"
+
+	typeset -r var_name=$(escape_slash "$1")
+	typeset -r file="$2"
+	exist_var "$var_name" "$file"
+	if [ $? -eq 0 ]
+	then
+		exec_cmd "sed -i '/^${var_name}\s*=.*$/d' $file"
+	else
+		info "remove_value : variable '$var_name' not exists in $file"
+	fi
+}
+
+#*> exit_if_param_undef <var> [message]
+#*>
+#*> Script aborted if var = undef or -1
+function exit_if_param_undef #var_name
+{
+	typeset -r var_name=$1
+	typeset -r var_value=$(eval echo \$$var_name)
+
+	if [ "$var_value" = "undef" ] || [ "$var_value" = "-1" ]
+	then
+		error "-$var_name missing"
+		shift
+		[ $# -ne 0 ] && LN && info "$@"
+		LN
+		exit 1
+	fi
+}
+
+#*> exit_if_param_invalid var_name val_list [message]
+#*>
+#*> Script aborted if var
+#*>		= undef or -1
+#*>		not in the list val_list
+function exit_if_param_invalid
+{
+	typeset -r var_name=$1
+	typeset -r val_list=$2
+	shift 2
+
+	typeset -r var_value=$(eval echo \$$var_name)
+
+	exit_if_param_undef $var_name "$@"
+
+	grep -E "\<${var_value}\>" <<< "$val_list" >/dev/null 2>&1
+	if [ $? -ne 0 ]
+	then
+		error "-$var_name=$var_value invalid."
+		[ $# -ne 0 ] && LN && info "$@"
+		LN
+		exit 1
+	fi
+}
+
+#*> fill <car> <no#>
+#*> Return a buffer filled with no# characteres car
+function fill
+{
+	typeset -r	car="$1"
+	typeset -ri	nb=$2
+
+	typeset buffer
+	typeset -i count=0
+	while [ $count -lt $nb ]
+	do
+		buffer=$buffer$car
+		count=count+1
+	done
+
+	echo $buffer
+}
+
+#*> pause_in_secs <seconds>
+#*> Fait une pause de <seconds> secondes.
+#*> Le décompte du temps écoulé sera affiché à la position courante du curseur.
+#*> Retourne la longeur utilisée pour afficher le décompte ce qui permet
+#*> d'éffacer l'affichage.
+function pause_in_secs
+{
+	typeset -ri	max_secs=$1
+	[ $# -eq 2 ] && suffix="$2"
+
+	typeset -i	secs=0
+	typeset		backspaces
+	typeset		buffer=""
+
+	case "$PLELIB_OUTPUT" in
+		"ENABLE"|"FILE")
+			hide_cursor
+
+			while [ $secs -ne $max_secs ]
+			do
+				buffer=$(printf "${secs}s/${max_secs}s")
+				[ $# -eq 2 ] && buffer="$buffer$suffix"
+
+				printf "$backspaces$buffer$CEOL"
+				sleep 1
+				secs=secs+1
+				backspaces=$(fill "\b" $((${#buffer})))
+			done
+
+			buffer=$(printf "${max_secs}/${max_secs}s")
+			printf "${backspaces}$buffer$CEOL"
+
+			show_cursor
+
+			[ "$PLELIB_OUTPUT" = "FILE" ] && printf "${max_secs}/${max_secs}s" >> $PLELIB_LOG_FILE
+		;;
+
+		"DISABLE")
+			printf "${max_secs}s> "
+			while [ $secs -ne $max_secs ]
+			do
+				printf "."
+				sleep 1
+				secs=secs+1
+			done
+
+			buffer="${max_secs}s>: "$(fill . $max_secs)
+			if [ $# -eq 2 ]
+			then
+				printf " $suffix"
+				buffer=$buffer" "$suffix
+			fi
+		;;
+	esac
+
+	return ${#buffer}
+}
+
+#*> chrono_start
+#*> Démarre le chrono
+function chrono_start
+{
+	ple_start=$SECONDS
+}
+
+#*> chrono_stop [message]
+#*> Affiche le temps écoulé depuis le dernier appel à chrono_start
+#*> Si premier paramètre est -q alors retourne le temps écoulé.
+function chrono_stop
+{
+	if [ $# -eq 0 ]
+	then
+		info "$(fmt_seconds $(( SECONDS - ple_start )) )"
+	else
+		if [ "$1" = "-q" ]
+		then
+			echo $(( SECONDS - ple_start ))
+		else
+			info "$1 ${BOLD}$(fmt_seconds $(( SECONDS - ple_start )) )${NORM}"
+		fi
+	fi
+}
+
+PAUSE=OFF
+function test_pause # $1 message
+{
+	if [ $PAUSE = ON ]
+	then
+		[ $# -ne 0 ] && info "$@"
+		info "Press a key to continue" && read keyboard
+	fi
+}
+
+#*> fmt_number <number>
+#*> Format number english or french, use LANG to define the format.
+#*>
+function fmt_number
+{
+	typeset -r number=$1
+	typeset -i len=${#number}
+	len=len-1
+
+	case "${LANG:0:2}" in
+		fr)	car_group=" "
+			;;
+
+		*)	car_group=","
+			;;
+	esac
+
+	typeset formatted
+	typeset -i if=0
+	while [ $len -ge 0 ]
+	do
+		mod=$(compute $if%3)
+		[[ $if -ne 0 && $mod -eq 0 ]] && formatted=$car_group$formatted
+		formatted=${number:$len:1}$formatted
+		if=if+1
+		len=len-1
+	done
+
+	echo $formatted
+}
+
+#*> fmt_kb2mb <size>
+#*>	convert <size> in Kb to Mb and format.
+function fmt_kb2mb
+{
+	typeset -ri kb=$1
+	typeset -ri mb=kb/1024
+	echo "$(fmt_number $mb)Mb"
+}
+
+#*> to_mb <size><unit>
+#*> Convert size in Mb
+#*>		Last digits of size is the unit
+#*>		Unit : G, Gb, M, Mb, Kb or K
+function to_mb
+{
+	typeset -r	arg=$1
+	typeset -r size_value=$(sed "s/.$//" <<< "$arg")
+
+	case $arg in
+		*G|*Gb|*GiB)
+			compute -i "$size_value*1024"
+			;;
+
+		*M|*Mb|*MiB)
+			echo $size_value
+			;;
+
+		*K|*Kb|*KiB)
+			compute -i "$size_value/1024"
+			;;
+
+		*)
+			compute -i "$size_value/1024/1024"
+			;;
+	esac
+}
+

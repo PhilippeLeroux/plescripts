@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#	ts=4 sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+
+EXEC_CMD_ACTION=EXEC
+
+typeset -r account=$1
+
+if [[ -v ID_DB ]]
+then
+	db=$ID_DB
+else
+	error "use set_db before !"
+	exit 1
+fi
+
+typeset -r cfg_path=~/plescripts/infra
+exit_if_dir_not_exists $cfg_path
+
+typeset -ri max_nodes=$(ls -1 $cfg_path/$db/node*|wc -l)
+
+typeset -i node=1
+[ $# -eq 2 ] && node=$2
+
+[ $max_nodes -gt 1 ] && type=RAC || type=single
+info "$type node."
+
+typeset -r server_name=$(printf "srv%s%02d" $db $node)
+
+wait_server ${server_name}
+[ $? -eq 0 ] && exec_cmd -ci ssh -Y $account@${server_name}

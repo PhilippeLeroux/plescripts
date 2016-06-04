@@ -1,0 +1,84 @@
+#!/bin/sh
+
+#	ts=4	sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+typeset -r str_usage=\
+"Usage : $ME [-ns] word
+Sans ns recherche strictement le mot word
+Avec ns recherche si le mot word est dans une chaîne"
+
+typeset word=undef
+typeset strict=yes
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			first_args=-emul
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		-ns)
+			strict=no
+			shift
+			;;
+
+		*) word=$1
+			shift
+			;;
+	esac
+done
+
+[ "$word" = undef ] && info "$str_usage" && exit 1
+
+function trunc_line
+{
+	typeset -r line=$1
+
+	typeset -ri len=${#line}
+
+	typeset -i term_cols=$(term_cols)
+	term_cols=term_cols-7	#[...] plus gap de 2 = 7
+
+	if [ $len -gt $term_cols ]
+	then
+		echo "${line:0:$term_cols}[...]"
+	else
+		echo "$line"
+	fi
+}
+
+find_cmd="find ~/plescripts/ -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.swp\" ! -path \*/.\* | xargs "
+
+if [ $strict = no ]
+then
+	find_cmd=$find_cmd"grep -n \"$word\""
+else
+	find_cmd=$find_cmd"grep -n \"\<$word\>\""
+fi
+
+fake_exec_cmd $find_cmd
+typeset -i count=0
+prev_file_name=""
+while IFS=":" read file_name line
+do
+	[ "$prev_file_name" != "$file_name" ] && echo " " && info "$file_name" && count=count+1
+	echo $(trunc_line "$line")
+	prev_file_name=$file_name
+done<<<"$(eval $find_cmd)"
+
+LN
+info "'$word' présent dans $count fichiers."
