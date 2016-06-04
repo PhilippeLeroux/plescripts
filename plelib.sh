@@ -1,4 +1,3 @@
-
 #	ts=4 sw=4
 [ x"$plelib_banner" != x ] && return 0
 
@@ -124,6 +123,12 @@ fi
 #[ ! -t 1 ] || [ ! -t 2 ] && PLELIB_OUTPUT=DISABLE
 
 [ "$PLELIB_OUTPUT" = DISABLE ] && disable_markers || enable_markers
+
+if [ ! -z PLE_SHOW_EXECUTION_TIME_AFTER ]
+then # Temps en secondes, le temps d'exécution des commandes est affiché
+	 # s'il est supérieur à cette variable
+	typeset -i PLE_SHOW_EXECUTION_TIME_AFTER=6
+fi
 
 #*> Remove all visual makers from file $1
 function clean_log_file
@@ -428,7 +433,7 @@ function get_ssh_command
 {
 	read -a argv <<<"$@"
 
-	if [ ${argv[0]} != ssh ] || [ ${#argv} -eq 1 ]
+	if [ "${argv[0]}" != ssh ] || [ ${#argv} -eq 1 ]
 	then	# Ce n'est pas ssh ou il n'y a qu'une seule commande
 		echo ${argv[0]}
 		return 0
@@ -446,10 +451,16 @@ function get_ssh_command
 
 	# Ici argc pointe sur la chaîne de connexion.
 	# La commande est donc sur argc+1
+	if [ $(( argc+1 )) -eq ${#argv} ]
+	then # Pas de commande c'est un ssh interactif
+		echo ssh
+		return 0
+	fi
+
 	typeset cmd=${argv[argc+1]}
 
 	# Si la commande débute par une " elle est supprimée.
-	[ ${cmd:0:1} = \" ] && cmd=${cmd:1} || true
+	[ "${cmd:0:1}" = \" ] && cmd=${cmd:1} || true
 
 	echo "$cmd (ssh)"
 }
@@ -466,7 +477,7 @@ function get_ssh_command
 #*>		-c continue on errror.
 #*>		-ci like -c but not print error message.
 #*>
-#*> Show execution time after 60s.
+#*> Show execution time after PLE_SHOW_EXECUTION_TIME_AFTER seconds
 function exec_cmd
 {
 	# Mémo : ne jamais utiliser $1 $2 ... mais uniquement $@
@@ -525,7 +536,7 @@ function exec_cmd
 				[ x"$eval_return" = x ] &&	eval_return=0
 			fi
 			eval_duration=$(( $SECONDS - $eval_start_at ))
-			if [ $eval_duration -gt 60 ]
+			if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 			then
 				my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$(get_ssh_command "$@") running time : $(fmt_seconds $eval_duration)"
 			fi
