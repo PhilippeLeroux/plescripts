@@ -127,7 +127,7 @@ fi
 if [ ! -z PLE_SHOW_EXECUTION_TIME_AFTER ]
 then # Temps en secondes, le temps d'exécution des commandes est affiché
 	 # s'il est supérieur à cette variable
-	typeset -i PLE_SHOW_EXECUTION_TIME_AFTER=6
+	typeset -i PLE_SHOW_EXECUTION_TIME_AFTER=60
 fi
 
 #*> Remove all visual makers from file $1
