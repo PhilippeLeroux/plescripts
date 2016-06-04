@@ -8,7 +8,9 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : $ME file_name
+	Ex : gen_docs.sh *lib.sh
+"
 
 function write_para
 {
@@ -100,6 +102,8 @@ function gen_doc
 	chmod -w $doc_name
 	LN
 }
+
+[ $# -eq 0 ] && info "$str_usage" && exit 1
 
 while [ $# -ne 0 ]
 do
