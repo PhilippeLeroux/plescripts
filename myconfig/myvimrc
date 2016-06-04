@@ -104,9 +104,6 @@ set listchars=tab:→\ ,eol:¬,trail:⋅,nbsp:⋅
 "   Ne charge pas le driver noshowmatch qui est trop lent.
 let loaded_matchparen = 1
 
-"N'a jamais marché :(
-"set statusline=%{fugitive#statusline()}
-
 "Pour que airline soit visible tout le temps
 set laststatus=2
 
@@ -124,15 +121,6 @@ let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
 let g:syntastic_check_on_open = 1
 let g:syntastic_check_on_wq = 0
-
-"	============================================================================
-"	NERDTree
-"	============================================================================
-autocmd VimEnter * NERDTree %:p:h
-map <F5> :NERDTreeToggle<CR>
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-" Go to previous (last accessed) window.
-autocmd VimEnter * wincmd p
 
 "	============================================================================
 "	Dictionnaire :
@@ -226,9 +214,29 @@ function! ToggleHOME2Plescripts ()
 	execute "cd ".l:new_dir
 	execute "NERDTree ".l:new_dir
 	wincmd p	"Go to previous windows
-	:echo "goto ".l:new_dir
 endfunction
-map <F4> :call ToggleHOME2Plescripts()<CR>
+map <silent> <F4> :call ToggleHOME2Plescripts()<CR>
+
+"	============================================================================
+"	NERDTree
+"	============================================================================
+let NERDTreeIgnore=['\.swp$', '\~$']
+
+if has( "gui_running" )
+	" NERDTree ouvert automatiquement
+	autocmd VimEnter * NERDTree %:p:h
+else
+	" NERDTree ouvert si aucun fichier n'est passé en paramètre.
+	autocmd StdinReadPre * let s:std_in=1
+	autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree %:p:h | endif
+endif
+map <silent> <F5> :NERDTreeToggle<CR>
+
+"Si NERDTree est la dernière fenêtre ouverte alors quitter [G]vim
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" Go to previous (last accessed) window.
+autocmd VimEnter * wincmd p
 
 "	============================================================================
 "	Thème :
@@ -248,7 +256,7 @@ endfunction
 if g:first_load == 1
 	" Évite de changer de thème sur un reload
 	:call ToggleColorscheme()
-	map <F6> :call ToggleColorscheme()<CR>
+	map <silent> <F6> :call ToggleColorscheme()<CR>
 endif
 
 "	============================================================================
@@ -275,6 +283,17 @@ function! ToggleVimTips()
 	endif
 endfunction
 
-nnoremap <F9> :call ToggleVimTips()<CR>
+" En test
+if has("persistent_undo")
+    set undodir=~/.vim/undodir/
+    set undofile
+endif
+let g:undotree_WindowLayout=3
+nnoremap <silent> <F7> :UndotreeToggle<CR>
+
+nnoremap <silent> <C-p> :GitGutterPrevHunk<CR>
+nnoremap <silent> <C-n> :GitGutterNextHunk<CR>
+
+nnoremap <silent> <F9> :call ToggleVimTips()<CR>
 
 "	============================================================================
