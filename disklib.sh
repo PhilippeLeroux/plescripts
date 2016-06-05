@@ -4,10 +4,7 @@
 #*> Retourne la taille du disque $1 en bytes.
 function disk_size_bytes
 {
-	BLANG=$LANG
-	LANG=C
-	fdisk -l $1 | head -2 | tail -1 | sed 's/.*, \(.*\) bytes.*/\1/'
-	LANG=$BLANG
+	LANG=C fdisk -l $1 | head -2 | tail -1 | sed 's/.*, \(.*\) bytes.*/\1/'
 }
 
 #*> Retourne le nombre de partitions pour le disque $1
@@ -67,9 +64,7 @@ info "add partition to $device"
 fake_exec_cmd "fdisk $device n p 1"
 if [ $? -eq 0 ]
 then
-BLANG=$LANG
-LANG=C
-fdisk $device <<EOS >/dev/null
+LANG=C fdisk $device <<EOS >/dev/null
 n
 p
 1
@@ -77,7 +72,6 @@ p
 
 w
 EOS
-LANG=$BLANG
 fi
 }
 
@@ -88,13 +82,10 @@ typeset -r device=$1
 fake_exec_cmd "fdisk $device d"
 if [ $? -eq 0 ]
 then
-BLANG=$LANG
-LANG=C
-fdisk $device <<EOS >/dev/null
+LANG=C fdisk $device <<EOS >/dev/null
 d
 w
 EOS
-LANG=$BLANG
 fi
 }
 
