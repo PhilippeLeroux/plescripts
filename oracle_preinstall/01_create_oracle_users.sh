@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset ORCL_RELEASE=undef
+typeset ORACLE_RELEASE=undef
 typeset db_type=undef
 
 typeset -r str_usage="Usage $0 -release=aa.bb.cc.dd -db_type=[single|rac]"
@@ -15,7 +16,7 @@ while [ $# -ne 0 ]
 do
 	case $1 in
 		-releaseoracle=*|-release=*)
-			RELEASE_ORACLE=${1##*=}
+			ORACLE_RELEASE=${1##*=}
 			shift
 			;;
 
@@ -33,17 +34,19 @@ do
 	esac
 done
 
-ORCL_RELEASE=${RELEASE_ORACLE:0:2}
+[ $ORACLE_RELEASE = undef ] &&	$ORACLE_RELEASE=$oracle_release
+
+ORCL_RELEASE=${ORACLE_RELEASE:0:2}
 
 info "Create grid profile."
 exec_cmd "cp ~/plescripts/oracle_preinstall/grid_env.template  ~/plescripts/oracle_preinstall/grid_env"
 case $db_type in
 	rac|raco)
-		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/$RELEASE_ORACLE/grid!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/$ORACLE_RELEASE/grid!\" ~/plescripts/oracle_preinstall/grid_env"
 		;;
 
 	single|single_fs)
-		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/grid/$RELEASE_ORACLE!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/grid/$ORACLE_RELEASE!\" ~/plescripts/oracle_preinstall/grid_env"
 		;;
 
 	*)
@@ -59,7 +62,7 @@ LN
 typeset -r profile_oracle=/tmp/profile_oracle
 
 info "Create oracle profile."
-exec_cmd "sed \"s/RELEASE_ORACLE/${RELEASE_ORACLE}/g\" ~/plescripts/oracle_preinstall/template_profile.oracle | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > $profile_oracle"
+exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ~/plescripts/oracle_preinstall/template_profile.oracle | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > $profile_oracle"
 LN
 
 . $profile_oracle
@@ -113,7 +116,7 @@ exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper -s /bin/ksh 
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
 exec_cmd cp template_kshrc /home/grid/.kshrc
 [ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/grid/.kshrc"
-exec_cmd "sed \"s/RELEASE_ORACLE/${RELEASE_ORACLE}/g\" ./template_profile.grid | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/.profile"
+exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.grid | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/.profile"
 make_vimrc_file "/home/grid/.vimrc"
 exec_cmd "mkdir /home/grid/TOOLS"
 exec_cmd "cp ./grid_TOOLS/* /home/grid/TOOLS/"
