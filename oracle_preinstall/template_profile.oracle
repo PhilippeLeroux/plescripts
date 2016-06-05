@@ -56,10 +56,8 @@ then
     grep "$instance" /etc/oratab >/dev/null 2>&1
     if [ $? -eq 0 ]
     then
-        ORAENV_ASK=NO
         ORACLE_SID=$instance
-        . oraenv
-        unset ORAENV_ASK
+        ORAENV_ASK=NO . oraenv
     fi
 fi
 

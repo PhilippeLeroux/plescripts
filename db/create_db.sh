@@ -578,10 +578,8 @@ line_separator
 [ "$db_type" = "RAC" ] && exec_cmd "./update_oratab.sh -db=$lower_name"
 
 info "Enable archivelog :"
-ORAENV_ASK=NO
 [ $db_type = RAC ] && ORACLE_SID=${name}1 || ORACLE_SID=${name}
-. oraenv
-unset ORAENV_ASK
+ORAENV_ASK=NO . oraenv
 
 exec_cmd "~/plescripts/db/enable_archive_log.sh"
 

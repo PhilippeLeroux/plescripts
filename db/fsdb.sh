@@ -47,12 +47,11 @@ function start_db
 	typeset -r OSID=$1
 
 	fake_exec_cmd "startup $OSID"
-	ORAENV_ASK=NO
 	ORACLE_SID=$OSID
+	ORAENV_ASK=NO . oraenv
 	sqlplus -s sys/$oracle_password as sysdba<<EOS
 	startup
 EOS
-	unset ORAENV_ASK
 }
 
 function stop_db
@@ -60,12 +59,11 @@ function stop_db
 	typeset -r OSID=$1
 
 	fake_exec_cmd "shutdown $OSID"
-	ORAENV_ASK=NO
 	ORACLE_SID=$OSID
+	ORAENV_ASK=NO . oraenv
 	sqlplus -s sys/$oracle_password as sysdba<<EOS
 	shutdown immediate
 EOS
-	unset ORAENV_ASK
 }
 
 exec_cmd lsnrctl $action
