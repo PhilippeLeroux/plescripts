@@ -43,6 +43,8 @@ function enable_markers
 	BOLD="\e[1m"
 	INVERT="\e[7m"
 	BLINK="\e[5m"
+	ITALIC="\e[3m"			# Ne fonctionne qu'avec xterm
+	STRIKE="\e[9m"			# Ne fonctionne qu'avec xterm
 
 	#	Clear End Of Line
 	CEOL="\e[K"
@@ -86,16 +88,18 @@ function disable_markers
 	UNDERLINE=
 	BOLD=
 	INVERT=
+	BLINK=
+	ITALIC=
+	STRIKE=
 }
 
+#	============================================================================
 #	Valeurs de PLELIB_OUTPUT
 #		- ENABLE	: Effets d'affichage
 #		- DISABLE	: Aucun effets d'affichage
 #		- FILE		: Effet d'affichage et écriture dans la log définie par PLELIB_LOG_FILE
 #
 #	Si PLELIB_LOG_FILE est définie alors PLE_OUTPUT sera positionné à FILE
-
-
 [ x"$PLELIB_OUTPUT" = x ] && PLELIB_OUTPUT=ENABLE
 
 typeset -r PLELOG_ROOT=~/plescripts/logs
@@ -106,11 +110,6 @@ then
 fi
 
 typeset -r PLELOG_PATH=$PLELOG_ROOT/$(date +"%Y-%m-%d")
-if [ ! -d $PLELOG_PATH ]
-then
-	mkdir $PLELOG_PATH >/dev/null 2>&1
-	chmod ug=rwx,o=rx $PLELOG_PATH >/dev/null 2>&1
-fi
 
 if [ "$PLELIB_OUTPUT" = "FILE" ] && [ x"$PLELIB_LOG_FILE" = x ]
 then
@@ -120,9 +119,14 @@ fi
 
 [ x"$PLELIB_LOG_FILE" != x ] && PLELIB_OUTPUT=FILE
 
-#[ ! -t 1 ] || [ ! -t 2 ] && PLELIB_OUTPUT=DISABLE
-
 [ "$PLELIB_OUTPUT" = DISABLE ] && disable_markers || enable_markers
+
+if [ "$PLELIB_OUTPUT" = "FILE" ] && [ ! -d $PLELOG_PATH ]
+then
+	mkdir $PLELOG_PATH >/dev/null 2>&1
+	chmod ug=rwx,o=rx $PLELOG_PATH >/dev/null 2>&1
+fi
+#	============================================================================
 
 if [ ! -z PLE_SHOW_EXECUTION_TIME_AFTER ]
 then # Temps en secondes, le temps d'exécution des commandes est affiché
@@ -133,11 +137,9 @@ fi
 #*> Remove all visual makers from file $1
 function clean_log_file
 {
-	echo "clean_log_file $1"
 	if [ -f "$1" ]
 	then
-		sed -i "s/\[[0-9]m//g" "$1"
-		sed -i "s/\[[0-9]*;[0-9]*m//g" "$1"
+		sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" "$1"
 		sed -i "s/\r//g" "$1"
 	fi
 }
@@ -145,6 +147,10 @@ function clean_log_file
 #*< Remove all visual makers for log file generate by plelib
 function clean_plelib_log_file
 {
+	# Le premier appel permet de flusher la log.
+	clean_log_file "$PLELIB_LOG_FILE"
+	# La log est 'flushée' permet de traiter la fin de la log.
+	# Marche pas toujours, mais je laisse.
 	clean_log_file "$PLELIB_LOG_FILE"
 }
 
@@ -244,7 +250,6 @@ function my_echo
 			;;
 
 		"FILE")
-			[ -z PLELIB_LOG_FILE ] && echo "PLELIB_LOG_FILE not defined.">&2 && exit 1
 			printf "${color}${symbol}${NORM}${MSG}$EOL"
 			printf "${symbol}${MSG}$EOL" >> $PLELIB_LOG_FILE
 			;;
@@ -417,12 +422,12 @@ function fake_exec_cmd
 {
 	case $EXEC_CMD_ACTION in
 		NOP)
-			my_echo "${YELLOW}" "nop > " "$@"
+			my_echo "${YELLOW}" "${INVERT}nop  >${NORM} " "$@"
 			return 1
 			;;
 
 		EXEC)
-			my_echo "${YELLOW}" "$(date +"%Hh%M")> " "$@"
+			my_echo "${YELLOW}" "${INVERT}$(date +"%Hh%M")>${NORM} " "$@"
 			return 0
 	esac
 }
@@ -461,6 +466,9 @@ function get_ssh_command
 
 	# Si la commande débute par une " elle est supprimée.
 	[ "${cmd:0:1}" = \" ] && cmd=${cmd:1} || true
+
+	# Si la commande est LANG=C on passe à la suivante.
+	[ "$cmd" == "LANG=C" ] && cmd=${argv[argc+2]}
 
 	echo "$cmd (ssh)"
 }
