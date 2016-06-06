@@ -9,7 +9,9 @@ PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
 
-function gen_keys_for_user
+#	Génération de la clef pour les utilisateur oracle ou grid
+#	$1 == oracle|grid
+function gen_keys_for_dbuser
 {
 	typeset -r dbuser=$1
 
@@ -21,6 +23,7 @@ function gen_keys_for_user
 
 }
 
+#	Génération des clefs publics pour les utilisateurs root, oracle et grid.
 function ssh_keygen_local_users
 {
 	line_separator
@@ -29,11 +32,12 @@ function ssh_keygen_local_users
 	exec_cmd "[ ! -f ~/.ssh/id_rsa ] && ssh-keygen -t rsa -N \"\" -f ~/.ssh/id_rsa || true"
 	LN
 
-	gen_keys_for_user oracle
+	gen_keys_for_dbuser oracle
 
-	gen_keys_for_user grid
+	gen_keys_for_dbuser grid
 }
 
+#	$1 nom du serveur sur lequel copier la clef public de root.
 function copy_root_rsa_pub_to
 {
 	typeset -r server_name=$1
@@ -44,6 +48,8 @@ function copy_root_rsa_pub_to
 	LN
 }
 
+#	$1 nom du serveur ou copier la clef public.
+#	$2 nom de l'utilisateur oracle ou grid.
 function copy_user_rsa_pub_to
 {
 	typeset -r server_name=$1
@@ -60,6 +66,7 @@ function copy_user_rsa_pub_to
 	LN
 }
 
+#	Établie l'auto équivalence SSH pour l'utilisateur $1
 function auto_equi_for_user
 {
 	typeset -r user_name=$1
@@ -72,6 +79,8 @@ function auto_equi_for_user
 	LN
 }
 
+#	Met à jour le fichier locale know_host avec le serveur $1
+#	Le fichier est mis à jour pour les utilisateurs root, oracle et grid du serveur $1
 function update_local_know_hosts_with
 {
 	typeset -r remote_server=$1
