@@ -53,8 +53,10 @@ LN
 
 while read name rem
 do
+	info "Read $name"
 	if $(begin_with_number $name)
 	then
+		info "$name is an IP."
 		exec_cmd -f -ci "ssh $dns_conn \"grep \\\"\<$name\>$\\\" /var/named/named.orcl\" </dev/null >/dev/null 2>&1"
 		if [ $? -ne 0 ]
 		then
@@ -66,6 +68,14 @@ do
 			count_valids=count_valids+1
 		fi
 	else
+		if grep -q "," <<<"$name"
+		then
+			info -n "Extract name : "
+			name=$(cut -d, -f1<<<"$name")
+			info -f "$name"
+		else
+			info "$name is server name"
+		fi
 		exec_cmd -f -ci "ssh $dns_conn \"grep -i \\\"\<$name\> \\\" /var/named/named.orcl\" </dev/null >/dev/null 2>&1"
 		if [ $? -ne 0 ]
 		then
