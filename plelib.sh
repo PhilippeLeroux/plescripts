@@ -1,5 +1,5 @@
 #	ts=4 sw=4
-[ x"$plelib_banner" != x ] && return 0
+[ ! -z $plelib_banner ] && return 0
 
 typeset -ri plelib_release=3
 typeset -r	plelib_banner=$(printf "plelib V%02d" $plelib_release)
@@ -481,9 +481,10 @@ function get_ssh_command
 #*> If command failed stop the scripts.
 #*>
 #*> Parameters:
-#*>		-f EXEC_CMD_ACTION is ignored.
-#*>		-c continue on errror.
+#*>		-f  EXEC_CMD_ACTION is ignored.
+#*>		-c  continue on error.
 #*>		-ci like -c but not print error message.
+#*>		-h  hide command except on error (never tested)
 #*>
 #*> Show execution time after PLE_SHOW_EXECUTION_TIME_AFTER seconds
 function exec_cmd
@@ -493,6 +494,7 @@ function exec_cmd
 	#	exec_cmd "ls -rtl"	l'est aussi.
 	typeset force=NO
 	typeset continue_on_error=NO
+	typeset hide_command=NO
 
 	while [ 0 -eq 0 ]	# forever
 	do
@@ -516,6 +518,11 @@ function exec_cmd
 				continue_on_error=YES_AND_HIDE_MESSAGE
 				;;
 
+			"-h")
+				shift
+				hide_command=YES
+				;;
+
 			*)
 				break
 				;;
@@ -529,7 +536,7 @@ function exec_cmd
 
 		EXEC)
 			[ $force = YES ] && COL=$RED || COL=$YELLOW
-			my_echo "$COL" "$(date +"%Hh%M")> " "$@"
+			[ $hide_command == NO ] && my_echo "$COL" "$(date +"%Hh%M")> " "$@"
 
 			eval_start_at=$SECONDS
 			if [ x"$PLELIB_LOG_FILE" = x ]
@@ -543,14 +550,20 @@ function exec_cmd
 				#	BUG workaround :
 				[ x"$eval_return" = x ] &&	eval_return=0
 			fi
-			eval_duration=$(( $SECONDS - $eval_start_at ))
-			if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
+
+			if [ $hide_command == NO ]
 			then
-				my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$(get_ssh_command "$@") running time : $(fmt_seconds $eval_duration)"
+				eval_duration=$(( $SECONDS - $eval_start_at ))
+				if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
+				then
+					my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$(get_ssh_command "$@") running time : $(fmt_seconds $eval_duration)"
+				fi
 			fi
 
 			if [ $eval_return -ne 0 ]
 			then
+				[ $hide_command == YES ] && my_echo "$COL" "$(date +"%Hh%M")> " "$@"
+
 				typeset -r user_cmd=$(cut -d' ' -f1 <<< "$@")
 				if [ $continue_on_error = NO ]
 				then
@@ -817,7 +830,7 @@ function chrono_start
 
 #*> chrono_stop [message]
 #*> Affiche le temps écoulé depuis le dernier appel à chrono_start
-#*> Si premier paramètre est -q alors retourne le temps écoulé.
+#*> Si le premier paramètre est -q alors retourne le temps écoulé.
 function chrono_stop
 {
 	if [ $# -eq 0 ]
