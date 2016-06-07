@@ -67,19 +67,20 @@ done
 
 exit_if_param_undef db 		"$str_usage"
 
-if [ ! -d ~/plescripts/infra/$db ]
+typeset -r cfg_path=~/plescripts/infra/$db
+if [ ! -d $cfg_path ]
 then
-	error "~/plescripts/infra/$db not exits !"
+	error "$cfg_path not exits !"
 	info "First run ~/plescripts/infra/new_infra.sh"
 	exit 1
 fi
 
-typeset -ri max_nodes=$(ls -1 ~/plescripts/infra/$db/node*|wc -l)
+typeset -ri max_nodes=$(ls -1 $cfg_path/node*|wc -l)
 [ $node = -1 ] && [ $max_nodes -eq 1 ] && node=1
 
 exit_if_param_undef node	"$str_usage"
 
-typeset -r cfg_file=~/plescripts/infra/$db/node$node
+typeset -r cfg_file=$cfg_path/node$node
 exit_if_file_not_exists $cfg_file $str_usage
 
 typeset -r server_name=$(cat $cfg_file | cut -d: -f2)
@@ -334,10 +335,40 @@ function configure_oracle_accounts
 	connections_ssh_client_to_db_server
 }
 
+#	Ne pas appeler pour le premier noeud d'un RAC.
+#	Pour les autres noeuds (supérieur à 1 donc) test si le serveur précédent
+#	à été configuré.
+function test_if_other_nodes_up
+{
+	typeset check_ok=yes
+
+	for node_file in $cfg_path/node*
+	do
+		typeset other_node=$(cat $node_file | cut -d: -f2)
+		if [ $other_node != $server_name ]
+		then
+			info -n "Test if $other_node is up : "
+			nc $other_node 22 </dev/null >/dev/null 2>&1
+			if [ $? -ne 0 ]
+			then
+				info -f "$KO"
+				check_ok=no
+			else
+				info -f "$OK"
+			fi
+			LN
+		fi
+	done
+
+	[ $check_ok == no ] && exit 1 || true
+}
+
 #	============================================================================
 #	MAIN
 #	============================================================================
 typeset -r script_start_at=$SECONDS
+
+[ $node -gt 1 ]			&& test_if_other_nodes_up || true
 
 [ $skip_clone = no ]	&& configure_server || true
 
