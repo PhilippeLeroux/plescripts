@@ -9,7 +9,7 @@
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
 
-exec_cmd "~/plescripts/san/discovery_target.sh"
+exec_cmd "~/plescripts/disk/discovery_target.sh"
 
 line_separator
 exec_cmd "oracleasm scandisks"
