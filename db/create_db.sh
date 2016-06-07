@@ -37,7 +37,7 @@ typeset serverPoolName=undef
 typeset -r str_usage=\
 "Usage :
 $ME
-	-name=$name db name for single|db for RAC
+	-name=$name db name for single or db for RAC
 	-lang=$lang
 	-sysPassword=$sysPassword
 	-memory_mb=$memory_mb
@@ -46,6 +46,9 @@ $ME
 	-data=$data
 	-fra=$fra
 	-templateName=$templateName
+	-db_type=SINGLE|RAC|RACONENODE (1)
+
+	1 : Pour le RAC one node il faut impérativement le préciser !
 
 	[-verbose]
 "
@@ -522,9 +525,9 @@ then
 fi
 LN
 
-if [ $verbose = yes ]
+if [ $verbose == yes ]
 then
-	[ $db_type = RAC ] && noi=1
+	[[ $db_type == RAC* ]] && noi=1
 	alert_log=$ORACLE_BASE/diag/rdbms/$lower_name/${name}${noi}/trace/alert_${name}${noi}.log
 
 	wait_file $alert_log
@@ -578,11 +581,11 @@ then
 fi
 LN
 
-[ "$db_type" = "RAC" ] && line_separator && exec_cmd "./update_oratab.sh -db=$lower_name"
+[[ "$db_type" == "RAC*" ]] && line_separator && exec_cmd "./update_oratab.sh -db=$lower_name"
 
 line_separator
 info "Enable archivelog :"
-[ $db_type = RAC ] && ORACLE_SID=${name}1 || ORACLE_SID=${name}
+[[ "$db_type" == "RAC*" ]] && ORACLE_SID=${name}1 || ORACLE_SID=${name}
 ORAENV_ASK=NO . oraenv
 exec_cmd "~/plescripts/db/enable_archive_log.sh"
 LN

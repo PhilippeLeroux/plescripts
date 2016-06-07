@@ -13,13 +13,12 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=<str>        Identifiant.
 	-action=install  Si config l'installation n'est pas lancée.
-	-one_node        Installation d'un RAC one node."
+"
 
 info "$ME $@"
 
 typeset db=undef
 typeset action=install
-typeset rac_one_node=no
 
 while [ $# -ne 0 ]
 do
@@ -36,11 +35,6 @@ do
 
 		-action=*)
 			action=${1##*=}
-			shift
-			;;
-
-		-one_node)
-			rac_one_node=yes
 			shift
 			;;
 
@@ -70,13 +64,14 @@ typeset -r dir_files=~/plescripts/infra/$db
 typeset -r rsp_file=${dir_files}/oracle_$db.rsp
 
 #
-typeset -a node_names
-typeset -a node_ips
-typeset -a node_vip_names
-typeset -a node_vips
-typeset -a node_priv_names
-typeset -a node_priv_ips
-typeset -i max_nodes=0
+typeset -a	node_names
+typeset -a	node_ips
+typeset -a	node_vip_names
+typeset -a	node_vips
+typeset -a	node_priv_names
+typeset -a	node_priv_ips
+typeset -i	max_nodes=0
+typeset		rac_one_node=no
 
 function load_node_cfg # $1 node_file $2 idx
 {
@@ -93,6 +88,7 @@ function load_node_cfg # $1 node_file $2 idx
 		else
 			clusterNodes=$clusterNodes,$node_name:$node_vip_name
 		fi
+		[ $db_type == raco ] && rac_one_node=yes || true
 		node_names[$idx]=$node_name
 		node_ips[$idx]=$node_ip
 		node_vip_names[$idx]=$node_vip_name
