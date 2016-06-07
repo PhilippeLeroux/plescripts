@@ -1,0 +1,15 @@
+oracle@srvbatman01:NOSID:db> olsnodes      
+srvbatman01
+srvbatman02
+
+Check node connectivity
+cluvfy comp nodecon -n srvbatman01,srvbatman02
+
+Vérifie si toutes les lib & co sont présentes : check pre requis
+cluvfy comp sys -n srvbatman01,srvbatman02 -p crs -verbose
+
+Verifying shared storage accessibility 
+cluvfy comp ssa  -n all -verbose
+
+Verifying cluster integrity
+cluvfy comp clu
