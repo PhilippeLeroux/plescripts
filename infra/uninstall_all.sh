@@ -136,12 +136,36 @@ function deinstall_oracle
 	info "deinstall oracle"
 	suoracle -f "~/plescripts/infra/uninstall_oracle.sh $arg1"
 	LN
+
+	typeset -r service_file=/usr/lib/systemd/system/oracledb.service
+	if [ -f $service_file ]
+	then	# Uniquement sur les DB sur FS
+		exec_cmd -c "systemctl stop oracledb.service"
+		exec_cmd -c "systemctl disable oracledb.service"
+		exec_cmd "rm -f $service_file"
+	fi
+}
+
+function remove_vg
+{
+	exec_cmd "umount /u01/app/oracle/oradata"
+	exec_cmd "sed -i "/vg_oradata-lv_oradata/d" /etc/fstab"
+	fake_exec_cmd "vgremove vg_oradata<<<\"yy\""
+	if [ $? -eq 0 ]
+	then
+		vgremove vg_oradata <<EOS
+y
+y
+EOS
+	fi
+	exec_cmd -c "~/plescripts/disk/logout_sessions.sh"
 }
 
 function remove_disks
 {
 	exec_cmd "~/plescripts/disk/clear_oracle_disk_headers.sh -doit"
 	exec_cmd -c "~/plescripts/disk/logout_sessions.sh"
+	exec_cmd "systemctl disable oracleasm.service"
 }
 
 function deinstall_grid
@@ -174,7 +198,8 @@ fi
 
 if grep -q remove_grid_binary <<< "$action"
 then
-	deinstall_grid
+	typeset -i nr_file=$(find /u01/app/grid/ -type f | wc -l)
+	[ $nr_file -ne 0 ] && deinstall_grid || remove_vg
 elif grep -q remove_disks <<< "$action"
 then
 	remove_disks
@@ -183,8 +208,21 @@ fi
 exec_cmd -f -c "umount /mnt/oracle_install"
 LN
 
+line_separator
+
 info "Éventuellement faire un rm -rf /tmp/* en root"
 LN
+
+info "Option 1 :"
 info "Exécuter revert_to_master.sh sur ce serveur."
 info "Puis delete_infra.sh depuis le client."
+info "Puis relancer clone_master & co"
+LN
+
+info "Option 2 :"
+info "Ou aller dans ~/plescripts/disk puis exécuter :
+	./oracleasm_discovery_first_node.sh sur le premier noeud
+	./oracleasm_discovery_other_nodes.sh sur les autres noeuds dans le cas d'un RAC
+
+L'installation du grid et d'oracle peut être relancé."
 LN

@@ -40,16 +40,17 @@ do
 	esac
 done
 
-[ $action = undef ] && error "$str_usage" && exit 1
+exit_if_param_invalid action "start stop" "$str_usage"
 
 function start_db
 {
 	typeset -r OSID=$1
 
-	fake_exec_cmd "startup $OSID"
 	ORACLE_SID=$OSID
 	ORAENV_ASK=NO . oraenv
+	fake_exec_cmd "sqlplus -s sys/$oracle_password as sysdba"
 	sqlplus -s sys/$oracle_password as sysdba<<EOS
+	prompt startup
 	startup
 EOS
 }
@@ -58,19 +59,26 @@ function stop_db
 {
 	typeset -r OSID=$1
 
-	fake_exec_cmd "shutdown $OSID"
 	ORACLE_SID=$OSID
 	ORAENV_ASK=NO . oraenv
+	fake_exec_cmd "sqlplus -s sys/$oracle_password as sysdba"
 	sqlplus -s sys/$oracle_password as sysdba<<EOS
+	prompt shutdown immediate
 	shutdown immediate
 EOS
 }
 
-exec_cmd lsnrctl $action
+exec_cmd -c lsnrctl $action
 LN
 
 cat /etc/oratab | grep -E "^[A-Z].*" |\
 while IFS=':' read OSID OHOME MANAGED
 do
-	[[ $MANAGED = Y && $action = start ]] && start_db $OSID || stop_db $OSID
+	if [ $MANAGED = Y ]
+	then
+		info "$action database $OSID"
+		[ $action = start ] && start_db $OSID || stop_db $OSID
+	else
+		info "$OSID ignored."
+	fi
 done

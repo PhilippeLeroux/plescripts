@@ -259,7 +259,7 @@ function start_grid_installation
 {
 	line_separator
 	info "Démarre l'installation du grid, attente ~17mn"
-	exec_cmd -c "ssh -t grid@${node_names[0]} \"LANG=C; /mnt/oracle_install/grid/runInstaller -silent -showProgress -waitforcompletion -responseFile /home/grid/grid_$db.rsp\""
+	exec_cmd -c "ssh -t grid@${node_names[0]} \"LANG=C /mnt/oracle_install/grid/runInstaller -silent -showProgress -waitforcompletion -responseFile /home/grid/grid_$db.rsp\""
 	ret=$?
 	[ $ret -eq 254 ] && exit 1
 }
@@ -301,29 +301,25 @@ function create_dg # $1 nom du DG
 
 function launch_memstat
 {
+	typeset mode="-h"
+	[ "$DEBUG_PLE" = yes ] && mode=""
+
 	for i in $( seq 0 $(( max_nodes - 1 )) )
 	do
-		if [ "$DEBUG_PLE" = yes ]
-		then
-			exec_cmd -c "ssh -n grid@${node_names[$i]} \
-			 \"nohup ~/plescripts/memory/memstats.sh -title=install_grid >/dev/null 2>&1 &\""
-		else
-			exec_cmd -c "ssh -n grid@${node_names[$i]} \
-			 \"nohup ~/plescripts/memory/memstats.sh -title=install_grid >/dev/null 2>&1 &\"" >/dev/null 2>&1
-		fi
+		exec_cmd $mode -c "ssh -n grid@${node_names[$i]} \
+		\"nohup ~/plescripts/memory/memstats.sh -title=install_grid >/dev/null 2>&1 &\""
 	done
 }
 
 function on_exit
 {
+	typeset mode="-h"
+	[ "$DEBUG_PLE" = yes ] && mode=""
+
 	for i in $( seq 0 $(( max_nodes - 1 )) )
 	do
-		if [ "$DEBUG_PLE" = yes ]
-		then
-			exec_cmd -c "ssh -t grid@${node_names[$i]} \"~/plescripts/memory/memstats.sh -kill -title=install_grid\""
-		else
-			exec_cmd -c "ssh -t grid@${node_names[$i]} \"~/plescripts/memory/memstats.sh -kill -title=install_grid\"" >/dev/null 2>&1
-		fi
+		exec_cmd $mode -c "ssh -t grid@${node_names[$i]} \
+		\"~/plescripts/memory/memstats.sh -kill -title=install_grid >/dev/null 2>&1\""
 	done
 }
 
@@ -470,6 +466,6 @@ then
 	LN
 fi
 
-info "Now execute :"
+info "Oracle peut être installé."
 info "./install_oracle.sh -db=$db"
 LN

@@ -44,7 +44,8 @@ done
 
 [ $USER != root ] && error "Only root !" && info "$str_usage" && exit 1
 
-if [ -f /etc/oratab ]
+typeset -ri nr_files=$(find /u01 -type f | wc -l)
+if [ $nr_files -ne 0 ]
 then
 	error "Le GI et oracle doivent être désinstallés."
 	LN
@@ -72,6 +73,9 @@ exec_cmd "sed -i '/\/mnt\/oracle_install/d' /etc/fstab"
 LN
 
 exec_cmd "~/plescripts/gadgets/customize_logon.sh -name=$master_name"
+LN
+
+exec_cmd "systemctl restart NetworkManager"
 LN
 
 if [ $EXEC_CMD_ACTION = NOP ]

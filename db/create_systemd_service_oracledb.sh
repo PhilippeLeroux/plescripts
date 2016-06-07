@@ -8,7 +8,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -db=<str>"
+typeset -r str_usage="Usage : $ME"
 
 [ "$USER" != "root" ] && error "User must be root." && exit 1
 
@@ -18,11 +18,6 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
-			shift
-			;;
-
-		-db=*)
-			db=${1##*=}
 			shift
 			;;
 
@@ -36,6 +31,13 @@ do
 done
 
 typeset -r service_file=/usr/lib/systemd/system/oracledb.service
+
+if [ -f $service_file ]
+then
+	info "Le service oracledb existe."
+	exec_cmd "systemctl status oracledb.service -l"
+	exit 0
+fi
 
 info "Create systemd service for Oracle Database"
 

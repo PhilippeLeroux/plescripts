@@ -7,6 +7,7 @@ EXEC_CMD_ACTION=EXEC
 
 function configure_oracleasm
 {
+fake_exec_cmd "/etc/init.d/oracleasm configure grid asmadmin y y"
 /etc/init.d/oracleasm configure <<EOS
 grid
 asmadmin
@@ -27,7 +28,9 @@ line_separator
 info "Configure oracleasm"
 configure_oracleasm
 exec_cmd oracleasm configure
-exec_cmd /usr/sbin/oracleasm-discover
+#oracleasm init n'est utile que si une désinstallation a été faite.
+exec_cmd oracleasm init
+exec_cmd oracleasm-discover
 exec_cmd systemctl enable oracleasm.service
 LN
 

@@ -49,7 +49,6 @@ function disable_selinux
 	if [ $(getenforce) != Disabled ]
 	then
 		info "Désactivation de SELINUX pour utilisation de oracleasm."
-		info "	TODO : trouver comment définir les règles"
 		exec_cmd "sed -i \"s/^SELINUX=enforcing/SELINUX=disabled/g\" $selinux_cfg"
 	else
 		info "SELinux already disabled."
@@ -148,6 +147,12 @@ function dev_shm_setting
 }
 
 #	Depuis la 11.2.0.4 il n'est plus nécessaire de désactiver selinux.
+#	Pas exactement :
+#		Lors de la toute première création si selinux est activé oracleasm
+#		échouera.
+#		Après s'il est réactivé oracleasm n'aura plus problème, même pour
+#		ajouter de nouveau disque.
+#		Pour le moment SELINUX est activé dans clone_master.sh
 #line_separator
 #disable_selinux
 #LN

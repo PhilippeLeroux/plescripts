@@ -160,7 +160,8 @@ function start_oracle_installation
 {
 	line_separator
 	info "Démarre l'installation d'oracle, attente ~35mn"
-	exec_cmd -c "ssh oracle@${node_names[0]} \"LANG=C; /mnt/oracle_install/database/runInstaller -silent -showProgress -waitforcompletion -responseFile /home/oracle/oracle_$db.rsp\""
+	info "Log disponible ici : /u01/app/oraInventory/logs"
+	exec_cmd -c "ssh oracle@${node_names[0]} \"LANG=C /mnt/oracle_install/database/runInstaller -silent -showProgress -waitforcompletion -responseFile /home/oracle/oracle_$db.rsp\""
 	LN
 }
 
@@ -170,35 +171,31 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
 
 	line_separator
-	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C; /u01/app/oracle/$oracle_release/dbhome_1/root.sh\" </dev/null"
+	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C /u01/app/oracle/$oracle_release/dbhome_1/root.sh\" </dev/null"
 	LN
 }
 
 function launch_memstat
 {
+	typeset mode="-h"
+	[ "$DEBUG_PLE" = yes ] && mode=""
+
 	for i in $( seq 0 $(( max_nodes - 1 )) )
 	do
-		if [ "$DEBUG_PLE" = yes ]
-		then
-			exec_cmd -c "ssh -n oracle@${node_names[$i]} \
-			 \"nohup ~/plescripts/memory/memstats.sh -title=install_oracle >/dev/null 2>&1 &\""
-		else
-			exec_cmd -c "ssh -n oracle@${node_names[$i]} \
-			 \"nohup ~/plescripts/memory/memstats.sh -title=install_oracle >/dev/null 2>&1 &\"" >/dev/null 2>&1
-		fi
+		exec_cmd $mode -c "ssh -n oracle@${node_names[$i]} \
+		 \"nohup ~/plescripts/memory/memstats.sh -title=install_oracle >/dev/null 2>&1 &\""
 	done
 }
 
 function on_exit
 {
+	typeset mode="-h"
+	[ "$DEBUG_PLE" = yes ] && mode=""
+
 	for i in $( seq 0 $(( max_nodes - 1 )) )
 	do
-		if [ "$DEBUG_PLE" = yes ]
-		then
-			exec_cmd -c "ssh -t oracle@${node_names[$i]} \"~/plescripts/memory/memstats.sh -kill -title=install_oracle\""
-		else
-			exec_cmd -c "ssh -t oracle@${node_names[$i]} \"~/plescripts/memory/memstats.sh -kill -title=install_oracle\"" >/dev/null 2>&1
-		fi
+		exec_cmd $mode -c "ssh -t oracle@${node_names[$i]} \
+		\"~/plescripts/memory/memstats.sh -kill -title=install_oracle >/dev/null 2>&1\""
 	done
 }
 
@@ -246,5 +243,9 @@ then
 		inode=inode+1
 		LN
 	done
+
+	typeset -r type_disks=$(cat ~/plescripts/infra/$db/disks | tail -1 | cut -d: -f1)
+	[ "$type_disks" == FS ] && exec_cmd "ssh -t root@${node_names[$i]} \"~/plescripts/db/create_systemd_service_oracledb.sh\""
+
 	info "Database can be created."
 fi

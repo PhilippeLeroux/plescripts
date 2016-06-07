@@ -26,17 +26,17 @@ Création de nouveaux serveurs :
 	Lance l'installation du grid sur le ou les nœuds concernées.
 
 
-5)	install_oracle.sh 
+6)	install_oracle.sh 
 	Lance l'installation de oracle sur le ou les nœuds concernés.
 
-Ensuite crée les bases, un script est présent dans ~/plescripts/db
+Ensuite créer les bases, un script est présent dans ~/plescripts/db
 
 
 
 
 
-Supprimer totalement l'installation du serveur :
-------------------------------------------------
+Recycler un serveur :
+---------------------
 Se connecter sur le serveur cible en root :
 	cd ~/plescripts/infra
 	./uninstall_all.sh -all

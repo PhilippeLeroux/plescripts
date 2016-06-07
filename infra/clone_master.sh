@@ -362,8 +362,14 @@ then	# C'est le dernier noeud
 		LN
 	fi
 
-	info "Le grid peut être installé."
-	info "./install_grid.sh -db=$db"
+	if [ $type_disks = FS ]
+	then
+		info "Oracle peut être installé."
+		info "./install_oracle.sh -db=$db"
+	else
+		info "Le grid peut être installé."
+		info "./install_grid.sh -db=$db"
+	fi
 	LN
 elif [ $max_nodes -ne 1 ]
 then	# Ce n'est pas le dernier noeud et il y a plus de 1 noeud.

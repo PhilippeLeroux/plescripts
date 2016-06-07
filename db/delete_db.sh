@@ -7,7 +7,10 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME ...."
+typeset -r str_usage=\
+"Usage : $ME
+	-db=<str> Nom de la base à supprimer.
+"
 
 typeset db=undef
 
@@ -47,7 +50,10 @@ exec_cmd "rm -rf $ORACLE_BASE/cfgtoollogs/dbca/$upper_db"
 exec_cmd "rm -rf $ORACLE_BASE/diag/rdbms/$db"
 LN
 
-info "Purge de ASM :"
-exec_cmd -c "sudo -u grid -i asmcmd rm -rf DATA/$upper_db"
-exec_cmd -c "sudo -u grid -i asmcmd rm -rf FRA/$upper_db"
-LN
+if $(test_if_cmd_exists olsnodes)
+then
+	info "Purge de ASM :"
+	exec_cmd -c "sudo -u grid -i asmcmd rm -rf DATA/$upper_db"
+	exec_cmd -c "sudo -u grid -i asmcmd rm -rf FRA/$upper_db"
+	LN
+fi

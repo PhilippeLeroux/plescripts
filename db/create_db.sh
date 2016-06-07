@@ -27,7 +27,7 @@ typeset fra=FRA
 typeset templateName=General_Purpose.dbc
 typeset db_type=undef
 typeset node_list=undef
-typeset usefs=no			#TODO Faire disparaître ce paramètre
+typeset usefs=no
 typeset cdc=yes
 typeset lang=french
 typeset verbose=no
@@ -41,7 +41,6 @@ $ME
 	-lang=$lang
 	-sysPassword=$sysPassword
 	-memory_mb=$memory_mb
-	-usefs=$usefs	(yes/no)
 	-cdc=$cdc	(yes/no)
 	[-pdbName=<str>]
 	-data=$data
@@ -109,16 +108,6 @@ do
 
 		-db_type=*)
 			db_type=$(to_upper ${1##*=})
-			shift
-			;;
-
-		-usefs=*)
-			usefs=$(to_lower ${1##*=})
-			if [[ "$usefs" = "yes" && $data = DATA && $fra = FRA ]]
-			then
-				data=/u01/app/oracle/oradata/data
-				fra=/u01/app/oracle/oradata/fra
-			fi
 			shift
 			;;
 
@@ -405,7 +394,7 @@ function wait_file
 	[ -f $file_name ] && return 0
 
 	info $(string_fit_on_screen 4 "Wait until $file_name exists.")
-	begin_at=$SECONDS
+	typeset -i begin_at=$SECONDS
 	hide_cursor
 	while [ $file_exists = no ] && [ $duration -lt 180 ]
 	do
@@ -461,13 +450,15 @@ typeset -i pid_tail=-1
 typeset -i pid_dbca=-1
 function stop_all_background_processes
 {
-	[ "$DEBUG_PLE" = yes ] && info "cleanup :"
+	[ "$DEBUG_PLE" = yes ] && line_separator && info "cleanup :"
 
 	stop_process dbca pid_dbca
 
 	stop_memstat
 
 	stop_process log_process pid_tail
+
+	[ "$DEBUG_PLE" = yes ] && LN
 }
 
 function on_ctrl_c
@@ -482,6 +473,21 @@ function on_ctrl_c
 #	MAIN
 #	============================================================================
 [ $db_type = undef ] && is_rac_or_single_server
+if [ $db_type = SINGLE ]
+then
+	test_if_cmd_exists olsnodes
+	if [ $? -eq 0 ]
+	then	# Si le GI est installé alors utilisation de ASM
+		usefs=no
+	else	# Pas de GI alors on est sur FS
+		usefs=yes
+		if [[ $data = DATA && $fra = FRA ]]
+		then
+			data=/u01/app/oracle/oradata/data
+			fra=/u01/app/oracle/oradata/fra
+		fi
+	fi
+fi
 
 show_db_settings
 
@@ -554,9 +560,7 @@ info "dbca $dbca_status ${BOLD}$(fmt_seconds $(chrono_stop -q))"
 pid_dbca=-1
 LN
 
-line_separator
 stop_process log_process pid_tail
-LN
 
 if [ $verbose = yes ]
 then
@@ -574,19 +578,17 @@ then
 fi
 LN
 
-line_separator
-[ "$db_type" = "RAC" ] && exec_cmd "./update_oratab.sh -db=$lower_name"
+[ "$db_type" = "RAC" ] && line_separator && exec_cmd "./update_oratab.sh -db=$lower_name"
 
+line_separator
 info "Enable archivelog :"
 [ $db_type = RAC ] && ORACLE_SID=${name}1 || ORACLE_SID=${name}
 ORAENV_ASK=NO . oraenv
-
 exec_cmd "~/plescripts/db/enable_archive_log.sh"
+LN
 
-test_if_cmd_exists srvctl
-if [ $? -eq 0 ]
+if [ $usefs == no ]
 then
-	LN
 	line_separator
 	info "Database config :"
 	exec_cmd "srvctl config database -db $lower_name"
@@ -594,4 +596,10 @@ then
 	line_separator
 	exec_cmd "crsctl stat res ora.$lower_name.db -t"
 	LN
+else
+	line_separator
+	info "Active le démarrage/arrêt automatique de la base."
+	exec_cmd "sed \"s/^\(${name}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
+	exec_cmd "cat /tmp/ot > /etc/oratab"
+	exec_cmd "rm /tmp/ot"
 fi
