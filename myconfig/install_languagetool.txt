@@ -1,0 +1,17 @@
+correspond à la version 1.29
+
+Ne fonctionne pas
+
+cd .vim
+wget http://www.vim.org/scripts/download_script.php?src_id=23923 -O LanguageTool.zip
+unzip LanguageTool.zip
+
+Aller sur le site pour réperer l'adress de la version 
+
+Récupérer la version java
+wget http://www.languagetool.org/download/LanguageTool-2.9.zip
+unzip LanguageTool-2.9.zip
+
+Dans .vimrc ajouter : let g:languagetool_jar=$HOME./LanguageTool-2.9/languagetool.jar
+
+J'ai JAVA 7 il faut 8 pour les versions 3
