@@ -11,7 +11,7 @@ typeset -r str_usage=\
 "Usage : $ME
            -url=<url>
            -show
-           -del=<path>
+           -del=<plugin name>
            -init
 "
 
@@ -45,7 +45,7 @@ do
 			;;
 
 		-del=*)
-			plugin_path=${1##*=}
+			plugin_name=${1##*=}
 			action=uninstall_plugin
 			shift
 			;;
@@ -103,10 +103,11 @@ function install_plugin
 
 function uninstall_plugin
 {
-	typeset -r plugin_path=$1
+	typeset -r plugin_name=$1
 
-	exec_cmd "cd ~/.vim && git submodule deinit -f $plugin_path"
-	exec_cmd "cd ~/.vim && git rm  -f $plugin_path"
+	exec_cmd "cd ~/.vim && git submodule deinit -f  bundle/$plugin_name"
+	exec_cmd "cd ~/.vim && git rm -f  bundle/$plugin_name"
+	exec_cmd "rm -rf ~/.vim/.git/modules/bundle/$plugin_name"
 }
 
 function install_pathogen
@@ -193,7 +194,7 @@ case $action in
 		;;
 
 	uninstall_plugin)
-		uninstall_plugin $plugin_path
+		uninstall_plugin $plugin_name
 		LN
 		exec_cmd "cd ~/.vim && git status"
 		LN
