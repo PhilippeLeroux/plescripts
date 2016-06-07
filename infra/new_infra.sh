@@ -19,7 +19,7 @@ typeset -r str_usage=\
 	[-size_lun_gb=8]    taille des LUNs si utilisation de ASM.
 	[-no_dns_test]      ne pas tester si les IPs sont utilisées.
 	[-usefs]            ne pas utiliser ASM mais un FS.
-	[-onenode]			RAC de type one node.
+	[-one_node]			RAC de type one node.
 "
 info "$ME $@"
 
@@ -72,7 +72,7 @@ do
 			shift
 			;;
 
-		-onenode)
+		-one_node)
 			db_type=raco
 			shift
 			;;
@@ -89,7 +89,7 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
-[ $db_type = raco ] && [ $max_nodes -eq 1 ] && error "-max_nodes missing with -onenode" && exit 1
+[ $db_type = raco ] && [ $max_nodes -eq 1 ] && error "-max_nodes missing with -one_node" && exit 1
 
 [[ $max_nodes -gt 1 && $db_type != rac* ]] && db_type=rac
 
