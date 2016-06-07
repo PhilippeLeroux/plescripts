@@ -61,7 +61,7 @@ function trunc_line
 	fi
 }
 
-find_cmd="find ~/plescripts/ -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.swp\" ! -path \*/.\* | xargs "
+find_cmd="find ~/plescripts/ -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.json\" ! -name \"*.swp\" ! -path \*/.\* | xargs "
 
 if [ $strict = no ]
 then
