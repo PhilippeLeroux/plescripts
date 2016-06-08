@@ -35,8 +35,7 @@ typeset pdbName=undef
 typeset serverPoolName=undef
 
 typeset -r str_usage=\
-"Usage :
-$ME
+"Usage : $ME
 	-name=$name db name for single or db for RAC
 	-lang=$lang
 	-sysPassword=$sysPassword
@@ -50,8 +49,7 @@ $ME
 
 	1 : Pour le RAC one node il faut impérativement le préciser !
 
-	[-verbose]
-"
+	[-verbose]"
 
 info "$ME $@"
 
