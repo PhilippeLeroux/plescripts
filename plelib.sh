@@ -438,7 +438,9 @@ function get_ssh_command
 {
 	read -a argv <<<"$@"
 
-	if [ "${argv[0]}" != ssh ] || [ ${#argv} -eq 1 ]
+	typeset -ri size=${#argv[@]}
+
+	if [ "${argv[0]}" != ssh ] || [ $size -eq 1 ]
 	then	# Ce n'est pas ssh ou il n'y a qu'une seule commande
 		echo ${argv[0]}
 		return 0
@@ -446,7 +448,7 @@ function get_ssh_command
 
 	# Passe tous les arguments de ssh
 	typeset -i argc=1
-	while [ $argc -ne ${#argv} ]
+	while [ $argc -ne $size ]
 	do
 		arg=${argv[$argc]}
 		[ ${arg:0:1} != - ] && break
@@ -456,9 +458,9 @@ function get_ssh_command
 
 	# Ici argc pointe sur la chaîne de connexion.
 	# La commande est donc sur argc+1
-	if [ $(( argc+1 )) -eq ${#argv} ]
+	if [ $(( argc + 1 )) -eq $size ]
 	then # Pas de commande c'est un ssh interactif
-		echo ssh
+		echo "ssh (interactif)"
 		return 0
 	fi
 
@@ -466,6 +468,8 @@ function get_ssh_command
 
 	# Si la commande débute par une " elle est supprimée.
 	[ "${cmd:0:1}" = \" ] && cmd=${cmd:1} || true
+	# Si la commande termnie par une " elle est supprimée.
+	[ "${cmd:${#cmd}-1:1}" = \" ] && cmd=${cmd:0:${#cmd}-1} || true
 
 	# Si la commande est LANG=C on passe à la suivante.
 	[ "$cmd" == "LANG=C" ] && cmd=${argv[argc+2]}
