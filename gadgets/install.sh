@@ -8,7 +8,6 @@ EXEC_CMD_ACTION=EXEC
 
 role=${1-rdbms}
 
-# Pour el6 c'est nmap
 line_separator
 exec_cmd -c yum -y install	nmap-ncat	\
 							git			\
@@ -19,9 +18,11 @@ exec_cmd "~/plescripts/gadgets/customize_logon.sh"
 
 if [ $role = rdbms ]
 then
-	exec_cmd "su - grid -c \"~/plescripts/shell/vim_plugin -init\""
-	exec_cmd "cp -pr /home/grid/.vim /home/oracle"
+	#	Installation des plugins vim pour oracle & grid
+	exec_cmd "gzip -dc /root/plescripts/gadgets/vim.tar.gz | tar xf - -C /home/oracle"
 	exec_cmd "chown -R oracle:oinstall /home/oracle/.vim"
+	exec_cmd "gzip -dc /root/plescripts/gadgets/vim.tar.gz | tar xf - -C /home/grid"
+	exec_cmd "chown -R grid:oinstall /home/grid/.vim"
 	LN
 else
 	exec_cmd "~/plescripts/shell/vim_plugin -init"
