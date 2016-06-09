@@ -25,40 +25,25 @@ Création de nouveaux serveurs :
 5)	install_grid.sh 
 	Lance l'installation du grid sur le ou les nœuds concernées.
 
-
 6)	install_oracle.sh 
 	Lance l'installation de oracle sur le ou les nœuds concernés.
 
 Ensuite créer les bases, un script est présent dans ~/plescripts/db
 
 
-
-
-
 Recycler un serveur :
 ---------------------
 Se connecter sur le serveur cible en root :
 	cd ~/plescripts/infra
-	./uninstall_all.sh -all
+	./uninstall_all.sh -type=FS|ASM
 	./revert_to_master.sh -doit
-Puis rebooter ou stopper le serveur.
-
-Pour un RAC faire l'opération sur tous les serveurs.
-
-Sont supprimés par le premier script :
-	Les bases
-	Oracle
-	Le GI
-
-Le second script supprime :
-	Les comptes grid & oracle
-	Renomme le serveur en orclmaster (cf variable master_name) et positionne
-	l'IP qui va bien.
+	Puis rebooter ou stopper le serveur.
+	Pour un RAC faire l'opération sur tous les serveurs.
 
 Depuis le poste client :
 	cd ~/plescripts/infra
 	./delete_infra.sh -db=<str> [-remove_cfg]
-Le DNS et le SAN sont mis à jours.
+	Le DNS et le SAN sont mis à jours.
 
 License
 -------
