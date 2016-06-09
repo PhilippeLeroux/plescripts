@@ -79,5 +79,3 @@ line_separator
 info "Supprime les datafiles de ASM"
 exec_cmd -c "su - grid -c \"asmcmd rm -rf DATA/$upper_db\""
 exec_cmd -c "su - grid -c \"asmcmd rm -rf FRA/$upper_db\""
-
-
