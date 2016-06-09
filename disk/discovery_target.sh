@@ -14,6 +14,15 @@ line_separator
 info "Discovery portal $san_ip_priv"
 exec_cmd iscsiadm --mode discovery --type sendtargets --portal $san_ip_priv
 LN
+# BUG ?	Tous les initiators sont vus, je supprime ceux que je ne veux pas en
+#		attendant de trouver mieux
+fake_exec_cmd "iscsiadm -m node -P 0 | grep -v $initiator_name"
+iscsiadm -m node -P 0 | grep -v $initiator_name |\
+while read portal other_initiator_name
+do
+	exec_cmd iscsiadm -m node --op delete --targetname $other_initiator_name
+done
+LN
 
 info "Connect to $initiator_name"
 exec_cmd iscsiadm -m node -T $initiator_name --portal $san_ip_priv -l
@@ -23,5 +32,7 @@ info -n "Wait : "; pause_in_secs 5; LN
 
 exec_cmd "ls /dev/disk/by-path/${disk_prefix}*"
 
+#Devrait appeler setting_iscsi_chap_auth.sh, mais l'authentification ne marche pas.
+
 # Permet de voir les nouvelles luns.
-# scsiadm -m node --rescan
+# iscsiadm -m node --rescan

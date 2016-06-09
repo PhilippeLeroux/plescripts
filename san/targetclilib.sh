@@ -65,6 +65,7 @@ function create_iscsi_initiator
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/portals/ create $l_portal
 
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/acls create $l_initiator_name
+	#	L'authentification ne marche pas et je ne sais pas pourquoi :(
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/acls/$l_initiator_name set auth mutual_userid=$l_userid
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/acls/$l_initiator_name set auth mutual_password=$l_password
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/acls/$l_initiator_name set auth userid=$l_userid
