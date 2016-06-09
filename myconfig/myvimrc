@@ -90,7 +90,8 @@ endif
 set ts=4
 set sw=4
 if has("gui_running")
-	let g:default_colors_name = 'sourcerer'
+	"let g:default_colors_name = 'sourcerer'
+	let g:default_colors_name = 'github'
 	set guifont=Monospace\ 12
 	set guioptions+=b
 	set cc=81 nowrap
@@ -101,14 +102,22 @@ else
 endif
 
 set listchars=tab:→\ ,eol:¬,trail:⋅,nbsp:⋅
+
 "   Ne charge pas le driver noshowmatch qui est trop lent.
 let loaded_matchparen = 1
 
 "Pour que airline soit visible tout le temps
 set laststatus=2
 
-"Incremental Search
+"Search
+set hlsearch
 set incsearch
+
+" Don't redraw while executing macros (good performance config)
+set lazyredraw
+
+" For regular expressions turn magic on
+set magic
 
 "	============================================================================
 "	Syntastic : configuration conseillé
@@ -116,6 +125,8 @@ set incsearch
 set statusline+=%#warningmsg#
 set statusline+=%{SyntasticStatuslineFlag()}
 set statusline+=%*
+" Ne fonctionne pas avec Airline :(
+"set statusline+=%{&spelllang}
 
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
@@ -125,6 +136,7 @@ let g:syntastic_check_on_wq = 0
 "	============================================================================
 "	Dictionnaire :
 "	============================================================================
+"let g:languagetool_jar=$HOME.'/LanguageTool-2.9/languagetool.jar'
 function! TristateNodictFrUs()
 	if (! exists ("g:active_lang"))
 		let g:active_lang = 'no'
@@ -134,14 +146,23 @@ function! TristateNodictFrUs()
 		:echo "Dictionnaire français."
 		let g:active_lang='fr'
 		:set spell spelllang=fr
+		if exists( "g:languagetool_jar" )
+			:LanguageToolCheck
+		endif
 	elseif g:active_lang == 'fr'
 		:echo "Dictionnaire US."
 		let g:active_lang='us'
 		:set spelllang=en_us
+		if exists( "g:languagetool_jar" )
+			:LanguageToolCheck
+		endif
 	elseif g:active_lang == 'us'
 		:echo "Dictionnaire désactivé."
 		let g:active_lang='no'
 		:set nospell
+		if exists( "g:languagetool_jar" )
+			:LanguageToolClear
+		endif
 	endif
 endfunction
 map <F2> :call TristateNodictFrUs()<CR>
@@ -151,6 +172,8 @@ map <F2> :call TristateNodictFrUs()<CR>
 "	============================================================================
 set foldlevel=0
 set foldnestmax=1
+
+"	Permet de (un)folder la fonction courante avec la touche space.
 nnoremap <silent> <Space> @=(foldlevel('.')?'za':"\<Space>")<CR>
 vnoremap <Space> zf
 
@@ -203,7 +226,6 @@ autocmd BufNewFile,BufRead * call EnableShellFoldBrace()
 "	============================================================================
 "	Répertoires :
 "	Bascule entre $HOME et $HOME/plescripts
-"	BUG : Ne fonctionne pas si lancé depuis Dolphin avec Gvim ou vim seulement 
 "	============================================================================
 "	NERDTreeChDirMode
 function! ToggleHOME2Plescripts ()
@@ -291,6 +313,7 @@ endif
 let g:undotree_WindowLayout=3
 nnoremap <silent> <F7> :UndotreeToggle<CR>
 
+"	Permet de ce déplacer d'une modification à l'autre.
 nnoremap <silent> <C-p> :GitGutterPrevHunk<CR>
 nnoremap <silent> <C-n> :GitGutterNextHunk<CR>
 
