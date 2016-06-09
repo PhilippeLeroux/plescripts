@@ -21,11 +21,6 @@ do
 			shift
 			;;
 
-		-db=*)
-			db=${1##*=}
-			shift
-			;;
-
 		-h|-help|help)
 			info "$str_usage"
 			LN
