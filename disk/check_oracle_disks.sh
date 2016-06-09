@@ -17,6 +17,12 @@ do
 	count_disks_checked=count_disks_checked+1
 
 	info "Test $disk_name"
+	if [ x"$disk_name" == x ]
+	then
+		error "no disk name."
+		exit 1
+	fi
+
 	exec_cmd -f -ci oracleasm querydisk -p $disk_name
 	if [ $? -ne 0 ]
 	then
