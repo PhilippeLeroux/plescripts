@@ -246,10 +246,10 @@ function show_db_settings
 	LN
 }
 
-#   Ajoute le paramètre $1 à la liste de paramètres pour dbca
-#       2 variables sont utilisées
-#         - fake_dbca_args utilisée pour l'affichage : formatage visuel
-#         - dbca_args  qui contiendra les arguments pour dbca.
+#	Ajoute le paramètre $1 à la liste de paramètres pour dbca
+#		2 variables sont utilisées
+#		- fake_dbca_args utilisée pour l'affichage : formatage visuel
+#		- dbca_args  qui contiendra les arguments pour dbca.
 function add_dbca_param
 {
 	if [ x"$fake_dbca_args" = x ]
@@ -265,8 +265,8 @@ function add_dbca_param
 #	Fabrique les arguments à passer à dbca en fonction des variables
 #	globales.
 #		2 variables sont utilisées
-#			- fake_dbca_args utilisée pour l'affichage : formatage visuel
-#			- dbca_args  qui contiendra les arguments pour dbca.
+#		- fake_dbca_args utilisée pour l'affichage : formatage visuel
+#		- dbca_args  qui contiendra les arguments pour dbca.
 function make_dbca_args
 {
 	add_dbca_param "-createDatabase -silent"
