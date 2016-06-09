@@ -15,9 +15,13 @@
                 |_|   |_|  \___/ \__, |_|  \___||___/___/
                                  |___/
 
+**Documentation :** plescripts/setup_vms_dns_master/installation.odp
+
+_Actuellement la documentation n'est plus à jour._
+
 License
 -------
 
-Copyright (©) 2016 Philippe Leroux  - All Rights Reserved
+Copyright (©) 2016 Philippe Leroux - All Rights Reserved
 
 This project including all of its source files is released under the terms of [GNU General Public License (version 3 or later)](http://www.gnu.org/licenses/gpl.txt)
