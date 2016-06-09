@@ -9,7 +9,7 @@
 # https://github.com/jistr/vim-nerdtree-tabs.git
 
 #	Suivie des modifs 
-"https://github.com/mhinz/vim-signify.git
+#https://github.com/mhinz/vim-signify.git
 https://github.com/airblade/vim-gitgutter.git
 
 # airline
@@ -29,3 +29,6 @@ https://github.com/xero/sourcerer.vim.git
 
 #
 https://github.com/nvie/vim-togglemouse.git
+
+#	Montre les undo sous forme arborescente.
+//github.com/mbbill/undotree.git

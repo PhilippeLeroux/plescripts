@@ -87,17 +87,21 @@ if has("gui_running")
   autocmd VimLeavePre * call ScreenSave()
 endif
 
+" Pour mes fichiers template je désactive la syntaxe
+autocmd BufNewFile,BufRead *.template set syn=off
+
 set ts=4
 set sw=4
 if has("gui_running")
-	"let g:default_colors_name = 'sourcerer'
-	let g:default_colors_name = 'github'
+	let g:colors_name1 = 'github'
+	let g:colors_name2 = 'sourcerer'
 	set guifont=Monospace\ 12
 	set guioptions+=b
 	set cc=81 nowrap
 else
 	silent! set mouse=a
-	let g:default_colors_name = 'github'
+	let g:colors_name1 = 'github'
+	let g:colors_name2 = 'sourcerer'
 	set cc=81 nu wrap linebreak
 endif
 
@@ -265,21 +269,21 @@ autocmd VimEnter * wincmd p
 "	============================================================================
 function! ToggleColorscheme()
 	if ! exists( "g:colors_name" )
-		let g:colors_name='default'
+		let g:colors_name=g:colors_name2
 	endif
 
-	if g:colors_name == 'default'
-		execute "colorscheme ".g:default_colors_name
+	if g:colors_name == g:colors_name2
+		execute "colorscheme ".g:colors_name1
 	else
-		colorscheme default
+		execute "colorscheme ".g:colors_name2
 	endif
 endfunction
 
 if g:first_load == 1
 	" Évite de changer de thème sur un reload
 	:call ToggleColorscheme()
-	map <silent> <F6> :call ToggleColorscheme()<CR>
 endif
+map <silent> <F6> :call ToggleColorscheme()<CR>
 
 "	============================================================================
 "	Recharger .vimrc

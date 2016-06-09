@@ -6,6 +6,8 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
+typeset -r plugin_list=~/plescripts/shell/vim_plugin_list.txt
+
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
@@ -13,6 +15,9 @@ typeset -r str_usage=\
            -show
            -del=<plugin name>
            -init
+
+Pour l'initialisation (-init) les plugins à installer sont lues dans le fichier :
+	$plugin_list
 "
 
 typeset url=undef
@@ -133,8 +138,7 @@ function install_pathogen
 
 function install_all
 {
-	typeset -r list_file=~/plescripts/shell/vim_plugin_list.txt
-	exit_if_file_not_exists $list_file
+	exit_if_file_not_exists $plugin_list
 
 	clean_tod_vim
 	LN
@@ -161,7 +165,7 @@ function install_all
 				warning "'${line:0:1}' : $line"
 				;;
 		esac
-	done<<<"$( cat $list_file )"
+	done<<<"$( cat $plugin_list )"
 }
 
 #	======================================================================
