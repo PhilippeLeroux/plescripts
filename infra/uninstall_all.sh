@@ -10,27 +10,32 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-databases    : supprime les bases de données.
-	[!] -oracle   : supprime le binaire oracle.
-	[!] -grid     : supprime le binaire grid.
+	-type=FS|ASM : type d'installation FS ou ASM
 
-	-all          : tous les flags sont combinées.
-	    Ajouter :
-	    ! -oracle si le binaire oracle n'est pas installé
-	    ! -grid si le GI n'est pas installé, seul les disques seront supprimés
-
-	L'utilisation normale est d'utiliser -all, les autres options ne servent
-	que s'il y a un plantage avec -all
-
+	Désinstalle tous les composants d'un serveur ou cluster Oracle.
 	Seul root peut exécuter ce script et il doit être exécuté sur le serveur
 	concerné.
+
+	Les paramètres ci dessous sont optionnels et les raisons pour les utiliser
+	sont rares. Utiliser les à vos risques et périls !
+	[-databases]    : supprime les bases de données.
+	[[!] -oracle]   : supprime le binaire oracle.
+	[[!] -grid]     : supprime le binaire grid.
+	[[!] -disks]    : supprime les disques.
+
+	Ajouter le flag '!' permet de ne pas effectuer une action.
 "
 
 info "$ME $@"
 
+typeset type=undef
 typeset action
-typeset neg=no
+typeset all_actions="delete_databases remove_oracle_binary remove_grid_binary -remove_disks"
 
+typeset not_flag=no
+#	Utiliser lors de l'évaluation de paramètres.
+#	Si $1 vaut yes met fin au script, c'est la contenu de la variable not_flag
+#	qui doit être passé en paramètre.
 function exit_if_yes
 {
 	if [ $1 = yes ]
@@ -45,34 +50,34 @@ while [ $# -ne 0 ]
 do
 	case $1 in
 		!)
-			neg=yes
+			not_flag=yes
 			shift
 			;;
 
 		-emul)
-			exit_if_yes $neg -emul
+			exit_if_yes $not_flag -emul
 			EXEC_CMD_ACTION=NOP
 			arg1="-emul"
 			shift
 			;;
 
-		-all)
-			exit_if_yes $neg -all
-			action="delete_databases remove_oracle_binary remove_grid_binary"
+		-type=*)
+			exit_if_yes $not_flag -all
+			type=${1##*=}
 			shift
 			;;
 
 		-databases)
-			exit_if_yes $neg -databases
+			exit_if_yes $not_flag -databases
 			action="$action delete_databases"
 			shift
 			;;
 
 		-oracle)
-			if [ $neg = yes ]
+			if [ $not_flag = yes ]
 			then
-				neg=no
-				action=$(sed "s/ remove_oracle_binary//"<<<"$action")
+				not_flag=no
+				all_actions=$(sed "s/ remove_oracle_binary//"<<<"$action")
 			else
 				action="$action remove_oracle_binary"
 			fi
@@ -80,15 +85,31 @@ do
 			;;
 
 		-grid)
-			if [ $neg = yes ]
+			if [ $not_flag = yes ]
 			then
-				neg=no
-				action=$(sed "s/ remove_grid_binary//"<<<"$action")
-				action="$action remove_disks"
+				not_flag=no
+				all_actions=$(sed "s/ remove_grid_binary//"<<<"$action")
 			else
 				action="$action remove_grid_binary"
 			fi
 			shift
+			;;
+
+		-disks)
+			if [ $not_flag = yes ]
+			then
+				not_flag=no
+				all_actions=$(sed "s/ remove_disks//"<<<"$action")
+			else
+				action="$action remove_disks"
+			fi
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
 			;;
 
 		*)
@@ -102,22 +123,70 @@ done
 
 [ $USER != root ] && error "Only root !" && exit 1
 
-[ x"$action" = x ] && info "$str_usage" && exit 1
+exit_if_param_invalid type "FS ASM" "$str_usage"
 
+if [ x"$action" == x ]
+then
+	action=$all_actions
+fi
+
+#	Retourne tous les noeuds du cluster moins le noeud courant.
+#	Si le serveur courant n'appartient pas à un cluster la fonction
+#	ne retourne rien.
+function get_other_nodes
+{
+	if $(test_if_cmd_exists olsnodes)
+	then
+		typeset nl=$(olsnodes | xargs)
+		if [ x"$nl" != x ]
+		then # olsnodes ne retourne rien sur un SINGLE
+			sed "s/$(hostname -s) //" <<<"$nl"
+		fi
+	fi
+}
+
+typeset -r node_list=$(get_other_nodes)
+typeset -r current_node=$(hostname -s)
+
+#	Exécute la commande "$@" sur tous les autres noeuds du cluster
+function root_execute_on_other_nodes
+{
+	typeset -r cmd="$@"
+
+	for node in $node_list
+	do
+		exec_cmd "ssh $node $cmd"
+	done
+}
+
+#	Exécute la commande "$@" sur tous les noeuds du cluster
+function root_execute_on_all_nodes
+{
+	typeset -r cmd="$@"
+
+	exec_cmd "$cmd"
+	root_execute_on_other_nodes "$cmd"
+}
+
+#	Exécute la commande "$@" en faisant un su - oracle -c
+#	Si le premier paramètre est -f l'exécution est forcée.
 function suoracle
 {
-	[ "$1" = -f ] && arg=$1 && shift
+	[ "$1" = -f ] && typeset -r arg=$1 && shift
 
 	exec_cmd $arg "su - oracle -c \"$@\""
 }
 
+#	Exécute la commande "$@" en faisant un su - grid -c
+#	Si le premier paramètre est -c le script n'est pas interrompu sur une erreur
 function sugrid
 {
-	[ "$1" = -c ] && arg=$1 && shift
+	[ "$1" = -c ] && typeset -r arg=$1 && shift
 
 	exec_cmd $arg "su - grid -c \"$@\""
 }
 
+#	Supprime toutes les bases de données installées.
 function delete_all_db
 {
 	line_separator
@@ -130,11 +199,15 @@ function delete_all_db
 	LN
 }
 
+#	Désinstalle Oracle.
 function deinstall_oracle
 {
 	line_separator
 	info "deinstall oracle"
 	suoracle -f "~/plescripts/infra/uninstall_oracle.sh $arg1"
+
+	root_execute_on_all_nodes "rm -fr /opt/ORCLfmap"
+	root_execute_on_all_nodes "rm -fr /u01/app/oracle/audit"
 	LN
 
 	typeset -r service_file=/usr/lib/systemd/system/oracledb.service
@@ -143,11 +216,14 @@ function deinstall_oracle
 		exec_cmd -c "systemctl stop oracledb.service"
 		exec_cmd -c "systemctl disable oracledb.service"
 		exec_cmd "rm -f $service_file"
+		LN
 	fi
 }
 
+#	FS uniquement : supprime le VG et les disques
 function remove_vg
 {
+	line_separator
 	exec_cmd "umount /u01/app/oracle/oradata"
 	exec_cmd "sed -i "/vg_oradata-lv_oradata/d" /etc/fstab"
 	fake_exec_cmd "vgremove vg_oradata<<<\"yy\""
@@ -159,29 +235,52 @@ y
 EOS
 	fi
 	exec_cmd -c "~/plescripts/disk/logout_sessions.sh"
+	LN
 }
 
+#	GI uniquement : supprime tous les disques.
 function remove_disks
 {
+	line_separator
 	exec_cmd "~/plescripts/disk/clear_oracle_disk_headers.sh -doit"
 	exec_cmd -c "~/plescripts/disk/logout_sessions.sh"
 	exec_cmd "systemctl disable oracleasm.service"
+	LN
+
+	root_execute_on_other_nodes "oracleasm scandisks"
+	LN
+
+	root_execute_on_other_nodes "~/plescripts/disk/logout_sessions.sh"
+	LN
+
+	root_execute_on_other_nodes "systemctl disable oracleasm.service"
+	LN
 }
 
+#	Désinstalle le grid.
 function deinstall_grid
 {
 	line_separator
-	info "deinstall GI"
-	sugrid -c "crsctl stop has"
-	sugrid -c "crsctl disable has"
-	remove_disks
 	sugrid "/mnt/oracle_install/grid/runInstaller -deinstall -home \\\$ORACLE_HOME"
-	exec_cmd "rm -fr /etc/oraInst.loc"
-	exec_cmd "rm -fr /opt/ORCLfmap"
-	exec_cmd "rm -fr /etc/oratab"
-	exec_cmd "rm -fr /u01/app/grid/log"
+	LN
+
+	root_execute_on_all_nodes "rm -fr /etc/oraInst.loc"
+	LN
+
+	root_execute_on_all_nodes "rm -fr /etc/oratab"
+	LN
+
+	root_execute_on_all_nodes "rm -fr /u01/app/grid/log"
 	LN
 }
+
+#	============================================================================
+#	MAIN
+#	============================================================================
+line_separator
+info "Remove component on : $current_node $node_list"
+line_separator
+LN
 
 exec_cmd -f -c "mount /mnt/oracle_install"
 LN
@@ -196,13 +295,17 @@ then
 	deinstall_oracle
 fi
 
-if grep -q remove_grid_binary <<< "$action"
+if [ $type != FS ]
 then
-	typeset -i nr_file=$(find /u01/app/grid/ -type f | wc -l)
-	[ $nr_file -ne 0 ] && deinstall_grid || remove_vg
-elif grep -q remove_disks <<< "$action"
+	if grep -q remove_grid_binary <<< "$action"
+	then
+		deinstall_grid
+	fi
+fi
+
+if grep -q remove_disks <<< "$action"
 then
-	remove_disks
+	[ $type == ASM ] && remove_disks || remove_vg
 fi
 
 exec_cmd -f -c "umount /mnt/oracle_install"
@@ -214,15 +317,19 @@ info "Éventuellement faire un rm -rf /tmp/* en root"
 LN
 
 info "Option 1 :"
-info "Exécuter revert_to_master.sh sur ce serveur."
+info "Exécuter revert_to_master.sh sur les serveurs."
 info "Puis delete_infra.sh depuis le client."
 info "Puis relancer clone_master & co"
 LN
 
 info "Option 2 :"
-info "Ou aller dans ~/plescripts/disk puis exécuter :
-	./oracleasm_discovery_first_node.sh sur le premier noeud
-	./oracleasm_discovery_other_nodes.sh sur les autres noeuds dans le cas d'un RAC
+info "Ou aller dans ~/plescripts/disk puis exécuter :"
+info "	./oracleasm_discovery_first_node.sh sur le premier noeud"
+info "	./oracleasm_discovery_other_nodes.sh sur les autres noeuds dans le cas d'un RAC"
+LN
 
-L'installation du grid et d'oracle peut être relancé."
+info "Option 3 : ...."
+LN
+
+info "L'installation du grid et d'oracle peut être relancé."
 LN

@@ -48,7 +48,4 @@ EOS
 fi
 LN
 
-exec_cmd "rm -rf /u01/app/oracle/audit"
-LN
-
 exit 0
