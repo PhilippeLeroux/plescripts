@@ -81,7 +81,7 @@ typeset -ri max_nodes=$(ls -1 $cfg_path/node*|wc -l)
 exit_if_param_undef node	"$str_usage"
 
 typeset -r cfg_file=$cfg_path/node$node
-exit_if_file_not_exists $cfg_file $str_usage
+exit_if_file_not_exists $cfg_file "$str_usage"
 
 typeset -r server_name=$(cat $cfg_file | cut -d: -f2)
 
