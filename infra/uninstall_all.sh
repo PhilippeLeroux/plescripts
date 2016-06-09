@@ -30,7 +30,7 @@ info "$ME $@"
 
 typeset type=undef
 typeset action
-typeset all_actions="delete_databases remove_oracle_binary remove_grid_binary -remove_disks"
+typeset all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_disks"
 
 typeset not_flag=no
 #	Utiliser lors de l'évaluation de paramètres.
@@ -77,7 +77,7 @@ do
 			if [ $not_flag = yes ]
 			then
 				not_flag=no
-				all_actions=$(sed "s/ remove_oracle_binary//"<<<"$action")
+				all_actions=$(sed "s/ remove_oracle_binary//"<<<"$all_actions")
 			else
 				action="$action remove_oracle_binary"
 			fi
@@ -88,7 +88,7 @@ do
 			if [ $not_flag = yes ]
 			then
 				not_flag=no
-				all_actions=$(sed "s/ remove_grid_binary//"<<<"$action")
+				all_actions=$(sed "s/ remove_grid_binary//"<<<"$all_actions")
 			else
 				action="$action remove_grid_binary"
 			fi
@@ -99,7 +99,7 @@ do
 			if [ $not_flag = yes ]
 			then
 				not_flag=no
-				all_actions=$(sed "s/ remove_disks//"<<<"$action")
+				all_actions=$(sed "s/ remove_disks//"<<<"$all_actions")
 			else
 				action="$action remove_disks"
 			fi
