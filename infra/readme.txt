@@ -95,13 +95,6 @@ Depuis le poste client :
 License
 -------
 
-Copyright 2016 Philippe Leroux  - All Rights Reserved
-
-This project including all of its source files is released under the terms of [GNU General Public License (version 3 or later)](http://www.gnu.org/licenses/gpl.txt)
-
-License
--------
-
 Copyright (©) 2016 Philippe Leroux - All Rights Reserved
 
 This project including all of its source files is released under the terms of [GNU General Public License (version 3 or later)](http://www.gnu.org/licenses/gpl.txt)
