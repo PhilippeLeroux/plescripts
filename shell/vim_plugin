@@ -16,9 +16,7 @@ typeset -r str_usage=\
 "
 
 typeset url=undef
-typeset action=install_plugin
-
-[ $# -eq 0 ] && info "$str_usage" && exit 1
+typeset action=undef
 
 while [ $# -ne 0 ]
 do
@@ -36,6 +34,7 @@ do
 
 		-url=*)
 			url=${1##*=}
+			action=install_plugin
 			shift
 			;;
 
@@ -168,6 +167,10 @@ function install_all
 #	======================================================================
 #	MAIN
 #	======================================================================
+
+#	Si aucun argument l'action par défaut est -show
+[ $action == undef ] && action=show && info "$str_usage"
+
 case $action in
 	init)
 		install_all
