@@ -18,11 +18,11 @@ aucun cas ils ne doivent être utilisés sur des serveurs de productions.**
 
 Création de nouveaux serveurs :
 ------------------------------
-1)	Définition d'une nouvelle infra.
+1.	Définition d'une nouvelle infra.
 
-	Création d'un serveur standalone : ```./new_infra.sh -db=babar```
+	Création d'un serveur standalone : `./new_infra.sh -db=babar`
 
-	Création d'un RAC 2 noeuds : ```./new_infra.sh -db=babar -max_nodes=2```
+	Création d'un RAC 2 noeuds : `./new_infra.sh -db=babar -max_nodes=2`
 
 	Un nouveau répertoire nommé babar est crée contenant les fichiers décrivant
 	le paramétrage du ou des serveurs.
@@ -38,7 +38,7 @@ Création de nouveaux serveurs :
 	Dans la cas d'un RAC 2 noeuds on aurait un serveur de plus srvbabar02 et 3
 	disques supplémentaires pour le CRS
 
-2)	Clonage.
+2.	Clonage.
 
 	Exécuter le script présent dans le répertoire "shared/BABAR/clone/"
 
@@ -50,11 +50,11 @@ Création de nouveaux serveurs :
 	*Il ne faut pas démarrer 2 VMs venant d'être crées, elles ont le même nom et
 	la même adresse IP.*
 
-3)	Configuration des VMs
+3.	Configuration des VMs
 
-	Configurer un serveur standalone : ```./clone_master.sh -db=babar```
+	Configurer un serveur standalone : `./clone_master.sh -db=babar`
 
-	Configurer le nœud d'un RAC      : ```./clone_master.sh -db=babar -node=1```
+	Configurer le nœud d'un RAC      : `./clone_master.sh -db=babar -node=1`
 
 	(Le RAC one node n'est pas encore 100% opérationnel.)
 
@@ -74,23 +74,23 @@ Création de nouveaux serveurs :
 	Le compte oracle est configuré pour se connecter grid sans mot de passe via
 	l'alias sugrid.
 
-4)	Installation du grid.
+4.	Installation du grid.
 
-	```./install_grid.sh -db=babar```
+	`./install_grid.sh -db=babar`
 
 	Installe le grid en standalone ou cluster. Les scripts root sont exécutés
 	sur l'ensemble des nœuds.
 
 	Les deux DGs DATA et FRA sont crées, pour un cluster il y a en plus le DG CRS
 
-5)	Installation d'Oracle
+5.	Installation d'Oracle
 
-	```./install_oracle.sh -db=babar```
+	`./install_oracle.sh -db=babar`
 
 	Installe oracle en standalone ou cluster. Les scripts root sont exécutés
 	sur l'ensemble des nœuds.
 
-6)	C'est terminé.
+6.	C'est terminé.
 
 	Pour créer une base voir [README.md](https://github.com/PhilippeLeroux/plescripts/db/README.md)
 
