@@ -90,6 +90,9 @@ endif
 " Pour mes fichiers template je désactive la syntaxe
 autocmd BufNewFile,BufRead *.template set syn=off
 
+"	Activé pour le plugin markdown
+filetype plugin on
+
 set ts=4
 set sw=4
 if has("gui_running")
@@ -106,6 +109,9 @@ else
 endif
 
 set listchars=tab:→\ ,eol:¬,trail:⋅,nbsp:⋅
+
+"	Recharge automatiquement les fichiers modifiés.
+set autoread
 
 "   Ne charge pas le driver noshowmatch qui est trop lent.
 let loaded_matchparen = 1
@@ -301,7 +307,6 @@ function! ToggleVimTips()
 	if g:vimtips == "on"
 		let g:vimtips="off"
 		pclose
-		:echo "Tips off."
 	else
 		let g:vimtips="on"
 		set previewheight=5
@@ -317,10 +322,30 @@ endif
 let g:undotree_WindowLayout=3
 nnoremap <silent> <F7> :UndotreeToggle<CR>
 
+nnoremap <silent> <F9> :call ToggleVimTips()<CR>
+
 "	Permet de ce déplacer d'une modification à l'autre.
 nnoremap <silent> <C-p> :GitGutterPrevHunk<CR>
 nnoremap <silent> <C-n> :GitGutterNextHunk<CR>
 
-nnoremap <silent> <F9> :call ToggleVimTips()<CR>
+function! ReadmeSwap()
+	if expand('%:t') == 'readme.txt'
+		let l:source=expand('%:p')
+		let l:dest=expand('%:p:h').'/README.md'
+	elseif expand('%:t') == 'README.md'
+		let l:source=expand('%:p')
+		let l:dest=expand('%:p:h').'/readme.txt'
+	endif
+
+	if exists( "l:source" )
+		execute "silent !cp ".l:source." ".l:dest
+		let l:msg="cp ".l:source." ".l:dest
+		echomsg l:msg
+		"execute ":echom '".l:msg."'"
+	else
+		echo "Seulement avec readme.txt/README.md"
+	endif
+endfunction
+nnoremap <silent> <F8> :call ReadmeSwap()<CR>
 
 "	============================================================================

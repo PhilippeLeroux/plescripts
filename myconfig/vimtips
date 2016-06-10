@@ -1,5 +1,5 @@
 		F1 Help				F2 Dictionnary				C-n	Next Git Hunk
 		F3 (Un)Fold All		F4 Toggle ~ \ scripts		C-p Previous Git Hunk
 		F5 Explorer			F6 Scheme
-		F7 Undo tree		F8
+		F7 Undo tree		F8 readme.txt <-> README.md
 		F9 Tips				F10 Reload vimrc
