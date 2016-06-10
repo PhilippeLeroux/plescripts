@@ -1,5 +1,8 @@
 Objectif des scripts
 ====================
+**Attention : Les scripts sont prévus pour fonctionner sur des VMs de démo, en
+aucun cas ils ne doivent être utilisés sur des serveurs d'entrepises.**
+
 Le but des ces scripts et de créer une infrastructure complète avec un
 minimum d'interventions
 
@@ -12,9 +15,6 @@ minimum d'interventions
 
 Si votre poste client est Windows connectez vous sur K2 en root avec putty.
 Toutes les opérations se font depuis le répertoire plescripts/infra.
-
-**Attention Les scripts sont prévus pour fonctionner sur des VMs de démo, en
-aucun cas ils ne doivent être utilisés sur des serveurs de productions.**
 
 Création de nouveaux serveurs :
 ------------------------------
@@ -35,7 +35,7 @@ Création de nouveaux serveurs :
 		1 serveur nommé  :	srvbabar01
 		8 disques nommés :	S1DISKBABAR01,S1DISKBABAR02,..., S1DISKBABAR08
 
-	Dans la cas d'un RAC 2 noeuds on aurait un serveur de plus srvbabar02 et 3
+	Dans la cas d'un RAC 2 noeuds on a un serveur de plus srvbabar02 et 3
 	disques supplémentaires pour le CRS
 
 2.	Clonage.
@@ -67,7 +67,7 @@ Création de nouveaux serveurs :
 		* Configuration du réseau.
 		* Création des disques.
 		* Création des comptes oracle & grid.
-		* Applique tous les pré requis Oracle.
+		* Application des pré requis Oracle.
 		* Établie les connections ssh sans mot de passe entre le poste client et
 		le serveur avec les comptes root, grid et oracle.
 
@@ -81,7 +81,7 @@ Création de nouveaux serveurs :
 	Installe le grid en standalone ou cluster. Les scripts root sont exécutés
 	sur l'ensemble des nœuds.
 
-	Les deux DGs DATA et FRA sont crées, pour un cluster il y a en plus le DG CRS
+	Les 2 DGs DATA et FRA sont crées, pour un cluster il y a en plus le DG CRS
 
 5.	Installation d'Oracle
 
