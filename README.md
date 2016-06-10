@@ -15,7 +15,9 @@
                 |_|   |_|  \___/ \__, |_|  \___||___/___/
                                  |___/
 
-[Documentation](https://github.com/PhilippeLeroux/plescripts/setup_vms_dns_master/installation.odp)
+[Documentation](https://github.com/PhilippeLeroux/plescripts/tree/master/setup_vms_dns_master/installation.odp)
+ suivre le lien et cliquer sur "View Raw" pour télécharger la documentation.
+
 _Actuellement la documentation n'est plus à jour._
 
 License
