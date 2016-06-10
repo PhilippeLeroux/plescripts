@@ -20,6 +20,15 @@
 
 _Actuellement la documentation n'est plus à jour._
 
+Liste des logiciels à télécharger :
+----------------------------------
+
+[Download Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
+
+[Download Oracle Linux 7](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
+
+[Download Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
+
 License
 -------
 
