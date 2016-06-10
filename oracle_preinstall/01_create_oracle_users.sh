@@ -118,8 +118,8 @@ exec_cmd cp template_kshrc /home/grid/.kshrc
 [ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/grid/.kshrc"
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.grid | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/.profile"
 make_vimrc_file "/home/grid/.vimrc"
-exec_cmd "mkdir /home/grid/TOOLS"
-exec_cmd "cp ./grid_TOOLS/* /home/grid/TOOLS/"
+#exec_cmd "mkdir /home/grid/TOOLS"
+#exec_cmd "cp ./grid_TOOLS/* /home/grid/TOOLS/"
 exec_cmd "find /home/grid | xargs chown grid:oinstall"
 LN
 
@@ -131,10 +131,10 @@ exec_cmd cp $profile_oracle /home/oracle/.profile
 exec_cmd cp template_kshrc /home/oracle/.kshrc
 [ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/oracle/.kshrc"
 make_vimrc_file "/home/oracle/.vimrc"
-exec_cmd "mkdir /home/oracle/DB"
-exec_cmd "cp DB/* /home/oracle/DB/"
+#exec_cmd "mkdir /home/oracle/DB"
+#exec_cmd "cp DB/* /home/oracle/DB/"
 exec_cmd "find /home/oracle | xargs chown oracle:oinstall"
-exec_cmd "find /home/oracle -name \"*.sh\" -o -name \"*.ksh\" | xargs chmod u+x"
+#exec_cmd "find /home/oracle -name \"*.sh\" -o -name \"*.ksh\" -exec chmod u+x {} \;"
 LN
 
 line_separator
