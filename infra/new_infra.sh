@@ -19,7 +19,7 @@ typeset -r str_usage=\
 	[-size_lun_gb=8]    taille des LUNs si utilisation de ASM.
 	[-no_dns_test]      ne pas tester si les IPs sont utilisées.
 	[-usefs]            ne pas utiliser ASM mais un FS.
-	[-one_node]			RAC de type one node.
+	[-one_node]         RAC de type one node.
 "
 info "$ME $@"
 
@@ -75,6 +75,12 @@ do
 		-one_node)
 			db_type=raco
 			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
 			;;
 
 		*)
