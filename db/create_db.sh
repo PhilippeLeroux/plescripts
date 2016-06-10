@@ -28,7 +28,7 @@ typeset templateName=General_Purpose.dbc
 typeset db_type=undef
 typeset node_list=undef
 typeset usefs=no
-typeset cdc=yes
+typeset cdb=yes
 typeset lang=french
 typeset verbose=no
 typeset pdbName=undef
@@ -40,7 +40,7 @@ typeset -r str_usage=\
 	-lang=$lang
 	-sysPassword=$sysPassword
 	-memory_mb=$memory_mb
-	-cdc=$cdc	(yes/no)
+	-cdb=$cdb	(yes/no)
 	[-pdbName=<str>]
 	-data=$data
 	-fra=$fra
@@ -112,8 +112,8 @@ do
 			shift
 			;;
 
-		-cdc=*)
-			cdc=$(to_lower ${1##*=})
+		-cdb=*)
+			cdb=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -229,7 +229,7 @@ function show_db_settings
 		info "fs fra                 : $fra"
 	fi
 	info "template               : $templateName"
-	info "container database     : $cdc"
+	info "container database     : $cdb"
 	if [ $pdbName != undef ]
 	then
 		numberOfPDBs=1
@@ -285,7 +285,7 @@ function make_dbca_args
 		add_dbca_param "-recoveryAreaDestination $fra"
 	fi
 	add_dbca_param "-templateName $templateName"
-	if [ "$cdc" = yes ]
+	if [ "$cdb" = yes ]
 	then
 		add_dbca_param "-createAsContainerDatabase true"
 		if [ "$pdbName" != undef ]
