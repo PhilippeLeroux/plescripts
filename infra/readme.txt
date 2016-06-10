@@ -3,42 +3,42 @@ Objectif des scripts
 Le but des ces scripts et de créer une infrastructure complète avec un
 minimum d'interventions
 
-	- La mémoire des machines virtuelles sera adaptée en fonction du type de base
-	  SINGLE ou RAC
-	- Le DNS sera mis à jour.
-	- Le SAN sera mis à jour.
+	- La mémoire des machines virtuelles est adaptée en fonction du type de base
+	SINGLE ou RAC
+	- Le DNS est mis à jour.
+	- Le SAN est mis à jour.
 	- Les horloges des serveurs synchronisées sur la même source.
-	- Les disques seront montés via oracleasm.
+	- Les disques sont attachés via oracleasm.
 
-Note :
+Si votre poste client est Windows connectez vous sur K2 en root avec putty.
+Toutes les opérations se font depuis le répertoire plescripts/infra.
 
-	- Le support des bases sur FS a été inclue alarache, l'objectif initial étant
-	de gérer le stockage des bases uniquement depuis ASM.
+**Attention Les scripts sont prévus pour fonctionner sur des VMs de démo, en
+aucun cas ils ne doivent être utilisés sur des serveurs de productions.**
 
 Création de nouveaux serveurs :
 ------------------------------
-1)	new_infra.sh
-	Permet de définir une nouvelle infrastructure.
+1)	Définition d'une nouvelle infra.
 
-	./new_infra.sh -db=babar
+	Création d'un serveur standalone : ```./new_infra.sh -db=babar```
 
-	Définie une infrastructure babar pour une base SINGLE.
-	Un répertoire babar est crée contenant la description de la base.
+	Création d'un RAC 2 noeuds : ```./new_infra.sh -db=babar -max_nodes=2```
 
-	Pour créer une RAC 2 noeuds : ./new_infra.sh -db=babar -max_nodes=2
+	Un nouveau répertoire nommé babar est crée contenant les fichiers décrivant
+	le paramétrage du ou des serveurs.
 
-2)	Lancer le(s) clonage(s) par le script virtualbox généré.
-	En fonction du guess des fichiers .sh ou .bat sont crées. Ils ont pour but
-	de créer des VMs conformes.
+	Par défaut les DGs DATA et FRA ont une taille de 24Gb chacun, la taille
+	peut être changée à l'aide du paramètre -size_dg_gb
 
-	Actuellement seule les scripts pour VBOX sont générés que ce soit pour un
-	guess sous Windows ou Linux.
+	Dans le cas d'un serveur standalone sont crées :
 
-	Les scripts sont disponibles sour "shared/BABAR"
+		1 serveur nommé  :	srvbabar01
+		8 disques nommés :	S1DISKBABAR01,S1DISKBABAR02,..., S1DISKBABAR08
 
-	A l'avenir les scripts pour KVM seront également générés.
+	Dans la cas d'un RAC 2 noeuds on aurait un serveur de plus srvbabar02 et 3
+	disques supplémentaires pour le CRS
 
-3)	Lancer le clonage.
+2)	Clonage.
 
 	Exécuter le script présent dans le répertoire "shared/BABAR/clone/"
 
@@ -47,34 +47,52 @@ Création de nouveaux serveurs :
 	Pour une base RAC tous les nœuds sont clonés depuis master mais seul le
 	premier nœud est démarré.
 
-4)	Lancer le script clone_master.sh
+	*Il ne faut pas démarrer 2 VMs venant d'être crées, elles ont le même nom et
+	la même adresse IP.*
 
-	Pour une base SINGLE : ./clone_master.sh -db=babar
+3)	Configuration des VMs
 
-	Pour une base RAC : ./clone_master.sh -db=babar -node=1
+	Configurer un serveur standalone : ```./clone_master.sh -db=babar```
 
-	Pour un RAC démarrer la VM suivante et relancer clone_master.sh en changeant
-	le n° du noeud.
+	Configurer le nœud d'un RAC      : ```./clone_master.sh -db=babar -node=1```
 
-5)	install_grid.sh
+	(Le RAC one node n'est pas encore 100% opérationnel.)
 
-	./install_grid.sh -db=babar
+	Pour un RAC démarrer la VM suivante et relancer clone_master.sh en
+	changeant le n° du nœud.
 
-	Installera le grid en standalone ou cluster.
+	Actions effectuées par le script :
 
-	Tous les scripts pré install seront exécutés.
+		* Renomme le serveur
+		* Configuration du réseau.
+		* Création des disques.
+		* Création des comptes oracle & grid.
+		* Applique tous les pré requis Oracle.
+		* Établie les connections ssh sans mot de passe entre le poste client et
+		le serveur avec les comptes root, grid et oracle.
 
-6)	install_oracle.sh
+	Le compte oracle est configuré pour se connecter grid sans mot de passe via
+	l'alias sugrid.
 
-	./install_oracle.sh -db=babar
+4)	Installation du grid.
 
-	Installera oracle en standalone ou cluster.
+	```./install_grid.sh -db=babar```
 
-	Tous les scripts pré installe seront exécutés.
+	Installe le grid en standalone ou cluster. Les scripts root sont exécutés
+	sur l'ensemble des nœuds.
 
-7)	Création de la base.
+	Les deux DGs DATA et FRA sont crées, pour un cluster il y a en plus le DG CRS
 
-	Se connecter sur le premier nœud et voir le README.md dans ~/plescripts/db
+5)	Installation d'Oracle
+
+	```./install_oracle.sh -db=babar```
+
+	Installe oracle en standalone ou cluster. Les scripts root sont exécutés
+	sur l'ensemble des nœuds.
+
+6)	C'est terminé.
+
+	Pour créer une base voir [README.md](https://github.com/PhilippeLeroux/plescripts/db/README.md)
 
 Recycler un serveur :
 ---------------------
@@ -87,7 +105,7 @@ Se connecter sur le serveur cible en root :
 	- Pour un RAC exécuter ./revert_to_master.sh -doit sur tous les nœuds.
 
 Depuis le poste client :
-	
+
 	- cd ~/plescripts/infra
 	- ./delete_infra.sh -db=<str> [-remove_cfg]
 	- Le DNS et le SAN sont mis à jours.
