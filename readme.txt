@@ -20,8 +20,8 @@
 
 _Actuellement la documentation n'est plus à jour._
 
-Liste des logiciels à télécharger :
-----------------------------------
+Logiciels à télécharger :
+-------------------------
 
 [Download Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
@@ -30,7 +30,7 @@ Liste des logiciels à télécharger :
 [Download Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 
 License
--------
+=======
 
 Copyright (©) 2016 Philippe Leroux - All Rights Reserved
 
