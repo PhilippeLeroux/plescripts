@@ -1,7 +1,8 @@
 Création d'une base de donnée.
 ==============================
 **Attention : Les scripts sont prévus pour fonctionner sur des VMs de démo, en
-aucun cas ils ne doivent être utilisés sur des serveurs d'entrepises.**
+aucun cas ils ne doivent être utilisés sur des serveurs d'entrepises. Les scripts
+sont très loin des exigences d'une entreprise.**
 
 1. Se connecter sur le serveur : `ssh oracle@srvbabar01`
 
