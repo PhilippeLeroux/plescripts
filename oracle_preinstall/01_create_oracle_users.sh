@@ -73,22 +73,7 @@ then
 	exit 1
 fi
 
-
-line_separator
-info "delete users oracle & grid"
-exec_cmd -cont userdel -r oracle
-exec_cmd -cont userdel -r grid
-LN
-
-line_separator
-info "delete all groups"
-exec_cmd -cont groupdel oinstall
-exec_cmd -cont groupdel dba
-exec_cmd -cont groupdel oper
-exec_cmd -cont groupdel asmadmin
-exec_cmd -cont groupdel asmdba
-exec_cmd -cont groupdel asmoper
-LN
+exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
 
 line_separator
 info "create all groups"

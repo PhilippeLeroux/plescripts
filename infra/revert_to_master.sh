@@ -53,9 +53,7 @@ then
 	exit 1
 fi
 
-exec_cmd -c "userdel -r grid"
-exec_cmd -c "userdel -r oracle"
-LN
+exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
 
 exec_cmd -c "rm -rf /u01"
 LN
