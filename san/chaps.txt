@@ -1,5 +1,0 @@
-sous acls
- set auth userid=iqn.1988-12.com.oracle:b8ffc1b1292e password=moi mutual_userid=iqn.1988-12.com.oracle:srv mutual_password=moi
-
-sous iscsi
-set discovery_auth enable=1 userid=moi password=moi  mutual_userid=moi mutual_password=moi
