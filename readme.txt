@@ -1,3 +1,7 @@
+**Attention : Les scripts sont prévus pour fonctionner sur des VMs de démo, en
+aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scripts
+sont très loin des exigences d'une entreprise.**
+
                     __        __         _
                     \ \      / /__  _ __| | __
                      \ \ /\ / / _ \| '__| |/ /
@@ -14,10 +18,6 @@
                 |  __/| | | (_) | (_| | | |  __/\__ \__ \
                 |_|   |_|  \___/ \__, |_|  \___||___/___/
                                  |___/
-
-**Attention : Les scripts sont prévus pour fonctionner sur des VMs de démo, en
-aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scripts
-sont très loin des exigences d'une entreprise.**
 
 [Documentation](https://github.com/PhilippeLeroux/plescripts/tree/master/setup_vms_dns_master/installation.odp)
  suivre le lien et cliquer sur "View Raw" pour télécharger la documentation.
