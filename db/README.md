@@ -9,18 +9,15 @@ sont très loin des exigences d'une entreprise.**
 2. Ce déplacer dans le répertoire plescripts/db : `cd plescripts/db`
 
 3. Pour créer une base de données exécuter le script create_db.sh :
-`./create_db.sh -name=babar`
+	
+	`./create_db.sh -name=babar -pdbName=babar01`
 
 	La base sera de type "Container Database", pour créer une base ala 11gR2 utiliser
 	l'option -cdb=no
 
-	1. Pour créer une "Plugin Database" utiliser le paramètre -pdbName
+	Pour visualiser le fichier 'alert.log' durant la création ajouter le paramètre -verbose
 
-		Exemple : `./create_db.sh -name=babar -pdbName=babar01`
-
-	2. Pour visualiser le fichier 'alert.log' durant la création utiliser le paramètre -verbose
-
-		Exemple : `./create_db.sh -name=babar -pdbName=babar01 -verbose`
+	Exemple : `./create_db.sh -name=babar -pdbName=babar01 -verbose`
 
 - Les bases sont crées avec l'option threaded_execution=true, pour se connecter
 avec le compte sys il faut donc utiliser la syntaxe : `sqlplus sys/Oracle12 as sysbda`
@@ -29,7 +26,7 @@ avec le compte sys il faut donc utiliser la syntaxe : `sqlplus sys/Oracle12 as s
 
 - Les bases sont crées en 'archive log'
 
-- Une fois le script terminé le statue de la base est affiché (exemple d'une base SINGLE) :
+- Une fois le script terminé le statue de la base est affichée (exemple d'une base SINGLE) :
 
 TODO : Créer un service pour la pdb
 ```
