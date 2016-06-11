@@ -148,27 +148,27 @@ let g:syntastic_check_on_wq = 0
 "	============================================================================
 "let g:languagetool_jar=$HOME.'/LanguageTool-2.9/languagetool.jar'
 function! TristateNodictFrUs()
-	if (! exists ("g:active_lang"))
-		let g:active_lang = 'no'
+	if (! exists ("b:active_lang"))
+		let b:active_lang = 'no'
 	endif
 
-	if g:active_lang == 'no'
+	if b:active_lang == 'no'
 		:echo "Dictionnaire français."
-		let g:active_lang='fr'
+		let b:active_lang='fr'
 		:set spell spelllang=fr
 		if exists( "g:languagetool_jar" )
 			:LanguageToolCheck
 		endif
-	elseif g:active_lang == 'fr'
+	elseif b:active_lang == 'fr'
 		:echo "Dictionnaire US."
-		let g:active_lang='us'
+		let b:active_lang='us'
 		:set spelllang=en_us
 		if exists( "g:languagetool_jar" )
 			:LanguageToolCheck
 		endif
-	elseif g:active_lang == 'us'
+	elseif b:active_lang == 'us'
 		:echo "Dictionnaire désactivé."
-		let g:active_lang='no'
+		let b:active_lang='no'
 		:set nospell
 		if exists( "g:languagetool_jar" )
 			:LanguageToolClear
@@ -328,7 +328,10 @@ nnoremap <silent> <F9> :call ToggleVimTips()<CR>
 nnoremap <silent> <C-p> :GitGutterPrevHunk<CR>
 nnoremap <silent> <C-n> :GitGutterNextHunk<CR>
 
-function! ReadmeSwap()
+"	============================================================================
+"	Mise à jour auto readme.txt et README.md
+"	============================================================================
+function! UpdateReadme()
 	if expand('%:t') == 'readme.txt'
 		let l:source=expand('%:p')
 		let l:dest=expand('%:p:h').'/README.md'
@@ -339,13 +342,56 @@ function! ReadmeSwap()
 
 	if exists( "l:source" )
 		execute "silent !cp ".l:source." ".l:dest
-		let l:msg="cp ".l:source." ".l:dest
-		echomsg l:msg
-		"execute ":echom '".l:msg."'"
 	else
 		echo "Seulement avec readme.txt/README.md"
 	endif
 endfunction
-nnoremap <silent> <F8> :call ReadmeSwap()<CR>
 
+autocmd BufWritePost readme.txt :call UpdateReadme()
+autocmd BufWritePost README.md :call UpdateReadme()
+
+function! LoadREADME_md()
+	let l:md=expand('%:p:h').'/README.md'
+	if !bufexists(l:md)
+		execute "tabnew ".l:md
+		tabp
+	endif
+endfunction
+
+autocmd BufRead readme.txt :call LoadREADME_md()
+
+" Ne fonctionne pas quand un README.md est fermée.
+function! OnReadmeClosed()
+	if expand('%:t') == 'readme.txt'
+		let l:other=expand('%:p:h').'/README.md'
+		"let l:type='md'
+	elseif expand('%:t') == 'README.md'
+		let l:other=expand('%:p:h').'/readme.txt'
+		"let l:type='txt'
+	endif
+
+	if exists( "l:other" ) && bufnr( l:other ) > 0
+		execute "bdelete ".l:other
+	endif
+endfunction
+
+autocmd BufUnload readme.txt :call OnReadmeClosed()
+autocmd BufUnload README.md :call OnReadmeClosed()
+
+function! OnWinLeaveReadCurLineNu()
+	if expand('%:t') == 'readme.txt'
+		let l:other=expand('%:p:h').'/README.md'
+	elseif expand('%:t') == 'README.md'
+		let l:other=expand('%:p:h').'/readme.txt'
+	endif
+	
+	if exists( "l:other" ) && bufnr( l:other ) > 0
+		let g:save_cursor=getcurpos()
+	endif
+endfunction
+
+autocmd WinLeave readme.txt :call OnWinLeaveReadCurLineNu()
+autocmd WinLeave README.md :call OnWinLeaveReadCurLineNu()
+autocmd WinEnter readme.txt if exists( "g:save_cursor" ) | call setpos('.', g:save_cursor) | endif
+autocmd WinEnter README.md if exists( "g:save_cursor" ) | call setpos('.', g:save_cursor) | endif
 "	============================================================================
