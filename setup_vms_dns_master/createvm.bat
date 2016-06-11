@@ -4,7 +4,7 @@ set PATH=%PATH%;"C:\Program Files\Oracle\VirtualBox"
 rem Répertoire qui contiendra les VMs
 set VM_PATH=C:\Users\kangs\VirtualBox VMs
 
-rem Chemin complet de l'ISO Linux Ã  utiliser
+rem Chemin complet de l'ISO Linux à utiliser
 set ISO_PATH=C:\Users\kangs\Desktop\iso_linux\V100082-01.iso
 
 VBoxManage createvm --name %VM_NAME% --register
@@ -15,13 +15,19 @@ VBoxManage modifyvm %VM_NAME% --memory %VM_MEMORY%
 VBoxManage modifyvm %VM_NAME% --vram 12
 VBoxManage modifyvm %VM_NAME% --cpus 4
 VBoxManage modifyvm %VM_NAME% --rtcuseutc on
-if %VM_NAME% == K2 (VBoxManage modifyvm %VM_NAME% --nic1 bridged) else VBoxManage modifyvm %VM_NAME% --nic1 intnet
+
+VBoxManage modifyvm %VM_NAME% --nic1 hostonly
+VBoxManage modifyvm %VM_NAME% --hostonlyadapter1 "VirtualBox Host-Only Ethernet Adapter"
 VBoxManage modifyvm %VM_NAME% --nictype1 virtio
-if %VM_NAME% == K2 (VBoxManage modifyvm %VM_NAME% --bridgeadapter1 "Realtek RTL8188CU Wireless LAN 802.11n USB 2.0 Network Adapter") else VBoxManage modifyvm %VM_NAME% --cableconnected1 off
+
 VBoxManage modifyvm %VM_NAME% --nic2 intnet
 VBoxManage modifyvm %VM_NAME% --nictype2 virtio
-VBoxManage modifyvm %VM_NAME% --nic3 intnet
+
+if %VM_NAME% NEQ K2 goto AFTER_NIC3
+VBoxManage modifyvm %VM_NAME% --nic3 bridged
+VBoxManage modifyvm %VM_NAME% --bridgeadapter3 "Realtek RTL8188CU Wireless LAN 802.11n USB 2.0 Network Adapter"
 VBoxManage modifyvm %VM_NAME% --nictype3 virtio
+:SKIP_NIC3
 VBoxManage modifyvm %VM_NAME% --audio dsound
 VBoxManage modifyvm %VM_NAME% --usb on
 VBoxManage modifyvm %VM_NAME% --usbehci on

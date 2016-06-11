@@ -1,12 +1,12 @@
 Name:            K2
-Groups:          /
+Groups:          /ORCL Infra
 Guest OS:        Oracle (64-bit)
 UUID:            c75ca26a-a5fc-49f8-ad64-462e25effa99
-Config file:     C:\Users\kangs\VirtualBox VMs\K2\K2.vbox
-Snapshot folder: C:\Users\kangs\VirtualBox VMs\K2\Snapshots
-Log folder:      C:\Users\kangs\VirtualBox VMs\K2\Logs
+Config file:     C:\Users\kangs\VirtualBox VMs\ORCL Infra\K2\K2.vbox
+Snapshot folder: C:\Users\kangs\VirtualBox VMs\ORCL Infra\K2\Snapshots
+Log folder:      C:\Users\kangs\VirtualBox VMs\ORCL Infra\K2\Logs
 Hardware UUID:   c75ca26a-a5fc-49f8-ad64-462e25effa99
-Memory size:     1024MB
+Memory size:     256MB
 Page Fusion:     off
 VRAM size:       12MB
 CPU exec cap:    100%
@@ -33,7 +33,7 @@ Large Pages:     on
 VT-x VPID:       on
 VT-x unr. exec.: on
 Paravirt. Provider: Default
-State:           powered off (since 2016-05-16T15:09:28.752000000)
+State:           running (since 2016-06-11T11:34:39.800000000)
 Monitor count:   1
 3D Acceleration: off
 2D Video Acceleration: off
@@ -59,13 +59,12 @@ Storage Controller Instance Number (1): 0
 Storage Controller Max Port Count (1):  30
 Storage Controller Port Count (1):      2
 Storage Controller Bootable (1):        on
-IDE (0, 0): C:\Users\kangs\Desktop\iso_linux\V100082-01.iso (UUID: 096f03a1-e996-4d83-a65a-a6460fa83502)
-IDE (1, 0): C:\Program Files\Oracle\VirtualBox\VBoxGuestAdditions.iso (UUID: 9913ee95-07fc-49f4-be89-3ec25ac2bda3)
-SATA (0, 0): C:\Users\kangs\VirtualBox VMs\K2\K2.vdi (UUID: 7b6a5dcd-2663-48d7-83ff-f0d111df1710)
-SATA (1, 0): C:\Users\kangs\VirtualBox VMs\K2\asm01.vdi (UUID: dd86fcb3-9763-4d7b-9cf3-b14db8c3e86c)
-NIC 1:           MAC: 080027ECEAF2, Attachment: Bridged Interface 'Realtek RTL8188CU Wireless LAN 802.11n USB 2.0 Network Adapter', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
+IDE (0, 0): Empty
+SATA (0, 0): C:\Users\kangs\VirtualBox VMs\ORCL Infra\K2\K2.vdi (UUID: 7b6a5dcd-2663-48d7-83ff-f0d111df1710)
+SATA (1, 0): C:\Users\kangs\VirtualBox VMs\ORCL Infra\K2\asm01.vdi (UUID: dd86fcb3-9763-4d7b-9cf3-b14db8c3e86c)
+NIC 1:           MAC: 080027ECEAF2, Attachment: Host-only Interface 'VirtualBox Host-Only Ethernet Adapter', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
 NIC 2:           MAC: 0800276524D7, Attachment: Internal Network 'intnet', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
-NIC 3:           MAC: 0800270A87C2, Attachment: Internal Network 'intnet', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
+NIC 3:           MAC: 0800270A87C2, Attachment: Bridged Interface 'Realtek RTL8188CU Wireless LAN 802.11n USB 2.0 Network Adapter', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
 NIC 4:           disabled
 NIC 5:           disabled
 NIC 6:           disabled
@@ -82,6 +81,8 @@ LPT 2:           disabled
 Audio:           enabled (Driver: DSOUND, Controller: AC97, Codec: STAC9700)
 Clipboard Mode:  disabled
 Drag and drop Mode: disabled
+Session name:    headless
+Video mode:      720x400x0 at 0,0 enabled
 VRDE:            disabled
 USB:             enabled
 EHCI:            enabled
@@ -91,15 +92,26 @@ USB Device Filters:
 
 <none>
 
+Available remote USB devices:
+
+<none>
+
+Currently Attached USB Devices:
+
+<none>
+
 Bandwidth groups:  <none>
 
 Shared folders:  
 
 Name: 'shared', Host path: 'C:\Users\kangs\Desktop\shared' (machine mapping), writable
 
+VRDE Connection:    not active
+Clients so far:     0
+
 Video capturing:    not active
 Capture screens:    0
-Capture file:       C:\Users\kangs\VirtualBox VMs\K2\K2.webm
+Capture file:       C:\Users\kangs\VirtualBox VMs\ORCL Infra\K2\K2.webm
 Capture dimensions: 1024x768
 Capture rate:       512 kbps
 Capture FPS:        25
@@ -107,5 +119,16 @@ Capture FPS:        25
 Guest:
 
 Configured memory balloon size:      0 MB
+OS type:                             Linux26_64
+Additions run level:                 2
+Additions version:                   5.0.20 r106931
+
+
+Guest Facilities:
+
+Facility "VirtualBox Base Driver": active/running (last update: 2016/06/11 11:34:54 UTC)
+Facility "VirtualBox System Service": active/running (last update: 2016/06/11 11:35:01 UTC)
+Facility "Seamless Mode": not active (last update: 2016/06/11 11:34:54 UTC)
+Facility "Graphics Mode": not active (last update: 2016/06/11 11:34:54 UTC)
 
 
