@@ -3,15 +3,14 @@ aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scr
 sont très loin des exigences d'une entreprise.**
 
 ----
-Le but de ces scripts est de normaliser les différents noms utilisés.
-Normalement il n'y a pas besoin d'appeler les commandes de l'os sauf pour
-la création du VG.
+Ces scripts prennent en charge la création des LVs et de l'export sur le réseaux.
 
 ---
 
 __Bibliothèques :__
 * `targetclilib.sh` : contient toutes les fonctions permettant de manipuler targetcli
 * `lvlib.sh` : fonction courante de manipulation des LVs.
+
 ---
 
 __Création de nouveaux disques :__
