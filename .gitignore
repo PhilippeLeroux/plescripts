@@ -12,7 +12,6 @@ logs/**
 #
 *.link
 #
-patch/**
 test/**
 ###
 dns/install/etc
@@ -24,4 +23,4 @@ nohup.out
 afiedt.buf
 infra/babar
 infra/donald
-infra/mini
+infra/mimi
