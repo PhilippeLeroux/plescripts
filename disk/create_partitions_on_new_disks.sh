@@ -2,9 +2,6 @@
 
 #	ts=4 sw=4
 
-#	rescan la session pour mapper les éventuelles nouvelles luns
-#	crée une partition sur tous les disques n'en ayant pas.
-
 . ~/plescripts/plelib.sh
 . ~/plescripts/disklib.sh
 
@@ -49,7 +46,7 @@ do
 			info $str_usage
 			LN
 
-		    exit 1
+			exit 1
 			;;
 	esac
 done
@@ -89,7 +86,7 @@ function create_partitions
 	done
 
 	info "$count_new_part partitions added."
-	info "Total part : $(( $count_existing_parts + $count_new_part )) partitions"
+	info "Total partitions : $(( $count_existing_parts + $count_new_part ))"
 }
 
 line_separator
