@@ -4,21 +4,22 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-		[-path=str]	Chemin ou commencer la recherche, par défaut ~/plescripts
-		-str        Chaîne à remplacer.
-		-by			Chaîne de remplacement.
+	[-path=str] Chemin ou commencer la recherche, par défaut ~/plescripts
+	[-readme]   Remplacer uniquement dans les fichiers readme.txt & README.md
+	-str        Chaîne à remplacer.
+	-by         Chaîne de remplacement.
 "
 
 typeset		str=undef
 typeset		by=undef
 typeset -r	default_root_path=~/plescripts
 typeset		root_path=$default_root_path
+typeset		readme_only=no
 
 while [ $# -ne 0 ]
 do
@@ -26,6 +27,11 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
+			shift
+			;;
+
+		-readme)
+			readme_only=yes
 			shift
 			;;
 
@@ -67,7 +73,7 @@ function replace
 	do
 		grep -E "\<$str\>" $file_name >/dev/null 2>&1
 		if [ $? -eq 0 ]
-		then	
+		then
 			info "Update $file_name"
 			sed -i "s#\<$str\>#$by#g" $file_name
 			count_modified_files=count_modified_files+1
@@ -77,7 +83,14 @@ function replace
 	info "$count_modified_files files updated."
 }
 
-cmd_find="find $root_path/*"' -name "*.sh" -or -name "*.cfg" -or ! -name "[!^.]*" ' 
+if [ $readme_only = yes ]
+then
+	cmd_find="find $root_path/*"' -name readme.txt -or -name README.md'
+	replace "$cmd_find"
+	exit 0
+fi
+
+cmd_find="find $root_path/*"' -name "*.sh" -or -name "*.cfg" -or ! -name "[!^.]*" '
 replace "$cmd_find"
 LN
 
