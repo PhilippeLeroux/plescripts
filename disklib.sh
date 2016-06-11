@@ -34,7 +34,7 @@ function get_iscsi_disks
 	while read id type f1 f2 f3 disk
 	do
 		echo $disk $(echo ${id:1:${#id}-2} | cut -d':' -f4)
-	done<<<"$(lsscsi | grep LIO-ORG)"
+	done<<<"$(lsscsi | grep IBLOCK)"
 }
 
 #*> Met à zéro l'en-tête du disque $1
