@@ -6,5 +6,3 @@
 EXEC_CMD_ACTION=EXEC
 
 exec_cmd "iscsiadm -m session -P 3"
-
-#iscsiadm -m session -P 3 | grep "Attached scsi disk"
