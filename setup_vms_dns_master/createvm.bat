@@ -27,7 +27,7 @@ if %VM_NAME% NEQ K2 goto AFTER_NIC3
 VBoxManage modifyvm %VM_NAME% --nic3 bridged
 VBoxManage modifyvm %VM_NAME% --bridgeadapter3 "Realtek RTL8188CU Wireless LAN 802.11n USB 2.0 Network Adapter"
 VBoxManage modifyvm %VM_NAME% --nictype3 virtio
-:SKIP_NIC3
+:AFTER_NIC3
 VBoxManage modifyvm %VM_NAME% --audio dsound
 VBoxManage modifyvm %VM_NAME% --usb on
 VBoxManage modifyvm %VM_NAME% --usbehci on
