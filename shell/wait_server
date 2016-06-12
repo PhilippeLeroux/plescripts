@@ -101,7 +101,7 @@ then
 	if [[ -v ID_DB ]]
 	then
 		typeset -i	exit_code=0
-		typeset -r	cfg_path=~/plescripts/infra/$ID_DB
+		typeset -r	cfg_path=~/plescripts/database_servers/$ID_DB
 		exit_if_dir_not_exists $cfg_path
 		for f in $(ls $cfg_path/node*)
 		do

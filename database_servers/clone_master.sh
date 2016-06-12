@@ -67,11 +67,11 @@ done
 
 exit_if_param_undef db 		"$str_usage"
 
-typeset -r cfg_path=~/plescripts/infra/$db
+typeset -r cfg_path=~/plescripts/database_servers/$db
 if [ ! -d $cfg_path ]
 then
 	error "$cfg_path not exits !"
-	info "First run ~/plescripts/infra/new_infra.sh"
+	info "First run ~/plescripts/database_servers/define_new_server.sh"
 	exit 1
 fi
 
@@ -85,7 +85,7 @@ exit_if_file_not_exists $cfg_file "$str_usage"
 
 typeset -r server_name=$(cat $cfg_file | cut -d: -f2)
 
-typeset -r type_disks=$(cat ~/plescripts/infra/$db/disks | tail -1 | cut -d: -f1)
+typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
 
 #	Équivalence ssh entre le poste client et root@orclmaster
 function connection_ssh_with_root_on_orclmaster
@@ -128,7 +128,7 @@ function run_oracle_preinstall
 	LN
 
 	info "Ajoute grid & oracle dans le groupe users pour pouvoir lire les montages NFS."
-	exec_cmd "ssh -t root@$server_name plescripts/infra/add_oracle_grid_into_group_users.sh"
+	exec_cmd "ssh -t root@$server_name plescripts/database_servers/add_oracle_grid_into_group_users.sh"
 	chrono_stop "Oracle preinstall : "
 	LN
 }
@@ -389,7 +389,7 @@ if [ $node -eq $max_nodes ]
 then	# C'est le dernier noeud
 	if [ $max_nodes -ne 1 ]
 	then	# Plus de 1 noeud donc c'est un RAC.
-		exec_cmd "~/plescripts/infra/apply_ssh_prereq_on_all_nodes.sh -db=$db"
+		exec_cmd "~/plescripts/database_servers/apply_ssh_prereq_on_all_nodes.sh -db=$db"
 		LN
 	fi
 

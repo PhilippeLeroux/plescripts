@@ -101,7 +101,7 @@ exit_if_param_undef db	"$str_usage"
 
 [[ $db_type == rac* && $usefs = yes ]] && error "RAC non supporté sur un FS." && exit 1
 
-typeset -c	cfg_path=~/plescripts/infra/$db
+typeset -c	cfg_path=~/plescripts/database_servers/$db
 
 function test_ip_node_used
 {
@@ -272,6 +272,6 @@ else
 	normalyse_fs_disks
 fi
 
-~/plescripts/shell/show_infra -db=$db
+~/plescripts/shell/show_db_servers -db=$db
 
 ./virtualbox_scripts.sh -db=$db

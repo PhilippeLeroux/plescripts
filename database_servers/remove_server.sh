@@ -48,7 +48,7 @@ exit_if_param_undef db	"$str_usage"
 
 typeset -r upper_db=$(to_upper $db)
 
-typeset -r cfg_path=~/plescripts/infra/$db
+typeset -r cfg_path=~/plescripts/database_servers/$db
 
 if [ -d $cfg_path ]
 then
@@ -70,7 +70,7 @@ then
 	exec_cmd "ssh -t $san_conn \"~/plescripts/san/reset_all_for_db.sh -db=$db\""
 	LN
 else
-	warning "Infra $db not exists."
+	warning "No servers for $db"
 	exit 1
 fi
 

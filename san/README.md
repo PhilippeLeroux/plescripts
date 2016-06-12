@@ -2,23 +2,25 @@
 aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scripts
 sont très loin des exigences d'une entreprise.**
 
-----
+--------------------------------------------------------------------------------
+
 Ces scripts prennent en charge la création des LVs et de l'export sur le réseaux.
 
----
+--------------------------------------------------------------------------------
 
 __Bibliothèques :__
+
 * `targetclilib.sh` : contient toutes les fonctions permettant de manipuler targetcli
 * `lvlib.sh` : fonction courante de manipulation des LVs.
 
----
+--------------------------------------------------------------------------------
 
 __Création de nouveaux disques :__
 
 create_lun_for_db.sh est utiliser par clone_master.sh, ce script va enchainer les
 scripts de plus bas niveaux pour créer les disques et les exporter sur le réseau.
 
----
+--------------------------------------------------------------------------------
 
 __Utilisation des scripts génériques :__
 
@@ -33,9 +35,10 @@ __Utilisation des scripts génériques :__
 
 Puis aller sur le client pour mapper les LUNs (cf ../disk)
 
-----
+--------------------------------------------------------------------------------
 
 __Scripts divers :__
+
 * create_lv.sh
 	
 	Création de 1 ou plusieurs LVs dans un VG.
@@ -66,7 +69,7 @@ __Scripts divers :__
 		
 	Les LVs restent intactes.
 
----
+--------------------------------------------------------------------------------
 
 License
 -------

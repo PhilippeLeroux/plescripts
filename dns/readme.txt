@@ -2,6 +2,8 @@
 aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scripts
 sont très loin des exigences d'une entreprise.**
 
+--------------------------------------------------------------------------------
+
 Gestion du DNS
 ==============
 
@@ -17,7 +19,8 @@ __Scripts pouvant être utiles :__
 *	Supprime un serveur du DNS : `./remove_server.sh -name=<server_name>`
 
 --------------------------------------------------------------------------------
-__Scripts utilisés par les scripts présent dans plescripts/infra :__
+
+__Scripts utilisés par les scripts présent dans plescripts/database_server :__
 
 *	get_free_ip_node.sh
 	Permet d'obtenir la première IP libre, ou un intervalle d'IPs libre.

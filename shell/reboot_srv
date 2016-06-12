@@ -35,7 +35,7 @@ done
 
 exit_if_param_undef db
 
-typeset -r cfg_path=~/plescripts/infra/$db
+typeset -r cfg_path=~/plescripts/database_servers/$db
 
 typeset -r max_nodes=$(ls -1 $cfg_path/node* | wc -l)
 

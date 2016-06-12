@@ -17,7 +17,7 @@ else
 	exit 1
 fi
 
-typeset -r cfg_path=~/plescripts/infra
+typeset -r cfg_path=~/plescripts/database_servers
 exit_if_dir_not_exists $cfg_path
 
 typeset -ri max_nodes=$(ls -1 $cfg_path/$db/node*|wc -l)

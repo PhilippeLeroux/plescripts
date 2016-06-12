@@ -57,7 +57,7 @@ exit_if_param_undef		db						"$str_usage"
 exit_if_param_invalid	action "install config" "$str_usage"
 
 #	Répertoire contenant le fichiers de configuration de la db
-typeset -r dir_files=~/plescripts/infra/$db
+typeset -r dir_files=~/plescripts/database_servers/$db
 [ ! -d $dir_files ]	&& error "$dir_files not exists." && exit 1
 
 #	Nom du "fichier réponse" pour l'installation d'oracle
@@ -240,7 +240,7 @@ then
 		LN
 	done
 
-	typeset -r type_disks=$(cat ~/plescripts/infra/$db/disks | tail -1 | cut -d: -f1)
+	typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
 	[ "$type_disks" == FS ] && exec_cmd "ssh -t root@${node_names[$i]} \"~/plescripts/db/create_systemd_service_oracledb.sh\""
 
 	info "Database can be created."

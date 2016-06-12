@@ -1,8 +1,11 @@
-Objectif des scripts
-====================
 **Attention : Les scripts sont prévus pour fonctionner sur des VMs de démo, en
 aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scripts
 sont très loin des exigences d'une entreprise.**
+
+--------------------------------------------------------------------------------
+
+Objectif des scripts
+====================
 
 Le but des ces scripts et de créer une infrastructure complète avec un
 minimum d'interventions
@@ -15,15 +18,16 @@ minimum d'interventions
 	- Les disques sont attachés via oracleasm.
 
 Si votre poste client est Windows connectez vous sur K2 en root avec putty.
-Toutes les opérations se font depuis le répertoire plescripts/infra.
+Toutes les opérations se font depuis le répertoire plescripts/database_server.
 
 Création de nouveaux serveurs :
 ------------------------------
-1.	Définition d'une nouvelle infra.
 
-	Création d'un serveur standalone : `./new_infra.sh -db=babar`
+1.	Définir le serveur :
 
-	Création d'un RAC 2 noeuds : `./new_infra.sh -db=babar -max_nodes=2`
+	Création d'un serveur standalone : `./define_new_server.sh -db=babar`
+
+	Création d'un RAC 2 noeuds : `./define_new_server.sh -db=babar -max_nodes=2`
 
 	Un nouveau répertoire nommé babar est crée contenant les fichiers décrivant
 	le paramétrage du ou des serveurs.
@@ -97,9 +101,10 @@ Création de nouveaux serveurs :
 
 Recycler un serveur :
 ---------------------
+
 Se connecter sur le serveur cible en root :
 
-	- cd ~/plescripts/infra
+	- cd ~/plescripts/database_server
 	- ./uninstall_all.sh -type=FS|ASM
 	- ./revert_to_master.sh -doit
 	- Puis rebooter ou stopper le serveur.
@@ -107,9 +112,11 @@ Se connecter sur le serveur cible en root :
 
 Depuis le poste client :
 
-	- cd ~/plescripts/infra
-	- ./delete_infra.sh -db=<str> [-remove_cfg]
+	- cd ~/plescripts/database_server
+	- ./remove_server.sh -db=<str> [-remove_cfg]
 	- Le DNS et le SAN sont mis à jours.
+
+--------------------------------------------------------------------------------
 
 License
 -------

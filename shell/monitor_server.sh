@@ -28,7 +28,7 @@ then
 	db=$ID_DB
 fi
 
-typeset -r dir_files=~/plescripts/infra/$db
+typeset -r dir_files=~/plescripts/database_servers/$db
 [ ! -d $dir_files ] && error "$dir_files not exists." && exit 1
 
 function is_running # $1 server name

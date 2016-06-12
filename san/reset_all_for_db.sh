@@ -44,7 +44,7 @@ exit_if_param_undef db	"$str_usage"
 
 if [ $count_nodes -eq -1 ]
 then
-	typeset -r cfg_path=~/plescripts/infra/$db
+	typeset -r cfg_path=~/plescripts/database_servers/$db
 	[ ! -d $cfg_path ] && error "$db config files not exists." && exit 1
 
 	count_nodes=$(ls -1 $cfg_path/node* | wc -l)

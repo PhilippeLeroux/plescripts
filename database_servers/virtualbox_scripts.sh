@@ -45,7 +45,7 @@ exit_if_param_undef db	"$str_usage"
 
 typeset -r upper_db=$(to_upper $db)
 
-typeset -r cfg_path=~/plescripts/infra/$db
+typeset -r cfg_path=~/plescripts/database_servers/$db
 exit_if_dir_not_exists $cfg_path
 
 case $hostvm in

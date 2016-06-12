@@ -56,7 +56,7 @@ exec_cmd -c "$oracle_rm_1"
 exec_cmd -c "$oracle_rm_2"
 LN
 
-typeset -r cfg_path=~/plescripts/infra/${db}
+typeset -r cfg_path=~/plescripts/database_servers/${db}
 if [ -d $cfg_path ]
 then
 	oracle_rm_1=$(escape_2xquotes $oracle_rm_1)

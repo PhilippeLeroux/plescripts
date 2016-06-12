@@ -104,7 +104,7 @@ exit_if_param_undef		db						"$str_usage"
 exit_if_param_invalid	action "install config" "$str_usage"
 
 #	Répertoire contenant le fichiers de configuration de la db
-typeset -r cfg_path=~/plescripts/infra/$db
+typeset -r cfg_path=~/plescripts/database_servers/$db
 [ ! -d $cfg_path ]	&& error "$cfg_path not exists." && exit 1
 
 #	Nom du "fichier réponse" pour l'installation du grid

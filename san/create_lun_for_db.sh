@@ -18,7 +18,7 @@ typeset -r str_usage=\
 		-node=<#>      : n° du serveur.
 
 Ne sert que lors de la création d'un serveur.
-Ce script n'est utilisé que par ~/plescripts/infra/clone_master.sh"
+Ce script n'est utilisé que par ~/plescripts/database_servers/clone_master.sh"
 
 typeset db=undef
 typeset create_disk=no
@@ -60,7 +60,7 @@ done
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef node	"$str_usage"
 
-typeset -r config_dir=~/plescripts/infra/$db
+typeset -r config_dir=~/plescripts/database_servers/$db
 [ ! -d $config_dir ] && error "Directory $config_dir not exists." && exit 1
 
 typeset -r initiator_name=$(get_initiator_for $db $node)

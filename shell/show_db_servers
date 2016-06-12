@@ -33,7 +33,7 @@ done
 [[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db
 
-typeset -r cfg_dir=~/plescripts/infra/$db
+typeset -r cfg_dir=~/plescripts/database_servers/$db
 
 if [ ! -d $cfg_dir ]
 then

@@ -204,7 +204,7 @@ function deinstall_oracle
 {
 	line_separator
 	info "deinstall oracle"
-	suoracle -f "~/plescripts/infra/uninstall_oracle.sh $arg1"
+	suoracle -f "~/plescripts/database_servers/uninstall_oracle.sh $arg1"
 
 	root_execute_on_all_nodes "rm -fr /opt/ORCLfmap"
 	root_execute_on_all_nodes "rm -fr /u01/app/oracle/audit"
@@ -318,7 +318,7 @@ LN
 
 info "Option 1 :"
 info "Exécuter revert_to_master.sh sur les serveurs."
-info "Puis delete_infra.sh depuis le client."
+info "Puis remove_server.sh depuis le client."
 info "Puis relancer clone_master & co"
 LN
 

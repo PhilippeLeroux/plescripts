@@ -55,7 +55,7 @@ then
 	exit 0
 fi
 
-typeset -r db_path=~/plescripts/infra/${db}
+typeset -r db_path=~/plescripts/database_servers/${db}
 [ ! -d $db_path ] && error "'$db_path' not exists." && exit 1
 
 typeset -r node_file_prefix=${db_path}/node

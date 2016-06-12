@@ -45,7 +45,7 @@ done
 exit_if_param_undef db		$str_usage
 exit_if_param_undef node	$str_usage
 
-typeset -r	cfg_path=~/plescripts/infra/$db
+typeset -r	cfg_path=~/plescripts/database_servers/$db
 typeset -r	node_file=$cfg_path/node$node
 typeset -r	scanvips_file=$cfg_path/scanvips
 

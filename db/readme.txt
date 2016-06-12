@@ -2,6 +2,8 @@
 aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scripts
 sont très loin des exigences d'une entreprise.**
 
+--------------------------------------------------------------------------------
+
 Création d'une base de donnée.
 ==============================
 
@@ -30,6 +32,7 @@ avec le compte sys il faut donc utiliser la syntaxe : `sqlplus sys/Oracle12 as s
 - Une fois le script terminé le statue de la base est affichée (exemple d'une base SINGLE) :
 
 TODO : Créer un service pour la pdb
+
 ```
 # ==============================================================================
 # Database config :

@@ -44,11 +44,11 @@ function add_dir
 	LN
 }
 
-info "Efface tous les répertoires infra/...."
-exec_cmd "sed -i '/^infra\//d' .gitignore"
+info "Efface tous les répertoires database_servers/...."
+exec_cmd "sed -i '/^database_servers\//d' .gitignore"
 LN
 
-cmd_find="find ~/plescripts/infra/* -type d"
+cmd_find="find ~/plescripts/database_servers/* -type d"
 fake_exec_cmd $cmd_find
 eval "$cmd_find" |\
 while read dir_name
