@@ -38,4 +38,5 @@ do
 	esac
 done
 
-exec_cmd "ls -rtl $PLELOG_PATH"
+last_path=$(ls -1td $PLELOG_ROOT/* | head -1)
+exec_cmd "ls -rtl $last_path"
