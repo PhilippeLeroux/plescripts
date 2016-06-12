@@ -21,6 +21,3 @@ san/saveconfig-*
 san/targetcli_backup/**
 nohup.out
 afiedt.buf
-infra/babar
-infra/donald
-infra/mimi
