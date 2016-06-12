@@ -152,6 +152,7 @@ function clean_log_file
 	if [ -f "$1" ]
 	then
 		sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" "$1"
+		sed -i -r "s/\x1B\[[0-9]m//g" "$1"
 		sed -i "s/\r//g" "$1"
 	fi
 }
