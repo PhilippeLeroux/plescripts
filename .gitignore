@@ -21,6 +21,6 @@ san/saveconfig-*
 san/targetcli_backup/**
 nohup.out
 afiedt.buf
-database_servers/babar/**
-database_servers/donald/**
-database_servers/mimi/**
+database_servers/babar
+database_servers/daisy
+database_servers/donald
