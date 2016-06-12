@@ -1,21 +1,17 @@
 ################################################################################
-Resume 2016/06/04 :
+Resume 2016/06/12 :
 ~~~~~~~~~~~~~~~~~~~
 
-# 37 publics functions
-# 9 privates functions
+# 36 publics functions
+# 10 privates functions
 # 1 undocumented functions
 
 ################################################################################
-37 publics functions :
+36 publics functions :
 ~~~~~~~~~~~~~~~~~~~~~~
 
 #*> Remove all visual makers from file $1
 function clean_log_file
-
-#*> get_initiator_for <db> <#node>
-#*> return initiator name for <db> and node <#node>
-function get_initiator_for
 
 #*> Hide cursor
 function hide_cursor
@@ -25,18 +21,6 @@ function show_cursor
 
 #*> return number of col for the terminal
 function term_cols
-
-#*> Double symbol % from $@.
-function double_symbol_percent
-
-#*> Escape " from $@
-function escape_2xquotes
-
-#*> Escape / from $@
-function escape_slash
-
-#*> Escape  from $@
-function escape_anti_slash
 
 #*> Print error message
 function error
@@ -48,9 +32,6 @@ function warning
 #*> Usage :
 #*> mark_info; printf "Hellow %sn" name
 function mark_info
-
-#*> return 0 if cmd $1 exists else return 1
-function test_if_cmd_exists
 
 #*>	Print normal message
 #*> Options
@@ -64,30 +45,6 @@ function line_separator
 
 #*> New line
 function LN
-
-#*> Upper case "$@"
-function to_upper
-
-#*> Lower case "$@"
-function to_lower
-
-#*> Upper case the first caractere of $1
-function initcap
-
-#*> return string :
-#*>	  true	if $1 in( y, yes )
-#*>   false if $1 in( n, no )
-function yn_to_bool
-
-#*> Eval an arithmetic expression
-#*> Flags
-#*>    -l : use real numbers
-#*>    -i : remove all decimals
-function compute
-
-#*> fmt_seconds <seconds>
-#*> <seconds> formated to the better format
-function fmt_seconds # $1 seconds
 
 #*> Fake exec_cmd command
 #*> Command printed but not executed.
@@ -104,11 +61,12 @@ function fake_exec_cmd
 #*> If command failed stop the scripts.
 #*>
 #*> Parameters:
-#*>		-f EXEC_CMD_ACTION is ignored.
-#*>		-c continue on errror.
+#*>		-f  EXEC_CMD_ACTION is ignored.
+#*>		-c  continue on error.
 #*>		-ci like -c but not print error message.
+#*>		-h  hide command except on error (never tested)
 #*>
-#*> Show execution time after 60s.
+#*> Show execution time after PLE_SHOW_EXECUTION_TIME_AFTER seconds
 function exec_cmd
 
 #*> exit_if_file_not_exists <name> [message]
@@ -150,6 +108,32 @@ function exit_if_param_undef #var_name
 #*>		not in the list val_list
 function exit_if_param_invalid
 
+#*> Double symbol % from $@.
+function double_symbol_percent
+
+#*> Escape " from $@
+function escape_2xquotes
+
+#*> Escape / from $@
+function escape_slash
+
+#*> Escape  from $@
+function escape_anti_slash
+
+#*> Upper case "$@"
+function to_upper
+
+#*> Lower case "$@"
+function to_lower
+
+#*> Upper case the first caractere of $1
+function initcap
+
+#*> return string :
+#*>	  true	if $1 in( y, yes )
+#*>   false if $1 in( n, no )
+function yn_to_bool
+
 #*> fill <car> <no#>
 #*> Return a buffer filled with no# characteres car
 function fill
@@ -167,8 +151,18 @@ function chrono_start
 
 #*> chrono_stop [message]
 #*> Affiche le temps écoulé depuis le dernier appel à chrono_start
-#*> Si premier paramètre est -q alors retourne le temps écoulé.
+#*> Si le premier paramètre est -q alors retourne le temps écoulé.
 function chrono_stop
+
+#*> Eval an arithmetic expression
+#*> Flags
+#*>    -l : use real numbers
+#*>    -i : remove all decimals
+function compute
+
+#*> fmt_seconds <seconds>
+#*> <seconds> formated to the better format
+function fmt_seconds # $1 seconds
 
 #*> fmt_number <number>
 #*> Format number english or french, use LANG to define the format.
@@ -185,6 +179,9 @@ function fmt_kb2mb
 #*>		Unit : G, Gb, M, Mb, Kb or K
 function to_mb
 
+#*> return 0 if cmd $1 exists else return 1
+function test_if_cmd_exists
+
 
 ################################################################################
 1 undocumented functions :
@@ -194,8 +191,8 @@ function test_pause # $1 message
 
 
 ################################################################################
-9 privates functions :
-~~~~~~~~~~~~~~~~~~~~~~
+10 privates functions :
+~~~~~~~~~~~~~~~~~~~~~~~
 
 #*< Active les effets visuels couleurs et autres.
 function enable_markers
@@ -235,3 +232,7 @@ function change_value
 function add_value
 
 #*<	Format ^var\s*=\s*value
+#*< get_initiator_for <db> <#node>
+#*< return initiator name for <db> and node <#node>
+function get_initiator_for
+

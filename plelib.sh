@@ -1,7 +1,12 @@
 #	ts=4 sw=4
+
 [ ! -z $plelib_banner ] && return 0
 
-typeset -ri plelib_release=3
+################################################################################
+#	Initialisation de la lib.
+################################################################################
+
+typeset -ri	plelib_release=3
 typeset -r	plelib_banner=$(printf "plelib V%02d" $plelib_release)
 
 #*< Active les effets visuels couleurs et autres.
@@ -93,6 +98,9 @@ function disable_markers
 	STRIKE=
 }
 
+typeset -r OK="${GREEN}ok${NORM}"
+typeset -r KO="${RED}ko${NORM}"
+
 #	============================================================================
 #	Valeurs de PLELIB_OUTPUT
 #		- ENABLE	: Effets d'affichage
@@ -134,6 +142,10 @@ then # Temps en secondes, le temps d'exécution des commandes est affiché
 	typeset -i PLE_SHOW_EXECUTION_TIME_AFTER=60
 fi
 
+################################################################################
+#	Fonctions supprimant les effets visuelles des logs.
+################################################################################
+
 #*> Remove all visual makers from file $1
 function clean_log_file
 {
@@ -158,15 +170,9 @@ function clean_plelib_log_file
 
 [ x"$EXEC_CMD_ACTION" = x ] && typeset EXEC_CMD_ACTION=NOP
 
-#*> get_initiator_for <db> <#node>
-#*> return initiator name for <db> and node <#node>
-function get_initiator_for
-{
-	typeset -r db=$1
-	typeset -r num_node=$2
-
-	printf "%s%s:%02d" $iscsi_initiator_prefix $db $num_node
-}
+################################################################################
+#	Fonctions agissants ou donnant des informations sur le terminal.
+################################################################################
 
 #*> Hide cursor
 function hide_cursor
@@ -195,29 +201,9 @@ function ctrl_c
 
 trap ctrl_c INT
 
-#*> Double symbol % from $@.
-function double_symbol_percent
-{
-	sed "s/%/%%/g" <<< "$@"
-}
-
-#*> Escape " from $@
-function escape_2xquotes
-{
-	sed 's/"/\\\"/g' <<< "$@"
-}
-
-#*> Escape / from $@
-function escape_slash
-{
-	sed "s/\//\\\\\//g" <<< "$@"
-}
-
-#*> Escape \ from $@
-function escape_anti_slash
-{
-	sed 's/\\/\\\\/g' <<<"$@"
-}
+################################################################################
+#	Fonctions d'affichages
+################################################################################
 
 #*< Used by fonctions info, warning and error.
 #*< Action depand of PLELIB_OUTPUT
@@ -281,15 +267,6 @@ function mark_info
 	my_echo -n "${PURPLE}" "# "
 }
 
-typeset -r OK="${GREEN}ok${NORM}"
-typeset -r KO="${RED}ko${NORM}"
-
-#*> return 0 if cmd $1 exists else return 1
-function test_if_cmd_exists
-{
-	which $1 >/dev/null 2>&1
-}
-
 #*>	Print normal message
 #*> Options
 #*>   -n no new line
@@ -328,90 +305,9 @@ function LN
 	my_echo "${NORM}" ""
 }
 
-#*> Upper case "$@"
-function to_upper
-{
-	tr [:lower:] [:upper:] <<< "$@"
-}
-
-#*> Lower case "$@"
-function to_lower
-{
-	tr [:upper:] [:lower:] <<< "$@"
-}
-
-#*> Upper case the first caractere of $1
-function initcap
-{
-	sed 's/\(.\)/\U\1/' <<< "$@"
-}
-
-#*> return string :
-#*>	  true	if $1 in( y, yes )
-#*>   false if $1 in( n, no )
-function yn_to_bool
-{
-	case $1 in
-		y|yes)	echo true
-				;;
-
-		n|no)	echo false
-				;;
-	esac
-}
-
-#*> Eval an arithmetic expression
-#*> Flags
-#*>    -l : use real numbers
-#*>    -i : remove all decimals
-function compute
-{
-	bc_args=""
-	return_int=no
-
-	while [ $# -ne 0 ]
-	do
-		case "$1" in
-			"-l")
-				bc_args="-l"
-				shift
-				;;
-
-			"-i")
-				return_int=yes
-				shift
-				;;
-			*)
-				break
-		esac
-	done
-
-	val=$(bc $bc_args <<< "$@")
-	[ $return_int = yes ] && echo ${val%%.*} || echo $val
-}
-
-#*> fmt_seconds <seconds>
-#*> <seconds> formated to the better format
-function fmt_seconds # $1 seconds
-{
-	typeset -ri seconds=$1
-
-	typeset -i minutes=$seconds/60
-
-	if [ $minutes -eq 0 ]
-	then
-		printf "%ds\n" $seconds
-	elif [ $minutes -lt 60 ]
-	then
-		typeset -i modulo=$(( seconds % 60 ))
-		printf "%dmn%02ds\n" $minutes $modulo
-	else
-		typeset -i hours=$minutes/60
-		typeset -i rem_mn=$(( minutes - hours*60 ))
-		typeset -i rem_sec=$(( seconds - (hours*60*60 + rem_mn*60) ))
-		printf "%dh%02dmn%02ds\n" $hours $rem_mn $rem_sec
-	fi
-}
+################################################################################
+#	Fonctions permettant d'exécuter des commandes ou scripts.
+################################################################################
 
 #*> Fake exec_cmd command
 #*> Command printed but not executed.
@@ -593,6 +489,10 @@ function exec_cmd
 	return $eval_return
 }
 
+################################################################################
+#	Fonctions agissant sur les fichiers ou répertoires.
+################################################################################
+
 #*> exit_if_file_not_exists <name> [message]
 #*> if file <name> not exists, script aborted.
 #*> Print [message] if specified.
@@ -628,6 +528,10 @@ function exit_if_dir_not_exists
 		exit 1
 	fi
 }
+
+################################################################################
+#	Fonctions agissant sur le contenu d'un fichier.
+################################################################################
 
 #*<	Test if a variable exists, format ^var\\s*=\\s*value
 #*<	1	variable name
@@ -706,6 +610,10 @@ function remove_value
 	fi
 }
 
+################################################################################
+#	Fonctions permettant de tester les arguments des scripts.
+################################################################################
+
 #*> exit_if_param_undef <var> [message]
 #*>
 #*> Script aborted if var = undef or -1
@@ -749,6 +657,66 @@ function exit_if_param_invalid
 	fi
 }
 
+################################################################################
+#	Fonctions transformants des chaînes de caractères.
+################################################################################
+
+#*> Double symbol % from $@.
+function double_symbol_percent
+{
+	sed "s/%/%%/g" <<< "$@"
+}
+
+#*> Escape " from $@
+function escape_2xquotes
+{
+	sed 's/"/\\\"/g' <<< "$@"
+}
+
+#*> Escape / from $@
+function escape_slash
+{
+	sed "s/\//\\\\\//g" <<< "$@"
+}
+
+#*> Escape \ from $@
+function escape_anti_slash
+{
+	sed 's/\\/\\\\/g' <<<"$@"
+}
+
+#*> Upper case "$@"
+function to_upper
+{
+	tr [:lower:] [:upper:] <<< "$@"
+}
+
+#*> Lower case "$@"
+function to_lower
+{
+	tr [:upper:] [:lower:] <<< "$@"
+}
+
+#*> Upper case the first caractere of $1
+function initcap
+{
+	sed 's/\(.\)/\U\1/' <<< "$@"
+}
+
+#*> return string :
+#*>	  true	if $1 in( y, yes )
+#*>   false if $1 in( n, no )
+function yn_to_bool
+{
+	case $1 in
+		y|yes)	echo true
+				;;
+
+		n|no)	echo false
+				;;
+	esac
+}
+
 #*> fill <car> <no#>
 #*> Return a buffer filled with no# characteres car
 function fill
@@ -766,6 +734,10 @@ function fill
 
 	echo $buffer
 }
+
+################################################################################
+#	Fonctions pratiques sur le temps.
+################################################################################
 
 #*> pause_in_secs <seconds>
 #*> Fait une pause de <seconds> secondes.
@@ -860,6 +832,63 @@ function test_pause # $1 message
 	fi
 }
 
+################################################################################
+#	Fonctions de formatage et de manipulation de nombres.
+################################################################################
+
+#*> Eval an arithmetic expression
+#*> Flags
+#*>    -l : use real numbers
+#*>    -i : remove all decimals
+function compute
+{
+	bc_args=""
+	return_int=no
+
+	while [ $# -ne 0 ]
+	do
+		case "$1" in
+			"-l")
+				bc_args="-l"
+				shift
+				;;
+
+			"-i")
+				return_int=yes
+				shift
+				;;
+			*)
+				break
+		esac
+	done
+
+	val=$(bc $bc_args <<< "$@")
+	[ $return_int = yes ] && echo ${val%%.*} || echo $val
+}
+
+#*> fmt_seconds <seconds>
+#*> <seconds> formated to the better format
+function fmt_seconds # $1 seconds
+{
+	typeset -ri seconds=$1
+
+	typeset -i minutes=$seconds/60
+
+	if [ $minutes -eq 0 ]
+	then
+		printf "%ds\n" $seconds
+	elif [ $minutes -lt 60 ]
+	then
+		typeset -i modulo=$(( seconds % 60 ))
+		printf "%dmn%02ds\n" $minutes $modulo
+	else
+		typeset -i hours=$minutes/60
+		typeset -i rem_mn=$(( minutes - hours*60 ))
+		typeset -i rem_sec=$(( seconds - (hours*60*60 + rem_mn*60) ))
+		printf "%dh%02dmn%02ds\n" $hours $rem_mn $rem_sec
+	fi
+}
+
 #*> fmt_number <number>
 #*> Format number english or french, use LANG to define the format.
 #*>
@@ -907,7 +936,7 @@ function fmt_kb2mb
 function to_mb
 {
 	typeset -r	arg=$1
-	typeset -r size_value=$(sed "s/.$//" <<< "$arg")
+	typeset -r	size_value=$(sed "s/.$//" <<< "$arg")
 
 	case $arg in
 		*G|*Gb|*GiB)
@@ -926,5 +955,25 @@ function to_mb
 			compute -i "$size_value/1024/1024"
 			;;
 	esac
+}
+
+################################################################################
+#	Fonctions inclassable
+################################################################################
+
+#*> return 0 if cmd $1 exists else return 1
+function test_if_cmd_exists
+{
+	which $1 >/dev/null 2>&1
+}
+
+#*< get_initiator_for <db> <#node>
+#*< return initiator name for <db> and node <#node>
+function get_initiator_for
+{
+	typeset -r db=$1
+	typeset -r num_node=$2
+
+	printf "%s%s:%02d" $iscsi_initiator_prefix $db $num_node
 }
 
