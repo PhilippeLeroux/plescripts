@@ -93,11 +93,6 @@ function connection_ssh_with_root_on_orclmaster
 	exec_cmd "~/plescripts/shell/connections_ssh_with.sh -server=$master_name -user=root"
 }
 
-function disable_selinux
-{
-	update_value SELINUX disable /etc/selinux/config
-}
-
 function register_server_2_dns
 {
 	line_separator
@@ -158,6 +153,12 @@ function loop_wait_server
 function reboot_server
 {
 	typeset -r server=$1
+
+	line_separator
+
+	info "Plymouth theme"
+	exec_cmd -c "ssh -t root@$server plescripts/shell/set_plymouth_them"
+	LN
 
 	info "Reboot :"
 	exec_cmd -c "ssh -t root@$server reboot"

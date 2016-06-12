@@ -164,24 +164,31 @@ fi
 
 case $role in
 	master)
+		line_separator
+		info "Disable selinux"
+		update_value SELINUX disabled /etc/selinux/config
+		LN
+
+		line_separator
 		exec_cmd yum -y install nfs-utils iscsi-initiator-utils deltarpm
 
+		line_separator
 		exec_cmd "echo \"$dns_hostname:/root/plescripts /mnt/plescripts nfs rsize=8192,wsize=8192,timeo=14,intr\" >> /etc/fstab"
 		exec_cmd -c mkdir /mnt/plescripts
 		exec_cmd -c mount /mnt/plescripts
 		LN
-		info "Disable selinux"
-		update_value SELINUX disabled /etc/selinux/config
-		LN
 		;;
 
 	dns)
+		line_separator
 		exec_cmd "~/plescripts/update_perms.sh"
 		LN
 
+		line_separator
 		exec_cmd yum -y install nfs-utils git targetcli deltarpm
 		LN
 
+		line_separator
 		exec_cmd "cp ~/plescripts/san/pletarget.service /usr/lib/systemd/system/"
 		exec_cmd systemctl enable pletarget
 		exec_cmd systemctl start pletarget
@@ -195,12 +202,14 @@ case $role in
 		exec_cmd systemctl start nfs-server
 		LN
 
+		line_separator
 		exec_cmd "sysctl -w net.ipv4.ip_forward=1"
 		exec_cmd "echo \"net.ipv4.ip_forward = 1\" >> /etc/sysctl.d/ip_forward.conf"
 		exec_cmd "firewall-cmd --permanent --direct --passthrough ipv4 -t nat -I POSTROUTING -o $if_net_name -j MASQUERADE -s ${infra_network}.0/24"
 		exec_cmd "firewall-cmd --reload"
 		LN
 
+		line_separator
 		info "Export /root/plescripts & /root/oracle_install :"
 		exec_cmd "echo \"/root/plescripts *(rw,sync,no_root_squash,no_subtree_check)\" >> /etc/exports"
 		exec_cmd "mkdir /root/oracle_install"

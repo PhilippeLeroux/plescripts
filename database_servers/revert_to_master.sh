@@ -73,6 +73,9 @@ LN
 exec_cmd "~/plescripts/gadgets/customize_logon.sh -name=$master_name"
 LN
 
+update_value SELINUX enforcing /etc/selinux/config
+LN
+
 exec_cmd "systemctl restart NetworkManager"
 LN
 
