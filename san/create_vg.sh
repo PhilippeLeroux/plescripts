@@ -8,9 +8,9 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME 
+"Usage : $ME
 	[-device=<str>] Nom du disque à utiliser, par exemple sdb.
-	[-vg=<str>]     Nom du VG à créer par exemple asm01.
+	[-vg=<str>]     Nom du VG à créer, par exemple asm01.
 "
 
 info "$ME $@"
