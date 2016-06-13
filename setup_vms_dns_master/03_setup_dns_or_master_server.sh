@@ -217,7 +217,7 @@ case $role in
 		exec_cmd exportfs -a
 		LN
 
-		exec_cmd "~/plescripts/create_vg.sh"
+		exec_cmd "~/plescripts/create_vg.sh -device=sdb -vg=asm01"
 		;;
 esac
 

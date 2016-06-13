@@ -9,19 +9,14 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME 
-	[-device=sdb] Nom du disque à utiliser, par défaut sdb.
-	[-vg=asm01]   Nom du VG à créer par défaut asm01.
-
-Lors de la création de la VM K2 sont attachés 2 disques, le second disque sdb
-est pour le vg asm01.
-
-Pour créer un autre VG sur un autre disque spécifier les arguments.
+	[-device=<str>] Nom du disque à utiliser, par exemple sdb.
+	[-vg=<str>]     Nom du VG à créer par exemple asm01.
 "
 
 info "$ME $@"
 
-typeset	device=sdb
-typeset vg=asm01
+typeset	device=undef
+typeset vg=undef
 
 while [ $# -ne 0 ]
 do
@@ -56,6 +51,9 @@ do
 			;;
 	esac
 done
+
+exit_if_param_undef device	"$str_usage"
+exit_if_param_undef vg		"$str_usage"
 
 #	exit if device $1 not exists
 function exit_if_device_not_exists
