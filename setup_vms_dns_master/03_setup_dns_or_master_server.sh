@@ -216,6 +216,8 @@ case $role in
 		exec_cmd "echo \"/root/oracle_install *(rw,sync,no_root_squash,no_subtree_check)\" >> /etc/exports"
 		exec_cmd exportfs -a
 		LN
+
+		exec_cmd "~/plescripts/create_vg.sh"
 		;;
 esac
 
