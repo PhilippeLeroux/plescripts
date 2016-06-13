@@ -5,45 +5,5 @@ function make_vimrc_file # $1 full_path_vimrc
 	typeset -r full_path_vimrc=$1
 
 	cp ~/plescripts/myconfig/myvimrc $full_path_vimrc
-return 0
-cat <<EOS >$full_path_vimrc
-let g:pathogen_disabled = []
-if has("gui_running")
-	call add(g:pathogen_disabled, 'vim-togglemouse')
-endif
-
-call pathogen#infect()
-call pathogen#helptags()
-
-set ts=4
-set sw=4
-set nowrap
-set guioptions+=b
-
-set cc=81
-
-set listchars=tab:→\ ,eol:¬,trail:⋅,nbsp:⋅
-
-"   Ne charge pas le driver noshowmatch qui est une grosse merde.
-let loaded_matchparen = 1
-
-set guifont=Monospace\ 12
-
-autocmd VimEnter * NERDTree %:p:
-map <C-t> :NERDTreeToggle<CR>
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-" Go to previous (last accessed) window.
-autocmd VimEnter * wincmd p
-
-set statusline+={fugitive#statusline()}
-
-"airline visible tout le temps
-set laststatus=2
-
-silent! colorscheme github
-silent! set mouse=a
-
-map <F2> :set spell spelllang=fr<CR>
-map <F3> :set nospell<CR>
-EOS
+	cp ~/plescripts/myconfig/.vimtips ${full_path_vimrc%/*}/.vimtips
 }

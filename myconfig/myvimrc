@@ -1,3 +1,12 @@
+set ts=4
+set sw=4
+set listchars=tab:→\ ,eol:¬,trail:⋅,nbsp:⋅
+set cc=81 wrap
+set nu
+
+if !has("compatible")
+"	A partir d'ici la configuration n'est pas compatible avec vi.
+
 if !exists( "g:first_load" )
 	" Permet d'éviter certaines actions sur
 	" un rechargement du fichier
@@ -93,8 +102,6 @@ autocmd BufNewFile,BufRead *.template set syn=off
 "	Activé pour le plugin markdown
 filetype plugin on
 
-set ts=4
-set sw=4
 if has("gui_running")
 	let g:colors_name1 = 'github'
 	let g:colors_name2 = 'sourcerer'
@@ -107,8 +114,6 @@ else
 	let g:colors_name2 = 'sourcerer'
 	set cc=81 nu wrap linebreak
 endif
-
-set listchars=tab:→\ ,eol:¬,trail:⋅,nbsp:⋅
 
 "	Recharge automatiquement les fichiers modifiés.
 set autoread
@@ -395,3 +400,6 @@ autocmd WinLeave README.md :call OnWinLeaveReadCurLineNu()
 autocmd WinEnter readme.txt if exists( "g:save_cursor" ) | call setpos('.', g:save_cursor) | endif
 autocmd WinEnter README.md if exists( "g:save_cursor" ) | call setpos('.', g:save_cursor) | endif
 "	============================================================================
+
+endif "!has("compatible")
+

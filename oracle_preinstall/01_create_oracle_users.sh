@@ -95,6 +95,9 @@ LN
 
 . ~/plescripts/oracle_preinstall/make_vimrc_file
 
+#	Met à jour root également.
+make_vimrc_file "/root/.vimrc"
+
 line_separator
 info "create users grid"
 exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper -s /bin/ksh -c \"Grid Infrastructure Owner\" grid
