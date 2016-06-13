@@ -60,10 +60,10 @@ then
 	LN
 fi
 
-#info "Config firewall"
-#exec_cmd "firewall-cmd --add-service=ntp --permanent"
-#exec_cmd "firewall-cmd --reload"
-#LN
+info "Config firewall"
+exec_cmd "firewall-cmd --add-service=ntp --permanent --zone=trusted"
+exec_cmd "firewall-cmd --reload"
+LN
 
 info "Enabled & start chrony"
 exec_cmd "systemctl enable chronyd"

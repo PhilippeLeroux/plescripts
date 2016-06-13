@@ -1,0 +1,9 @@
+chronyc sources
+chronyc tracking
+chronyc sourcestats
+chronyc makestep
+
+
+Les serveurs clients ajouter :
+initstepslew 20 K2.orcl       
+Permet de corriger rapidement le temps.                                                   
