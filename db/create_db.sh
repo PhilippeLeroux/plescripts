@@ -16,23 +16,23 @@ typeset -r ME=$0
 #	C'est probablement liée à la faible quantité de RAM.
 #	TODO Rendre optionnel le paramétrage de la shared_pool_size
 typeset -ri	min_memory_mb=444
-typeset -ri min_shared_pool_size_mb=256
+typeset -ri	min_shared_pool_size_mb=256
 
-typeset name=undef
-typeset db=undef
-typeset sysPassword=$oracle_password
-typeset -i memory_mb=$min_memory_mb
-typeset data=DATA
-typeset fra=FRA
-typeset templateName=General_Purpose.dbc
-typeset db_type=undef
-typeset node_list=undef
-typeset usefs=no
-typeset cdb=yes
-typeset lang=french
-typeset verbose=no
-typeset pdbName=undef
-typeset serverPoolName=undef
+typeset		name=undef
+typeset		db=undef
+typeset		sysPassword=$oracle_password
+typeset -i	memory_mb=$min_memory_mb
+typeset		data=DATA
+typeset		fra=FRA
+typeset		templateName=General_Purpose.dbc
+typeset		db_type=undef
+typeset		node_list=undef
+typeset		usefs=no
+typeset		cdb=yes
+typeset		lang=french
+typeset		verbose=no
+typeset		pdbName=undef
+typeset		serverPoolName=undef
 
 typeset -r str_usage=\
 "Usage : $ME
