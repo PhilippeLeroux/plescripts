@@ -3,7 +3,7 @@ set echo off
 rem Nom de la VM
 set VM_NAME=K2
 
-set SHARED_WINDOWS_PATH=256
+set SHARED_WINDOWS_PATH=C:\Program Files\Oracle\VirtualBox
 
 rem mémoire :
 rem Pour l'installation de l'OS 1Gb c'est mieux

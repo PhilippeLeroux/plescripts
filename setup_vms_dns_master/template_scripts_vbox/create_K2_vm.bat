@@ -3,7 +3,7 @@ set echo off
 rem Nom de la VM
 set VM_NAME=DNS_NAME
 
-set SHARED_WINDOWS_PATH=VM_MEMORY_MB_FOR_DNS
+set SHARED_WINDOWS_PATH=VM_SHARED_DIRECTORY
 
 rem mémoire :
 rem Pour l'installation de l'OS 1Gb c'est mieux

@@ -58,10 +58,10 @@ LN
 exec_cmd "sed -i \"s!DNS_NAME!$dns_hostname!\" $vbox_directory/createvm.bat"
 LN
 
-info "Mise à jour de create_mydns_vm.bat :"
+info "Mise à jour de create_K2_vm.bat :"
 exec_cmd "sed -i \"s!DNS_NAME!$dns_hostname!\" $vbox_directory/create_K2_vm.bat"
 LN
-exec_cmd "sed -i \"s!VM_MEMORY_MB_FOR_DNS!$vm_memory_mb_for_dns!\" $vbox_directory/create_K2_vm.bat"
+exec_cmd "sed -i \"s!VM_SHARED_DIRECTORY!$(triple_slash $vm_shared_directory)!\" $vbox_directory/create_K2_vm.bat"
 LN
 
 info "Mise à jour de create_orclmaster.bat :"

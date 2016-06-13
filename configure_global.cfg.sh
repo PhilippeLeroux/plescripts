@@ -50,6 +50,7 @@ do
 			hostvm_type=windows_virtualbox
 			vm_binary_p="C:\Program Files\Oracle\VirtualBox"
 			vm_p="C:\Users\kangs\VirtualBox VMs"
+			vm_shared_dir="C:\Users\kangs\Desktop\shared"
 			full_linux_iso_n="C:\Users\kangs\Desktop\iso_linux\V100082-01.iso"
 			break;
 			;;
@@ -102,6 +103,8 @@ ask_for vm_binary_p "Hypervisor full installation path :"
 
 ask_for vm_p "Full path to store VMs :"
 
+ask_for vm_shared_dir "Shared path from windows :"
+
 ask_for full_linux_iso_n "Full path for Oracle Linux 7 ISO (...V100082-01.iso) :"
 
 #	Si l'installation se fait depuis K2 alors la synchronisation NTP par défaut
@@ -127,5 +130,8 @@ exec_cmd "sed -i 's/full_linux_iso_name=.*$/full_linux_iso_name=\"$full_linux_is
 LN
 
 exec_cmd "sed -i 's/master_time_server=.*$/master_time_server=$master_time_s/g' ~/plescripts/global.cfg"
+LN
+
+exec_cmd "sed -i 's/vm_shared_directory=.*$/vm_shared_directory=\"$vm_shared_dir\"/g' ~/plescripts/global.cfg"
 LN
 
