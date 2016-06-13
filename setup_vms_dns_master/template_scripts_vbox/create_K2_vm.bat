@@ -1,9 +1,9 @@
 set echo off 
 
 rem Nom de la VM
-set VM_NAME=K2
+set VM_NAME=DNS_NAME
 
-set SHARED_WINDOWS_PATH=C:\Users\kangs\Desktop\shared
+set SHARED_WINDOWS_PATH=VM_MEMORY_MB_FOR_DNS
 
 rem mémoire :
 rem Pour l'installation de l'OS 1Gb c'est mieux
