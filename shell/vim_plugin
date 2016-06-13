@@ -11,10 +11,11 @@ typeset -r plugin_list=~/plescripts/shell/vim_plugin_list.txt
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-           -url=<url>
-           -show
-           -del=<plugin name>
-           -init
+	-url=<url>         : Installe depuis l'url github un plugin
+	-show              : Affiche l'ensemble des plugins installés.
+	-del=<plugin name> : Supprime un plugin
+	-init              : Réinitialise tous les plugins.
+	-backup            : backup .vim dans le répertoire gadget.
 
 Pour l'initialisation (-init) les plugins à installer sont lues dans le fichier :
 	$plugin_list
@@ -51,6 +52,11 @@ do
 		-del=*)
 			plugin_name=${1##*=}
 			action=uninstall_plugin
+			shift
+			;;
+
+		-backup)
+			action=backup
 			shift
 			;;
 
@@ -173,9 +179,14 @@ function install_all
 #	======================================================================
 
 #	Si aucun argument l'action par défaut est -show
-[ $action == undef ] && action=show && info "$str_usage"
+[ $action == undef ] && action=show && info "$str_usage" && LN
 
 case $action in
+	backup)
+		exec_cmd "tar cf - .vim -C ~/ | gzip -c > ~/plescripts/gadgets/vim.tar.gz"
+		LN
+		;;
+
 	init)
 		install_all
 		LN

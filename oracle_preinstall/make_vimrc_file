@@ -4,6 +4,7 @@ function make_vimrc_file # $1 full_path_vimrc
 {
 	typeset -r full_path_vimrc=$1
 
-	cp ~/plescripts/myconfig/myvimrc $full_path_vimrc
-	cp ~/plescripts/myconfig/.vimtips ${full_path_vimrc%/*}/.vimtips
+	info "Copy vim config"
+	exec_cmd "cp ~/plescripts/myconfig/myvimrc $full_path_vimrc"
+	exec_cmd "cp ~/plescripts/myconfig/vimtips ${full_path_vimrc%/*}/.vimtips"
 }

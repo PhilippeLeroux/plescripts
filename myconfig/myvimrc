@@ -103,15 +103,15 @@ autocmd BufNewFile,BufRead *.template set syn=off
 filetype plugin on
 
 if has("gui_running")
-	let g:colors_name1 = 'github'
-	let g:colors_name2 = 'sourcerer'
+	let g:light_colors_name = 'github'
+	let g:dark_colors_name = 'sourcerer'
 	set guifont=Monospace\ 12
 	set guioptions+=b
-	set cc=81 nowrap
+	set cc=81 nonu nowrap
 else
 	silent! set mouse=a
-	let g:colors_name1 = 'github'
-	let g:colors_name2 = 'sourcerer'
+	let g:light_colors_name = 'github'
+	let g:dark_colors_name = 'sourcerer'
 	set cc=81 nu wrap linebreak
 endif
 
@@ -280,13 +280,13 @@ autocmd VimEnter * wincmd p
 "	============================================================================
 function! ToggleColorscheme()
 	if ! exists( "g:colors_name" )
-		let g:colors_name=g:colors_name2
+		let g:colors_name=g:dark_colors_name
 	endif
 
-	if g:colors_name == g:colors_name2
-		execute "colorscheme ".g:colors_name1
+	if g:colors_name == g:dark_colors_name
+		execute "colorscheme ".g:light_colors_name
 	else
-		execute "colorscheme ".g:colors_name2
+		execute "colorscheme ".g:dark_colors_name
 	endif
 endfunction
 
@@ -333,6 +333,7 @@ nnoremap <silent> <F9> :call ToggleVimTips()<CR>
 nnoremap <silent> <C-p> :GitGutterPrevHunk<CR>
 nnoremap <silent> <C-n> :GitGutterNextHunk<CR>
 
+if has( "gui_running" )
 "	============================================================================
 "	Mise à jour auto readme.txt et README.md
 "	============================================================================
@@ -399,6 +400,7 @@ autocmd WinLeave readme.txt :call OnWinLeaveReadCurLineNu()
 autocmd WinLeave README.md :call OnWinLeaveReadCurLineNu()
 autocmd WinEnter readme.txt if exists( "g:save_cursor" ) | call setpos('.', g:save_cursor) | endif
 autocmd WinEnter README.md if exists( "g:save_cursor" ) | call setpos('.', g:save_cursor) | endif
+endif "	has( "gui_running" )
 "	============================================================================
 
 endif "!has("compatible")
