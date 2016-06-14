@@ -1,0 +1,18 @@
+A scripter :
+	Sur le serveur K2 forcer bind à utiliser IPV4 : permet de diminuer le nombre
+	de messages d'erreurs dans /var/log/messages liées à IPv6
+
+	/etc/sysconfig/named
+	Ajouter OPTIONS="-4"
+
+Dans shell :
+	Créer un script pour synchroniser l'heure les serveurs sur K2.
+	Quand l'OS guess se met en hibernation les horloges mettent trop de temps à
+	se synchroniser.
+
+	Nom      : synctime
+	Commande : chronyc -a makestep
+	Test     : les nœuds d'un RAC vont ils survivre.
+
+BUG : le script 01_update_vms_scripts.sh n'utilise pas la variable vm_memory_mb_for_infra
+le fichier finalize.bat ne prend donc pas en compte la modification éventuelle.
