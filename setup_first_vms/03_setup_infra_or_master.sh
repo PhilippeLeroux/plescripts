@@ -7,7 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -role=dns|master"
+typeset -r str_usage="Usage : $ME -role=infra|master"
 
 typeset role=undef
 
@@ -28,19 +28,19 @@ do
 	esac
 done
 
-exit_if_param_undef role	"$str_usage"
-exit_if_param_undef ip_node	"$str_usage"
+exit_if_param_undef role	"infra master"	"$str_usage"
+exit_if_param_undef ip_node					"$str_usage"
 
 typeset ip_pub
 typeset ip_priv
 
 case $role in
-	dns)
-		ip_pub=${dns_ip}
-		ip_priv=${if_priv_network}.${dns_ip_node}
-		if [ "$(hostname -s)" != "$dns_hostname" ]
+	infra)
+		ip_pub=${infra_ip}
+		ip_priv=${if_priv_network}.${infra_ip_node}
+		if [ "$(hostname -s)" != "$infra_hostname" ]
 		then
-			error "Le nom du serveur ne correspond pas à dns_hostname=$dns_hostname"
+			error "Le nom du serveur ne correspond pas à infra_hostname=$infra_hostname"
 			error "du fichier ~/plescripts/global.cfg"
 			exit 1
 		fi
@@ -52,9 +52,9 @@ case $role in
 			exit 1
 		fi
 
-		if [ "$ip_pub" != "$dns_ip" ]
+		if [ "$ip_pub" != "$infra_ip" ]
 		then
-			error "L'ip du serveur ne correspond pas à dns_ip"
+			error "L'ip du serveur ne correspond pas à infra_ip"
 			error "du fichier ~/plescripts/global.cfg"
 			exit 1
 		fi
@@ -101,7 +101,7 @@ LN
 
 typeset -i count_error=0
 
-if [ $role = dns ]
+if [ $role == infra ]
 then
 	info "Configure interface $if_net_name :"
 	if [ ! -f $if_net_file ]
@@ -173,13 +173,13 @@ case $role in
 		exec_cmd yum -y install nfs-utils iscsi-initiator-utils deltarpm
 
 		line_separator
-		exec_cmd "echo \"$dns_hostname:/root/plescripts /mnt/plescripts nfs rsize=8192,wsize=8192,timeo=14,intr\" >> /etc/fstab"
+		exec_cmd "echo \"$infra_hostname:/root/plescripts /mnt/plescripts nfs rsize=8192,wsize=8192,timeo=14,intr\" >> /etc/fstab"
 		exec_cmd -c mkdir /mnt/plescripts
 		exec_cmd -c mount /mnt/plescripts
 		LN
 		;;
 
-	dns)
+	infra)
 		line_separator
 		exec_cmd "~/plescripts/update_perms.sh"
 		LN
@@ -225,7 +225,7 @@ exec_cmd ~/plescripts/ntp/config_ntp.sh -role=$role
 
 exec_cmd ~/plescripts/gadgets/install.sh $role
 
-if [ $role = master ]
+if [ $role == master ]
 then
 	exec_cmd rm -rf ~/plescripts
 	exec_cmd ln -s /mnt/plescripts ~/plescripts

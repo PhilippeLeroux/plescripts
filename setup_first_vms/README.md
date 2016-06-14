@@ -14,7 +14,7 @@ Ces scripts servent à créer les 2 VMs K2 et orclmaster.
 
 	* Depuis Linux éditer le script ~/plescripts/global.cfg et ajuster les noms
 	des répertoires puis exécuter : `01_update_vms_scripts.sh`
-		
+
 --------------------------------------------------------------------------------
 
 Les scripts ci dessous doivent être exécuter depuis la VM avec le compte root
@@ -23,7 +23,7 @@ Les scripts ci dessous doivent être exécuter depuis la VM avec le compte root
 
 	Configure le compte root et met à jour l'OS.
 
-* 03_setup_dns_or_master_server.sh -role=dns|master
+* 03_setup_infra_or_master.sh.sh -role=infra|master
 
 	Configure le serveur en fonction de son rôle
 

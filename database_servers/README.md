@@ -97,7 +97,7 @@ Création de nouveaux serveurs :
 
 6.	C'est terminé.
 
-	Pour créer une base voir [README.md](https://github.com/PhilippeLeroux/plescripts/db/README.md)
+	Pour créer une base voir [README.md](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
 Recycler un serveur :
 ---------------------

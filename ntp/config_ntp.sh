@@ -9,8 +9,8 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -role=[dns|master]
-Configure NTP for dns or master server (use chrony).
+"Usage : $ME -role=[infra|master]
+Configure NTP for infra or master server (use chrony).
 "
 
 typeset role=undef
@@ -43,12 +43,12 @@ do
 	esac
 done
 
-exit_if_param_invalid role "master dns" "$str_usage"
+exit_if_param_invalid role "master infra" "$str_usage"
 
 typeset -r chrony_conf=/etc/chrony.conf
 exit_if_file_not_exists $chrony_conf
 
-[ $role = master ] && time_server=$dns_hostname || time_server=$master_time_server
+[ $role = master ] && time_server=$infra_hostname || time_server=$master_time_server
 
 if [ $time_server != internet ]
 then
