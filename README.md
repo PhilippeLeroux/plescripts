@@ -34,7 +34,7 @@ La première version se basait sur KVM, Oracle Linux 6, OpenFiler et un serveur 
 Il était possible d'installer Oracle 11gR2 ou Oracle 12cR1 en SINGLE ou RAC.
 
 Cette version ce base maintenant uniquement sur Oracle Linux 7, OpenFiler est abandonné
-pour targetcli qui à le gros avantage d'être scriptable et seul Oracle 12cR1 est
+pour targetcli qui à le gros avantage d'être scriptable, seul Oracle 12cR1 est
 pris en charge et le RAC étendu n'est plus pris en compte.
 
 L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable,
@@ -84,7 +84,7 @@ d'infrastructure.
 
 --------------------------------------------------------------------------------
 # Pré requis :
-* Disposer d'une machine assez puissant, pour une RAC il faut au minimum 8Gb de RAM.
+* Disposer d'une machine assez puissant, pour un RAC il faut au minimum 8Gb de RAM.
 
 * Télécharger les logiciels suivants :
 
