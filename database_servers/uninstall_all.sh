@@ -130,6 +130,9 @@ then
 	action=$all_actions
 fi
 
+#	Les fonctions get_other_nodes & root_execute_on_other_nodes sont dupliquées
+#	dans db/delete_db.sh
+
 #	Retourne tous les noeuds du cluster moins le noeud courant.
 #	Si le serveur courant n'appartient pas à un cluster la fonction
 #	ne retourne rien.
