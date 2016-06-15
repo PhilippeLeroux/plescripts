@@ -35,7 +35,7 @@ Il était possible d'installer Oracle 11gR2 ou Oracle 12cR1 en SINGLE ou RAC.
 
 Cette version ce base maintenant uniquement sur Oracle Linux 7, OpenFiler est abandonné
 pour targetcli qui à le gros avantage d'être scriptable et seul Oracle 12cR1 est
-pris en charge.
+pris en charge et le RAC étendu n'est plus pris en compte.
 
 L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable,
 mais il fort probable que je finisse par utiliser KVM dans un futur proche en
@@ -58,7 +58,7 @@ des disques sont définies à partir du nom de la base.
 * Installation du GI (Les bases SINGLE sur FS sont possibles mais pas documentées).
 
 	Que la base soit SINGLE ou RAC il n'y a qu'un script à exécuter, les scripts
-root pré installation sont automatiquement exécuter sur le serveur ou l'ensemble
+root de pré installations sont automatiquement exécutés sur le serveur ou l'ensemble
 des nœuds d'un RAC.
 
 * Installation d'Oracle
