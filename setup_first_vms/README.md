@@ -13,11 +13,11 @@ Ces scripts servent à créer les 2 VMs K2 et orclmaster.
 	* Depuis windows éditer le script createvm.bat pour ajuster le nom des répertoires.
 
 	* Depuis Linux éditer le script ~/plescripts/global.cfg et ajuster les noms
-	des répertoires puis exécuter : `01_update_vms_scripts.sh`
+	des répertoires puis exécuter : `update_vms_scripts.sh`
 
 --------------------------------------------------------------------------------
 
-Les scripts ci dessous doivent être exécuter depuis la VM avec le compte root
+Les scripts ci dessous doivent être exécutés depuis la VM avec le compte root
 
 * 02_update_config.sh
 
