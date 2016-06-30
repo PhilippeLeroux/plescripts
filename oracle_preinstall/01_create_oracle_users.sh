@@ -77,6 +77,20 @@ exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
 
 line_separator
 info "create all groups"
+#Generic Name          OS Group    Admin Privilege   Description
+#====================  ==========  ================  =================================
+#OraInventory Owner    oinstall                      (Mandatory)
+#OSDBA                 dba         SYSDBA            Full admin privileges (Mandatory)
+#OSOPER                oper        SYSOPER           Subset of admin privileges
+#
+#OSDBA (for ASM)       asmdba
+#OSASM                 asmadmin    SYSASM            ASM management
+#OSOPER (for ASM)      asmoper     
+#
+#OSBACKUPDBA           backupdba   SYSBACKUP         RMAN management
+#OSDGDBA               dgdba       SYSDG             Data Guard management
+#OSKMDBA               kmdba       SYSKM             Encryption key management
+
 exec_cmd groupadd -g 1000 oinstall
 #	asmadmin : util pour oracle asm.
 exec_cmd groupadd -g 1200 asmadmin
@@ -87,6 +101,11 @@ exec_cmd groupadd -g 1203 oper
 #
 exec_cmd groupadd -g 1250 dba
 LN
+
+# Pour la 12cR1 : ignoré pour le moment.
+#exec_cmd groupadd -g 1260 backupdba		#	RMAN management
+#exec_cmd groupadd -g 1270 dgdba			#	Data Guard management
+#exec_cmd groupadd -g 1280 kmdba			#	Encryption key management
 
 line_separator
 info "remove $GRID_ROOT/"
