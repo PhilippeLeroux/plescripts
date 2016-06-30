@@ -54,15 +54,28 @@ function test_ip_uniq
 
 info "Nombre d'IPs : ${#ip_list[@]}"
 #info "IPs : ${ip_list[@]}"
-typeset -i i=0
+typeset	-i	dup=0
+typeset -i	i=0
 while [ $i -lt ${#ip_list[@]} ]
 do
 	info -n "IP $(( i + 1 )) : ${ip_list[$i]}"
 	test_ip_uniq $i
-	[ $? -ne 0 ] && info -f " : IP dupliquée." || LN
+	if [ $? -ne 0 ]
+	then
+		info -f " : IP dupliquée."
+		dup=dup+1
+	else
+		LN
+	fi
 	i=i+1
 done
 LN
+
+info "$dup ping sur la même IP"
+LN
+
+[ $dup -eq 3 ] && warning "Cache DNS actif ?" && LN
+
 
 line_separator
 info "nslookup"
