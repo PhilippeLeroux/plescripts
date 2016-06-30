@@ -63,15 +63,14 @@ case $action in
 esac
 
 typeset -r hostn=$(hostname -s)
-typeset -r dns_ip=$(hostname -I|cut -d' ' -f1)
 typeset -r domain_name=$(hostname -d)
 
-IFS='.' read ip1 ip2 ip3 dns_ip_node<<<"$dns_ip"
+IFS='.' read ip1 ip2 ip3 rem<<<"$dns_ip"
 typeset -r reversed_network="$ip3.$ip2.$ip1"
 
-typeset -r named_conf_template=config_template/named.conf.template
-typeset -r name_domain_template=config_template/named.domain.template
-typeset -r reverse_domain_template=config_template/reverse.domain.template
+typeset -r named_conf_template=~/plescripts/dns/install/config_template/named.conf.template
+typeset -r name_domain_template=~/plescripts/dns/install/config_template/named.domain.template
+typeset -r reverse_domain_template=~/plescripts/dns/install/config_template/reverse.domain.template
 
 typeset -r named_conf=$etc_path/named.conf
 typeset -r named_domain=$var_named_path/named.${domain_name}
@@ -91,8 +90,8 @@ copy $named_conf_template $named_conf
 replace DNS_IP				$dns_ip				$named_conf
 replace DOMAIN_NAME			$domain_name		$named_conf
 replace	REVERSED_NETWORK	$reversed_network	$named_conf
-replace infra_network		$infra_network		$named_conf
-replace infra_mask			$infra_mask			$named_conf
+replace MY_NETWORK			$infra_network		$named_conf
+replace MY_MASK				$infra_mask			$named_conf
 LN
 
 info "Configuration de $named_domain"
