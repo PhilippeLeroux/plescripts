@@ -17,6 +17,10 @@ function set_targetcli_default_settings
 	info "Pas de création du portal 0.0.0.0"
 	exec_cmd targetcli / set global auto_add_default_portal=false
 	LN
+
+	info "Pas de sauvegardes automatique."
+	exec_cmd targetcli / set global auto_save_on_exit=false
+	LN
 }
 
 function reset
