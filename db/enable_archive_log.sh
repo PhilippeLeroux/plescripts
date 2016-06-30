@@ -40,7 +40,7 @@ EOS
 
 function enable_archivelog
 {
-exec_cmd "srvctl stop database -db $ORACLE_SID"
+exec_cmd "srvctl stop database -db $ORACLE_DB"
 fake_exec_cmd "sqlplus sys/$oracle_password as sysdba"
 sqlplus sys/$oracle_password as sysdba<<EOS
 set echo off
@@ -60,7 +60,7 @@ archive log list;
 prompt shutdown immediate
 shutdown immediate
 EOS
-exec_cmd "srvctl start database -db $ORACLE_SID"
+exec_cmd "srvctl start database -db $ORACLE_DB"
 }
 
 test_if_cmd_exists olsnodes
