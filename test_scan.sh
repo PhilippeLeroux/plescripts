@@ -4,39 +4,66 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME ...."
 
-while [ $# -ne 0 ]
-do
-	case $1 in
-		-emul)
-			EXEC_CMD_ACTION=NOP
-			first_args=-emul
-			shift
-			;;
+typeset scan_name=$1
+[ x"$scan_name" == x ] && scan_name=$(olsnodes -c)
 
-		*)
-			error "Arg '$1' invalid."
-			LN
-			info "$str_usage"
-			exit 1
-			;;
-	esac
-done
 
-typeset -r scan_name=$(olsnodes -c)
+exec_cmd -ci "systemctl status nscd.service 2>/dev/null 1>&2"
+if [ $? -eq 0 ]
+then
+	LN
+	LN
+	line_separator
+	warning "La cache DNS est actif, seul une IP de l'adresse de SCAN sera donc utilisée"
+	line_separator
+	LN
+fi
+LN
 
+typeset -a	ip_list
+
+line_separator
 info "Test $scan_name"
 for i in $( seq 1 3 )
 do
-	info "Ping $i"
-	exec_cmd ping -c 1 $scan_name
-	LN
+	ip_list[$((i-1))]=$(ping -c 1 $scan_name | head -2 | tail -1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/")
 done
 
+# $1 indice de l'IP dans ip_list
+function test_ip_uniq
+{
+	typeset -ri indice=$1
+
+	typeset -i count_diffs=0
+	typeset -i i=0
+	while [ $i -lt ${#ip_list[@]} ]
+	do
+		if [ $i -ne $indice ]
+		then
+			[ "${ip_list[$i]}" != "${ip_list[$indice]}" ] && count_diffs=count_diffs+1
+		fi
+		i=i+1
+	done
+
+	[ $count_diffs -eq 2 ] && return 0 || return 1
+}
+
+info "Nombre d'IPs : ${#ip_list[@]}"
+#info "IPs : ${ip_list[@]}"
+typeset -i i=0
+while [ $i -lt ${#ip_list[@]} ]
+do
+	info -n "IP $(( i + 1 )) : ${ip_list[$i]}"
+	test_ip_uniq $i
+	[ $? -ne 0 ] && info -f " : IP dupliquée." || LN
+	i=i+1
+done
+LN
+
+line_separator
 info "nslookup"
 exec_cmd nslookup $scan_name
