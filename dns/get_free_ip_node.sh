@@ -52,6 +52,7 @@ while read ip_node rem
 do
 	if [ $ip_node -gt 9 ]
 	then
+		[ $prev_ip_node -eq 0 ] && prev_ip_node=$ip_node
 		if [ $ip_node -gt $(( $prev_ip_node + 2 )) ]
 		then
 			if [ $(( $prev_ip_node + $range )) -lt $ip_node ]
@@ -60,8 +61,8 @@ do
 				break
 			fi
 		fi
+		prev_ip_node=ip_node
 	fi
-	prev_ip_node=ip_node
 done<<<"$(cat /var/named/reverse.orcl	|\
 				grep "^[0-9]"			|\
 				grep -v arpa			|\
