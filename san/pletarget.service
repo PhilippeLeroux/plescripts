@@ -1,7 +1,7 @@
 [Unit]
 Description=Restore LIO kernel target configuration
 Requires=sys-kernel-config.mount
-After=sys-kernel-config.mount network.target local-fs.target
+After=sys-kernel-config.mount network.target local-fs.target proc-fs-nfsd.mount var-lib-nfs-rpc_pipefs.mount nfs-config.service nfs-idmapd.service nfs-mountd.service nfs-server.service nfs-client.target
 
 [Service]
 Type=oneshot
