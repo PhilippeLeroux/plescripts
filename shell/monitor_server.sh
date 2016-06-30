@@ -19,8 +19,6 @@ typeset -r xterm_static_options="-fa 'Monospace' -fs 14"
 
 db=$1
 
-[ $db = undef ] && exit 0
-
 if [ $# -eq 0 ]
 then
 	[ -f /tmp/id_db ] && ID_DB=$(cat /tmp/id_db)
