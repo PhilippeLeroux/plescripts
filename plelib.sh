@@ -134,11 +134,19 @@ then
 	mkdir $PLELOG_PATH >/dev/null 2>&1
 	chmod ug=rwx,o=rx $PLELOG_PATH >/dev/null 2>&1
 fi
+
+if [ ! -f $PLELIB_LOG_FILE ]
+then	# Obligatoire lors de l'utilisation répertoire partagé vboxf
+		# Avec NFS pas de problème (plus utilisé pour lenteur excessive)
+	touch $PLELIB_LOG_FILE
+	chmod ug=rwx,o=rx $PLELIB_LOG_FILE
+fi
+
 #	============================================================================
 
 if [ ! -z PLE_SHOW_EXECUTION_TIME_AFTER ]
-then # Temps en secondes, le temps d'exécution des commandes est affiché
-	 # s'il est supérieur à cette variable
+then	# Temps en secondes, le temps d'exécution des commandes est affiché
+		# s'il est supérieur à cette variable
 	typeset -i PLE_SHOW_EXECUTION_TIME_AFTER=60
 fi
 
@@ -743,8 +751,8 @@ function fill
 #*> pause_in_secs <seconds>
 #*> Fait une pause de <seconds> secondes.
 #*> Le décompte du temps écoulé sera affiché à la position courante du curseur.
-#*> Retourne la longeur utilisée pour afficher le décompte ce qui permet
-#*> d'éffacer l'affichage.
+#*> Retourne la longueur utilisée pour afficher le décompte ce qui permet
+#*> d'effacer l'affichage.
 function pause_in_secs
 {
 	typeset -ri	max_secs=$1
