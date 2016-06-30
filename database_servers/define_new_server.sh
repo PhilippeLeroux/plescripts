@@ -226,10 +226,10 @@ then
 	do
 		read keyboard
 		case "$keyboard" in
-			yes)
+			yes|y)
 				loop=no
 				;;
-			no)
+			no|n)
 				exit 0
 				;;
 			*)
