@@ -87,7 +87,7 @@ export EDITOR=vi
 
 #	alias vi sur gvim s'il est installé.
 which gvim >/dev/null 2>&1
-[ $? -eq 0 ] && alias vi=gvim
+[ $? -eq 0 ] && alias vi='gvim >/dev/null 2>&1'
 
 alias root='with root'
 alias grid='with grid'
