@@ -68,7 +68,7 @@ do
 		*)
 			error "Arg '$1' invalid."
 			LN
-			info $str_usage
+			info "$str_usage"
 			LN
 			exit 1
 			;;
