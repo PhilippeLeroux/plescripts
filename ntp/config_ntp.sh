@@ -61,8 +61,8 @@ then
 fi
 
 info "Config firewall"
-exec_cmd "firewall-cmd --add-service=ntp --permanent --zone=trusted"
-exec_cmd "firewall-cmd --reload"
+exec_cmd -c "firewall-cmd --add-service=ntp --permanent --zone=trusted"
+exec_cmd -ci "firewall-cmd --reload"
 LN
 
 info "Enabled & start chrony"
