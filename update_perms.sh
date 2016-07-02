@@ -30,7 +30,7 @@ exec_cmd -c "sudo find ~/plescripts/shell -type f -and ! -name \"*.txt\" | xargs
 LN
 
 info "Cas particulier de template_script.txt"
-exec_cmd "chmod ug=rwx,o=r ~/plescripts/template_script.txt"
+exec_cmd "sudo chmod ug=rwx,o=r ~/plescripts/template_script.txt"
 LN
 
 info "Les docs"
