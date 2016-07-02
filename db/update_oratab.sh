@@ -42,12 +42,19 @@ exit_if_dir_not_exists $cfg_path
 
 typeset -ri max_nodes=$(ls -1 $cfg_path/node*|wc -l)
 
-upper_db=$(to_upper $db)
+typeset -r	upper_db=$(to_upper $db)
 
 line_separator
 info "Mise à jour de /etc/oratab"
 for inode in $( seq 1 $max_nodes )
 do
-	exec_cmd "echo \"${upper_db}$inode:/u01/app/oracle/$oracle_release/dbhome_1:N	#added by bibi\" >> /etc/oratab"
+	INSTANCE=${upper_db}$inode
+	grep "$INSTANCE" /etc/oratab 2>/dev/null 1>&2
+	if [ $? -eq 0 ]
+	then
+		info "$INSTANCE est déjà dans /etc/oratab"
+	else
+		exec_cmd "echo \"${INSTANCE}:/u01/app/oracle/$oracle_release/dbhome_1:N	#added by bibi\" >> /etc/oratab"
+	fi
 done
 
