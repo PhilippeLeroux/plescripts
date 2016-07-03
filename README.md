@@ -18,13 +18,16 @@ Cette version se base maintenant uniquement sur Oracle Linux 7, OpenFiler est ab
 pour targetcli qui a le gros avantage d'être scriptable, seul Oracle 12cR1 est
 pris en charge et le RAC étendu n'est plus pris en compte.
 
-L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable,
-mais il est fort probable que je finisse par utiliser KVM dans un futur proche en
-essayant de toujours fonctionner avec VirtualBox pour linux.
+L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable.
+Une adaptation pour KVM sera sans doute effectuée.
 
 --------------------------------------------------------------------------------
 
-# Description rapide de la création d'une base :
+# Publics : DBA Oracle
+
+--------------------------------------------------------------------------------
+
+# Étapes pour la création d'une base :
 
 La création d'une nouvelle base SINGLE ou RAC se fait en 5 étapes :
 * Définition du nom de la base et du nombre de nœuds : le nom du ou des serveurs,
