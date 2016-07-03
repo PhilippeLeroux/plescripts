@@ -131,15 +131,18 @@ fi
 
 if [ "$PLELIB_OUTPUT" = "FILE" ] && [ ! -d $PLELOG_PATH ]
 then
+	echo "mkdir $PLELOG_PATH"
 	mkdir $PLELOG_PATH >/dev/null 2>&1
-	chmod ug=rwx,o=rx $PLELOG_PATH >/dev/null 2>&1
+	chmod ug=rwx,o=rx $PLELOG_PATH
+	[ $? -ne 0 ] && exit 1
 fi
 
 if [ ! -f $PLELIB_LOG_FILE ]
 then	# Obligatoire lors de l'utilisation répertoire partagé vboxf
 		# Avec NFS pas de problème (plus utilisé pour lenteur excessive)
-	touch $PLELIB_LOG_FILE 2>/dev/null 1>&2
+	touch $PLELIB_LOG_FILE >/dev/null 2>&1
 	chmod ug=rwx,o=rx $PLELIB_LOG_FILE
+	[ $? -ne 0 ] && exit 1
 fi
 
 #	============================================================================
@@ -438,14 +441,16 @@ function exec_cmd
 		esac
 	done
 
+	typeset -r simplify_cmd=$(echo "$@" | tr -s [:space:])
+
 	case $EXEC_CMD_ACTION in
 		NOP)
-			my_echo "${YELLOW}" "nop > " "$@"
+			my_echo "${YELLOW}" "nop > " "$simplify_cmd"
 			;;
 
 		EXEC)
 			[ $force = YES ] && COL=$RED || COL=$YELLOW
-			[ $hide_command == NO ] && my_echo "$COL" "$(date +"%Hh%M")> " "$@"
+			[ $hide_command == NO ] && my_echo "$COL" "$(date +"%Hh%M")> " "$simplify_cmd"
 
 			eval_start_at=$SECONDS
 			if [ x"$PLELIB_LOG_FILE" = x ]
