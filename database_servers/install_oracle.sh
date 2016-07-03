@@ -200,6 +200,8 @@ trap on_exit EXIT
 #	============================================================================
 #	MAIN
 #	============================================================================
+typeset -r script_start_at=$SECONDS
+
 line_separator
 for file in $dir_files/node*
 do
@@ -242,6 +244,9 @@ then
 
 	typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
 	[ "$type_disks" == FS ] && exec_cmd "ssh -t root@${node_names[$i]} \"~/plescripts/db/create_systemd_service_oracledb.sh\""
+
+	info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
+	LN
 
 	info "Database can be created."
 fi

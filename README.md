@@ -36,18 +36,26 @@ des disques sont définies à partir du nom de la base.
 	* Enregistrer le serveur dans le DNS : utilisation de bind9.
 	* Mapper les disques du SAN sur le ou les serveurs : utilisation d'oracleasm.
 
+	Temps de clonage : ~8mn par serveurs.
+
 * Installation du GI et création des DGs.
 
 	Que la base soit SINGLE ou RAC il n'y a qu'un script à exécuter, les scripts
 root de pré installations sont automatiquement exécutés sur le serveur ou l'ensemble
 des nœuds d'un RAC.
 
+	Temps d'installation RAC : ~35mn
+
 * Installation d'Oracle
 
 	Comme pour le GI un seul script prend en charge l'ensemble des opérations que
 la base soit SINGLE ou bien RAC.
 
+	Temps d'installation RAC : ~15mn
+
 * Création d'une base de donner : un seul script également (Utilisation de dbca).
+
+	Temps de création RAC cdc + 1 pdb : 1h05
 
 --------------------------------------------------------------------------------
 # Pré requis :

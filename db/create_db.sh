@@ -488,6 +488,8 @@ function on_ctrl_c
 #	============================================================================
 #	MAIN
 #	============================================================================
+typeset -r script_start_at=$SECONDS
+
 [ $db_type = undef ] && is_rac_or_single_server
 if [ $db_type = SINGLE ]
 then
@@ -662,4 +664,8 @@ else
 	exec_cmd "sed \"s/^\(${name}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
 	exec_cmd "cat /tmp/ot > /etc/oratab"
 	exec_cmd "rm /tmp/ot"
+	LN
 fi
+
+info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
+LN

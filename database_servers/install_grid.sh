@@ -365,6 +365,8 @@ trap on_exit EXIT
 #	======================================================================
 #	MAIN
 #	======================================================================
+typeset -r script_start_at=$SECONDS
+
 line_separator
 for file in $cfg_path/node*
 do
@@ -524,6 +526,10 @@ then
 	LN
 fi
 
+info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
+LN
+
 info "Oracle peut être installé."
 info "./install_oracle.sh -db=$db"
 LN
+
