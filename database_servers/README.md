@@ -65,16 +65,14 @@ Création de nouveaux serveurs :
 	Le compte oracle est configuré pour se connecter grid sans mot de passe via
 	l'alias sugrid.
 
-	TODO compilation des gess
-
 3.	Installation du grid.
 
 	`./install_grid.sh -db=daisy`
 
-	Installe le grid en standalone ou cluster. Les scripts root sont exécutés
+	Installe-le grid en standalone ou cluster. Les scripts root sont exécutés
 	sur l'ensemble des nœuds.
 
-	Les 2 DGs DATA et FRA sont crées, pour un cluster il y a en plus le DG CRS
+	Les 2 DGs DATA et FRA sont créées, pour un cluster il y a en plus le DG CRS
 
 4.	Installation d'Oracle
 
