@@ -69,5 +69,5 @@ else
 exec_cmd -ci "tmux kill-session -t MonitorSINGLE"
 
 tmux new -s MonitorSINGLE	"ssh root@${node1} vmstat 2"				\; \
-							split-window -v "ssh -t root@${node2} top"
+							split-window -v "ssh -t root@${node1} top"
 fi
