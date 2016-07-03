@@ -23,7 +23,7 @@ Une adaptation pour KVM sera sans doute effectuée.
 
 --------------------------------------------------------------------------------
 
-# Publics : DBA Oracle
+# Publics : DBA / Développeurs Oracle
 
 --------------------------------------------------------------------------------
 
