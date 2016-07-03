@@ -68,6 +68,9 @@ function write_headers
 	echo "$(date +"%Y:%m:%d") total used free shared buffer cached" > $mem_file
 	echo "$(date +"%Y:%m:%d") total used free" > $swap_file
 	echo "$(date +"%Y:%m:%d") total used free Used%" > $shm_file
+
+	#	Obligatoire avec vboxsf
+	chmod ug=rwx $mem_file $swap_file $shm_file
 }
 
 function write_stats
