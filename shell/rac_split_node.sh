@@ -10,11 +10,14 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME ...."
 
+info "$ME $@"
+
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			first_args=-emul
 			shift
 			;;
 
@@ -33,9 +36,17 @@ do
 	esac
 done
 
-[ -d ~/$oracle_install ] && exec_cmd mkdir -p ~/$oracle_install
-
-for zip in ~/zips/*.zip
+typeset	other_node=undef
+while read node_name node_number
 do
-	exec_cmd "unzip $zip -d ~/$oracle_install/"
-done
+	if [ $node_name != $(hostname -s) ]
+	then
+		other_node=$node_name
+		break
+	fi
+done<<<"$(olsnodes -n)"
+
+tmux new -s Monitor							\; \
+			split-window -h "ssh -t $other_node"  \; \
+			selectp -t 0 
+

@@ -48,14 +48,14 @@ set echo off
 prompt startup mount
 startup mount
 
-prompt alter database archivelog;
-alter database archivelog;
+prompt alter database archivelog
+alter database archivelog
 
-prompt alter database open;
-alter database open;
+prompt alter database open
+alter database open
 
-prompt archive log list;
-archive log list;
+prompt archive log list
+archive log list
 
 prompt shutdown immediate
 shutdown immediate

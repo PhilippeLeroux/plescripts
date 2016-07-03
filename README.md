@@ -4,25 +4,6 @@ sont très loin des exigences d'une entreprise.**
 
 --------------------------------------------------------------------------------
 
-                    __        __         _
-                    \ \      / /__  _ __| | __
-                     \ \ /\ / / _ \| '__| |/ /
-                      \ V  V / (_) | |  |   <
-                       \_/\_/ \___/|_|  |_|\_\
-                             ___
-                            |_ _|_ __
-                             | || '_ \
-                             | || | | |
-                            |___|_| |_|
-                 ____
-                |  _ \ _ __ ___   __ _ _ __ ___  ___ ___
-                | |_) | '__/ _ \ / _` | '__/ _ \/ __/ __|
-                |  __/| | | (_) | (_| | | |  __/\__ \__ \
-                |_|   |_|  \___/ \__, |_|  \___||___/___/
-                                 |___/
-
---------------------------------------------------------------------------------
-
 # Objectifs :
 
 Mettre en œuvre un réseau de VMs pour installer des bases Oracle de tout types en
@@ -33,12 +14,12 @@ compétences particulières le tout étant automatisé, ainsi que la suppression
 La première version se basait sur KVM, Oracle Linux 6, OpenFiler et un serveur DNS.
 Il était possible d'installer Oracle 11gR2 ou Oracle 12cR1 en SINGLE ou RAC.
 
-Cette version ce base maintenant uniquement sur Oracle Linux 7, OpenFiler est abandonné
-pour targetcli qui à le gros avantage d'être scriptable, seul Oracle 12cR1 est
+Cette version se base maintenant uniquement sur Oracle Linux 7, OpenFiler est abandonné
+pour targetcli qui a le gros avantage d'être scriptable, seul Oracle 12cR1 est
 pris en charge et le RAC étendu n'est plus pris en compte.
 
 L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable,
-mais il fort probable que je finisse par utiliser KVM dans un futur proche en
+mais il est fort probable que je finisse par utiliser KVM dans un futur proche en
 essayant de toujours fonctionner avec VirtualBox pour linux.
 
 --------------------------------------------------------------------------------
@@ -50,12 +31,12 @@ La création d'une nouvelle base SINGLE ou RAC se fait en 5 étapes :
 des disques sont définies à partir du nom de la base.
 
 * Clonage du serveur de référence, actions effectuées :
-	* Cloner la VM master (sous Windows l'action est manuelle).
+	* Cloner la VM master.
 	* Créer les disques sur le SAN : utilisation du protocole iscsi.
 	* Enregistrer le serveur dans le DNS : utilisation de bind9.
 	* Mapper les disques du SAN sur le ou les serveurs : utilisation d'oracleasm.
 
-* Installation du GI (Les bases SINGLE sur FS sont possibles mais pas documentées).
+* Installation du GI et création des DGs.
 
 	Que la base soit SINGLE ou RAC il n'y a qu'un script à exécuter, les scripts
 root de pré installations sont automatiquement exécutés sur le serveur ou l'ensemble
@@ -69,22 +50,8 @@ la base soit SINGLE ou bien RAC.
 * Création d'une base de donner : un seul script également (Utilisation de dbca).
 
 --------------------------------------------------------------------------------
-
-L'étape n° 1 (la plus délicate) consiste à créer 2 VMs :
-* La première, K2, qui servira de serveur d'infrastructure, dont **les** rôles sont :
-
-	* SAN : gestion des disques via targetcli.
-	* DNS : gestion des noms des serveurs et des adresses de SCAN pour le RAC.
-	* Passerelle : les serveurs de base de données ne peuvent pas accéder directement
-à internet, utile pour les yum update par exemple, ils passent donc par le serveur
-d'infrastructure.
-	* Serveur de temps : l'ensemble des VMs du réseau sont synchronisées sur ce serveur.
-
-* La seconde, orclmaster, qui servira de master, elle aura une configuration minimale.
-
---------------------------------------------------------------------------------
 # Pré requis :
-* Disposer d'une machine assez puissant, pour un RAC il faut au minimum 8Gb de RAM.
+* Disposer d'une machine assez puissante pour un RAC il faut au minimum 8Gb de RAM.
 
 * Télécharger les logiciels suivants :
 
@@ -96,14 +63,12 @@ d'infrastructure.
 
 --------------------------------------------------------------------------------
 
-# Documentation.
-L'infrastructure ne devrait plus changer en profondeur, **la documentation est donc
-en cour**
+# Création des 2 premières VMs.
+Instructions présentes ici : [README.md](https://github.com/PhilippeLeroux/plescripts/tree/master/database_servers/README.md)
 
 --------------------------------------------------------------------------------
 
-License
-=======
+# License
 
 Copyright (©) 2016 Philippe Leroux - All Rights Reserved
 

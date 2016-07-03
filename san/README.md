@@ -4,7 +4,7 @@ sont très loin des exigences d'une entreprise.**
 
 --------------------------------------------------------------------------------
 
-Ces scripts prennent en charge la création des LVs et de l'export sur le réseaux.
+Ces scripts prennent en charge la création des LVs et de l'export sur le réseau.
 
 --------------------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ __Bibliothèques :__
 
 __Création de nouveaux disques :__
 
-create_lun_for_db.sh est utiliser par clone_master.sh, ce script va enchainer les
+create_lun_for_db.sh est utilisé par clone_master.sh, ce script va enchainer les
 scripts de plus bas niveaux pour créer les disques et les exporter sur le réseau.
 
 --------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ __Scripts divers :__
 	
 	Création de 1 ou plusieurs LVs dans un VG.
 
-	Ce scripts s'assure que les normes sont respectées.
+	Ce script s'assure que les normes sont respectées.
 
 * remove_lv.sh
 	

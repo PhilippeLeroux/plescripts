@@ -20,8 +20,9 @@ typeset -r str_usage=\
 		Pour passer certaine phases de l'installation :
 		   -skip_grid_installation
 		   -skip_root_scripts
-		   -skip_runToolAllCommands
+		   -skip_configToolAllCommands
 		   -skip_create_dg
+		   -install_mgmtdb	(uniquement pour le RAC)
 
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
 "
@@ -32,8 +33,9 @@ typeset	action=install
 
 typeset	skip_grid_installation=no
 typeset	skip_root_scripts=no
-typeset	skip_runToolAllCommands=no
+typeset	skip_configToolAllCommands=no
 typeset	skip_create_dg=no
+typeset	install_mgmtdb=no
 
 typeset oracle_home_for_test=no
 
@@ -70,8 +72,8 @@ do
 			shift
 			;;
 
-		-skip_runToolAllCommands)
-			skip_runToolAllCommands=yes
+		-skip_configToolAllCommands)
+			skip_configToolAllCommands=yes
 			shift
 			;;
 
@@ -82,6 +84,11 @@ do
 
 		-oracle_home_for_test)
 			oracle_home_for_test=yes
+			shift
+			;;
+
+		-install_mgmtdb)
+			install_mgmtdb=yes
 			shift
 			;;
 
@@ -277,16 +284,11 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	exec_cmd "ssh -t root@${node_names[$inode]} $ORACLE_HOME/root.sh"
 }
 
-function runToolAllCommands
+function runConfigToolAllCommands
 {
-	typeset  -ri inode=$1
-	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
-
-	test_pause "Exécution de ConfigTool ?"
-
 	line_separator
 	info "Exécute ConfigTool"
-	exec_cmd "ssh -t grid@${node_names[$inode]} $ORACLE_HOME/cfgtoollogs/configToolAllCommands RESPONSE_FILE=/home/grid/grid_${db}.properties"
+	exec_cmd "ssh -t grid@${node_names[0]} $ORACLE_HOME/cfgtoollogs/configToolAllCommands RESPONSE_FILE=/home/grid/grid_${db}.properties"
 }
 
 function create_dg # $1 nom du DG
@@ -320,6 +322,41 @@ function on_exit
 	do
 		exec_cmd $mode -c "ssh -t grid@${node_names[$i]} \
 		\"~/plescripts/memory/memstats.sh -kill -title=install_grid >/dev/null 2>&1\""
+	done
+}
+
+function stop_and_disable_unwanted_grid_ressources
+{
+	line_separator
+	info "Opération non supportées par le support Oracle"
+	info "Mais permet d'optimiser considérablement la démo"
+	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; crsctl stop res ora.crf -init"
+	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; crsctl delete res ora.crf -init"
+	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl stop cvu"
+	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl disable cvu"
+	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl stop oc4j"
+	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl disable oc4j"
+}
+
+function set_ASM_memory_target_low_and_restart_cluster
+{
+	line_separator
+	info "Opération non supportées par le support Oracle"
+	info "Mais permet d'optimiser considérablement la démo"
+	exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
+	exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop cluster -all\""
+	exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start cluster -all\""
+	LN
+}
+
+function remove_tfa_on_all_nodes
+{
+	line_separator
+	info "Opération non supportées par le support Oracle"
+	info "Mais permet d'optimiser considérablement la démo"
+	for i in $( seq 0 $(( max_nodes - 1 )) )
+	do
+		exec_cmd $mode -c "ssh -n root@${node_names[$i]} . /root/.bash_profile \; tfactl uninstall"
 	done
 }
 
@@ -359,7 +396,7 @@ fi
 info "ORACLE_HOME = '$ORACLE_HOME'"
 info "ORACLE_BASE = '$ORACLE_BASE'"
 
-[ x"$ORACLE_HOME" = x ] && error "Can't read ORACLE_HOME for user grid on ${node_names[0]}" && exit 1
+[ x"$ORACLE_HOME" == x ] && error "Can't read ORACLE_HOME for user grid on ${node_names[0]}" && exit 1
 
 if [ $action = config ] || [ $action = install ]
 then
@@ -370,7 +407,7 @@ then
 	LN
 fi
 
-if [ $action = install ]
+if [ $action == install ]
 then
 	if [ $oracle_home_for_test != no ]
 	then
@@ -412,14 +449,35 @@ then
 		done
 	fi
 
-	if [ $skip_runToolAllCommands != yes ]
+	if [ $skip_configToolAllCommands == no ]
 	then
-		if [ $max_nodes -eq 1 ]
-		then	#	Pas sur le RAC. N'est pas lancé pour ne pas créer la mngmt db
-				#	TODO : Tester si suffisamment de mémoire pour le lancer
-			chrono_start
-			runToolAllCommands 0
-			chrono_stop "runToolAllCommands 0 :"
+		if [ $max_nodes -gt 1 ]
+		then
+			if [ $install_mgmtdb == no ]
+			then
+				remove_tfa_on_all_nodes
+				LN
+
+				stop_and_disable_unwanted_grid_ressources
+				LN
+
+				set_ASM_memory_target_low_and_restart_cluster
+				LN
+			else
+				runConfigToolAllCommands
+			fi
+		else
+			line_separator
+			runConfigToolAllCommands
+			LN
+
+			line_separator
+			info "Opération non supportées par le support Oracle"
+			info "Mais permet d'optimiser considérablement la démo"
+			exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
+			exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop has\""
+			exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start has\""
+			LN
 		fi
 	fi
 
@@ -459,7 +517,7 @@ then
 	fi
 fi
 
-if [ $oracle_home_for_test = no ]
+if [ $oracle_home_for_test == no ]
 then
 	info "Statut de l'installation :"
 	exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; crsctl stat res -t\""

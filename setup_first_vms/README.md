@@ -8,25 +8,30 @@ Ces scripts servent à créer les 2 VMs K2 et orclmaster.
 
 * Création des VMs
 
-	Le répertoire vbox_scripts contient les scripts permettant de créer le VMs
+	* TODO : parler de ~/plescripts/global.cfg 
 
-	* Depuis windows éditer le script createvm.bat pour ajuster le nom des répertoires.
+	* `cd ~/plescripts/setup_first_vms/vbox_scripts`
 
-	* Depuis Linux éditer le script ~/plescripts/global.cfg et ajuster les noms
-	des répertoires puis exécuter : `update_vms_scripts.sh`
+	* Exécuter : `./create_master_vm.sh`
 
+		Configuration réseau : 192.170.100.2/24
+	
+		Host name : orclmaster
+
+		TODO : insérer screenshots
+
+	* Exécuter : `./create_infra_vm.sh`
+	
+	* Démarrer la VM master : orclmaster.
+	```VBoxManage startvm orclmaster --type headless
+	wait_server orclmaster
+	ssh root@orclmaster
+	mkdir /mnt/plescripts
+	mount 192.170.100.1:/home/kangs/plescripts /mnt/plescripts
+	ln -s /mnt/plescripts ./plescripts
+	cd plescripts/setup_first_vms/
+	./02_update_config.sh
+	./03_setup_infra_or_master.sh -role=master
+	poweroff
+	```
 --------------------------------------------------------------------------------
-
-Les scripts ci dessous doivent être exécutés depuis la VM avec le compte root
-
-* 02_update_config.sh
-
-	Configure le compte root et met à jour l'OS.
-
-* 03_setup_infra_or_master.sh.sh -role=infra|master
-
-	Configure le serveur en fonction de son rôle
-
-* 04_unzip_oracle_cd.sh
-
-	Extraction des zips oracle & grid

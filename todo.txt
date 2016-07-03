@@ -14,5 +14,3 @@ Dans shell :
 	Commande : chronyc -a makestep
 	Test     : les nœuds d'un RAC vont ils survivre.
 
-BUG : le script 01_update_vms_scripts.sh n'utilise pas la variable vm_memory_mb_for_infra
-le fichier finalize.bat ne prend donc pas en compte la modification éventuelle.

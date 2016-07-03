@@ -46,6 +46,7 @@ typeset -r	upper_db=$(to_upper $db)
 
 line_separator
 info "Mise à jour de /etc/oratab"
+info "Le nom de toutes les instances sont ajoutées, utile pour les RACs services managed"
 for inode in $( seq 1 $max_nodes )
 do
 	INSTANCE=${upper_db}$inode

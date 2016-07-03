@@ -10,26 +10,25 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-type=FS|ASM : type d'installation FS ou ASM
-
 	Désinstalle tous les composants d'un serveur ou cluster Oracle.
 	Seul root peut exécuter ce script et il doit être exécuté sur le serveur
 	concerné.
 
-	Les paramètres ci dessous sont optionnels et les raisons pour les utiliser
-	sont rares. Utiliser les à vos risques et périls !
+	[-all]          : désinstalle tous les composants
 	[-databases]    : supprime les bases de données.
-	[[!] -oracle]   : supprime le binaire oracle.
-	[[!] -grid]     : supprime le binaire grid.
+	[[!] -oracle]   : désinstalle oracle.
+	[[!] -grid]     : désinstalle grid.
 	[[!] -disks]    : supprime les disques.
+
+	-type=ASM       : type d'installation FS ou ASM
 
 	Ajouter le flag '!' permet de ne pas effectuer une action.
 "
 
 info "$ME $@"
 
-typeset type=undef
-typeset action
+typeset type=ASM
+typeset action_list
 typeset all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_disks"
 
 typeset not_flag=no
@@ -67,9 +66,15 @@ do
 			shift
 			;;
 
+		-all)
+			exit_if_yes $not_flag -databases
+			action_list=$all_actions
+			shift
+			;;
+
 		-databases)
 			exit_if_yes $not_flag -databases
-			action="$action delete_databases"
+			action_list="$action_list delete_databases"
 			shift
 			;;
 
@@ -79,7 +84,7 @@ do
 				not_flag=no
 				all_actions=$(sed "s/ remove_oracle_binary//"<<<"$all_actions")
 			else
-				action="$action remove_oracle_binary"
+				action_list="$action_list remove_oracle_binary"
 			fi
 			shift
 			;;
@@ -90,7 +95,7 @@ do
 				not_flag=no
 				all_actions=$(sed "s/ remove_grid_binary//"<<<"$all_actions")
 			else
-				action="$action remove_grid_binary"
+				action_list="$action_list remove_grid_binary"
 			fi
 			shift
 			;;
@@ -101,7 +106,7 @@ do
 				not_flag=no
 				all_actions=$(sed "s/ remove_disks//"<<<"$all_actions")
 			else
-				action="$action remove_disks"
+				action_list="$action_list remove_disks"
 			fi
 			shift
 			;;
@@ -125,9 +130,10 @@ done
 
 exit_if_param_invalid type "FS ASM" "$str_usage"
 
-if [ x"$action" == x ]
+if [ x"$action_list" == x ]
 then
-	action=$all_actions
+	info "$str_usage"
+	exit 1
 fi
 
 #	Les fonctions get_other_nodes & root_execute_on_other_nodes sont dupliquées
@@ -194,7 +200,7 @@ function delete_all_db
 {
 	line_separator
 	info "delete all DB :"
-	cat /etc/oratab | grep -E "^[A-Z]" |\
+	cat /etc/oratab | grep -E "^[A-Z].*# line added by Agent" |\
 	while IFS=':' read OSID REM
 	do
 		suoracle "~/plescripts/db/delete_db.sh -db=$OSID"
@@ -288,25 +294,25 @@ LN
 exec_cmd -f -c "mount /mnt/oracle_install"
 LN
 
-if grep -q delete_databases <<< "$action"
+if grep -q delete_databases <<< "$action_list"
 then
 	delete_all_db
 fi
 
-if grep -q remove_oracle_binary <<< "$action"
+if grep -q remove_oracle_binary <<< "$action_list"
 then
 	deinstall_oracle
 fi
 
 if [ $type != FS ]
 then
-	if grep -q remove_grid_binary <<< "$action"
+	if grep -q remove_grid_binary <<< "$action_list"
 	then
 		deinstall_grid
 	fi
 fi
 
-if grep -q remove_disks <<< "$action"
+if grep -q remove_disks <<< "$action_list"
 then
 	[ $type == ASM ] && remove_disks || remove_vg
 fi
@@ -329,10 +335,8 @@ info "Option 2 :"
 info "Ou aller dans ~/plescripts/disk puis exécuter :"
 info "	./oracleasm_discovery_first_node.sh sur le premier noeud"
 info "	./oracleasm_discovery_other_nodes.sh sur les autres noeuds dans le cas d'un RAC"
+info "L'installation du grid et d'oracle peuvent être relancées."
 LN
 
 info "Option 3 : ...."
-LN
-
-info "L'installation du grid et d'oracle peut être relancé."
 LN

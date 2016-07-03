@@ -50,10 +50,17 @@ exec_cmd -c "srvctl remove database -db $db<<<y"
 oracle_rm_1="su - oracle -c \"rm -rf $ORACLE_BASE/cfgtoollogs/dbca/$upper_db\""
 oracle_rm_2="su - oracle -c \"rm -rf $ORACLE_BASE/diag/rdbms/$db\""
 
+clean_oratab_cmd1="sed  \"/$upper_db[0-9].*/d\" /etc/oratab > /tmp/oratab"
+clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
+
 line_separator
 info "Supprime tous les fichiers d'oracle sur le noeud $(hostname -s)"
 exec_cmd -c "$oracle_rm_1"
 exec_cmd -c "$oracle_rm_2"
+LN
+
+exec_cmd -c "$clean_oratab_cmd1"
+exec_cmd -c "$clean_oratab_cmd2"
 LN
 
 typeset -r cfg_path=~/plescripts/database_servers/${db}
@@ -70,6 +77,10 @@ then
 			info "Supprime les fichiers oracle sur le noeud $node_name"
 			exec_cmd -c "ssh $node_name $oracle_rm_1"
 			exec_cmd -c "ssh $node_name $oracle_rm_2"
+			LN
+
+			exec_cmd -c "ssh $node_name \"$clean_oratab_cmd1\""
+			exec_cmd -c "ssh $node_name \"$clean_oratab_cmd1\""
 			LN
 		fi
 	done

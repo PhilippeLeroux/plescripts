@@ -21,7 +21,7 @@ Répertoire plescript/disk : permet de gérer les disques du serveur.
 
 *	Visualiser les disques iscsi : `show_iscsi_session.sh`
 
-*	Supprimmer de oracleasm tous les disques : `release_oracle_disks.sh`
+*	Supprimer de oracleasm tous les disques : `release_oracle_disks.sh`
 
 	*Les disques ne sont pas effacés, ils restent donc utilisables*
 

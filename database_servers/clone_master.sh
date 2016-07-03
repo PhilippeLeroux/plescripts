@@ -12,11 +12,12 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<str>      identifiant de la base
-	[-node=<#>]    n° du noeud si base de type RAC
+	-db=<str>            identifiant de la base
+	[-node=<#>]          n° du nœud si base de type RAC
 
-	[-skip_clone]  le clonage est déjà effectué.
-	[-skip_oracle] la création des utilisateurs est déjà effectué.
+	[-skip_clone]        le clonage est déjà effectué.
+	[-start_server_only] le serveur est cloné mais n'est pas démarré, util que pour le nœud 1.
+	[-skip_oracle]       la création des utilisateurs est déjà effectué.
 "
 
 info "$ME $@"
@@ -26,6 +27,7 @@ typeset -i	node=-1
 
 typeset		skip_clone=no
 typeset		skip_oracle=no
+typeset		start_server_only=no
 
 while [ $# -ne 0 ]
 do
@@ -45,6 +47,11 @@ do
 			shift
 			;;
 
+		-start_server_only)
+			start_server_only=yes
+			shift
+			;;
+
 		-skip_oracle)
 			skip_oracle=yes
 			shift
@@ -55,10 +62,16 @@ do
 			shift
 			;;
 
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
 		*)
 			error "Arg '$1' invalid."
 			LN
-			info $str_usage
+			info "$str_usage"
 			LN
 			exit 1
 			;;
@@ -95,7 +108,6 @@ function connection_ssh_with_root_on_orclmaster
 
 function register_server_2_dns
 {
-	line_separator
 	info "Register server to DNS"
 	exec_cmd "~/plescripts/configure_network/setup_dns.sh -db=$db -node=$node"
 	LN
@@ -133,6 +145,8 @@ function loop_wait_server
 {
 	typeset -r server=$1
 
+	sleep 2
+
 	while [ 1 -eq 1 ]	# forever
 	do
 		~/plescripts/shell/wait_server $server
@@ -155,11 +169,6 @@ function reboot_server
 	typeset -r server=$1
 
 	line_separator
-
-	info "Plymouth theme"
-	exec_cmd -c "ssh -t root@$server plescripts/shell/set_plymouth_them"
-	LN
-
 	info "Reboot :"
 	exec_cmd -c "ssh -t root@$server reboot"
 
@@ -168,7 +177,6 @@ function reboot_server
 
 function configure_ifaces_hostname_and_reboot
 {
-	line_separator
 	info "Configure network..."
 	exec_cmd "ssh -t $master_conn plescripts/configure_network/setup_iface_and_hostename.sh -db=$db -node=$node; exit"
 	LN
@@ -234,7 +242,6 @@ function connections_ssh_db_server_to_san
 #	Nomme l'initiator
 function setup_iscsi_inititiator
 {
-	line_separator
 	info "Set initiator name :"
 	iscsi_initiator=$(get_initiator_for $db $node)
 	exec_cmd "ssh -t root@$master_name \"echo InitiatorName=$iscsi_initiator > /etc/iscsi/initiatorname.iscsi\""
@@ -265,10 +272,19 @@ function configure_disks_node1
 	fi
 	chrono_stop "Create oracle disks : "
 
-	test_pause "Check if the oracle disks are created"
-
+	line_separator
 	info "Mount point for oracle installation"
-	fstab="$dns_hostname:/root/oracle_install /mnt/oracle_install nfs rsize=8192,wsize=8192,timeo=14,intr,noauto"
+	case $type_shared_fs in
+		nfs)
+			fstab="$infra_hostname:/root/${oracle_install} /mnt/oracle_install nfs rsize=8192,wsize=8192,timeo=14,intr,noauto"
+			;;
+
+		vbox)
+			fstab="${oracle_release%.*.*} /mnt/oracle_install vboxsf defaults,_netdev 0 0"
+			;;
+	esac
+	
+	exec_cmd "ssh -t root@${server_name} sed -i '/oracle_install/d' /etc/fstab"
 	exec_cmd "ssh -t root@${server_name} \"[ ! -d /mnt/oracle_install ] && mkdir /mnt/oracle_install || true\""
 	exec_cmd "ssh -t root@${server_name} \"echo $fstab >> /etc/fstab\""
 	exec_cmd "ssh -t root@${server_name} mount /mnt/oracle_install"
@@ -286,8 +302,6 @@ function configure_disks_other_node_than_1
 	exec_cmd "ssh -t root@${server_name} plescripts/disk/oracleasm_discovery_other_nodes.sh"
 	chrono_stop "SAN create disks : "
 	LN
-
-	test_pause "Check if the disks are created on the SAN"
 }
 
 #	Attend que le serveur master soit actif.
@@ -307,16 +321,34 @@ function wait_master
 #	Configure le master cloné
 function configure_server
 {
+	if [ $node -eq 1 ] && [ $start_server_only == no ]
+	then
+		exec_cmd ~/plescripts/database_servers/${db}/vms_virtualbox/clone/clone_${db}_from_orclmaster.sh
+	else
+		if [ $max_nodes -gt 1 ]
+		then
+			typeset -r s=$(printf "~/plescripts/database_servers/${db}/vms_virtualbox/single/srv${db}%02d_start.sh" $node)
+		else
+			typeset -r s="~/plescripts/database_servers/${db}/vms_virtualbox/${db}_start.sh"
+		fi
+		exec_cmd $s
+	fi
+
 	wait_master
 
+	line_separator
 	connection_ssh_with_root_on_orclmaster
 
+	line_separator
 	register_server_2_dns
 
+	line_separator
 	setup_iscsi_inititiator
 
+	line_separator
 	configure_ifaces_hostname_and_reboot
 
+	line_separator
 	typeset -r local_host=$(hostname -s)
 	info "Ajoute le nom de $server_name dans ~/.ssh/known_hosts $local_host"
 	typeset -r remote_keyscan=$(ssh-keyscan -t ecdsa $server_name | tail -1)
@@ -325,7 +357,9 @@ function configure_server
 	exec_cmd "echo \"$remote_keyscan\" >> ~/.ssh/known_hosts"
 	LN
 
+	line_separator
 	connections_ssh_db_server_to_san
+	LN
 }
 
 #	Met en place tous les pré requis Oracle
@@ -371,7 +405,7 @@ typeset -r script_start_at=$SECONDS
 
 [ $node -gt 1 ]			&& test_if_other_nodes_up || true
 
-[ $skip_clone = no ]	&& configure_server || true
+[ $skip_clone == no ]	&& configure_server || true
 
 [ $skip_oracle = no ]	&& configure_oracle_accounts || true
 
@@ -382,9 +416,34 @@ else
 	configure_disks_other_node_than_1
 fi
 
-line_separator
+info "Plymouth theme"
+exec_cmd -c "ssh -t root@$server_name plescripts/shell/set_plymouth_them"
+LN
+
 reboot_server $server_name
 LN
+
+loop_wait_server $server_name
+LN
+
+if [ $type_shared_fs == vbox ]
+then
+	exec_cmd -c "ssh root@$server_name \"yum -y install kernel-devel-\\\$(uname -r)\""
+	LN
+
+	exec_cmd -ci "ssh root@$server_name mkdir /media/cdrom"
+	exec_cmd -ci "ssh root@$server_name mount /dev/cdrom /media/cdrom"
+	LN
+
+	exec_cmd "ssh root@$server_name \"cd /media/cdrom; ./VBoxLinuxAdditions.run\""
+	LN
+
+	reboot_server $server_name
+	LN
+
+	loop_wait_server $server_name
+	LN
+fi
 
 if [ $node -eq $max_nodes ]
 then	# C'est le dernier noeud
@@ -405,8 +464,7 @@ then	# C'est le dernier noeud
 	LN
 elif [ $max_nodes -ne 1 ]
 then	# Ce n'est pas le dernier noeud et il y a plus de 1 noeud.
-	info "Démarrer la VM du noeud  $(( node + 1 ))"
-	info "et exécuter le script :"
+	info "Exécuter le script :"
 	info "$ME -db=$db -node=$(( node + 1 ))"
 	LN
 fi

@@ -1,12 +1,12 @@
 Name:            K2
-Groups:          /
+Groups:          /Infra
 Guest OS:        Oracle (64-bit)
-UUID:            f13ed206-578e-4686-9046-89b5fe6ed124
+UUID:            387a86a3-b9db-4f41-848a-03cdf8e4e73f
 Config file:     /home/kangs/VirtualBox VMs/K2/K2.vbox
 Snapshot folder: /home/kangs/VirtualBox VMs/K2/Snapshots
 Log folder:      /home/kangs/VirtualBox VMs/K2/Logs
-Hardware UUID:   f13ed206-578e-4686-9046-89b5fe6ed124
-Memory size:     1024MB
+Hardware UUID:   387a86a3-b9db-4f41-848a-03cdf8e4e73f
+Memory size:     4096MB
 Page Fusion:     off
 VRAM size:       12MB
 CPU exec cap:    100%
@@ -33,7 +33,7 @@ Large Pages:     off
 VT-x VPID:       on
 VT-x unr. exec.: on
 Paravirt. Provider: Default
-State:           powered off (since 2016-06-15T23:16:17.717000000)
+State:           powered off (since 2016-06-29T11:37:23.000000000)
 Monitor count:   1
 3D Acceleration: off
 2D Video Acceleration: off
@@ -59,12 +59,12 @@ Storage Controller Instance Number (1): 0
 Storage Controller Max Port Count (1):  30
 Storage Controller Port Count (1):      2
 Storage Controller Bootable (1):        on
-IDE (0, 0): /home/kangs/ISO/oracle_linux_7/V100082-01.iso (UUID: eeb74fc8-64d9-43dc-af81-75ec6653f78c)
-SATA (0, 0): /home/kangs/VirtualBox VMs/K2/K2.vdi (UUID: 707032bb-3b60-4a95-8ed4-b4f30e7b6918)
-SATA (1, 0): /home/kangs/VirtualBox VMs/K2/asm01.vdi (UUID: 78f10b32-a40c-4274-9990-a0aa047eed51)
-NIC 1:           MAC: 0800272671FA, Attachment: Host-only Interface 'VirtualBox Host-Only Ethernet Adapter', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
-NIC 2:           MAC: 080027A02E3C, Attachment: Internal Network 'intnet', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
-NIC 3:           MAC: 080027763A76, Attachment: Bridged Interface 'Realtek RTL8188CU Wireless LAN 802.11n USB 2.0 Network Adapter', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
+IDE (0, 0): Empty
+SATA (0, 0): /home/kangs/VirtualBox VMs/K2/K2.vdi (UUID: 0fca62e9-a93c-4ccc-a8e2-7a4b4340cc83)
+SATA (1, 0): /home/kangs/VirtualBox VMs/K2/asm01.vdi (UUID: 9ae8c503-3ff1-445c-8819-f2ff662caecd)
+NIC 1:           MAC: 080027232A7D, Attachment: Host-only Interface 'vboxnet0', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
+NIC 2:           MAC: 0800275F8782, Attachment: Internal Network 'intnet', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
+NIC 3:           MAC: 08002705D559, Attachment: Bridged Interface 'enp3s0', Cable connected: on, Trace: off (file: none), Type: virtio, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
 NIC 4:           disabled
 NIC 5:           disabled
 NIC 6:           disabled
@@ -92,9 +92,7 @@ USB Device Filters:
 
 Bandwidth groups:  <none>
 
-Shared folders:  
-
-Name: 'shared', Host path: '/home/kangs/shared' (machine mapping), writable
+Shared folders:  <none>
 
 Video capturing:    not active
 Capture screens:    0

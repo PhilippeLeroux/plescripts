@@ -33,6 +33,7 @@ typeset		lang=french
 typeset		verbose=no
 typeset		pdbName=undef
 typeset		serverPoolName=undef
+typeset		skip_db_create=no
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -48,6 +49,9 @@ typeset -r str_usage=\
 	-db_type=SINGLE|RAC|RACONENODE (1)
 
 	1 : Pour le RAC one node il faut impérativement le préciser !
+
+	[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
+	les scripts poste installations.
 
 	[-verbose]"
 
@@ -127,6 +131,11 @@ do
 			shift
 			;;
 
+		-skip_db_create)
+			skip_db_create=yes
+			shift
+			;;
+
 		-verbose)
 			verbose=yes
 			shift
@@ -178,7 +187,7 @@ function launch_memstat
 			if [ $node_name != $(hostname -s) ]
 			then
 				exec_cmd -c "ssh -n ${node_name} \
-				 \"nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &\""
+				\"nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &\""
 			fi
 		done<<<"$(olsnodes)"
 	fi
@@ -202,10 +211,10 @@ function stop_memstat
 				if [ "$DEBUG_PLE" = yes ]
 				then
 					exec_cmd -c "ssh ${node_name} \
-					 \"~/plescripts/memory/memstats.sh -title=create_db -kill\""
+					\"~/plescripts/memory/memstats.sh -title=create_db -kill\""
 				else
 					exec_cmd -c "ssh ${node_name} \
-					 \"~/plescripts/memory/memstats.sh -title=create_db -kill\"" >/dev/null 2>&1
+					\"~/plescripts/memory/memstats.sh -title=create_db -kill\"" >/dev/null 2>&1
 				fi
 			fi
 		done<<<"$(olsnodes)"
@@ -244,6 +253,12 @@ function show_db_settings
 		info "	serverPoolName : ${serverPoolName}"
 	fi
 	LN
+
+	if [ $skip_db_create == yes ]
+	then
+		warning "La base ne sera pas créée, elle doit donc exister."
+		LN
+	fi
 }
 
 #	Ajoute le paramètre $1 à la liste de paramètres pour dbca
@@ -506,84 +521,128 @@ read keyboard
 trap stop_all_background_processes EXIT
 trap on_ctrl_c INT
 
-launch_memstat
-
-make_dbca_args
-
-chrono_start
-
-remove_all_log_and_db_fs_files
-
-fake_exec_cmd "dbca\\\\\n$fake_dbca_args"
-if [ $? -eq 0 ]
+if [ $skip_db_create == no ]
 then
-	#	Lance dbca en tâche de fond.
-	dbca $dbca_args > ${LOG_DBCA} 2>&1 &
-	pid_dbca=$!
-fi
-LN
+	launch_memstat
 
-if [ $verbose == yes ]
-then
-	[[ $db_type == RAC* ]] && noi=1
-	alert_log=$ORACLE_BASE/diag/rdbms/$lower_name/${name}${noi}/trace/alert_${name}${noi}.log
+	make_dbca_args
 
-	wait_file $alert_log
-	if [ $? -ne 0 ]
+	chrono_start
+
+	remove_all_log_and_db_fs_files
+
+	fake_exec_cmd "dbca\\\\\n$fake_dbca_args"
+	if [ $? -eq 0 ]
 	then
-		info "Wait again."
+		#	Lance dbca en tâche de fond.
+		dbca $dbca_args > ${LOG_DBCA} 2>&1 &
+		pid_dbca=$!
+	fi
+	LN
+
+	if [ $verbose == yes ]
+	then
+		[[ $db_type == RAC* ]] && noi=1
+		alert_log=$ORACLE_BASE/diag/rdbms/$lower_name/${name}${noi}/trace/alert_${name}${noi}.log
+
 		wait_file $alert_log
-		[ $? -ne 0 ] && wait_file $alert_log
-						[ $? -ne 0 ] && verbose=no
+		if [ $? -ne 0 ]
+		then
+			info "Wait again."
+			wait_file $alert_log
+			[ $? -ne 0 ] && wait_file $alert_log
+							[ $? -ne 0 ] && verbose=no
+		fi
+
+		if [ $verbose = yes ]
+		then
+			tail -1000f $alert_log | tee -a $PLELIB_LOG_FILE &
+			pid_tail=$!
+			pid_tail=pid_tail-1
+		fi
 	fi
 
-	if [ $verbose = yes ]
+	if [ $verbose = no ]
 	then
-		tail -1000f $alert_log | tee -a $PLELIB_LOG_FILE &
+		wait_file $LOG_DBCA
+		tail -1000f $LOG_DBCA | tee -a $PLELIB_LOG_FILE &
 		pid_tail=$!
 		pid_tail=pid_tail-1
 	fi
-fi
 
-if [ $verbose = no ]
+	#	Attend la fin de dbca
+	wait $pid_dbca
+	dbca_return=$?
+	[ $dbca_return -eq 0 ] && dbca_status="[$OK]" || dbca_status="[$KO] return $dbca_return"
+	info "dbca $dbca_status ${BOLD}$(fmt_seconds $(chrono_stop -q))"
+	pid_dbca=-1
+	LN
+
+	stop_process log_process pid_tail
+
+	if [ $verbose = yes ]
+	then
+		line_separator
+		exec_cmd "cat $LOG_DBCA"
+		LN
+	fi
+
+	if [ $dbca_return -ne 0 ]
+	then
+		line_separator
+		exec_cmd "cat $LOG_DBCA"
+		LN
+	fi
+
+	exec_cmd "rm -f $LOG_DBCA"  >/dev/null 2>&1
+
+	if [ $dbca_return -ne 0 ]
+	then
+		error "dbca failed."
+		exit 1
+	fi
+	LN
+fi	#	skip_db_create == no
+
+if [ "${db_type:0:3}" == "RAC" ]
 then
-	wait_file $LOG_DBCA
-	tail -1000f $LOG_DBCA | tee -a $PLELIB_LOG_FILE &
-	pid_tail=$!
-	pid_tail=pid_tail-1
+	for node in $( sed "s/,/ /g" <<<"$node_list" )
+	do
+		line_separator
+		exec_cmd "ssh -t oracle@${node} ~/plescripts/db/update_oratab.sh -db=$lower_name"
+	done
 fi
 
-#	Attend la fin de dbca
-wait $pid_dbca
-dbca_return=$?
-[ $dbca_return -eq 0 ] && dbca_status="[$OK]" || dbca_status="[$KO] return $dbca_return"
-info "dbca $dbca_status ${BOLD}$(fmt_seconds $(chrono_stop -q))"
-pid_dbca=-1
-LN
-
-stop_process log_process pid_tail
-
-if [ $verbose = yes ]
+if [ $cdb == yes ] && [ x"$pdbName" != x ]
 then
 	line_separator
-	exec_cmd "cat $LOG_DBCA"
-	LN
+	if [ "${db_type:0:3}" == "RAC" ]
+	then
+		typeset inst_list
+		while IFS=':' read inst_name rem
+		do
+			[ x"$inst_list" = x ] && inst_list=$inst_name || inst_list=${inst_list}",$inst_name"
+		done<<<"$(cat /etc/oratab | grep "^$name[1-9]:")"
+		exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
+		exec_cmd "srvctl start service -db $name -service pdb$pdbName"
+		LN
+	else
+		exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName"
+		exec_cmd "srvctl start service -db $name -service pdb$pdbName"
+		LN
+	fi
 fi
-
-exec_cmd "rm -f $LOG_DBCA"  >/dev/null 2>&1
-
-if [ $dbca_return -ne 0 ]
-then
-	error "dbca failed."
-	exit 1
-fi
-LN
-
-[[ "$db_type" == "RAC*" ]] && line_separator && exec_cmd "./update_oratab.sh -db=$lower_name"
 
 line_separator
 info "Enable archivelog :"
-[[ "$db_type" == "RAC*" ]] && ORACLE_SID=${name}1 || ORACLE_SID=${name}
+if [ "${db_type:0:3}" == "RAC" ]
+then
+	export ORACLE_DB=${name}
+	ORACLE_SID=${name}1
+else
+	export ORACLE_DB=${name}
+	ORACLE_SID=${name}
+fi
 ORAENV_ASK=NO . oraenv
 exec_cmd "~/plescripts/db/enable_archive_log.sh"
 LN

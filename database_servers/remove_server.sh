@@ -79,11 +79,6 @@ then
 	info "Remove $cfg_path"
 	exec_cmd -c "rm -rf $cfg_path"
 	LN
-
-	typeset -r vbox_scripts=$shared_directory/vms_virtualbox/$upper_db
-	info "Remove $vbox_scripts"
-	[ -d $vbox_scripts ] && exec_cmd "rm -rf $vbox_scripts"
-	LN
 else
 	info "Les fichiers de configurations ne sont pas effacés."
 	LN

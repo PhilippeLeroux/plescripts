@@ -10,11 +10,14 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME ...."
 
+info "$ME $@"
+
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			first_args=-emul
 			shift
 			;;
 
@@ -33,9 +36,8 @@ do
 	esac
 done
 
-[ -d ~/$oracle_install ] && exec_cmd mkdir -p ~/$oracle_install
+typeset -r asm_inst=$(ps -ef|grep pmon_+ASM | grep -v grep | cut -d_ -f3)
 
-for zip in ~/zips/*.zip
-do
-	exec_cmd "unzip $zip -d ~/$oracle_install/"
-done
+tmux new -s RacLogs "tail -f /u01/app/grid/diag/crs/$(hostname -s)/crs/trace/alert.log" \; \
+		split-window -v "tail -f /u01/app/grid/diag/asm/+asm/$asm_inst/trace/alert_$asm_inst.log"
+

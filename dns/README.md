@@ -20,7 +20,7 @@ __Scripts pouvant être utiles :__
 
 --------------------------------------------------------------------------------
 
-__Scripts utilisés par les scripts présent dans plescripts/database_server :__
+__Scripts utilisés par les scripts présents dans plescripts/database_server :__
 
 *	get_free_ip_node.sh
 	Permet d'obtenir la première IP libre, ou un intervalle d'IPs libre.
