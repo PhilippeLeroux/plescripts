@@ -48,6 +48,8 @@ do
 		1)	LN
 			info "==> VirtualBox for Linux"
 			hostvm_type=linux_virtualbox
+			client_h=$(hostname -s)
+			common_user_n=$USER
 			vm_p="\$HOME/VirtualBox VMs"
 			full_linux_iso_n="\$HOME/ISO/oracle_linux_7/V100082-01.iso"
 			break;
@@ -111,6 +113,12 @@ then
 	exec_cmd "sed -i 's/hostvm=.*$/hostvm=$hostvm_type/g' ~/plescripts/global.cfg"
 	LN
 fi
+
+exec_cmd "sed -i 's/client_hostname=.*/client_hostname=$client_h/g' ~/plescripts/global.cfg"
+LN
+
+exec_cmd "sed -i 's/common_user_name=.*/common_user_name=$common_user_n/g' ~/plescripts/global.cfg"
+LN
 
 exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"$vm_p\"~g' ~/plescripts/global.cfg"
 LN
