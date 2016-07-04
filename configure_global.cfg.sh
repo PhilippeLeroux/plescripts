@@ -38,26 +38,28 @@ done
 
 typeset hostvm_type=undef
 info "Select hypervisor :"
-info "	1 : vbox for windows"
-info "	2 : vbox for linux"
+info "	1 : vbox for linux"
+info "	2 : vbox for windows"
 info "	x : other"
 while [ 0 -eq 0 ] # forever
 do
 	read -s -n 1 keyboard
 	case $keyboard in
 		1)	LN
-			info "==> VirtualBox for Windows"
-			hostvm_type=windows_virtualbox
-			vm_binary_p="C:\Program Files\Oracle\VirtualBox"
-			vm_p="C:\Users\kangs\VirtualBox VMs"
-			vm_shared_dir="C:\Users\kangs\Desktop\shared"
-			full_linux_iso_n="C:\Users\kangs\Desktop\iso_linux\V100082-01.iso"
+			info "==> VirtualBox for Linux"
+			hostvm_type=linux_virtualbox
+			vm_p="\$HOME/VirtualBox VMs"
+			full_linux_iso_n="\$HOME/ISO/oracle_linux_7/V100082-01.iso"
 			break;
 			;;
 
 		2)	LN
-			info "==> VirtualBox for Linux"
-			hostvm_type=linux_virtualbox
+			info "N'est plus à jour"
+			exit 0
+			info "==> VirtualBox for Windows"
+			hostvm_type=windows_virtualbox
+			vm_p="C:\Users\kangs\VirtualBox VMs"
+			full_linux_iso_n="C:\Users\kangs\Desktop\iso_linux\V100082-01.iso"
 			break;
 			;;
 
@@ -93,25 +95,15 @@ function ask_for
 
 	[ x"$keyboard" != x ] && var_value="$keyboard"
 
-	var_value=$(escape_anti_slash $var_value)
-	var_value=$(escape_slash "$var_value")
+	#var_value=$(escape_anti_slash $var_value)
+	#var_value=$(escape_slash "$var_value")
 
 	eval "$var_name=$(echo -E '$var_value')"
 }
 
-ask_for vm_binary_p "Hypervisor full installation path :"
-
-ask_for vm_p "Full path to store VMs :"
-
-ask_for vm_shared_dir "Shared path from windows :"
+ask_for vm_p "Localisation des VMs :"
 
 ask_for full_linux_iso_n "Full path for Oracle Linux 7 ISO (...V100082-01.iso) :"
-
-#	Si l'installation se fait depuis K2 alors la synchronisation NTP par défaut
-#	est internet, sinon la synchronisation s'effectuera sur le poste actuel.
-#	Rappel si VirtualBox pour windows alors les scripts seront lancés depuis K2
-[ $(hostname -s) = K2 ] && master_time_s=internet || master_time_s=$(hostname -f)
-ask_for master_time_s "Server NTP name or internet :"
 
 line_separator
 if [ $hostvm_type != unknow ]
@@ -120,18 +112,8 @@ then
 	LN
 fi
 
-exec_cmd "sed -i 's/vm_binary_path=.*$/vm_binary_path=\"$vm_binary_p\"/g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"$vm_p\"~g' ~/plescripts/global.cfg"
 LN
 
-exec_cmd "sed -i 's/vm_path=.*$/vm_path=\"$vm_p\"/g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's~full_linux_iso_name=.*$~full_linux_iso_name=\"$full_linux_iso_n\"~g' ~/plescripts/global.cfg"
 LN
-
-exec_cmd "sed -i 's/full_linux_iso_name=.*$/full_linux_iso_name=\"$full_linux_iso_n\"/g' ~/plescripts/global.cfg"
-LN
-
-exec_cmd "sed -i 's/master_time_server=.*$/master_time_server=$master_time_s/g' ~/plescripts/global.cfg"
-LN
-
-exec_cmd "sed -i 's/vm_shared_directory=.*$/vm_shared_directory=\"$vm_shared_dir\"/g' ~/plescripts/global.cfg"
-LN
-
