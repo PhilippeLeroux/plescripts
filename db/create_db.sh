@@ -507,6 +507,10 @@ then
 	fi
 fi
 
+exit_if_param_undef name "$str_usage"
+
+[ $cdb == yes ] && [ $pdbName == undef ] && pdbName=${lower_name}01
+
 show_db_settings
 
 if [ $memory_mb -lt $min_memory_mb ]
@@ -514,8 +518,6 @@ then
 	error "Minimum memory for Oracle Database 12c : ${min_memory_mb}Mb"
 	exit 1
 fi
-
-exit_if_param_undef name "$str_usage"
 
 info "Press a key to continue."
 read keyboard
