@@ -77,11 +77,11 @@ la base soit SINGLE ou bien RAC.
 # Création des VMs orclmaster et K2.
 2 VMs sont nécessaires pour commencer :
  - orclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
- - K2 qui est le serveur d'infrastructure est remplie de multiples fonctions :
+ - K2 qui est le serveur d'infrastructure et remplie de multiples fonctions :
    - DNS     : Gestion du DNS de notre réseau.
    - SAN     : Gestion des disques des bases de données.
    - NTP     : Les serveurs de base de données se synchronisent sur K2
-   - Gateway : Les serveurs de base de données passent par K2 pour aller sur internet.
+   - Gateway : Les serveurs de base de données passent par K2 pour se mettre à jour sur internet.
 
 Instructions présentes ici : [Création de la VM orclmaster](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-de-la-VM-:-orclmaster)
 
