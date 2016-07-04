@@ -58,7 +58,7 @@ la base soit SINGLE ou bien RAC.
 
 * Création d'une base de donner : un seul script également (Utilisation de dbca).
 
-	Temps de création RAC cdb + 1 pdb : 1h05
+	Temps de création RAC cdb + 1 pdb : 1h20
 
 --------------------------------------------------------------------------------
 # Pré requis :
