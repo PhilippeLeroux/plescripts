@@ -74,8 +74,8 @@ la base soit SINGLE ou bien RAC.
 
 --------------------------------------------------------------------------------
 
-# Création des 2 premières VMs.
-Instructions présentes ici : [README.md](https://github.com/PhilippeLeroux/plescripts/tree/master/database_servers/README.md)
+# Création des VMs orclmaster et K2.
+Instructions présentes ici : [Création de la VM : orclmaster](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-de-la-VM-:-orclmaster)
 
 --------------------------------------------------------------------------------
 
