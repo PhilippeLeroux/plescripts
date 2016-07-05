@@ -67,7 +67,7 @@ exec_cmd VBoxManage storageattach $master_name --storagectl IDE --port 0 --devic
 LN
 
 line_separator
-info "Attache le disque ou sera installé l'OS."
+info "Crée et attache le disque où sera installé l'OS."
 exec_cmd VBoxManage createhd --filename \"$vm_path/$master_name/$master_name.vdi\" --size 32768
 exec_cmd VBoxManage storagectl $master_name --name SATA --add SATA --controller IntelAhci --portcount 1
 exec_cmd VBoxManage storageattach $master_name --storagectl SATA --port 0 --device 0 --type hdd --medium \"$vm_path/$master_name/$master_name.vdi\"

@@ -6,6 +6,8 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
+#Doit être exécuté sur le serveur d'infrastructure ou le master.
+
 . ~/plescripts/oracle_preinstall/make_vimrc_file
 make_vimrc_file "/root/.vimrc"
 
