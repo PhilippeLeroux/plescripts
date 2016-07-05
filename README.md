@@ -39,7 +39,7 @@ des disques sont définies à partir du nom de la base.
 	* Enregistrer le serveur dans le DNS : utilisation de bind9.
 	* Mapper les disques du SAN sur le ou les serveurs : utilisation d'oracleasm.
 
-	Temps de clonage : ~10 à 15mn par serveurs.
+	Temps de clonage : ~8mn par serveurs.
 
 * Installation du GI et création des DGs.
 
@@ -54,14 +54,14 @@ des nœuds d'un RAC.
 	Comme pour le GI un seul script prend en charge l'ensemble des opérations que
 la base soit SINGLE ou bien RAC.
 
-	Temps d'installation RAC : ~25mn
+	Temps d'installation RAC : ~15mn
 
 * Création d'une base de donner : un seul script également (Utilisation de dbca).
 
 	Temps de création RAC cdb + 1 pdb : 1h20
 
 --------------------------------------------------------------------------------
-# Prérequis :
+# Pré requis :
 * Disposer d'une machine assez puissante pour un RAC il faut au minimum 8Gb de RAM.
 
 * Télécharger les logiciels suivants :
@@ -83,7 +83,7 @@ la base soit SINGLE ou bien RAC.
    - NTP     : Les serveurs de base de données se synchronisent sur K2
    - Gateway : Les serveurs de base de données passent par K2 pour se mettre à jour sur internet.
 
-[Création de la VM orclmaster](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-de-la-VM-:-orclmaster)
+Instructions présentes ici : [Création de la VM orclmaster](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-de-la-VM-:-orclmaster)
 
 --------------------------------------------------------------------------------
 
