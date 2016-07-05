@@ -8,14 +8,14 @@
 #	Plante
 # https://github.com/jistr/vim-nerdtree-tabs.git
 
-#	Suivie des modifs 
+#	Suivie des modifs
 #https://github.com/mhinz/vim-signify.git
 https://github.com/airblade/vim-gitgutter.git
 
 # airline
 //github.com/vim-airline/vim-airline
 
-# Vérification de la syntaxe	
+# Vérification de la syntaxe
 //github.com/scrooloose/syntastic.git
 
 #	Bien pour vim
@@ -27,7 +27,7 @@ https://github.com/lifepillar/vim-wwdc16-theme.git
 https://github.com/kocakosm/hilal.git
 https://github.com/xero/sourcerer.vim.git
 
-#
+#	Util dans un terminal toggle la sourie entre le terminal et vim
 https://github.com/nvie/vim-togglemouse.git
 
 #	Montre les undo sous forme arborescente.
