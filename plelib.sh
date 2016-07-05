@@ -98,9 +98,6 @@ function disable_markers
 	STRIKE=
 }
 
-typeset -r OK="${GREEN}ok${NORM}"
-typeset -r KO="${RED}ko${NORM}"
-
 #	============================================================================
 #	Valeurs de PLELIB_OUTPUT
 #		- ENABLE	: Effets d'affichage
@@ -128,6 +125,9 @@ fi
 [ x"$PLELIB_LOG_FILE" != x ] && PLELIB_OUTPUT=FILE
 
 [ "$PLELIB_OUTPUT" = DISABLE ] && disable_markers || enable_markers
+
+typeset -r OK="${GREEN}ok${NORM}"
+typeset -r KO="${RED}ko${NORM}"
 
 if [ "$PLELIB_OUTPUT" = "FILE" ] && [ ! -d $PLELOG_PATH ]
 then
