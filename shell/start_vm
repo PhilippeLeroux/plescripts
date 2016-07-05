@@ -12,8 +12,7 @@ typeset -r str_usage=\
 
 info "$ME $@"
 
-typeset -r db=$1
-typeset -r patternServer=srv${db}0[1-9]
+typeset -r server=$1
 
 function virtualbox_start
 {
@@ -23,11 +22,11 @@ function virtualbox_start
 	do
 		vm_list[$ivm]=$vm_name
 		ivm=ivm+1
-	done<<<"$(VBoxManage list vms | grep "$patternServer" | cut -d\" -f2)"
+	done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
 
 	typeset -ri max_vms=${#vm_list[@]}
 
-	[ $max_vms -eq 0 ] && error "Server for $db not found." && exit 1
+	[ $max_vms -eq 0 ] && error "Server for $server not found." && exit 1
 
 	exec_cmd -c "VBoxManage startvm ${vm_list[0]} --type headless"
 	[ $? -ne 0 ] && error "Failed to start ${vm_list[0]}"
