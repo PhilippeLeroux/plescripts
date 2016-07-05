@@ -92,11 +92,12 @@ exec_cmd "~/plescripts/shell/connections_ssh_with.sh -user=root -server=$infra_i
 LN
 
 line_separator
+info "Création des point de montage NFS :"
 run_ssh "mkdir plescripts"
 run_ssh "mount 192.170.100.1:/home/$common_user_name/plescripts /root/plescripts"
 run_ssh "mkdir -p ~/$oracle_install"
 run_ssh "mkdir zips"
-run_ssh "mount 192.170.100.1:/home/kangs/ISO/$oracle_install /root/zips"
+run_ssh "mount 192.170.100.1:/$common_user_name/kangs/ISO/$oracle_install /root/zips"
 run_ssh "~/plescripts/setup_first_vms/02_update_config.sh"
 run_ssh "~/plescripts/setup_first_vms/03_setup_infra_or_master.sh -role=infra"
 run_ssh "~/plescripts/setup_first_vms/04_unzip_oracle_cd.sh"
