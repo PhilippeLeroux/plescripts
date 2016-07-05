@@ -62,7 +62,7 @@ do
 	test_ip_uniq $i
 	if [ $? -ne 0 ]
 	then
-		info -f " : IP dupliquée."
+		info -f " : dupliquée."
 		dup=dup+1
 	else
 		LN
