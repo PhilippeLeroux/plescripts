@@ -57,7 +57,7 @@ exit_if_param_undef node1 "$str_usage"
 
 if [ $node2 != undef ]
 then
-typeset -r session_name="MonitorRAC"
+typeset -r session_name="Monitor RAC"
 exec_cmd -ci tmux kill-session -t "$session_name"
 
 tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"				\; \
