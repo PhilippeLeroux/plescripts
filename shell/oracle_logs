@@ -1,0 +1,61 @@
+#!/bin/sh
+
+#	ts=4	sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+typeset -r str_usage=\
+"Usage : $ME ...."
+
+info "$ME $@"
+
+typeset db=undef
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			first_args=-emul
+			shift
+			;;
+
+		-db=*)
+			db=${1##*=}
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
+
+exit_if_param_undef db	"$str_usage"
+typeset -r	cfg_path=~/plescripts/database_servers/$db
+typeset -r	max_nodes=$(ls -1 $cfg_path/node* | wc -l)
+
+[ $max_nodes -ne 2 ] && error "Uniquement RAC 2 nœuds" && exit 1
+
+typeset -r	node1=$(cat $cfg_path/node1 | cut -d: -f2)
+typeset -r	node2=$(cat $cfg_path/node2 | cut -d: -f2)
+
+typeset -r	session_name="GI$db"
+exec_cmd -ci tmux kill-session -t "$session_name"
+
+tmux new -s "$session_name"	"ssh oracle@${node1} tail -1000f /u01/app/oracle/diag/rdbms/picsou/PICSOU1/trace/alert_PICSOU1.log"			\;\
+							split-window -v "ssh root@${node2} tail -1000f /u01/app/oracle/diag/rdbms/picsou/PICSOU2/trace/alert_PICSOU2.log"			\;\
+							selectp -t 0 																								
+
