@@ -19,6 +19,7 @@ LN
 
 info "Les script"
 exec_cmd -c "sudo find ~/plescripts/ -name \"*.sh\" | xargs chmod ug=rwx,o=r"
+exec_cmd -c "sudo find ~/plescripts/virtualbox/ -type f | xargs chmod ug=rwx,o=r"
 LN
 
 info "Les lib"
