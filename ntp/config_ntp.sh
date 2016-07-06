@@ -60,10 +60,13 @@ then
 	LN
 fi
 
-info "Config firewall"
-exec_cmd -c "firewall-cmd --add-service=ntp --permanent --zone=trusted"
-exec_cmd -ci "firewall-cmd --reload"
-LN
+if [ $role == infra ]
+then
+	info "Config firewall"
+	exec_cmd "firewall-cmd --add-service=ntp --permanent --zone=trusted"
+	exec_cmd "firewall-cmd --reload"
+	LN
+fi
 
 info "Enabled & start chrony"
 exec_cmd "systemctl enable chronyd"
