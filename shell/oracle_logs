@@ -55,8 +55,8 @@ typeset -r	max_nodes=$(ls -1 $cfg_path/node* | wc -l)
 typeset -r	node1=$(cat $cfg_path/node1 | cut -d: -f2)
 typeset -r	node2=$(cat $cfg_path/node2 | cut -d: -f2)
 
-typeset -r	session_name="GI$db"
-exec_cmd -ci tmux kill-session -t "$session_name"
+typeset -r	session_name="ORCL Top $node1 / Bottom $node2"
+exec_cmd -ci tmux kill-session -t \"$session_name\"
 
 set -x
 tmux new -s "$session_name"	"ssh oracle@${node1} tail -1000f /u01/app/oracle/diag/rdbms/$db/${upper_db}1/trace/alert_${upper_db}1.log"			\;\

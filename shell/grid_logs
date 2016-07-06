@@ -52,8 +52,8 @@ typeset -r	max_nodes=$(ls -1 $cfg_path/node* | wc -l)
 typeset -r	node1=$(cat $cfg_path/node1 | cut -d: -f2)
 typeset -r	node2=$(cat $cfg_path/node2 | cut -d: -f2)
 
-typeset -r	session_name="GI$db"
-exec_cmd -ci tmux kill-session -t "$session_name"
+typeset -r	session_name="GI Left $node1 / Right $node2"
+exec_cmd -ci tmux kill-session -t \"$session_name\"
 
 tmux new -s "$session_name"	"ssh root@${node1} tail -1000f /u01/app/grid/diag/crs/$node1/crs/trace/alert.log"							\;\
 							split-window -h "ssh root@${node2} tail -1000f /u01/app/grid/diag/crs/$node2/crs/trace/alert.log"			\;\
