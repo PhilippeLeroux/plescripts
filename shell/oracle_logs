@@ -44,6 +44,9 @@ do
 done
 
 exit_if_param_undef db	"$str_usage"
+
+typeset -r	upper_db=$(to_upper $db)
+
 typeset -r	cfg_path=~/plescripts/database_servers/$db
 typeset -r	max_nodes=$(ls -1 $cfg_path/node* | wc -l)
 
@@ -55,7 +58,8 @@ typeset -r	node2=$(cat $cfg_path/node2 | cut -d: -f2)
 typeset -r	session_name="GI$db"
 exec_cmd -ci tmux kill-session -t "$session_name"
 
-tmux new -s "$session_name"	"ssh oracle@${node1} tail -1000f /u01/app/oracle/diag/rdbms/picsou/PICSOU1/trace/alert_PICSOU1.log"			\;\
-							split-window -v "ssh root@${node2} tail -1000f /u01/app/oracle/diag/rdbms/picsou/PICSOU2/trace/alert_PICSOU2.log"			\;\
-							selectp -t 0 																								
+set -x
+tmux new -s "$session_name"	"ssh oracle@${node1} tail -1000f /u01/app/oracle/diag/rdbms/$db/${upper_db}1/trace/alert_${upper_db}1.log"			\;\
+							split-window -v "ssh root@${node2} tail -1000f /u01/app/oracle/diag/rdbms/$db/${upper_db}2/trace/alert_${upper_db}2.log"			\;\
+							selectp -t 0
 
