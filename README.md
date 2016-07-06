@@ -83,7 +83,11 @@ la base soit SINGLE ou bien RAC.
    - NTP     : Les serveurs de base de données se synchronisent sur K2
    - Gateway : Les serveurs de base de données passent par K2 pour se mettre à jour sur internet.
 
-[Création de la VM orclmaster](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-de-la-VM-:-orclmaster)
+ [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
+
+# Ajout de serveurs de base de données Oracle.
+Les instructions pour ajouter des serveurs dans notre infrastructure sont décrites
+ici [README.md](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
 
 --------------------------------------------------------------------------------
 
