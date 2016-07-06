@@ -57,7 +57,7 @@ exit_if_param_undef node1 "$str_usage"
 
 if [ $node2 != undef ]
 then
-typeset -r session_name="Monitor RAC"
+typeset -r session_name="$node1 / $node2"
 exec_cmd -ci tmux kill-session -t \"$session_name\"
 
 tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"				\; \
@@ -66,8 +66,9 @@ tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"				\; \
 							selectp -t 0 \; \
 							split-window -v "ssh -t root@${node1} top"
 else
-exec_cmd -ci "tmux kill-session -t MonitorSINGLE"
+typeset -r session_name="$node1"
+exec_cmd -ci tmux kill-session -t \"$session_name\"
 
-tmux new -s MonitorSINGLE	"ssh root@${node1} vmstat 2"				\; \
+tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"				\; \
 							split-window -v "ssh -t root@${node1} top"
 fi
