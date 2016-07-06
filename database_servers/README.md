@@ -99,7 +99,7 @@ Se connecter sur le serveur cible en root :
 Depuis le poste client :
 
 - cd ~/plescripts/database_server
-- ./remove_server.sh -db=<str> [-remove_cfg]
+- ./remove_server.sh -db=<str>
 - Le DNS et le SAN sont mis à jours.
 
 --------------------------------------------------------------------------------

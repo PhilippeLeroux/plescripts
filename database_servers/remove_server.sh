@@ -9,12 +9,11 @@ PLELIB_OUTPUT=FILE
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -db=<str> [-remove_cfg]"
+typeset -r str_usage="Usage : $ME -db=<str>"
 
 info "$ME $@"
 
 typeset db=undef
-typeset remove_cfg=no
 
 while [ $# -ne 0 ]
 do
@@ -27,11 +26,6 @@ do
 
 		-db=*)
 			db=${1##*=}
-			shift
-			;;
-
-		-remove_cfg)
-			remove_cfg=yes
 			shift
 			;;
 
@@ -74,12 +68,6 @@ else
 	exit 1
 fi
 
-if [ $remove_cfg = yes ]
-then
-	info "Remove $cfg_path"
-	exec_cmd -c "rm -rf $cfg_path"
-	LN
-else
-	info "Les fichiers de configurations ne sont pas effacés."
-	LN
-fi
+info "Remove $cfg_path"
+exec_cmd -c "rm -rf $cfg_path"
+LN
