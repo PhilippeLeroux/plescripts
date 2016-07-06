@@ -1,7 +1,4 @@
 Ajouter dans validate_global.cfg.sh :
-	- Tester si le poster client référence K2 comme DNS.
-	- Tester si VBoxManage utilisable which
-
 	Compléter la doc niveau prérequis.
 
 A scripter :

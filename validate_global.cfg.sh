@@ -47,6 +47,8 @@ typeset -i plescripts_ok=0
 typeset -i zip_orcl_grid_ok=0
 typeset -i unzipped_orcl_grid_ok=0
 typeset -i iso_olinux_ok=0
+typeset -i resolv_conf_ok=0
+typeset -i vbox_is_ok=0
 
 line_separator
 info "L'addresse IP 192.170.100.1 correspond au poste client $client_hostname"
@@ -144,9 +146,55 @@ fi
 LN
 
 line_separator
-if [ $bad_ip_host -ne 0 ] || \
-	[ $plescripts_ok -ne 0 ] || [ $zip_orcl_grid_ok -ne 0 ] || \
-	[ $iso_olinux_ok -ne 0 ] || [ $unzipped_orcl_grid_ok -ne 0 ]
+info "Validation de resolv.conf :"
+info -n " - nameserver $infra_ip : "
+if grep -q "^nameserver.*${infra_ip}" /etc/resolv.conf
+then
+	info -f "[$OK]"
+else
+	info -f "[$KO]"
+	resolv_conf_ok=1
+fi
+
+info -n " - search $infra_domain .* : "
+if grep -q "^search.*${infra_domain}.*" /etc/resolv.conf 
+then
+	info -f "[$OK]"
+else
+	info -f "[$KO]"
+	resolv_conf_ok=1
+fi
+
+LN
+
+line_separator
+info -n "Vbox dans le path : "
+which VBoxManage >/dev/null 2>1
+if [ $? -ne 0 ]
+then
+	vbox_is_ok=1
+	info -f "[$KO]"
+else
+	info -f "[$OK]"
+fi
+
+info -n "~/plescripts/shell dans le path : "
+which llog >/dev/null 2>1
+if [ $? -ne 0 ]
+then
+	info -f "${LBLUE}non${NORM}, fortement conseillé..."
+else
+	info -f "[$OK]"
+fi
+
+LN
+
+line_separator
+if [ $bad_ip_host -ne 0 ] 											\
+	|| [ $plescripts_ok -ne 0 ] || [ $zip_orcl_grid_ok -ne 0 ] 		\
+	|| [ $iso_olinux_ok -ne 0 ] || [ $unzipped_orcl_grid_ok -ne 0 ]	\
+	|| [ $resolv_conf_ok -ne 0 ] 									\
+	|| [ $vbox_is_ok -ne 0 ]
 then
 	info "Corriger les erreurs avant de continuer."
 	exit 1
