@@ -37,7 +37,7 @@ function virtualbox_stop
 			LN
 			info "Poweroff : ${vm_list[$ivm]}"
 			exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} poweroff"
-			[ $? -ne 0 ] && error "Failed to poweroff ${vm_list[$ivm]}"
+			[ $? -ne 0 ] && error "Failed to poweroff ${vm_list[$ivm]}" && exit 1
 		fi
 		LN
 	done
@@ -46,6 +46,7 @@ function virtualbox_stop
 case ${hostvm##*_} in
 	virtualbox)
 		virtualbox_stop
+		exit 0
 		;;
 
 	*)
