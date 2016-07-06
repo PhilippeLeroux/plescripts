@@ -50,16 +50,19 @@ ssh -t root@${host}<<EOS
 KV=\$(uname -r)
 if echo "$KV" | grep -q "uek"
 then
-	echo "uek"
 	rpm_kernel="kernel-devel-\$KV"
 else
-	echo "! uek"
 	rpm_kernel="kernel-uek-devel-\$KV"
 fi
 echo "yum -y install deltarpm gcc \$rpm_kernel"
 yum -y install deltarpm gcc \$rpm_kernel
-mkdir /media/cdrom
+
+[ ! -d /media/cdrom ] && mkdir /media/cdrom || true
+
+echo "mount /dev/cdrom /media/cdrom"
 mount /dev/cdrom /media/cdrom
-cd /media/cdrom ; ./VBoxLinuxAdditions.run
+
+echo "cd /media/cdrom && ./VBoxLinuxAdditions.run"
+cd /media/cdrom && ./VBoxLinuxAdditions.run
 EOS
 [ $? -ne 0 ] && exit 1 || exit 0
