@@ -1,3 +1,9 @@
+Ajouter dans validate_global.cfg.sh :
+	- Tester si le poster client référence K2 comme DNS.
+	- Tester si VBoxManage utilisable which
+
+	Compléter la doc niveau prérequis.
+
 A scripter :
 	Sur le serveur K2 forcer bind à utiliser IPV4 : permet de diminuer le nombre
 	de messages d'erreurs dans /var/log/messages liées à IPv6
