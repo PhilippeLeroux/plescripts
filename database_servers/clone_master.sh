@@ -312,11 +312,13 @@ function wait_master
 	[ $? -ne 0 ] && exit 1
 	LN
 
+if [ 0 -eq 1 ]; then # Désactivé, plus besoins de saisir le mot de passe.
 	chrono_start
 	info "You are ready : press a key."
 	read keyboard
 	LN
 	chrono_stop "Wait user : "
+fi
 }
 
 #	Configure le master cloné
@@ -425,14 +427,7 @@ LN
 
 if [ $type_shared_fs == vbox ]
 then
-	exec_cmd -c "ssh root@$server_name \"yum -y install kernel-devel-\\\$(uname -r)\""
-	LN
-
-	exec_cmd -ci "ssh root@$server_name mkdir /media/cdrom"
-	exec_cmd -ci "ssh root@$server_name mount /dev/cdrom /media/cdrom"
-	LN
-
-	exec_cmd "ssh root@$server_name \"cd /media/cdrom; ./VBoxLinuxAdditions.run\""
+	exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=$server_name"
 	LN
 
 	reboot_server $server_name

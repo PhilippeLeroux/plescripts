@@ -66,7 +66,7 @@ then
 	LN
 
 	line_separator
-	exec_cmd "~/plescripts/setup_first_vms/vbox_scripts/compile_guest_additions.sh -host=${master_ip}"
+	exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=${master_ip}"
 	LN
 	exec_cmd "$vm_scripts_path/stop_vm $master_name"
 	info -n "Temporisation : "; pause_in_secs 20; LN

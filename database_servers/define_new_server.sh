@@ -273,5 +273,3 @@ else
 fi
 
 ~/plescripts/shell/show_db_servers -db=$db
-
-./virtualbox_scripts.sh -db=$db

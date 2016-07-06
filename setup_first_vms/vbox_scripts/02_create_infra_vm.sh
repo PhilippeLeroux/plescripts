@@ -124,7 +124,7 @@ exec_cmd "~/plescripts/shell/connections_ssh_with.sh -user=root -server=$infra_i
 LN
 
 line_separator
-exec_cmd "~/plescripts/setup_first_vms/vbox_scripts/compile_guest_additions.sh -host=${infra_ip}"
+exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=${infra_ip}"
 LN
 
 info "Redémarrage de la VM $infra_hostname"
