@@ -16,7 +16,7 @@ typeset -r str_usage=\
 	[-node=<#>]          n° du nœud si base de type RAC
 
 	[-skip_clone]        le clonage est déjà effectué.
-	[-start_server_only] le serveur est cloné mais n'est pas démarré, util que pour le nœud 1.
+	[-start_server_only] le serveur est cloné mais n'est pas démarré, utile que pour le nœud 1.
 	[-skip_oracle]       la création des utilisateurs est déjà effectué.
 "
 
@@ -170,7 +170,11 @@ function reboot_server
 
 	line_separator
 	info "Reboot :"
-	exec_cmd -c "ssh -t root@$server reboot"
+	exec_cmd "$vm_scripts_path/stop_vm $server"
+	info -n "Wait : "; pause_in_secs 20; LN
+	LN
+
+	exec_cmd "$vm_scripts_path/start_vm $server"
 
 	loop_wait_server $server
 }
@@ -181,10 +185,7 @@ function configure_ifaces_hostname_and_reboot
 	exec_cmd "ssh -t $master_conn plescripts/configure_network/setup_iface_and_hostename.sh -db=$db -node=$node; exit"
 	LN
 
-	info "Reboot :"
-	exec_cmd -c "ssh -t root@$master_name reboot"
-
-	loop_wait_server $server_name
+	reboot_server $server_name
 
 	test_pause "$server_name : Check network configuration."
 }
@@ -283,7 +284,7 @@ function configure_disks_node1
 			fstab="${oracle_release%.*.*} /mnt/oracle_install vboxsf defaults,_netdev 0 0"
 			;;
 	esac
-	
+
 	exec_cmd "ssh -t root@${server_name} sed -i '/oracle_install/d' /etc/fstab"
 	exec_cmd "ssh -t root@${server_name} \"[ ! -d /mnt/oracle_install ] && mkdir /mnt/oracle_install || true\""
 	exec_cmd "ssh -t root@${server_name} \"echo $fstab >> /etc/fstab\""
@@ -323,17 +324,16 @@ function configure_server
 {
 	if [ $node -eq 1 ] && [ $start_server_only == no ]
 	then
-		exec_cmd ~/plescripts/database_servers/${db}/vms_virtualbox/clone/clone_${db}_from_orclmaster.sh
-	else
-		if [ $max_nodes -gt 1 ]
+		if [ $max_nodes -eq 1 ]
 		then
-			typeset -r s=$(printf "~/plescripts/database_servers/${db}/vms_virtualbox/single/srv${db}%02d_start.sh" $node)
+			typeset -r vm_memory=$vm_memory_mb_for_single_db
 		else
-			typeset -r s="~/plescripts/database_servers/${db}/vms_virtualbox/${db}_start.sh"
+			typeset -r vm_memory=$vm_memory_mb_for_rac_db
 		fi
-		exec_cmd $s
+		exec_cmd "$vm_scripts_path/clone_vm.sh -db=$db -vm_memory_mb=$vm_memory"
 	fi
 
+	exec_cmd "$vm_scripts_path/start_vm $server_name"
 	wait_master
 
 	line_separator
@@ -423,9 +423,6 @@ LN
 reboot_server $server_name
 LN
 
-loop_wait_server $server_name
-LN
-
 if [ $type_shared_fs == vbox ]
 then
 	exec_cmd -c "ssh root@$server_name \"yum -y install kernel-devel-\\\$(uname -r)\""
@@ -439,9 +436,6 @@ then
 	LN
 
 	reboot_server $server_name
-	LN
-
-	loop_wait_server $server_name
 	LN
 fi
 
