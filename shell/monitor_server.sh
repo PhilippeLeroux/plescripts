@@ -16,7 +16,7 @@ typeset -r top_left=+0+0
 typeset -r bottom_left=+0+550
 
 #	Font du terminal
-typeset -r xterm_static_options="-fa 'Monospace' -fs 14"
+typeset -r xterm_static_options="-fa 'Monospace' -fs 14 +sb -rv"
 
 db=$1
 
@@ -34,9 +34,9 @@ typeset -ri count_nodes=$(ls -1 $dir_files/node* | wc -l)
 
 if [ $count_nodes -eq 2 ]
 then
-	xterm $xterm_static_options -geometry ${width_rac}x${height}$top_left +sb -rv \
+	xterm $xterm_static_options -geometry ${width_rac}x${height}$top_left \
 		-e "tmux_monitor_server.sh -node1=srv${db}01 -node2=srv${db}02" &
 else
-	xterm $xterm_static_options -geometry ${width_single}x${height}$top_right +sb -rv \
+	xterm $xterm_static_options -geometry ${width_single}x${height}$top_right \
 		-e "tmux_monitor_server.sh -node1=srv${db}01" &
 fi
