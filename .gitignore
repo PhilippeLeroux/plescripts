@@ -21,10 +21,10 @@ san/saveconfig-*
 san/targetcli_backup/**
 nohup.out
 afiedt.buf
-database_servers/picsou
-database_servers/picsou/vms_virtualbox
-database_servers/picsou/vms_virtualbox/clone
-database_servers/picsou/vms_virtualbox/single
-database_servers/plutot
-database_servers/plutot/vms_virtualbox
-database_servers/plutot/vms_virtualbox/clone
+database_servers/daisy
+database_servers/daisy/vms_virtualbox
+database_servers/daisy/vms_virtualbox/clone
+database_servers/daisy/vms_virtualbox/single
+database_servers/riri
+database_servers/riri/vms_virtualbox
+database_servers/riri/vms_virtualbox/clone
