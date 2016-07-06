@@ -129,7 +129,7 @@ case $role in
 		LN
 
 		line_separator
-		exec_cmd yum -y install nfs-utils iscsi-initiator-utils deltarpm chrony wget net-tools vim-enhanced unzip tmux
+		exec_cmd yum -y install nfs-utils iscsi-initiator-utils deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm
 
 		case $type_shared_fs in
 			nfs)
@@ -141,16 +141,11 @@ case $role in
 
 			vbox)
 				line_separator
-				exec_cmd "echo \"sf_plescripts /mnt/plescripts vboxsf defaults,uid=kangs,gid=users,_netdev 0 0\" >> /etc/fstab"
+				exec_cmd "echo \"plescripts /mnt/plescripts vboxsf defaults,uid=kangs,gid=users,_netdev 0 0\" >> /etc/fstab"
 				exec_cmd -c mount -a /mnt/plescripts
 				LN
 			;;
 		esac
-
-		line_separator
-		exec_cmd "~/plescripts/shell/set_plymouth_them"
-		LN
-
 		;;
 
 	infra)
@@ -160,7 +155,7 @@ case $role in
 		LN
 
 		line_separator
-		exec_cmd yum -y install nfs-utils git targetcli deltarpm chrony wget net-tools vim-enhanced unzip tmux
+		exec_cmd yum -y install nfs-utils git targetcli deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm
 		LN
 
 		line_separator
@@ -171,24 +166,33 @@ case $role in
 		LN
 
 		line_separator
-		exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rsize=8192,wsize=8192,timeo=14,intr,comment=systemd.automount\" >> /etc/fstab"
-		LN
+		case $type_shared_fs in
+			nfs)
+				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rsize=8192,wsize=8192,timeo=14,intr,comment=systemd.automount\" >> /etc/fstab"
+				LN
 
-		line_separator
-		exec_cmd "echo \"/root/$oracle_install ${infra_network}.0/${infra_mask}(rw,sync,no_root_squash,no_subtree_check)\" >> /etc/exports"
-		LN
+				line_separator
+				exec_cmd "echo \"/root/$oracle_install ${infra_network}.0/${infra_mask}(rw,sync,no_root_squash,no_subtree_check)\" >> /etc/exports"
+				LN
 
-		exec_cmd "systemctl enable rpcbind"
-		exec_cmd "systemctl start rpcbind"
-		LN
+				exec_cmd "systemctl enable rpcbind"
+				exec_cmd "systemctl start rpcbind"
+				LN
 
-		exec_cmd "systemctl enable nfs-server"
-		exec_cmd "systemctl start nfs-server"
-		LN
+				exec_cmd "systemctl enable nfs-server"
+				exec_cmd "systemctl start nfs-server"
+				LN
 
-		exec_cmd "firewall-cmd --add-service=nfs --permanent --zone=trusted"
-		exec_cmd "firewall-cmd --reload"
-		LN
+				exec_cmd "firewall-cmd --add-service=nfs --permanent --zone=trusted"
+				exec_cmd "firewall-cmd --reload"
+				LN
+				;;
+
+			vbox)
+				exec_cmd "echo \"plescripts  /mnt/plescripts     vboxsf defaults,uid=kangs,gid=users,_netdev 0 0\" >> /etc/fstab"
+				LN
+				;;
+		esac
 
 		line_separator
 		exec_cmd "~/plescripts/san/create_vg.sh -device=sdb -vg=asm01"
@@ -196,7 +200,7 @@ case $role in
 
 		line_separator
 		info "Configure SAN"
-		run_ssh "~/plescripts/san/targetcli_default_cfg.sh"
+		exec_cmd "~/plescripts/san/targetcli_default_cfg.sh"
 		LN
 
 		line_separator
@@ -204,13 +208,14 @@ case $role in
 		exec_cmd "cp ~/plescripts/san/pletarget.service /usr/lib/systemd/system/"
 		exec_cmd systemctl enable pletarget
 		LN
-
-		line_separator
-		exec_cmd "~/plescripts/shell/set_plymouth_them"
-		LN
 		;;
 esac
 
 exec_cmd ~/plescripts/ntp/config_ntp.sh -role=$role
 
 exec_cmd ~/plescripts/gadgets/install.sh $role
+
+line_separator
+exec_cmd "~/plescripts/shell/set_plymouth_them"
+LN
+
