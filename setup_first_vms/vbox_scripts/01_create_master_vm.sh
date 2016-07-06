@@ -1,6 +1,7 @@
 #!/bin/sh
 #	ts=4 sw=4
 
+PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -29,6 +30,11 @@ do
 			;;
 	esac
 done
+
+line_separator
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_ip}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
+LN
 
 line_separator
 info "Create VM $master_name"

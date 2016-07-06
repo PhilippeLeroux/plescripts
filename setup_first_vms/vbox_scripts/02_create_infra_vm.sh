@@ -1,6 +1,7 @@
 #!/bin/sh
 #	ts=4 sw=4
 
+PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -35,6 +36,12 @@ function run_ssh
 {
 	exec_cmd "ssh root@$infra_ip \"$@\""
 }
+line_separator
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_ip}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_ip}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_hostname}
+LN
 
 line_separator
 info "Arrêt de la VM $master_name"
@@ -65,26 +72,51 @@ exec_cmd VBoxManage modifyvm "$infra_hostname" --groups "/Infra"
 LN
 
 line_separator
+exec_cmd VBoxManage sharedfolder add $master_name --name "plescripts" --hostpath "$HOME/plescripts --automount"
+LN
+
+line_separator
 exec_cmd "VBoxManage showvminfo $infra_hostname > $infra_hostname.info"
 LN
 
 line_separator
 info "Démarre la VM $infra_hostname"
-exec_cmd VBoxManage startvm  $infra_hostname --type headless
-info -n "Temporisation : "; pause_in_secs 40; LN
+exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+LN
+wait_server $master_ip
 LN
 
 line_separator
 info "Copie la configuration des Ifaces sur $infra_hostname"
-exec_cmd "scp ~/plescripts/setup_first_vms/ifcfg_infra_server/* root@192.170.100.2:/etc/sysconfig/network-scripts/"
+typeset -r if_cfg_path=~/plescripts/setup_first_vms/ifcfg_infra_server
+update_value IPADDR	$infra_ip							$if_cfg_path/ifcfg-$if_pub_name
+update_value DNS1	$infra_ip							$if_cfg_path/ifcfg-$if_pub_name
+LN
+update_value IPADDR	${if_priv_network}.${infra_ip_node}	$if_cfg_path/ifcfg-$if_priv_name
+LN
+update_value DNS1	$infra_ip							$if_cfg_path/ifcfg-$if_net_name
+LN
+exec_cmd "scp ~/plescripts/setup_first_vms/ifcfg_infra_server/* root@${master_ip}:/etc/sysconfig/network-scripts/"
 LN
 
 line_separator
 info "Redémarrage de la VM $infra_hostname"
-exec_cmd VBoxManage controlvm $infra_hostname acpipowerbutton
+exec_cmd "~/plescripts/shell/stop_vm $infra_hostname"
 info -n "Temporisation : "; pause_in_secs 20; LN
-exec_cmd VBoxManage startvm $infra_hostname --type headless
-info -n "Temporisation : "; pause_in_secs 40; LN
+exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+LN
+wait_server $infra_ip
+if [ $? -ne 0 ]
+then	# Parfois un simple reboot suffit.
+	info "Redémarrage de la VM $infra_hostname"
+	exec_cmd "~/plescripts/shell/stop_vm $infra_hostname"
+	info -n "Temporisation : "; pause_in_secs 20; LN
+	exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+	LN
+	wait_server $infra_ip
+	[ $? -ne 0 ] && exit 1
+fi
+LN
 
 line_separator
 info "Connexion ssh :"
@@ -92,15 +124,40 @@ exec_cmd "~/plescripts/shell/connections_ssh_with.sh -user=root -server=$infra_i
 LN
 
 line_separator
-info "Création des point de montage NFS :"
-run_ssh "mkdir plescripts"
-run_ssh "mount 192.170.100.1:/home/$common_user_name/plescripts /root/plescripts"
-run_ssh "mkdir -p ~/$oracle_install"
-run_ssh "mkdir zips"
-run_ssh "mount 192.170.100.1:/$common_user_name/kangs/ISO/$oracle_install /root/zips"
+exec_cmd "~/plescripts/setup_first_vms/vbox_scripts/compile_guest_additions.sh -host=${infra_ip}"
+LN
+
+info "Redémarrage de la VM $infra_hostname"
+exec_cmd "~/plescripts/shell/stop_vm $infra_hostname"
+info -n "Temporisation : "; pause_in_secs 20; LN
+exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+LN
+wait_server $infra_ip
+[ $? -ne 0 ] && exit 1
+
+line_separator
+run_ssh "mkdir /mnt/plescripts"
+
+case $type_shared_fs in
+	vbox)
+		run_ssh "mount -t vboxsf plescripts /mnt/plescripts"
+		;;
+
+	nfs)
+		info "Création des point de montage NFS :"
+		run_ssh "mkdir plescripts"
+		run_ssh "mount 192.170.100.1:/home/$common_user_name/plescripts /root/plescripts"
+		run_ssh "mkdir -p ~/$oracle_install"
+		run_ssh "mkdir zips"
+		run_ssh "mount 192.170.100.1:/$common_user_name/kangs/ISO/$oracle_install /root/zips"
+		;;
+esac
+
+run_ssh "ln -s /mnt/plescripts ~/plescripts"
+LN
+
 run_ssh "~/plescripts/setup_first_vms/02_update_config.sh"
 run_ssh "~/plescripts/setup_first_vms/03_setup_infra_or_master.sh -role=infra"
-run_ssh "~/plescripts/setup_first_vms/04_unzip_oracle_cd.sh"
 LN
 
 line_separator
@@ -118,7 +175,7 @@ LN
 
 line_separator
 info "Redémarrage de la VM $infra_hostname"
-exec_cmd VBoxManage controlvm $infra_hostname acpipowerbutton
+exec_cmd "~/plescripts/shell/stop_vm $infra_hostname"
 info -n "Temporisation : "; pause_in_secs 20; LN
 
 line_separator
@@ -126,7 +183,7 @@ info "Ajuste la RAM"
 exec_cmd VBoxManage modifyvm $infra_hostname --memory $vm_memory_mb_for_infra
 LN
 
-exec_cmd VBoxManage startvm $infra_hostname --type headless
-info -n "Temporisation : "; pause_in_secs 40; LN
-exec_cmd "~/plescripts/shell/connections_ssh_with.sh -user=root -server=K2"
+exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+wait_server $infra_hostname
+exec_cmd "~/plescripts/shell/connections_ssh_with.sh -user=root -server=$infra_hostname"
 LN
