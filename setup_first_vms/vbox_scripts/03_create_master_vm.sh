@@ -49,7 +49,7 @@ case $type_shared_fs in
 		;;
 esac
 
-exec_cmd -c "~/plescripts/shell/start_vm $master_name"
+exec_cmd "$vm_scripts_path/start_vm $master_name"
 LN
 wait_server ${infra_network}.${master_ip_node}
 LN
@@ -68,9 +68,9 @@ then
 	line_separator
 	exec_cmd "~/plescripts/setup_first_vms/vbox_scripts/compile_guest_additions.sh -host=${master_ip}"
 	LN
-	exec_cmd "~/plescripts/shell/stop_vm $master_name"
+	exec_cmd "$vm_scripts_path/stop_vm $master_name"
 	info -n "Temporisation : "; pause_in_secs 20; LN
-	exec_cmd "~/plescripts/shell/start_vm $master_name"
+	exec_cmd "$vm_scripts_path/start_vm $master_name"
 	wait_server $master_name
 	[ $? -ne 0 ] && exit 1
 fi
@@ -98,7 +98,7 @@ run_ssh "~/plescripts/setup_first_vms/02_update_config.sh"
 run_ssh "~/plescripts/setup_first_vms/03_setup_infra_or_master.sh -role=master"
 LN
 
-exec_cmd "~/plescripts/shell/stop_vm $master_name"
+exec_cmd "$vm_scripts_path/stop_vm $master_name"
 LN
 
 info "Le serveur $master_name est prêt."

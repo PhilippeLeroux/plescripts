@@ -81,7 +81,7 @@ LN
 
 line_separator
 info "Démarre la VM $infra_hostname"
-exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
 LN
 wait_server $master_ip
 LN
@@ -101,17 +101,17 @@ LN
 
 line_separator
 info "Redémarrage de la VM $infra_hostname"
-exec_cmd "~/plescripts/shell/stop_vm $infra_hostname"
+exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
 info -n "Temporisation : "; pause_in_secs 20; LN
-exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
 LN
 wait_server $infra_ip
 if [ $? -ne 0 ]
 then	# Parfois un simple reboot suffit.
 	info "Redémarrage de la VM $infra_hostname"
-	exec_cmd "~/plescripts/shell/stop_vm $infra_hostname"
+	exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
 	info -n "Temporisation : "; pause_in_secs 20; LN
-	exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+	exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
 	LN
 	wait_server $infra_ip
 	[ $? -ne 0 ] && exit 1
@@ -128,9 +128,9 @@ exec_cmd "~/plescripts/setup_first_vms/vbox_scripts/compile_guest_additions.sh -
 LN
 
 info "Redémarrage de la VM $infra_hostname"
-exec_cmd "~/plescripts/shell/stop_vm $infra_hostname"
+exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
 info -n "Temporisation : "; pause_in_secs 20; LN
-exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
 LN
 wait_server $infra_ip
 [ $? -ne 0 ] && exit 1
@@ -175,7 +175,7 @@ LN
 
 line_separator
 info "Redémarrage de la VM $infra_hostname"
-exec_cmd "~/plescripts/shell/stop_vm $infra_hostname"
+exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
 info -n "Temporisation : "; pause_in_secs 20; LN
 
 line_separator
@@ -183,7 +183,7 @@ info "Ajuste la RAM"
 exec_cmd VBoxManage modifyvm $infra_hostname --memory $vm_memory_mb_for_infra
 LN
 
-exec_cmd "~/plescripts/shell/start_vm $infra_hostname"
+exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
 wait_server $infra_hostname
 exec_cmd "~/plescripts/shell/connections_ssh_with.sh -user=root -server=$infra_hostname"
 LN
