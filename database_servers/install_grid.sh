@@ -480,6 +480,9 @@ then
 			exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop has\""
 			exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start has\""
 			LN
+
+			#Pour être certain que ASM est démarré.
+			[ $max_nodes -eq 1 ] && (info -n "Wait : "; pause_in_secs 30; LN)
 		fi
 	fi
 
