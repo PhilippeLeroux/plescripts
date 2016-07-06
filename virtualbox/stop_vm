@@ -39,7 +39,6 @@ function virtualbox_stop
 			exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} poweroff"
 			[ $? -ne 0 ] && error "Failed to poweroff ${vm_list[$ivm]}" && exit 1
 		fi
-		LN
 	done
 }
 
