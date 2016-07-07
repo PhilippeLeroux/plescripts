@@ -58,7 +58,7 @@ la base soit SINGLE ou bien RAC.
 
 * Création d'une base de donner : un seul script également (Utilisation de dbca).
 
-	Temps de création RAC cdb + 1 pdb : 1h20
+	Temps de création RAC cdb + 1 pdb : 1 h 20
 
 --------------------------------------------------------------------------------
 # Prérequis :
@@ -81,11 +81,13 @@ la base soit SINGLE ou bien RAC.
    - DNS     : Gestion du DNS de notre réseau.
    - SAN     : Gestion des disques des bases de données.
    - NTP     : Les serveurs de base de données se synchronisent sur K2
-   - Gateway : Les serveurs de base de données passent par K2 pour se mettre à jour sur internet.
+   - GATEWAY : Les serveurs de base de données passent par K2 pour se mettre à jour sur internet.
 
  [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
 
 # Ajout de serveurs de base de données Oracle.
+_Les 2 VMs orclmaster et K2 doivent exister._
+
 Les instructions pour ajouter des serveurs dans notre infrastructure sont décrites
 ici [README.md](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
 
