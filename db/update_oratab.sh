@@ -46,10 +46,19 @@ typeset -r	upper_db=$(to_upper $db)
 
 line_separator
 info "Mise à jour de /etc/oratab"
-info "Le nom de toutes les instances sont ajoutées, utile pour les RACs services managed"
+info "Le nom de toutes les instances sont ajoutées, utile pour les RACs services managed & one node"
 for inode in $( seq 1 $max_nodes )
 do
-	INSTANCE=${upper_db}$inode
+	case $(cat $cfg_path/node$inode | cut -d: -f1) in
+		std|rac)
+			INSTANCE=${upper_db}$inode
+			;;
+
+		raco)
+			INSTANCE=${upper_db}_$inode
+			;;
+	esac
+
 	grep "$INSTANCE" /etc/oratab 2>/dev/null 1>&2
 	if [ $? -eq 0 ]
 	then
