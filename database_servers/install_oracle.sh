@@ -130,7 +130,11 @@ function create_response_file
 		done
 		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
 
-		update_value oracle.install.db.isRACOneInstall $(yn_to_bool $rac_one_node)	$rsp_file
+		if [ $rac_one_node == yes ]
+		then
+			update_value oracle.install.db.isRACOneInstall $(yn_to_bool $rac_one_node)	$rsp_file
+			update_value oracle.install.db.racOneServiceName ron_$db $rsp_file
+		fi
 	fi
 
 	LN

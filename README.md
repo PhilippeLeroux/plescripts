@@ -19,11 +19,6 @@ pour targetcli qui a le gros avantage d'être scriptable, seul Oracle 12cR1 est
 pris en charge et le RAC étendu n'est plus pris en compte.
 
 L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable.
-Une adaptation pour KVM sera sans doute effectuée.
-
---------------------------------------------------------------------------------
-
-# Publics : DBA / Développeurs Oracle
 
 --------------------------------------------------------------------------------
 

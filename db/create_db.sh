@@ -19,7 +19,7 @@ typeset -ri	min_memory_mb=444
 typeset -ri	min_shared_pool_size_mb=256
 
 typeset		name=undef
-typeset		db=undef
+#typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset -i	memory_mb=$min_memory_mb
 typeset		data=DATA
@@ -155,7 +155,7 @@ typeset -r LOG_DBCA=${PLELIB_LOG_FILE}_dbca
 
 function is_rac_or_single_server
 {
-	db_type=SINGLE
+	[ $db_type == undef ] && db_type=SINGLE
 	test_if_cmd_exists olsnodes
 	if [ $? -eq 0 ]
 	then
@@ -171,8 +171,9 @@ function is_rac_or_single_server
 			count_nodes=count_nodes+1
 		done<<<"$(olsnodes)"
 
-		[ $count_nodes -gt 1 ] && db_type=RAC
+		[ db_type == undef ] && [ $count_nodes -gt 1 ] && db_type=RAC
 	fi
+
 	#	Note sur un single olsnodes existe mais ne fait rien
 	[ x"$node_list" = x ] && node_list=undef
 }
@@ -226,7 +227,7 @@ function show_db_settings
 	info "Create DB              : $name"
 	info "lang                   : $lang"
 	info "Type                   : $db_type"
-	[ $node_list != undef ] && info "Nodes                  : $node_list"
+	[ "$node_list" != undef ] && info "Nodes                  : $node_list"
 	info "sys & system passwords : $sysPassword"
 	info "memory                 : $(fmt_number $memory_mb)Mb $mem_suffix"
 	if [ "$usefs" = "no" ]
@@ -285,8 +286,12 @@ function add_dbca_param
 function make_dbca_args
 {
 	add_dbca_param "-createDatabase -silent"
+
 	add_dbca_param "-databaseConfType $db_type"
+	[ $db_type == RACONENODE ] && add_dbca_param "    -RACOneNodeServiceName ron_$(to_lower $name)"
+
 	[ "$node_list" != undef ] && add_dbca_param "-nodelist $node_list"
+
 	add_dbca_param "-gdbName $name"
 	add_dbca_param "-totalMemory $memory_mb"
 	add_dbca_param "-characterSet AL32UTF8"
@@ -490,8 +495,8 @@ function on_ctrl_c
 #	============================================================================
 typeset -r script_start_at=$SECONDS
 
-[ $db_type = undef ] && is_rac_or_single_server
-if [ $db_type = SINGLE ]
+is_rac_or_single_server
+if [ $db_type == SINGLE ]
 then
 	test_if_cmd_exists olsnodes
 	if [ $? -eq 0 ]

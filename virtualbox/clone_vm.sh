@@ -57,7 +57,20 @@ exit_if_dir_not_exists $cfg_path "$str_usage"
 
 typeset -ri	max_nodes=$(ls -1 $cfg_path/node*|wc -l)
 
-typeset	-r	group_name="/$(initcap $db) RAC"
+typeset	-r	db_type=$(cat $node_file | cut -d: -f1)
+case $db_type in
+	std)
+		typeset	-r	group_name="/Standalone : $(initcap $db)"
+		;;
+
+	rac)
+		typeset	-r	group_name="/RAC : $(initcap $db)"
+		;;
+
+	raco)
+		typeset	-r	group_name="/One node : $(initcap $db)"
+		;;
+esac
 
 for node_file in $cfg_path/node*
 do
@@ -68,6 +81,6 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
 	exec_cmd VBoxManage storageattach "$vm_name" --storagectl IDE  --port 1 --device 0 --type dvddrive --medium emptydrive
 	exec_cmd VBoxManage sharedfolder add $vm_name --name \"${oracle_release%.*.*}\" --hostpath \"$HOME/$oracle_install\" --automount
-	[ $max_nodes -gt 1 ] && exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
+	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	LN
 done

@@ -26,6 +26,8 @@ Création de nouveaux serveurs :
 
 	Création d'un RAC 2 nœuds : `./define_new_server.sh -db=daisy -max_nodes=2`
 
+	Création d'un RAC 2 nœuds one node : `./define_new_server.sh -db=daisy -max_nodes=2 -one_node`
+
 	Un nouveau répertoire nommé daisy est créée contenant les fichiers décrivant
 	le paramétrage du ou des serveurs.
 
