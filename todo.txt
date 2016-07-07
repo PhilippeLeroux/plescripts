@@ -17,3 +17,40 @@ Dans shell :
 	Commande : chronyc -a makestep
 	Test     : les nœuds d'un RAC vont ils survivre.
 
+A documenter :
+	- Création d'un FS ACFS
+		root@K2
+		[root@K2:~]$ cd plescripts/san/
+		[root@K2:san]$ ./add_and_export_lv.sh -server=srvdaisy01 -vg_name=asm01 -count=4
+		[root@K2:san]$ ./export_lv.sh -initiator_name=iqn.1970-05.com.srvdaisy:02 -vg_name=asm01 -prefix=daisy -size_gb=8 -first_no=12 -count=4
+		[root@K2:san]$ ./show_db_info.sh -db=daisy
+		root@srvdaisy01
+		[root@srvdaisy01 ~]# cd plescripts/disk
+		[root@srvdaisy01 disk]# ./create_partitions_on_new_disks.sh
+		[root@srvdaisy01 disk]# ./create_oracle_disk_on_new_part.sh
+		root@srvdaisy02
+		[root@srvdaisy02 ~]# cd plescripts/disk
+		[root@srvdaisy02 ~]# iscsiadm -m node --rescan
+		[root@srvdaisy02 disk]# oracleasm scandisks
+		Reloading disk partitions: done
+		Cleaning any stale ASM disks...
+		Scanning system for ASM disks...
+		Instantiating disk "S1DISKDAISY12"
+		Instantiating disk "S1DISKDAISY14"
+		Instantiating disk "S1DISKDAISY15"
+		Instantiating disk "S1DISKDAISY13"
+		grid@srvdaisy01
+		grid@srvdaisy01:+ASM1:grid> cd plescripts/dg/
+		grid@srvdaisy01:+ASM1:dg> ./create_new_dg.sh -name=ACFS -disks=4
+		grid@srvdaisy02
+		grid@srvdaisy01:+ASM1:dg> ssh srvdaisy02
+		grid@srvdaisy02:+ASM2:grid> asmcmd mount ACFS
+		grid@srvdaisy02:+ASM2:grid> asmcmd lsdg
+		grid@srvdaisy01
+		Et maintenant ? 
+		ACFS n'est pas supporté sur Linux 7
+		https://docs.oracle.com/cd/E11882_01/server.112/e18951/asmfs_util001.htm#OSTMG94787
+		volcreate -G ACFS -s 10G volume1
+		volinfo -G ACFS volume1
+
+		/sbin/mkfs -t acfs /dev/asm/volume1-123
