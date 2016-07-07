@@ -116,6 +116,13 @@ else
 	let g:light_colors_name = 'github'
 	let g:dark_colors_name = 'sourcerer'
 	let g:colors_name=g:light_colors_name	" Théme par défaut
+	"	Théme par défaut
+	if $HOSTNAME == 'K2'
+		let g:colors_name=g:dark_colors_name
+	else
+		let g:colors_name=g:light_colors_name
+	endif
+
 	set cc=81 nu wrap linebreak
 endif
 
