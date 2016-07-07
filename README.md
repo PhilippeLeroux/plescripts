@@ -83,7 +83,7 @@ la base soit SINGLE ou bien RAC.
 # Ajout de serveurs de base de données Oracle.
 _Les 2 VMs orclmaster et K2 doivent exister._
 
-Les instructions pour créer serveurs sont décrites ici [README.md](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
+Les instructions pour créer des serveurs sont décrites ici [README](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
 
 --------------------------------------------------------------------------------
 
