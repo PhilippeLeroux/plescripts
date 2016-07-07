@@ -107,6 +107,7 @@ filetype plugin on
 if has("gui_running")
 	let g:light_colors_name = 'github'
 	let g:dark_colors_name = 'sourcerer'
+	let g:colors_name=g:dark_colors_name	" Théme par défaut
 	set guifont=Monospace\ 12
 	set guioptions+=b
 	set cc=81 nonu nowrap
@@ -114,6 +115,7 @@ else
 	silent! set mouse=a
 	let g:light_colors_name = 'github'
 	let g:dark_colors_name = 'sourcerer'
+	let g:colors_name=g:light_colors_name	" Théme par défaut
 	set cc=81 nu wrap linebreak
 endif
 
@@ -349,6 +351,18 @@ function! ToggleColorscheme()
 		execute "colorscheme ".g:light_colors_name
 	else
 		execute "colorscheme ".g:dark_colors_name
+	endif
+
+	if !has("gui")
+		" Améliore considérablement la lisibilité.
+		highlight clear SpellBad
+		highlight SpellBad term=standout ctermfg=1 term=underline cterm=underline
+		highlight clear SpellCap
+		highlight SpellCap term=underline cterm=underline
+		highlight clear SpellRare
+		highlight SpellRare term=underline cterm=underline
+		highlight clear SpellLocal
+		highlight SpellLocal term=underline cterm=underline
 	endif
 endfunction
 
