@@ -8,11 +8,17 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : $ME <str>"
 
 info "$ME $@"
 
-typeset -r server=$1
+[[ $# -eq 0 ]] && [[ -v ID_DB ]] && server=$ID_DB || server=$1
+
+if [ x"$server" == x ]
+then
+	error "$str_usage"
+	exit 1
+fi
 
 function virtualbox_start
 {

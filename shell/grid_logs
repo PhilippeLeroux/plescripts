@@ -43,7 +43,9 @@ do
 	esac
 done
 
+[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db	"$str_usage"
+
 typeset -r	cfg_path=~/plescripts/database_servers/$db
 typeset -r	max_nodes=$(ls -1 $cfg_path/node* | wc -l)
 

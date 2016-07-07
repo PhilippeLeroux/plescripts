@@ -43,6 +43,7 @@ do
 	esac
 done
 
+[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db	"$str_usage"
 
 typeset -r	upper_db=$(to_upper $db)
