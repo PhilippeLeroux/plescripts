@@ -131,7 +131,7 @@ function create_response_file
 		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
 
 		if [ $rac_one_node == yes ]
-		then
+		then	# Je pense que ca ne sert à rien. Le one node se décide à la création de la base : à tester.
 			update_value oracle.install.db.isRACOneInstall $(yn_to_bool $rac_one_node)	$rsp_file
 			update_value oracle.install.db.racOneServiceName ron_$db $rsp_file
 		fi
