@@ -79,7 +79,8 @@ Création de nouveaux serveurs :
 	```
 
 	![Broken SAN](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/screen/show_san_daisy.png "SAN")
-
+	
+	Note : sur ce screen il y a 4 LUNs en plus par rapport à ce que vous obtiendrez.
 
 3.	Installation du grid.
 
