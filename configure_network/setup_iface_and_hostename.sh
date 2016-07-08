@@ -97,6 +97,10 @@ remove_value NETMASK					$if_priv_file
 if_hwaddr=$(get_if_hwaddr $if_priv_name)
 update_value HWADDR		$if_hwaddr		$if_priv_file
 update_value ZONE		trusted			$if_priv_file
+# Effectue la commande 2 fois car la première insert et ne met pas de double quote
+# alors que la seconde update et met les double quote.
+update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_priv_file
+update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_priv_file
 LN
 
 line_separator

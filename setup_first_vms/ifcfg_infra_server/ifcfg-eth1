@@ -18,3 +18,4 @@ USERCTL=no
 PREFIX=24
 MTU=9000
 ZONE=trusted
+ETHTOOL_OPTS="speed 1000 duplex full autoneg off"
