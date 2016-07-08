@@ -6,17 +6,17 @@ sont très loin des exigences d'une entreprise.**
 
 # Objectifs :
 
-Mettre en œuvre un réseau de VMs pour installer des bases Oracle de tout types en
-essayant d'être le plus indépendant possible du logiciel de virtualisation utilisé.
+Mettre en œuvre d'un réseau de VMs pour installer des bases Oracle de tout types
+en essayant d'être le plus indépendant possible du logiciel de virtualisation utilisé.
 La création des VMs ou des bases Oracle, en SINGLE ou RAC, ne demandent pas de
 compétences particulières le tout étant automatisé, ainsi que la suppression.
 
 La première version se basait sur KVM, Oracle Linux 6, OpenFiler et un serveur DNS.
 Il était possible d'installer Oracle 11gR2 ou Oracle 12cR1 en SINGLE ou RAC.
 
-Cette version se base maintenant uniquement sur Oracle Linux 7, OpenFiler est abandonné
-pour targetcli qui a le gros avantage d'être scriptable, seul Oracle 12cR1 est
-pris en charge et le RAC étendu n'est plus pris en compte.
+Cette version se base maintenant uniquement sur Oracle Linux 7, OpenFiler est
+abandonné pour targetcli qui a le gros avantage d'être scriptable, seul Oracle 12cR1
+est pris en charge et le RAC étendu n'est plus pris en compte.
 
 L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable.
 
@@ -25,8 +25,8 @@ L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable.
 # Étapes pour la création d'une base :
 
 La création d'une nouvelle base SINGLE ou RAC se fait en 5 étapes :
-* Définition du nom de la base et du nombre de nœuds : le nom du ou des serveurs,
-des disques sont définies à partir du nom de la base.
+* Définition du nom de la base et du nombre de nœuds : le nommage des serveurs et
+des disques sont déduits du nom de la base.
 
 * Clonage du serveur de référence, actions effectuées :
 	* Cloner la VM master.
@@ -34,26 +34,28 @@ des disques sont définies à partir du nom de la base.
 	* Enregistrer le serveur dans le DNS : utilisation de bind9.
 	* Mapper les disques du SAN sur le ou les serveurs : utilisation d'oracleasm.
 
+	Toutes ces actions sont effectuées par un seul script.
+
 	Temps de clonage : ~10 à 15mn par serveurs.
 
-* Installation du GI et création des DGs.
+* Installation du Grid Infrastructure et création des DGs.
 
 	Que la base soit SINGLE ou RAC il n'y a qu'un script à exécuter, les scripts
 root de pré installations sont automatiquement exécutés sur le serveur ou l'ensemble
 des nœuds d'un RAC.
 
-	Temps d'installation RAC : ~35mn
+	Temps d'installation : ~35mn
 
 * Installation d'Oracle
 
 	Comme pour le GI un seul script prend en charge l'ensemble des opérations que
 la base soit SINGLE ou bien RAC.
 
-	Temps d'installation RAC : ~25mn
+	Temps d'installation : ~25mn
 
-* Création d'une base de donner : un seul script également (Utilisation de dbca).
+* Création d'une base de donner : un seul script également.
 
-	Temps de création RAC cdb + 1 pdb : 1 h 20
+	Temps de création cdb + 1 pdb : 1 h 20
 
 --------------------------------------------------------------------------------
 # Prérequis :
