@@ -41,7 +41,7 @@ ORCL_RELEASE=${ORACLE_RELEASE:0:2}
 info "Create grid profile."
 exec_cmd "cp ~/plescripts/oracle_preinstall/grid_env.template  ~/plescripts/oracle_preinstall/grid_env"
 case $db_type in
-	rac|raco)
+	rac)
 		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/$ORACLE_RELEASE/grid!\" ~/plescripts/oracle_preinstall/grid_env"
 		;;
 

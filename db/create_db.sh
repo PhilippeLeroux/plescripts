@@ -48,7 +48,9 @@ typeset -r str_usage=\
 	-templateName=$templateName
 	-db_type=SINGLE|RAC|RACONENODE (1)
 
-	1 : Pour le RAC one node il faut impérativement le préciser !
+	1 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
+	de noeuds, si 1 seul noeud c'est SINGLE sinon c'est RAC.
+	Donc pour créer un RAC One Node database il faut impérativement le préciser !
 
 	[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
 	les scripts poste installations.
@@ -618,7 +620,7 @@ then
 	for node in $( sed "s/,/ /g" <<<"$node_list" )
 	do
 		line_separator
-		exec_cmd "ssh -t oracle@${node} ~/plescripts/db/update_oratab.sh -db=$lower_name"
+		exec_cmd "ssh -t oracle@${node} ~/plescripts/db/update_oratab.sh -db=$lower_name -db_type=$db_type"
 	done
 fi
 

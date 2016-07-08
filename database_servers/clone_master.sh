@@ -118,11 +118,10 @@ function run_oracle_preinstall
 	line_separator
 	info "Run oracle preinstall..."
 
+	typeset db_type=rac
 	if [ $max_nodes -eq 1 ]
 	then
 		[ $type_disks = FS ] && db_type=single_fs || db_type=single
-	else
-		db_type=rac
 	fi
 
 	chrono_start

@@ -10,8 +10,6 @@ Objectif des scripts
 Le but de ces scripts et de créer une infrastructure complète avec un minimum
 d'interventions
 
-- La mémoire des machines virtuelles est adaptée en fonction du type de base
-SINGLE ou RAC
 - Le DNS est mis à jour.
 - Le SAN est mis à jour.
 - Les horloges des serveurs synchronisées sur la même source.
@@ -25,8 +23,6 @@ Création de nouveaux serveurs :
 	Création d'un serveur standalone : `./define_new_server.sh -db=daisy`
 
 	Création d'un RAC 2 nœuds : `./define_new_server.sh -db=daisy -max_nodes=2`
-
-	Création d'un RAC 2 nœuds one node : `./define_new_server.sh -db=daisy -max_nodes=2 -one_node`
 
 	Un nouveau répertoire nommé daisy est créée contenant les fichiers décrivant
 	le paramétrage du ou des serveurs.

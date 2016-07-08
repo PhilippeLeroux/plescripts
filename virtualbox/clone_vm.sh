@@ -57,18 +57,14 @@ exit_if_dir_not_exists $cfg_path "$str_usage"
 
 typeset -ri	max_nodes=$(ls -1 $cfg_path/node*|wc -l)
 
-typeset	-r	db_type=$(cat $node_file | cut -d: -f1)
+typeset	-r	db_type=$(cat $cfg_path/node1 | cut -d: -f1)
 case $db_type in
 	std)
-		typeset	-r	group_name="/Standalone : $(initcap $db)"
+		typeset	-r	group_name="/Standalone $(initcap $db)"
 		;;
 
 	rac)
-		typeset	-r	group_name="/RAC : $(initcap $db)"
-		;;
-
-	raco)
-		typeset	-r	group_name="/One node : $(initcap $db)"
+		typeset	-r	group_name="/RAC $(initcap $db)"
 		;;
 esac
 

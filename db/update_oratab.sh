@@ -8,9 +8,10 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME ...."
+typeset -r str_usage="Usage : $ME -db=<str> -db_type=RAC|RACONENODE"
 
 typeset db=undef
+typeset db_type=undef
 
 while [ $# -ne 0 ]
 do
@@ -26,6 +27,11 @@ do
 			shift
 			;;
 
+		-db_type=*)
+			db_type=${1##*=}
+			shift
+			;;
+
 		*)
 			error "Arg '$1' invalid."
 			LN
@@ -35,7 +41,8 @@ do
 	esac
 done
 
-exit_if_param_undef db	"$str_usage"
+exit_if_param_undef		db							"$str_usage"
+exit_if_param_invalid	db_type "RAC RACONENODE"	"$str_usage"
 
 typeset -r cfg_path=~/plescripts/database_servers/$db
 exit_if_dir_not_exists $cfg_path
@@ -49,12 +56,12 @@ info "Mise à jour de /etc/oratab"
 info "Le nom de toutes les instances sont ajoutées, utile pour les RACs services managed & one node"
 for inode in $( seq 1 $max_nodes )
 do
-	case $(cat $cfg_path/node$inode | cut -d: -f1) in
-		std|rac)
+	case $db_type in
+		RAC)
 			INSTANCE=${upper_db}$inode
 			;;
 
-		raco)
+		RACONENODE)
 			INSTANCE=${upper_db}_$inode
 			;;
 	esac

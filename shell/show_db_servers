@@ -55,18 +55,15 @@ function print_node # $1 node_file $2 idx
 			info "Node $(( $idx + 1 )) RAC : "
 			;;
 
-		raco)
-			info "Node $(( $idx + 1 )) RAC one node : "
-			;;
 		std)
 			info "Node $(( $idx + 1 )) standalone : "
 			;;
 	esac
 
 	info "	Server name    : ${node_name}     : ${node_ip}"
-	[[ $db_type == rac* ]] && info "	vip            : ${node_vip_name} : ${node_vip}"
+	[ $db_type == rac ] && info "	vip            : ${node_vip_name} : ${node_vip}"
 	info "	private ip     : ${node_priv_ip}	(san & rac interco)"
-	if [[ $db_type == rac* ]]
+	if [ $db_type == rac ]
 	then
 		info "	db name        : $db_name"
 		info "	instance name  : ${inst_name}"

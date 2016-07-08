@@ -19,7 +19,6 @@ typeset -r str_usage=\
 	[-size_lun_gb=8]    taille des LUNs si utilisation de ASM.
 	[-no_dns_test]      ne pas tester si les IPs sont utilisées.
 	[-usefs]            ne pas utiliser ASM mais un FS.
-	[-one_node]         RAC de type one node.
 "
 info "$ME $@"
 
@@ -72,11 +71,6 @@ do
 			shift
 			;;
 
-		-one_node)
-			db_type=raco
-			shift
-			;;
-
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -95,11 +89,9 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
-[ $db_type = raco ] && [ $max_nodes -eq 1 ] && error "-max_nodes missing with -one_node" && exit 1
+[[ $max_nodes -gt 1 && $db_type != rac ]] && db_type=rac
 
-[[ $max_nodes -gt 1 && $db_type != rac* ]] && db_type=rac
-
-[[ $db_type == rac* && $usefs = yes ]] && error "RAC non supporté sur un FS." && exit 1
+[ $db_type == rac && $usefs = yes ] && error "RAC non supporté sur un FS." && exit 1
 
 typeset -c	cfg_path=~/plescripts/database_servers/$db
 
@@ -130,7 +122,7 @@ function normalyze_node
 	server_private_ip=$if_priv_network.$ip_node
 	ip_node=ip_node+1
 
-	if [[ $db_type == rac* ]]
+	if [ $db_type == rac ]
 	then
 		test_ip_node_used $ip_node
 		server_vip=$if_pub_network.$ip_node
@@ -140,7 +132,7 @@ function normalyze_node
 	ip_node=ip_node+1
 
 	db_name="DB$(to_upper $db)"
-	if [[ $db_type == rac* ]]
+	if [ $db_type == rac ]
 	then
 		instance_name=$(printf "%s%02d" $db_name $num_node)
 	else
@@ -193,7 +185,7 @@ function normalyse_asm_disks
 {
 	typeset -i i_lun=1
 
-	if [[ $db_type == rac* ]]
+	if [ $db_type == rac ]
 	then
 		echo "CRS:6:1:3" > $cfg_path/disks
 		i_lun=4
@@ -253,7 +245,7 @@ do
 done
 LN
 
-[[ $db_type == rac* ]] && normalyze_scan
+[ $db_type == rac ] && normalyze_scan
 
 typeset -i data_lun_count=$(($size_dg_gb / $size_lun_gb))
 if [ $(($size_dg_gb % $size_lun_gb)) -ne 0 ]

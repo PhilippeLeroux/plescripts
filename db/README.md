@@ -22,6 +22,9 @@ Création d'une base de donnée.
 
 	Exemple : `./create_db.sh -name=daisy -pdbName=daisy01 -verbose`
 
+	Pour créer un RAC One Node database passe le paramètre -db_type=RACONENODE.
+	Le service associé sera ron_daisy
+	
 - Les bases sont créées avec l'option threaded_execution=true, pour se connecter
 avec le compte sys il faut donc utiliser la syntaxe : `sqlplus sys/Oracle12 as sysbda`
 

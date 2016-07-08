@@ -71,7 +71,6 @@ typeset -a	node_vips
 typeset -a	node_priv_names
 typeset -a	node_priv_ips
 typeset -i	max_nodes=0
-typeset		rac_one_node=no
 
 function load_node_cfg # $1 node_file $2 idx
 {
@@ -88,7 +87,6 @@ function load_node_cfg # $1 node_file $2 idx
 		else
 			clusterNodes=$clusterNodes,$node_name:$node_vip_name
 		fi
-		[ $db_type == raco ] && rac_one_node=yes || true
 		node_names[$idx]=$node_name
 		node_ips[$idx]=$node_ip
 		node_vip_names[$idx]=$node_vip_name
