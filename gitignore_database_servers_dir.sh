@@ -53,7 +53,15 @@ fake_exec_cmd $cmd_find
 eval "$cmd_find" |\
 while read dir_name
 do
-	add_dir ${dir_name#/*/*/*/}
+	case ${dir_name##*/} in
+		screen)
+			: # skeep
+			;;
+
+		*)
+			add_dir ${dir_name#/*/*/*/}
+			;;
+	esac
 done
 
 exec_cmd "git commit $ignore_file -m \"Mise à jour de .gitignore\""
