@@ -167,7 +167,7 @@ LN
 
 line_separator
 info -n "Vbox dans le path : "
-which VBoxManage >/dev/null 2>1
+which VBoxManage >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
 	vbox_is_ok=1
@@ -177,7 +177,7 @@ else
 fi
 
 info -n "~/plescripts/shell dans le path : "
-which llog >/dev/null 2>1
+which llog >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
 	info -f "${LBLUE}non${NORM}, fortement conseillé..."
