@@ -78,7 +78,7 @@ Création de nouveaux serveurs :
 	./show_db_info.sh -db=daisy
 	```
 
-	![Broken SAN](https://github.com/PhilippeLeroux/plescripts/tree/master/database_servers/screen/show_san_daisy.png "SAN")
+	![Broken SAN](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/screen/show_san_daisy.png "SAN")
 
 
 3.	Installation du grid.
