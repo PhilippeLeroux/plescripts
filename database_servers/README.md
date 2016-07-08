@@ -10,10 +10,13 @@ Objectif des scripts
 Le but de ces scripts et de créer une infrastructure complète avec un minimum
 d'interventions
 
+Toutes les actions nécessaires sur K2 sont scriptées et transparente :
 - Le DNS est mis à jour.
 - Le SAN est mis à jour.
 - Les horloges des serveurs synchronisées sur la même source.
 - Les disques sont attachés via oracleasm.
+
+La VM master sera clonée afin d'éviter d'installer l'OS à chaque fois.
 
 Création de nouveaux serveurs :
 ------------------------------
@@ -43,8 +46,6 @@ Création de nouveaux serveurs :
 	Cloner un serveur standalone : `./clone_master.sh -db=daisy`
 
 	Cloner le nœud d'un RAC      : `./clone_master.sh -db=daisy -node=1`
-
-	(Le RAC one node n'est pas encore 100% opérationnel.)
 
 	Pour un RAC exécuter clone_master.sh autant de fois qu'il y a de noeuds en
 	changeant le n° du nœud à chaque fois.
@@ -83,22 +84,6 @@ Création de nouveaux serveurs :
 
 	Pour créer une base voir [README.md](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
-Recycler un serveur :
----------------------
-
-Se connecter sur le serveur cible en root :
-
-- cd ~/plescripts/database_server
-- ./uninstall_all.sh -type=FS|ASM
-- ./revert_to_master.sh -doit
-- Puis rebooter ou stopper le serveur.
-- Pour un RAC exécuter ./revert_to_master.sh -doit sur tous les nœuds.
-
-Depuis le poste client :
-
-- cd ~/plescripts/database_server
-- ./remove_server.sh -db=<str>
-- Le DNS et le SAN sont mis à jours.
 
 --------------------------------------------------------------------------------
 

@@ -324,19 +324,3 @@ line_separator
 
 info "Éventuellement faire un rm -rf /tmp/* en root"
 LN
-
-info "Option 1 :"
-info "Exécuter revert_to_master.sh sur les serveurs."
-info "Puis remove_server.sh depuis le client."
-info "Puis relancer clone_master & co"
-LN
-
-info "Option 2 :"
-info "Ou aller dans ~/plescripts/disk puis exécuter :"
-info "	./oracleasm_discovery_first_node.sh sur le premier noeud"
-info "	./oracleasm_discovery_other_nodes.sh sur les autres noeuds dans le cas d'un RAC"
-info "L'installation du grid et d'oracle peuvent être relancées."
-LN
-
-info "Option 3 : ...."
-LN
