@@ -16,6 +16,7 @@ Le script est prévu pour être exécuté depuis le poste client.
 
 info "$ME $@"
 
+typeset	db=undef
 typeset	node1=undef
 typeset	node2=undef
 
@@ -25,6 +26,11 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
+			shift
+			;;
+
+		-db=*)
+			db=${1##*=}
 			shift
 			;;
 
@@ -69,6 +75,7 @@ else
 typeset -r session_name="$node1"
 exec_cmd -ci tmux kill-session -t \"$session_name\"
 
-tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"				\; \
+tmux new -s "$session_name"	ssh -t root@K2 "~/plescripts/san/dbiostat.sh -db=$db"	\;\
+							split-window -h "ssh root@${node1} vmstat 2"			\;\
 							split-window -v "ssh -t root@${node1} top"
 fi
