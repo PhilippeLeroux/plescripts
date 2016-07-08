@@ -64,6 +64,23 @@ Création de nouveaux serveurs :
 	Le compte oracle est configuré pour se connecter grid sans mot de passe via
 	l'alias sugrid.
 
+	Visuliser la configuration du DNS et du SAN.
+	```
+	ssh root@K2
+	cd plescripts/dns
+	./show_dns.sh
+	```
+
+	[[https://github.com/PhilippeLeroux/plescripts/blob/master/database_serveurs/screens/show_dns_daisy.png|alt=show_dns_daisy]]
+
+	```
+	cd ../san
+	./show_db_info.sh -db=daisy
+	```
+
+	[[https://github.com/PhilippeLeroux/plescripts/blob/master/database_serveurs/screens/show_san_daisy.png|alt=show_san_daisy]]
+
+
 3.	Installation du grid.
 
 	`./install_grid.sh -db=daisy`
