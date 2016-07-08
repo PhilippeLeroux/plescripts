@@ -44,25 +44,21 @@ done
 exit_if_param_undef		db							"$str_usage"
 exit_if_param_invalid	db_type "RAC RACONENODE"	"$str_usage"
 
-typeset -r cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exists $cfg_path
-
-typeset -ri max_nodes=$(ls -1 $cfg_path/node*|wc -l)
-
+typeset	-ri	max_nodes=$(olsnodes | wc -l)
 typeset -r	upper_db=$(to_upper $db)
 
 line_separator
-info "Mise à jour de /etc/oratab"
-info "Le nom de toutes les instances sont ajoutées, utile pour les RACs services managed & one node"
+info "Mise à jour de /etc/oratab sur $(hostname -s)"
+info "Le nom de toutes les instances sont ajoutées, utile pour les RACs Policy managed & one node"
 for inode in $( seq 1 $max_nodes )
 do
 	case $db_type in
 		RAC)
-			INSTANCE=${upper_db}$inode
+			INSTANCE=${upper_db:0:8}$inode
 			;;
 
 		RACONENODE)
-			INSTANCE=${upper_db}_$inode
+			INSTANCE=${upper_db:0:8}_$inode
 			;;
 	esac
 

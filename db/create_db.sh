@@ -620,7 +620,7 @@ then
 	for node in $( sed "s/,/ /g" <<<"$node_list" )
 	do
 		line_separator
-		exec_cmd "ssh -t oracle@${node} ~/plescripts/db/update_oratab.sh -db=$lower_name -db_type=$db_type"
+		exec_cmd "ssh -t oracle@${node} \". ./.profile; ~/plescripts/db/update_rac_oratab.sh -db=$lower_name -db_type=$db_type\""
 	done
 fi
 
@@ -659,17 +659,17 @@ info "Enable archivelog :"
 case $db_type in
 	RAC)
 		export ORACLE_DB=${name}
-		ORACLE_SID=${name}1
+		ORACLE_SID=${name:0:8}1
 		;;
 
 	RACONENODE)
 		export ORACLE_DB=${name}
-		ORACLE_SID=${name}_1
+		ORACLE_SID=${name:0:8}_1
 		;;
 
 	SINGLE)
 		export ORACLE_DB=${name}
-		ORACLE_SID=${name}
+		ORACLE_SID=${name:0:8}
 		;;
 esac
 ORAENV_ASK=NO . oraenv
