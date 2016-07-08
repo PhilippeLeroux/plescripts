@@ -103,7 +103,7 @@ function load_node_cfg # $1 node_file $2 idx
 function create_response_file
 {
 	line_separator
-	info "Création du 'fichier réponse' pour l'installation d'oracle"
+	info "Création du fichier réponse pour l'installation d'oracle"
 	exec_cmd cp -f template_oracle.rsp $rsp_file
 	LN
 
@@ -129,12 +129,6 @@ function create_response_file
 			server_list=$server_list","${node_names[$inode]}
 		done
 		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
-
-		if [ $rac_one_node == yes ]
-		then	# Je pense que ca ne sert à rien. Le one node se décide à la création de la base : à tester.
-			update_value oracle.install.db.isRACOneInstall $(yn_to_bool $rac_one_node)	$rsp_file
-			update_value oracle.install.db.racOneServiceName ron_$db $rsp_file
-		fi
 	fi
 
 	LN

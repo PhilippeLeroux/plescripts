@@ -625,34 +625,53 @@ fi
 if [ $cdb == yes ] && [ x"$pdbName" != x ]
 then
 	line_separator
-	if [ "${db_type:0:3}" == "RAC" ]
-	then
-		typeset inst_list
-		while IFS=':' read inst_name rem
-		do
-			[ x"$inst_list" = x ] && inst_list=$inst_name || inst_list=${inst_list}",$inst_name"
-		done<<<"$(cat /etc/oratab | grep "^$name[1-9]:")"
-		exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
-		exec_cmd "srvctl start service -db $name -service pdb$pdbName"
-		LN
-	else
-		exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName"
-		exec_cmd "srvctl start service -db $name -service pdb$pdbName"
-		LN
-	fi
+	info "Création du service pour le pdb $pdbName"
+	case $db_type in
+		RAC)
+			typeset inst_list
+			while IFS=':' read inst_name rem
+			do
+				[ x"$inst_list" = x ] && inst_list=$inst_name || inst_list=${inst_list}",$inst_name"
+			done<<<"$(cat /etc/oratab | grep "^${name}.*[1-9]:")"
+			exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
+			exec_cmd srvctl start service -db $name -service pdb$pdbName
+			LN
+			;;
+
+		RACONENODE)
+			exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
+			exec_cmd srvctl start service -db $name -service pdb$pdbName
+			LN
+			;;
+
+		SINGLE)
+			exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
+			exec_cmd srvctl start service -db $name -service pdb$pdbName
+			LN
+			;;
+	esac
 fi
 
 line_separator
 info "Enable archivelog :"
-if [ "${db_type:0:3}" == "RAC" ]
-then
-	export ORACLE_DB=${name}
-	ORACLE_SID=${name}1
-else
-	export ORACLE_DB=${name}
-	ORACLE_SID=${name}
-fi
+case $db_type in
+	RAC)
+		export ORACLE_DB=${name}
+		ORACLE_SID=${name}1
+		;;
+
+	RACONENODE)
+		export ORACLE_DB=${name}
+		ORACLE_SID=${name}_1
+		;;
+
+	SINGLE)
+		export ORACLE_DB=${name}
+		ORACLE_SID=${name}
+		;;
+esac
 ORAENV_ASK=NO . oraenv
+
 exec_cmd "~/plescripts/db/enable_archive_log.sh"
 LN
 
