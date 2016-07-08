@@ -71,14 +71,14 @@ Création de nouveaux serveurs :
 	./show_dns.sh
 	```
 
-	![Broken DNS](https://github.com/PhilippeLeroux/plescripts/tree/master/database_servers/screen/show_dns_daisy.png)
+	![Broken DNS](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/screen/show_dns_daisy.png "DNS")
 
 	```
 	cd ../san
 	./show_db_info.sh -db=daisy
 	```
 
-	![Broken SAN](https://github.com/PhilippeLeroux/plescripts/tree/master/database_servers/screen/show_san_daisy.png)
+	![Broken SAN](https://github.com/PhilippeLeroux/plescripts/tree/master/database_servers/screen/show_san_daisy.png "SAN")
 
 
 3.	Installation du grid.
