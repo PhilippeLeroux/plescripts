@@ -199,8 +199,6 @@ function connections_ssh_client_to_db_server
 	LN
 
 	test_pause "$server_name : Check connections."
-
-	exec_cmd "ssh -t root@$server_name plescripts/gadgets/install.sh"
 }
 
 #	Permet au compte root du serveur de se connecter sur le SAN sans mot de passe.
@@ -337,8 +335,9 @@ function configure_server
 	exec_cmd "$vm_scripts_path/start_vm $server_name"
 	wait_master
 
-	line_separator
-	connection_ssh_with_root_on_orclmaster
+	#N'est plus utile, la clef est créée sur le master.
+	#line_separator
+	#connection_ssh_with_root_on_orclmaster
 
 	line_separator
 	register_server_2_dns
@@ -369,6 +368,16 @@ function configure_oracle_accounts
 	run_oracle_preinstall
 
 	connections_ssh_client_to_db_server
+
+	exec_cmd "ssh -t root@$server_name plescripts/gadgets/install.sh"
+	LN
+
+	line_separator
+	info "Couleur par défaut plus adapté au fond clair."
+	typeset -r DIR_COLORS=~/plescripts/myconfig/suse_dir_colors
+	exec_cmd "scp $DIR_COLORS root@$server_name:.dir_colors"
+	exec_cmd "scp $DIR_COLORS grid@$server_name:.dir_colors"
+	exec_cmd "scp $DIR_COLORS oracle@$server_name:.dir_colors"
 }
 
 #	Ne pas appeler pour le premier noeud d'un RAC.
