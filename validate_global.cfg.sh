@@ -9,10 +9,8 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-Ce script vérifie :
-	- si la configuration de global.cfg est correcte.
-	- si l'IP 192.170.100.1 existe.
-"
+Ce script vérifie le l'OS host remplie les conditions nécessaire au bon
+fonctionnement de la démo."
 
 info "$ME $@"
 
@@ -157,7 +155,7 @@ else
 fi
 
 info -n " - search $infra_domain .* : "
-if grep -q "^search.*${infra_domain}.*" /etc/resolv.conf 
+if grep -q "^search.*${infra_domain}.*" /etc/resolv.conf
 then
 	info -f "[$OK]"
 else
