@@ -72,7 +72,7 @@ la base soit SINGLE ou bien RAC.
 --------------------------------------------------------------------------------
 # Configuration du poste client.
 
-	[Informations ici](https://github.com/PhilippeLeroux/plescripts/tree/master/myconfig/README.md)
+ [Informations ici](https://github.com/PhilippeLeroux/plescripts/blob/master/myconfig/README.md)
 
 --------------------------------------------------------------------------------
 
