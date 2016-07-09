@@ -70,6 +70,11 @@ la base soit SINGLE ou bien RAC.
 	* [Download Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 
 --------------------------------------------------------------------------------
+# Configuration du poste client.
+
+	[Informations ici](https://github.com/PhilippeLeroux/plescripts/tree/master/myconfig/README.md)
+
+--------------------------------------------------------------------------------
 
 # Création des VMs orclmaster et K2.
 2 VMs sont nécessaires pour commencer :
