@@ -18,12 +18,18 @@ exec_cmd "~/plescripts/gadgets/customize_logon.sh"
 
 if [ $role = rdbms ]
 then
-	#	Installation des plugins vim pour oracle & grid
-	exec_cmd "gzip -dc /root/plescripts/gadgets/vim.tar.gz | tar xf - -C /home/oracle"
-	exec_cmd "chown -R oracle:oinstall /home/oracle/.vim"
-	exec_cmd "gzip -dc /root/plescripts/gadgets/vim.tar.gz | tar xf - -C /home/grid"
-	exec_cmd "chown -R grid:oinstall /home/grid/.vim"
-	LN
+	if [ -f /root/plescripts/gadgets/vim.tar.gz ]
+	then
+		#	Installation des plugins vim pour oracle & grid
+		exec_cmd "gzip -dc /root/plescripts/gadgets/vim.tar.gz | tar xf - -C /home/oracle"
+		exec_cmd "chown -R oracle:oinstall /home/oracle/.vim"
+		exec_cmd "gzip -dc /root/plescripts/gadgets/vim.tar.gz | tar xf - -C /home/grid"
+		exec_cmd "chown -R grid:oinstall /home/grid/.vim"
+		LN
+	else # Si vim.tar.gz disparaît du dépôt ça fonctionnera encore.
+		exec_cmd "su - oracle -c \"~/plescripts/shell/vim_plugin -init\""
+		exec_cmd "su - grid -c \"~/plescripts/shell/vim_plugin -init\""
+	fi
 else
 	exec_cmd "~/plescripts/shell/vim_plugin -init"
 fi
