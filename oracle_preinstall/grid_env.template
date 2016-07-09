@@ -4,7 +4,7 @@ export GRID_HOME=
 
 function crs_mon # $1 wait in second
 {
-	typeset -i wait_in_seconds=30
+	typeset -i wait_in_seconds=10
 	if [ $# -ne 0 ]
 	then
 		wait_in_seconds=$1
