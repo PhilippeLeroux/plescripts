@@ -379,15 +379,6 @@ function configure_oracle_accounts
 	exec_cmd "scp $DIR_COLORS grid@$server_name:.dir_colors"
 	exec_cmd "scp $DIR_COLORS oracle@$server_name:.dir_colors"
 	LN
-
-	if [ $type_shared_fs == vbox ]
-	then
-		line_separator
-		info "Passe le umask d'oracle et grid à 002"
-		exec_cmd "ssh oracle@${server_name} \"sed -i 's/umask 022/umask 002/' ~/.profile\""
-		exec_cmd "ssh grid@${server_name} \"sed -i 's/umask 022/umask 002/' ~/.profile\""
-		LN
-	fi
 }
 
 #	Ne pas appeler pour le premier noeud d'un RAC.
