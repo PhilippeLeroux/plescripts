@@ -89,9 +89,9 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
-[[ $max_nodes -gt 1 && $db_type != rac ]] && db_type=rac
+[ $max_nodes -gt 1 ] && [ $db_type != rac ] && db_type=rac
 
-[ $db_type == rac && $usefs = yes ] && error "RAC non supporté sur un FS." && exit 1
+[ $db_type == rac ] && [ $usefs == yes ] && error "RAC non supporté sur un FS." && exit 1
 
 typeset -c	cfg_path=~/plescripts/database_servers/$db
 
