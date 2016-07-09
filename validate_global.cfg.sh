@@ -187,6 +187,12 @@ fi
 
 LN
 
+
+info "Positionne les acls sur ~/plescripts"
+# Pour supprimer les acls : setfacl -Rb ~/plescripts/
+exec_cmd setfacl -Rm d:g:users:rwx $HOME/plescripts
+LN
+
 line_separator
 if [ $bad_ip_host -ne 0 ] 											\
 	|| [ $plescripts_ok -ne 0 ] || [ $zip_orcl_grid_ok -ne 0 ] 		\

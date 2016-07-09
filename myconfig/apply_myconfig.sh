@@ -36,4 +36,15 @@ LN
 
 info "[G]vim configuration :"
 exec_cmd cp myvimrc ~/.vimrc
+exec_cmd cp vimtips ~/.vimtips
 LN
+
+info "tmux configuration :"
+exec_cmd cp mytmux.conf ~/.tmux.conf
+LN
+
+info "Positionne les acls sur ~/plescripts"
+# Pour supprimer les acls : setfacl -Rb ~/plescripts/
+exec_cmd setfacl -Rm d:g:users:rwx $HOME/plescripts
+LN
+

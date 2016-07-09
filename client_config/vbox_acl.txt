@@ -1,3 +1,0 @@
-Retire toutes les acl : setfacl -Rb ./plescripts/
-Position les acl : setfacl -Rm d:g:users:rwx $HOME/plescripts
-
