@@ -55,7 +55,7 @@ __Scripts divers :__
 
 * reset_all_for_db.sh
 	
-	Supprime le ou les initiators pour une base, le backstore et tous les LVS de
+	Supprime-le ou les initiators pour une base, le backstore et tous les LVS de
 	la base seront remis à zéro.
 	
 * delete_intiator.sh

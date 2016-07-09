@@ -173,26 +173,17 @@ function! FrGrammaire()
 
 	if b:grammar_is == 'us'
 		let b:grammar_is='no'
-		:setlocal nospell
-		if exists( "g:languagetool_jar" )
-			:LanguageToolClear
-		endif
+		:LanguageToolClear
 	endif
 
 	if b:grammar_is == 'no'
-		:echo "Dictionnaire français."
+		:echo "Grammaire française activée."
 		let b:grammar_is='fr'
-		:setlocal spell spelllang=fr
-		if exists( "g:languagetool_jar" )
-			:LanguageToolCheck
-		endif
+		:LanguageToolCheck
 	elseif b:grammar_is == 'fr'
-		:echo "Dictionnaire désactivé."
+		:echo "Grammaire française désactivée."
 		let b:grammar_is='no'
-		:setlocal nospell
-		if exists( "g:languagetool_jar" )
-			:LanguageToolClear
-		endif
+		:LanguageToolClear
 	endif
 endfunction
 
@@ -210,9 +201,6 @@ function! FrDictionnaire()
 		:echo "Dictionnaire français."
 		let b:dictionnary_is='fr'
 		:setlocal spell spelllang=fr
-		if exists( "g:languagetool_jar" )
-			:LanguageToolClear
-		endif
 	elseif b:dictionnary_is == 'fr'
 		:echo "Dictionnaire désactivé."
 		let b:dictionnary_is='no'
@@ -251,7 +239,9 @@ function! UsGrammaire()
 endfunction
 
 nnoremap <F2> :call FrDictionnaire()<CR>
-nnoremap <C-g> :call FrGrammaire()<CR>
+if exists( "g:languagetool_jar" )
+	nnoremap <C-g> :call FrGrammaire()<CR>
+endif
 
 "	============================================================================
 "	Foldmethod

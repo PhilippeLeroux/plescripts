@@ -35,3 +35,6 @@ https://github.com/nvie/vim-togglemouse.git
 
 #	Markdown
 https://github.com/suan/vim-instant-markdown.git
+
+# Grammaire
+//github.com/rhysd/vim-grammarous.git

@@ -16,7 +16,7 @@ Toutes les actions nécessaires sur K2 sont scriptées et transparente :
 - Les horloges des serveurs synchronisées sur la même source.
 - Les disques sont attachés via oracleasm.
 
-La VM master sera clonée afin d'éviter d'installer l'OS à chaque fois.
+La VM master sera cloné afin d'éviter d'installer l'OS à chaque fois.
 
 Création de nouveaux serveurs :
 ------------------------------
