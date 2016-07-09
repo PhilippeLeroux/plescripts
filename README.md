@@ -65,9 +65,21 @@ la base soit SINGLE ou bien RAC.
 
 	* [Download Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
+		Uniquement pour windows, sous linux yum install [...] ou apt-get install [...]
+
 	* [Download Oracle Linux 7](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
 
+		A télécharger ici : $HOME/ISO/
+
 	* [Download Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
+
+		Extraire les zips oracle ici $HOME/oracle_install/database
+
+		Extraire les zips grid ici $HOME/oracle_install/grid
+
+	* Download plescripts 
+		* git doit être installé sur le poste client.
+		* Exécuter ensuite : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
 
 --------------------------------------------------------------------------------
 # Configuration du poste client.
