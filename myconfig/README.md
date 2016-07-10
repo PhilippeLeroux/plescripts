@@ -6,7 +6,7 @@ sont très loin des exigences d'une entreprise.**
 
 # Objectifs :
 
-Mémorise la configuration de mon poste client.
+Décrire la configuration du poste client.
 
 # Description des scripts :
 
