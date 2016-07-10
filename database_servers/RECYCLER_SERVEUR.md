@@ -14,11 +14,12 @@ Se connecter sur le serveur cible en root :
 - ./revert_to_master.sh -doit
 
 	Repasse sur la configuration du master.
-	L'installation peut être refaite depuis le début avec clone_master.sh
+	L'installation peut être refaite depuis le début avec clone_master.sh en utilisant
+	le paramètre -start_server_only pour le premier nœud si les VMs ne sont pas détruites.
 
 	Pour un RAC exécuter ./revert_to_master.sh -doit sur tous les nœuds.
 
-	Détaille des actions effectuées par le scripts : `./revert_to_master.sh -h`
+	Détaille des actions effectuées par le script : `./revert_to_master.sh -h`
 
 Depuis le poste client, supprimer toutes les traces d'un serveur :
 - cd ~/plescripts/database_servers
