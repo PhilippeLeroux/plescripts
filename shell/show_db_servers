@@ -63,16 +63,6 @@ function print_node # $1 node_file $2 idx
 	info "	Server name    : ${node_name}     : ${node_ip}"
 	[ $db_type == rac ] && info "	vip            : ${node_vip_name} : ${node_vip}"
 	info "	private ip     : ${node_priv_ip}	(san & rac interco)"
-	if [ $db_type == rac ]
-	then
-		info "	db name        : $db_name"
-		info "	instance name  : ${inst_name}"
-	else
-		LN
-		info "	Sample database name :"
-		info "		db name        : $db_name"
-		info "		instance name  : ${inst_name}"
-	fi
 }
 
 function print_scan
