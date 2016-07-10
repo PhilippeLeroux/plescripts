@@ -45,7 +45,22 @@ done
 
 exit_if_param_undef host "$str_usage"
 
+typeset -r guest_version=$(ssh root@${host} modinfo vboxguest -F version)
+typeset -r vbox_version=$(VBoxManage --version | cut -d_ -f1)
+
 line_separator
+info "VirtualBox version : $vbox_version"
+info "vboxguest version  : $guest_version"
+if [ "$guest_version" == "$vbox_version" ]
+then
+	info "Le module des 'Guest Additions' est à jour sur $host"
+	LN
+	exit 0
+fi
+
+info "Le module des 'Guest Additions' n'est pas à jour sur $host"
+LN
+
 ssh -t root@${host}<<EOS
 KV=\$(uname -r)
 if echo "$KV" | grep -q "uek"
