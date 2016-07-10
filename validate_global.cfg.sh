@@ -47,6 +47,7 @@ typeset -i unzipped_orcl_grid_ok=0
 typeset -i iso_olinux_ok=0
 typeset -i resolv_conf_ok=0
 typeset -i vbox_is_ok=0
+typeset -i nc_is_ok=0
 
 line_separator
 info "L'addresse IP 192.170.100.1 correspond au poste client $client_hostname"
@@ -89,8 +90,8 @@ fi
 
 if [ $type_shared_fs == vbox ]
 then
-	info -n "Test l'existence de '$HOME/$oracle_install/database' : "
-	if [ ! -d "$HOME/$oracle_install/database" ]
+	info -n "Test l'existence de '$HOME/$oracle_install/database/runInstaller' : "
+	if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
 	then
 		info -f "[$KO]"
 		error "	Ce répertoire doit contenir les fichiers dézipés d'Oracle."
@@ -98,8 +99,8 @@ then
 	else
 		info -f "[$OK]"
 	fi
-	info -n "Test l'existence de '$HOME/$oracle_install/grid' : "
-	if [ ! -d "$HOME/$oracle_install/grid" ]
+	info -n "Test l'existence de '$HOME/$oracle_install/grid/runInstaller' : "
+	if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
 	then
 		info -f "[$KO]"
 		error "	Ce répertoire doit contenir les fichiers dézipés du Grid."
@@ -167,26 +168,31 @@ LN
 
 line_separator
 info -n "Vbox dans le path : "
-which VBoxManage >/dev/null 2>&1
-if [ $? -ne 0 ]
+if $(test_if_cmd_exists VBoxManage)
 then
+	info -f "[$OK]"
+else
 	vbox_is_ok=1
 	info -f "[$KO]"
-else
-	info -f "[$OK]"
 fi
 
 info -n "~/plescripts/shell dans le path : "
-which llog >/dev/null 2>&1
-if [ $? -ne 0 ]
+if $(test_if_cmd_exists llog)
 then
-	info -f "${LBLUE}non${NORM}, fortement conseillé..."
-else
 	info -f "[$OK]"
+else
+	info -f "${LBLUE}non${NORM}, fortement conseillé..."
 fi
 
+info -n "Vérifie si nc est installé : "
+if $(test_if_cmd_exists nc)
+then
+	info -f "[$OK]"
+else
+	info -f "[$KO]"
+	nc_is_ok=1
+fi
 LN
-
 
 info "Positionne les acls sur ~/plescripts"
 # Pour supprimer les acls : setfacl -Rb ~/plescripts/
@@ -198,7 +204,8 @@ if [ $bad_ip_host -ne 0 ] 											\
 	|| [ $plescripts_ok -ne 0 ] || [ $zip_orcl_grid_ok -ne 0 ] 		\
 	|| [ $iso_olinux_ok -ne 0 ] || [ $unzipped_orcl_grid_ok -ne 0 ]	\
 	|| [ $resolv_conf_ok -ne 0 ] 									\
-	|| [ $vbox_is_ok -ne 0 ]
+	|| [ $vbox_is_ok -ne 0 ]										\
+	|| [ $nc_is_ok -ne 0 ]
 then
 	info "Corriger les erreurs avant de continuer."
 	exit 1
