@@ -8,10 +8,10 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -db=<str> -db_type=RAC|RACONENODE"
+typeset -r str_usage="Usage : $ME -db=<str> -prefixInstance=<str>"
 
 typeset db=undef
-typeset db_type=undef
+typeset prefixInstance=undef
 
 while [ $# -ne 0 ]
 do
@@ -27,8 +27,8 @@ do
 			shift
 			;;
 
-		-db_type=*)
-			db_type=${1##*=}
+		-prefixInstance=*)
+			prefixInstance=${1##*=}
 			shift
 			;;
 
@@ -41,8 +41,8 @@ do
 	esac
 done
 
-exit_if_param_undef		db							"$str_usage"
-exit_if_param_invalid	db_type "RAC RACONENODE"	"$str_usage"
+exit_if_param_undef		db				"$str_usage"
+exit_if_param_undef		prefixInstance 	"$str_usage"
 
 typeset	-ri	max_nodes=$(olsnodes | wc -l)
 typeset -r	upper_db=$(to_upper $db)
@@ -52,15 +52,7 @@ info "Mise à jour de /etc/oratab sur $(hostname -s)"
 info "Le nom de toutes les instances sont ajoutées, utile pour les RACs Policy managed & one node"
 for inode in $( seq 1 $max_nodes )
 do
-	case $db_type in
-		RAC)
-			INSTANCE=${upper_db:0:8}$inode
-			;;
-
-		RACONENODE)
-			INSTANCE=${upper_db:0:8}_$inode
-			;;
-	esac
+	INSTANCE=$prefixInstance$inode
 
 	grep "$INSTANCE" /etc/oratab 2>/dev/null 1>&2
 	if [ $? -eq 0 ]

@@ -34,6 +34,7 @@ typeset		verbose=no
 typeset		pdbName=undef
 typeset		serverPoolName=undef
 typeset		skip_db_create=no
+typeset		policyManaged=no
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -47,6 +48,7 @@ typeset -r str_usage=\
 	-fra=$fra
 	-templateName=$templateName
 	-db_type=SINGLE|RAC|RACONENODE (1)
+	-policyManaged=$policyManaged	: créer une base en 'policy managed' no/yes
 
 	1 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
 	de noeuds, si 1 seul noeud c'est SINGLE sinon c'est RAC.
@@ -138,6 +140,11 @@ do
 			shift
 			;;
 
+		-policyManaged)
+			policyManaged=yes
+			shift
+			;;
+
 		-verbose)
 			verbose=yes
 			shift
@@ -183,14 +190,14 @@ function is_rac_or_single_server
 
 function launch_memstat
 {
-	exec_cmd -c "nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &"
+	exec_cmd -c -h "nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &"
 	if [ $node_list != undef ]
 	then
 		while read node_name
 		do
 			if [ $node_name != $(hostname -s) ]
 			then
-				exec_cmd -c "ssh -n ${node_name} \
+				exec_cmd -h -c "ssh -n ${node_name} \
 				\"nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &\""
 			fi
 		done<<<"$(olsnodes)"
@@ -203,7 +210,7 @@ function stop_memstat
 	then
 		exec_cmd -c "~/plescripts/memory/memstats.sh -title=create_db -kill"
 	else
-		exec_cmd -c "~/plescripts/memory/memstats.sh -title=create_db -kill" >/dev/null 2>&1
+		exec_cmd -c -h "~/plescripts/memory/memstats.sh -title=create_db -kill" >/dev/null 2>&1
 	fi
 
 	if [ $node_list != undef ]
@@ -217,7 +224,7 @@ function stop_memstat
 					exec_cmd -c "ssh ${node_name} \
 					\"~/plescripts/memory/memstats.sh -title=create_db -kill\""
 				else
-					exec_cmd -c "ssh ${node_name} \
+					exec_cmd -c -h "ssh ${node_name} \
 					\"~/plescripts/memory/memstats.sh -title=create_db -kill\"" >/dev/null 2>&1
 				fi
 			fi
@@ -295,6 +302,16 @@ function make_dbca_args
 
 	[ "$node_list" != undef ] && add_dbca_param "-nodelist $node_list"
 
+	if [ $serverPoolName != undef ]
+	then
+		add_dbca_param "-policyManaged"
+		if [ $cdb == yes ]
+		then
+			add_dbca_param "    -createServerPool"
+			add_dbca_param "    -serverPoolName $serverPoolName"
+		fi
+	fi
+
 	add_dbca_param "-gdbName $name"
 	add_dbca_param "-totalMemory $memory_mb"
 	add_dbca_param "-characterSet AL32UTF8"
@@ -331,11 +348,6 @@ function make_dbca_args
 		*)
 			add_dbca_param "-initParams shared_pool_size=${min_shared_pool_size_mb}M,threaded_execution=true"
 	esac
-	if [ "$serverPoolName" != undef ]
-	then
-		add_dbca_param "-policyManaged"
-		add_dbca_param "	-serverPoolName ${serverPoolName}"
-	fi
 }
 
 function remove_all_log_and_db_fs_files
@@ -518,6 +530,7 @@ fi
 exit_if_param_undef name "$str_usage"
 
 [ $cdb == yes ] && [ $pdbName == undef ] && pdbName=${lower_name}01
+[ $policyManaged == "yes" ] && [ $serverPoolName == undef ] && serverPoolName=poolAllNodes
 
 show_db_settings
 
@@ -616,12 +629,16 @@ then
 	LN
 fi	#	skip_db_create == no
 
+typeset prefixInstance=${name:0:8}
+
 if [ "${db_type:0:3}" == "RAC" ]
 then
+	[ $policyManaged == "yes" ] || [ $db_type == "RACONENODE" ] && prefixInstance=${prefixInstance}_
+
 	for node in $( sed "s/,/ /g" <<<"$node_list" )
 	do
 		line_separator
-		exec_cmd "ssh -t oracle@${node} \". ./.profile; ~/plescripts/db/update_rac_oratab.sh -db=$lower_name -db_type=$db_type\""
+		exec_cmd "ssh -t oracle@${node} \". ./.profile; ~/plescripts/db/update_rac_oratab.sh -db=$lower_name -prefixInstance=$prefixInstance\""
 	done
 fi
 
@@ -631,12 +648,17 @@ then
 	info "Création du service pour le pdb $pdbName"
 	case $db_type in
 		RAC)
-			typeset inst_list
-			while IFS=':' read inst_name rem
-			do
-				[ x"$inst_list" = x ] && inst_list=$inst_name || inst_list=${inst_list}",$inst_name"
-			done<<<"$(cat /etc/oratab | grep "^${name}_\{,1\}[1-9]:")"
-			exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
+			if [ $serverPoolName == "undef" ]
+			then
+				typeset inst_list
+				while IFS=':' read inst_name rem
+				do
+					[ x"$inst_list" = x ] && inst_list=$inst_name || inst_list=${inst_list}",$inst_name"
+				done<<<"$(cat /etc/oratab | grep "^${prefixInstance}[1-9]:")"
+				exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
+			else
+				exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -serverpool $serverPoolName"
+			fi
 			exec_cmd srvctl start service -db $name -service pdb$pdbName
 			LN
 			;;
@@ -657,20 +679,11 @@ fi
 
 line_separator
 info "Enable archivelog :"
+export ORACLE_DB=${name}
+ORACLE_SID=${prefixInstance}
 case $db_type in
-	RAC)
-		export ORACLE_DB=${name}
-		ORACLE_SID=${name:0:8}1
-		;;
-
-	RACONENODE)
-		export ORACLE_DB=${name}
-		ORACLE_SID=${name:0:8}_1
-		;;
-
-	SINGLE)
-		export ORACLE_DB=${name}
-		ORACLE_SID=${name:0:8}
+	RAC|RACONENODE)
+		ORACLE_SID=${prefixInstance}1
 		;;
 esac
 ORAENV_ASK=NO . oraenv
