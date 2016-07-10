@@ -79,17 +79,26 @@ Création de nouveaux serveurs :
 	```
 
 	![Broken SAN](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/screen/show_san_daisy.png "SAN")
-	
+
 	Note : sur ce screen il y a 4 LUNs en plus par rapport à ce que vous obtiendrez.
 
 3.	Installation du grid.
 
 	`./install_grid.sh -db=daisy`
 
-	Installe-le grid en standalone ou cluster. Les scripts root sont exécutés
+	Installe le grid en standalone ou cluster. Les scripts root sont exécutés
 	sur l'ensemble des nœuds.
 
 	Les 2 DGs DATA et FRA sont créées, pour un cluster il y a en plus le DG CRS
+
+	__Note pour le RAC__ pour consommer le moins de ressources possible :
+	 - tfa est désintallé.
+	 - des services sont désactivés.
+	 - La memory_target d'ASM est diminuée.
+	 - la 'mgmt database' n'est pas installée.
+
+	Si vous disposez de bons CPUs et au moins 4Gb de RAM par VM alors utiliser
+	l'option -install_mgmtdb qui n'effectuera pas ces actions.
 
 4.	Installation d'Oracle
 
@@ -100,7 +109,7 @@ Création de nouveaux serveurs :
 
 5.	C'est terminé.
 
-	Pour créer une base voir [README.md](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
+	[Création d'une base](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
 
 --------------------------------------------------------------------------------
