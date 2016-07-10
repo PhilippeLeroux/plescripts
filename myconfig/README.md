@@ -6,13 +6,13 @@ sont très loin des exigences d'une entreprise.**
 
 # Objectifs :
 
-Décrire la configuration du poste client.
+Description de la configuration du poste client.
 
 # Description des scripts :
 
 * apply_myconfig.sh
 
-  Met à jour ma configuration en effectuant les actions suivantes :
+  Met à jour la configuration du poste client en effectuant les actions suivantes :
 
   * bashrc_extensions : copier en ~/.bashrc_extensions puis ajouté à la fin de .bashrc
 
@@ -22,10 +22,15 @@ Décrire la configuration du poste client.
 
   * vimtips : copier en ~/.vimtips
 
+* Ajouter dans PATH : ~/plescripts/shell puis exécuter vim_plugin -init
+
+	Tous les plugins vim seront installés.
+
 * suse_dir_colors fichier copier sur les comptes des serveurs Oracle.
 
 * enable_nfs_server.sh : à exécuter si utilisation des partages NFS.
 
-* Misc 
-  * configurations.txt
-  * confiration_poste_client.odt
+* confiration_poste_client.odt : screenshot sur la configuration réseau sur opensuse.
+
+* Misc
+  * configurations.txt divers trucs.
