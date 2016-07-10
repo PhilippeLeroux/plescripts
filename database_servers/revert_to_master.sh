@@ -58,8 +58,8 @@ exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
 exec_cmd -c "rm -rf /u01"
 LN
 
-exec_cmd -c "rm -rf /root/.ssh"
-LN
+#exec_cmd -c "rm -rf /root/.ssh"
+#LN
 
 update_value IPADDR ${if_pub_network}.${master_ip_node}	$if_pub_file
 LN
