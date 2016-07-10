@@ -28,11 +28,9 @@ info "Connect to $initiator_name"
 exec_cmd iscsiadm -m node -T $initiator_name --portal $san_ip_priv -l
 LN
 
-info -n "Wait : "; pause_in_secs 5; LN
-
-exec_cmd "ls /dev/disk/by-path/${disk_prefix}*"
+#info -n "Wait : "; pause_in_secs 5; LN
+#exec_cmd "ls /dev/disk/by-path/${disk_prefix}*"
+info "Pour visualiser les nouveaux disques : ls /dev/disk/by-path/${disk_prefix}*"
+LN
 
 #Devrait appeler setting_iscsi_chap_auth.sh, mais l'authentification ne marche pas.
-
-# Permet de voir les nouvelles luns.
-# iscsiadm -m node --rescan

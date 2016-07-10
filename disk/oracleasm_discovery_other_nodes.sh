@@ -11,6 +11,9 @@ EXEC_CMD_ACTION=EXEC
 
 exec_cmd "~/plescripts/disk/discovery_target.sh"
 
+pause_in_secs 2
+LN
+
 line_separator
 exec_cmd "oracleasm scandisks"
 
