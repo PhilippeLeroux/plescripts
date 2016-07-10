@@ -384,6 +384,12 @@ function get_ssh_command
 	# Si la commande est LANG=C on passe à la suivante.
 	[ "$cmd" == "LANG=C" ] && cmd=${argv[argc+2]}
 
+	# Si la commande est . c'est qu'un fichier profile est chargé on passe le
+	# profile : . ./.profile ... donc pointe sur 3
+	[ "$cmd" == "." ] && cmd=${argv[argc+3]}
+	# Arrive dans ce scénario : . ./.profile \; ....
+	[ "$cmd" == ";" ] && cmd=${argv[argc+4]}
+
 	echo "$cmd (ssh)"
 }
 
