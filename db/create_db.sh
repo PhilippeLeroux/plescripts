@@ -157,7 +157,6 @@ typeset -r LOG_DBCA=${PLELIB_LOG_FILE}_dbca
 
 function is_rac_or_single_server
 {
-	[ $db_type == undef ] && db_type=SINGLE
 	test_if_cmd_exists olsnodes
 	if [ $? -eq 0 ]
 	then
@@ -173,10 +172,12 @@ function is_rac_or_single_server
 			count_nodes=count_nodes+1
 		done<<<"$(olsnodes)"
 
-		[ db_type == undef ] && [ $count_nodes -gt 1 ] && db_type=RAC
+		[ $db_type == undef ] && [ $count_nodes -gt 1 ] && db_type=RAC
 	fi
+	
+	[ $db_type == undef ] && db_type=SINGLE
 
-	#	Note sur un single olsnodes existe mais ne fait rien
+	#	Note sur un single olsnodes existe mais retourne du vide.
 	[ x"$node_list" = x ] && node_list=undef
 }
 
@@ -634,7 +635,7 @@ then
 			while IFS=':' read inst_name rem
 			do
 				[ x"$inst_list" = x ] && inst_list=$inst_name || inst_list=${inst_list}",$inst_name"
-			done<<<"$(cat /etc/oratab | grep "^${name}.*[1-9]:")"
+			done<<<"$(cat /etc/oratab | grep "^${name}_\{,1\}[1-9]:")"
 			exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
 			exec_cmd srvctl start service -db $name -service pdb$pdbName
 			LN

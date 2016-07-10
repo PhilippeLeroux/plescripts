@@ -70,7 +70,7 @@ info "Suppression de la base :"
 LN
 
 [ x"$node_list" == x ] && sourcedb=$upper_db || sourcedb=$db
-exec_cmd -c "dbca -deleteDatabase -sourcedb $sourcedb -sysDBAUserName sys -sysDBAPassword $oracle_password -silent"
+exec_cmd "dbca -deleteDatabase -sourcedb $sourcedb -sysDBAUserName sys -sysDBAPassword $oracle_password -silent"
 LN
 
 typeset -r rm_1="rm -rf $ORACLE_BASE/cfgtoollogs/dbca/$upper_db"
@@ -90,7 +90,7 @@ LN
 
 if [ x"$node_list" != x ]
 then	#	Sur les RACs j'ajoute le nom des instances
-	typeset -r clean_oratab_cmd1="sed  \"/${upper_db:0:8}.*[0-9].*/d\" /etc/oratab > /tmp/oracle_oratab"
+	typeset -r clean_oratab_cmd1="sed  \"/${upper_db:0:8}_\{,1\}[0-9].*/d\" /etc/oratab > /tmp/oracle_oratab"
 	typeset -r clean_oratab_cmd2="cat /tmp/oracle_oratab > /etc/oratab && rm /tmp/oracle_oratab"
 
 	exec_cmd "$clean_oratab_cmd1"
