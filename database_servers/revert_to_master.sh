@@ -44,7 +44,7 @@ done
 
 [ $USER != root ] && error "Only root !" && info "$str_usage" && exit 1
 
-typeset -f nr_files=$(ls -1 $GRID_HOME | wc -l)
+typeset -i nr_files=$(ls -1 $GRID_HOME | wc -l)
 if [ $nr_files -ne 0 ]
 then
 	error "Le GI et oracle doivent être désinstallés."
