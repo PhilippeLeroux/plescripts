@@ -31,7 +31,7 @@ Création d'une base de donnée.
 
 	La règle de nommage étant :
 	 * Nom de la pdb = name + 01
-	 * Nom du service service = pdb + nom de la pdb
+	 * Nom du service = pdb + nom de la pdb
 
 	Les bases sont créées avec l'option threaded_execution=true, pour se connecter
 	avec le compte sys il faut donc utiliser la syntaxe : `sqlplus sys/Oracle12 as sysbda`
