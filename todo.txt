@@ -22,6 +22,7 @@ Dans shell :
 	Test     : les nœuds d'un RAC vont ils survivre.
 
 A documenter :
+	ACFS par compatible : en root : acfsdriverstate -orahome $GRID_HOME
 	- Création d'un FS ACFS
 		root@K2
 		[root@K2:~]$ cd plescripts/san/
