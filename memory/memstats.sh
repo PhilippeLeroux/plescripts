@@ -70,7 +70,7 @@ function write_headers
 	echo "$(date +"%Y:%m:%d") total used free Used%" > $shm_file
 
 	#	Obligatoire avec vboxsf
-	chmod ug=rwx $mem_file $swap_file $shm_file
+	chmod ug=rw $mem_file $swap_file $shm_file
 }
 
 function write_stats

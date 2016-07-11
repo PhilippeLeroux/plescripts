@@ -143,7 +143,7 @@ if [ ! -f $PLELIB_LOG_FILE ]
 then	# Obligatoire lors de l'utilisation répertoire partagé vboxf
 		# Avec NFS pas de problème (plus utilisé pour lenteur excessive)
 	touch $PLELIB_LOG_FILE >/dev/null 2>&1
-	chmod ug=rwx,o=rx $PLELIB_LOG_FILE
+	chmod ug=rw,o=r $PLELIB_LOG_FILE
 	[ $? -ne 0 ] && exit 1
 fi
 
