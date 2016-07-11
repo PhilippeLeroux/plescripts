@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ksh
 
 #	ts=4	sw=4
 
@@ -45,6 +45,9 @@ LN
 
 info "Positionne les acls sur ~/plescripts"
 # Pour supprimer les acls : setfacl -Rb ~/plescripts/
-exec_cmd setfacl -Rm d:g:users:rwx $HOME/plescripts
+exec_cmd -c setfacl -Rm d:g:users:rwx $HOME/plescripts
+if [ $? -ne 0 ]
+then
+	info "with root exec : setfacl -Rm d:g:users:rwx $HOME/plescripts"
+fi
 LN
-
