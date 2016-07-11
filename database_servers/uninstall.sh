@@ -22,14 +22,14 @@ typeset -r str_usage=\
 
 	-type=ASM       : type d'installation FS ou ASM
 
-	Ajouter le flag '!' permet de ne pas effectuer une action.
+	Ajouter le flag '!' permet de ne pas effectuer une action avec le paramètre -all.
 "
 
 info "$ME $@"
 
 typeset type=ASM
 typeset action_list
-typeset all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_disks"
+typeset -r all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_disks"
 
 typeset not_flag=no
 #	Utiliser lors de l'évaluation de paramètres.
@@ -82,7 +82,7 @@ do
 			if [ $not_flag = yes ]
 			then
 				not_flag=no
-				all_actions=$(sed "s/ remove_oracle_binary//"<<<"$all_actions")
+				action_list=$(sed "s/ remove_oracle_binary//"<<<"$action_list")
 			else
 				action_list="$action_list remove_oracle_binary"
 			fi
@@ -93,7 +93,7 @@ do
 			if [ $not_flag = yes ]
 			then
 				not_flag=no
-				all_actions=$(sed "s/ remove_grid_binary//"<<<"$all_actions")
+				action_list=$(sed "s/ remove_grid_binary//"<<<"$action_list")
 			else
 				action_list="$action_list remove_grid_binary"
 			fi
@@ -104,7 +104,7 @@ do
 			if [ $not_flag = yes ]
 			then
 				not_flag=no
-				all_actions=$(sed "s/ remove_disks//"<<<"$all_actions")
+				action_list=$(sed "s/ remove_disks//"<<<"$action_list")
 			else
 				action_list="$action_list remove_disks"
 			fi
@@ -130,6 +130,7 @@ done
 
 exit_if_param_invalid type "FS ASM" "$str_usage"
 
+info "Actions : $action_list"
 if [ x"$action_list" == x ]
 then
 	info "$str_usage"
@@ -251,11 +252,13 @@ EOS
 function remove_disks
 {
 	line_separator
+	info "Supprime les disques :"
 	exec_cmd "~/plescripts/disk/clear_oracle_disk_headers.sh -doit"
 	exec_cmd -c "~/plescripts/disk/logout_sessions.sh"
 	exec_cmd "systemctl disable oracleasm.service"
 	LN
 
+	info "Supprime les disques sur les autres nœuds."
 	root_execute_on_other_nodes "oracleasm scandisks"
 	LN
 

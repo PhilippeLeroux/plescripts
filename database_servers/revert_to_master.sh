@@ -46,6 +46,7 @@ done
 
 typeset -i nr_files=0
 [ -d $GRID_HOME ] && nr_files=$(ls -1 $GRID_HOME | wc -l)
+info "$nr_files fichiers dans '$GRID_HOME'"
 if [ $nr_files -ne 0 ]
 then
 	error "Le GI et oracle doivent être désinstallés."
@@ -75,8 +76,8 @@ LN
 exec_cmd "~/plescripts/gadgets/customize_logon.sh -name=$master_name"
 LN
 
-#update_value SELINUX enforcing /etc/selinux/config
-#LN
+exec_cmd "rm -rf /tmp/*"
+LN
 
 exec_cmd "systemctl restart NetworkManager"
 LN
