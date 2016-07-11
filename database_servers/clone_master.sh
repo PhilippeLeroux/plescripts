@@ -256,7 +256,7 @@ function configure_disks_node1
 
 	line_separator
 	info "Register iscsi and create oracle disks..."
-	if [ "$type_disks" = FS ]
+	if [ "$type_disks" == FS ]
 	then
 		exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
 		exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracle_fs_on_new_disks.sh"
@@ -411,7 +411,7 @@ typeset -r script_start_at=$SECONDS
 
 [ $skip_clone == no ]	&& configure_server || true
 
-[ $skip_oracle = no ]	&& configure_oracle_accounts || true
+[ $skip_oracle == no ]	&& configure_oracle_accounts || true
 
 if [ $node -eq 1 ]
 then
