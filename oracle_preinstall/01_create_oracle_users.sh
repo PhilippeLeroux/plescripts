@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 #	ts=4 sw=4
 
@@ -119,7 +119,7 @@ make_vimrc_file "/root/.vimrc"
 
 line_separator
 info "create users grid"
-exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper -s /bin/ksh -c \"Grid Infrastructure Owner\" grid
+exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper -s /bin/bash -c \"Grid Infrastructure Owner\" grid
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
 exec_cmd cp template_kshrc /home/grid/.kshrc
 [ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/grid/.kshrc"
@@ -132,7 +132,7 @@ LN
 
 line_separator
 info "create user oracle"
-exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper -s /bin/ksh -c \"Oracle Software Owner\" oracle
+exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper -s /bin/bash -c \"Oracle Software Owner\" oracle
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/oracle/grid_env
 exec_cmd cp $profile_oracle /home/oracle/.profile
 exec_cmd cp template_kshrc /home/oracle/.kshrc

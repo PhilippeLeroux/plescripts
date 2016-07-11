@@ -1,6 +1,6 @@
 
 #	ts=4 sw=4
-#/bin/ksh
+#/bin/bash
 
 [ -z plelib_release ] && error "~/plescripts/plelib.sh doit être incluse" && exit 1
 

@@ -1,4 +1,4 @@
-#/bin/ksh
+#/bin/bash
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg

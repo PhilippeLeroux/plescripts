@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 #	ts=4	sw=4
 
