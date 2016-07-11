@@ -63,28 +63,24 @@ la base soit SINGLE ou bien RAC.
 
 * Télécharger les logiciels suivants :
 
-	* [Download Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
+	* [Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
 		Uniquement pour windows, sous linux yum install [...] ou apt-get install [...]
 
-	* [Download Oracle Linux 7](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
+	* [Oracle Linux 7](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
 
-		A télécharger ici : $HOME/ISO/
+	* [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 
-	* [Download Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
-
-		Extraire les zips oracle ici $HOME/oracle_install/database
-
-		Extraire les zips grid ici $HOME/oracle_install/grid
-
-	* Download plescripts 
-		* git doit être installé sur le poste client.
-		* Exécuter ensuite : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
+	* plescripts
+		* Avec git : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
+		* Ou télécharger le zip : https://github.com/PhilippeLeroux/plescripts.git
+	
+	L'archive plescripts doit être dans $HOME
 
 --------------------------------------------------------------------------------
-# Configuration du poste client.
+# Poste client.
 
- [Informations ici](https://github.com/PhilippeLeroux/plescripts/blob/master/myconfig/README.md)
+[Configuration](https://github.com/PhilippeLeroux/plescripts/blob/master/myconfig/README.md)
 
 --------------------------------------------------------------------------------
 
@@ -100,9 +96,9 @@ la base soit SINGLE ou bien RAC.
  [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
 
 # Ajout de serveurs de base de données Oracle.
-_Les 2 VMs orclmaster et K2 doivent exister._
+Les 2 VMs orclmaster et K2 doivent avoir été créées.
 
-Les instructions pour créer des serveurs sont décrites ici [README](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
+[Création des serveurs Oracle](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
 
 --------------------------------------------------------------------------------
 
