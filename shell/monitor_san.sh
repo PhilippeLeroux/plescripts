@@ -1,4 +1,4 @@
-#/bin/sh
+#/bin/ksh
 
 typeset -r width=85
 typeset -r height=40

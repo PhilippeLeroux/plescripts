@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ksh
 
 sqlplus -s / as sysasm<<EOS
 alter system set "_asm_allow_small_memory_target"=true scope=spfile;
