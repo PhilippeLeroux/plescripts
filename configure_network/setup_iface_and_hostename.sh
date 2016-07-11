@@ -60,10 +60,8 @@ line_separator
 IFS=':' read db_type server_name ip_pub vip_name vip_ip ip_priv_name ip_priv db_name instance_name<<<"$(cat $node_file)"
 info "Configure node $p_i_node"
 info "	server     : $server_name / $ip_pub"
-[[ $db_type == rac* ]] && info "	vip        : $vip_name / $vip_ip"
+[ $db_type == rac ] && info "	vip        : $vip_name / $vip_ip"
 info "	ip private : $ip_priv_name / $ip_priv"
-info "	DB name    : $db_name"
-info "	Instance   : $instance_name"
 LN
 
 line_separator
