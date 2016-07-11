@@ -124,7 +124,6 @@ function run_oracle_preinstall
 		[ $type_disks = FS ] && db_type=single_fs || db_type=single
 	fi
 
-	chrono_start
 	exec_cmd "ssh -t root@$server_name plescripts/oracle_preinstall/run_all.sh $db_type"
 	LN
 
@@ -135,7 +134,6 @@ function run_oracle_preinstall
 
 	info "Ajoute grid & oracle dans le groupe users pour pouvoir lire les montages NFS."
 	exec_cmd "ssh -t root@$server_name plescripts/database_servers/add_oracle_grid_into_group_users.sh"
-	chrono_stop "Oracle preinstall : "
 	LN
 }
 
@@ -251,24 +249,21 @@ function configure_disks_node1
 {
 	line_separator
 	info "Setup SAN"
-	chrono_start
 	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -create_disk -db=${db} -node=$node"
-	chrono_stop "Create disks : "
 	LN
 
 	test_pause "Check if the disks are created on the SAN"
 
+	line_separator
 	info "Register iscsi and create oracle disks..."
-	chrono_start
-
-	exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
 	if [ "$type_disks" = FS ]
 	then
+		exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
 		exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracle_fs_on_new_disks.sh"
 	else
 		exec_cmd "ssh -t root@${server_name} plescripts/disk/oracleasm_discovery_first_node.sh"
 	fi
-	chrono_stop "Create oracle disks : "
+	LN
 
 	line_separator
 	info "Mount point for oracle installation"
@@ -295,10 +290,8 @@ function configure_disks_other_node_than_1
 {
 	line_separator
 	info "Noeud $node disks on SAN exists"
-	chrono_start
 	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -db=${db} -node=$node"
 	exec_cmd "ssh -t root@${server_name} plescripts/disk/oracleasm_discovery_other_nodes.sh"
-	chrono_stop "SAN create disks : "
 	LN
 }
 
@@ -437,10 +430,6 @@ LN
 if [ $type_shared_fs == vbox ]
 then
 	exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=$server_name"
-	LN
-
-	reboot_server $server_name
-	LN
 fi
 
 if [ $node -eq $max_nodes ]

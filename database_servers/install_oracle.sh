@@ -218,22 +218,18 @@ LN
 
 create_response_file
 
-if [ $action = install ]
+if [ $action == install ]
 then
 	copy_response_file
 
 	prepare_installation_directory
 
-	chrono_start
 	start_oracle_installation
-	chrono_stop "Oracle installation :"
 
 	typeset -i inode=0
 	while [ $inode -lt $max_nodes ]
 	do
-		chrono_start
 		run_post_install_root_scripts_on_node $inode
-		chrono_stop "root's scripts node $(( $inode + 1)) :"
 		inode=inode+1
 		LN
 	done

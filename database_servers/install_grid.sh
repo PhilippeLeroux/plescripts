@@ -301,6 +301,39 @@ function create_dg # $1 nom du DG
 	exec_cmd "ssh -t grid@${node_names[0]} \". ./.profile; ~/plescripts/dg/create_new_dg.sh -name=$DG -disks=$total_disks\""
 }
 
+#	Création des DGs.
+#	- Pour un serveur standalone création du DG FRA.
+#	- Pour un serveur RAC création des DG DATA & FRA puis montage sur les autres nœuds.
+function create_all_dgs
+{
+	line_separator
+
+	# Pour le RAC uniquement, le premier DG étant CRS ou GRID
+	[ $max_nodes -gt 1 ] && create_dg DATA
+
+	create_dg FRA
+
+	if [ $max_nodes -ne 1 ]
+	then	# Sur les autres noeaud les DGs sont à monter uniquement.
+		typeset -i inode=1
+		while [ $inode -lt $max_nodes ]
+		do
+			if [ $max_nodes -gt 1 ]
+			then
+				info "mount DG DATA on ${node_names[$inode]}"
+				exec_cmd "ssh -t grid@${node_names[$inode]} \". ./.profile; asmcmd mount DATA\""
+				LN
+			fi
+
+			info "mount DG FRA on ${node_names[$inode]}"
+			exec_cmd "ssh -t grid@${node_names[$inode]} \". ./.profile; asmcmd mount FRA\""
+			LN
+
+			inode=inode+1
+		done
+	fi
+}
+
 function launch_memstat
 {
 	typeset mode="-h"
@@ -429,9 +462,7 @@ then
 
 	if [ $skip_grid_installation != yes ]
 	then
-		chrono_start
 		start_grid_installation
-		chrono_stop "grid installation :"
 		LN
 	fi
 
@@ -442,11 +473,8 @@ then
 		typeset -i inode=0
 		while [ $inode -lt $max_nodes ]
 		do
-			chrono_start
 			run_post_install_root_scripts_on_node $inode
-			chrono_stop "root's scripts node $(( $inode + 1 )) :"
 			LN
-
 			inode=inode+1
 		done
 	fi
@@ -454,7 +482,7 @@ then
 	if [ $skip_configToolAllCommands == no ]
 	then
 		if [ $max_nodes -gt 1 ]
-		then
+		then	#	RAC
 			if [ $install_mgmtdb == no ]
 			then
 				remove_tfa_on_all_nodes
@@ -468,7 +496,7 @@ then
 			else
 				runConfigToolAllCommands
 			fi
-		else
+		else	#	SINGLE
 			line_separator
 			runConfigToolAllCommands
 			LN
@@ -486,40 +514,7 @@ then
 		fi
 	fi
 
-	if [ $skip_create_dg != yes ]
-	then
-		chrono_start
-		line_separator
-		info "Create / mount DGs"
-
-		# Pour le RAC uniquement, le premier DG étant CRS ou GRID
-		[ $max_nodes -gt 1 ] && create_dg DATA
-
-		create_dg FRA
-
-		if [ $max_nodes -ne 1 ]
-		then	# Sur les autres noeaud les DGs sont à monter uniquement.
-			inode=1
-			while [ $inode -lt $max_nodes ]
-			do
-				if [ $max_nodes -gt 1 ]
-				then
-					info "mount DG DATA on ${node_names[$inode]}"
-					exec_cmd "ssh -t grid@${node_names[$inode]} \". ./.profile; asmcmd mount DATA\""
-					LN
-				fi
-
-				info "mount DG FRA on ${node_names[$inode]}"
-				exec_cmd "ssh -t grid@${node_names[$inode]} \". ./.profile; asmcmd mount FRA\""
-				LN
-
-				inode=inode+1
-			done
-		fi
-
-		chrono_stop "create dg"
-		LN
-	fi
+	[ $skip_create_dg != yes ] && create_all_dgs || true
 fi
 
 if [ $oracle_home_for_test == no ]
