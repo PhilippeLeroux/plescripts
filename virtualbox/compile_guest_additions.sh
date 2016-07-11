@@ -51,6 +51,7 @@ typeset -r vbox_version=$(VBoxManage --version | cut -d_ -f1)
 line_separator
 info "VirtualBox version : $vbox_version"
 info "vboxguest version  : $guest_version"
+
 if [ "$guest_version" == "$vbox_version" ]
 then
 	info "Le module des 'Guest Additions' est à jour sur $host"
@@ -80,4 +81,11 @@ mount /dev/cdrom /media/cdrom
 echo "cd /media/cdrom && ./VBoxLinuxAdditions.run"
 cd /media/cdrom && ./VBoxLinuxAdditions.run
 EOS
-[ $? -ne 0 ] && exit 1 || exit 0
+[ $? -ne 0 ] && exit 1 || true
+LN
+exec_cmd "$vm_scripts_path/stop_vm $host"
+info -n "Wait : "; pause_in_secs 20; LN
+LN
+exec_cmd "$vm_scripts_path/start_vm $host"
+~/plescripts/shell/wait_server $host
+LN
