@@ -74,7 +74,7 @@ la base soit SINGLE ou bien RAC.
 	* plescripts
 		* Avec git : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
 		* Ou télécharger le zip : https://github.com/PhilippeLeroux/plescripts.git
-	
+
 	L'archive plescripts doit être dans $HOME
 
 --------------------------------------------------------------------------------
@@ -99,6 +99,9 @@ la base soit SINGLE ou bien RAC.
 Les 2 VMs orclmaster et K2 doivent avoir été créées.
 
 [Création des serveurs Oracle](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
+
+La création des serveurs inclue l'installation du Grid Infrastructue et d'Oracle.
+Une fois cette étape terminée les bases peuvent être [créées](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
 --------------------------------------------------------------------------------
 
