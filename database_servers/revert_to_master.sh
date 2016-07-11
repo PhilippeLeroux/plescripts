@@ -44,7 +44,8 @@ done
 
 [ $USER != root ] && error "Only root !" && info "$str_usage" && exit 1
 
-typeset -i nr_files=$(ls -1 $GRID_HOME | wc -l)
+typeset -i nr_files=0
+[ -d $GRID_HOME ] && nr_files=$(ls -1 $GRID_HOME | wc -l)
 if [ $nr_files -ne 0 ]
 then
 	error "Le GI et oracle doivent être désinstallés."
@@ -53,13 +54,14 @@ then
 	exit 1
 fi
 
+exec_cmd "sed -i "/192.170.100/d" /etc/hosts"
+exec_cmd "sed -i "/10.10.10/d" /etc/hosts"
+LN
+
 exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
 
 exec_cmd -c "rm -rf /u01"
 LN
-
-#exec_cmd -c "rm -rf /root/.ssh"
-#LN
 
 update_value IPADDR ${if_pub_network}.${master_ip_node}	$if_pub_file
 LN
