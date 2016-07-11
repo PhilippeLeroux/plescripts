@@ -39,23 +39,30 @@ typeset		policyManaged=no
 typeset -r str_usage=\
 "Usage : $ME
 	-name=$name db name for single or db for RAC
-	-lang=$lang
-	-sysPassword=$sysPassword
-	-memory_mb=$memory_mb
-	-cdb=$cdb	(yes/no)
-	[-pdbName=<str>]
-	-data=$data
-	-fra=$fra
-	-templateName=$templateName
-	-db_type=SINGLE|RAC|RACONENODE (1)
-	-policyManaged=$policyManaged	: créer une base en 'policy managed' no/yes
+	[-lang=$lang]
+	[-sysPassword=$sysPassword]
+	[-memory_mb=$memory_mb]
+	[-cdb=$cdb]	(yes/no)	(1)
+	[-pdbName=<str>]	(2)
+	[-data=$data]
+	[-fra=$fra]
+	[-templateName=$templateName]
+	[-db_type=SINGLE|RAC|RACONENODE]	(3)
+	[-policyManaged]  : créer une base en 'Policy Managed'	(4)
 
-	1 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
+	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == name || 01
+	    Le service de la pdb sera : pdb || name || 01
+
+	2 : Si -pdbName est précisé -cdb vaut automatiquement yes
+
+	3 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
 	de noeuds, si 1 seul noeud c'est SINGLE sinon c'est RAC.
 	Donc pour créer un RAC One Node database il faut impérativement le préciser !
 
+	4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera crée.
+
 	[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
-	les scripts poste installations.
+	les scripts post installations.
 
 	[-verbose]"
 
@@ -150,6 +157,13 @@ do
 			shift
 			;;
 
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			rm -f $PLELIB_LOG_FILE
+			exit 1
+			;;
+
 		*)
 			error "Arg '$1' invalid."
 			LN
@@ -181,7 +195,7 @@ function is_rac_or_single_server
 
 		[ $db_type == undef ] && [ $count_nodes -gt 1 ] && db_type=RAC
 	fi
-	
+
 	[ $db_type == undef ] && db_type=SINGLE
 
 	#	Note sur un single olsnodes existe mais retourne du vide.
@@ -288,6 +302,14 @@ function add_dbca_param
 	fi
 }
 
+function test_if_serverpool_exists
+{
+	typeset -r serverPoolName=$1
+
+	info "Test si le pool de serveurs $serverPoolName"
+	exec_cmd -ci "srvctl status srvpool -serverpool $serverPoolName"
+}
+
 #	Fabrique les arguments à passer à dbca en fonction des variables
 #	globales.
 #		2 variables sont utilisées
@@ -307,7 +329,8 @@ function make_dbca_args
 		add_dbca_param "-policyManaged"
 		if [ $cdb == yes ]
 		then
-			add_dbca_param "    -createServerPool"
+			test_if_serverpool_exists $serverPoolName
+			[ $? -ne 0 ] && add_dbca_param "    -createServerPool"
 			add_dbca_param "    -serverPoolName $serverPoolName"
 		fi
 	fi
