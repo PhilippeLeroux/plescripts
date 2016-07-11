@@ -54,8 +54,8 @@ then
 	exit 1
 fi
 
-exec_cmd "sed -i "/192.170.100/d" /etc/hosts"
-exec_cmd "sed -i "/10.10.10/d" /etc/hosts"
+exec_cmd "sed -i "/${infra_network}/d" /etc/hosts"
+exec_cmd "sed -i "/${if_priv_network}/d" /etc/hosts"
 LN
 
 exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
