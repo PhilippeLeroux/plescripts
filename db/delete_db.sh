@@ -108,3 +108,6 @@ then
 	exec_cmd -c "sudo -u grid -i asmcmd rm -rf FRA/$upper_db"
 	LN
 fi
+
+info "Suppression effectuée."
+LN
