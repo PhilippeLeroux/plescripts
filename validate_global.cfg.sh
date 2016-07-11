@@ -48,6 +48,7 @@ typeset -i iso_olinux_ok=0
 typeset -i resolv_conf_ok=0
 typeset -i vbox_is_ok=0
 typeset -i nc_is_ok=0
+typeset -i ssh_is_ok=0
 
 line_separator
 info "L'addresse IP 192.170.100.1 correspond au poste client $client_hostname"
@@ -163,7 +164,6 @@ else
 	info -f "[$KO]"
 	resolv_conf_ok=1
 fi
-
 LN
 
 line_separator
@@ -175,6 +175,7 @@ else
 	vbox_is_ok=1
 	info -f "[$KO]"
 fi
+LN
 
 info -n "~/plescripts/shell dans le path : "
 if $(test_if_cmd_exists llog)
@@ -183,6 +184,7 @@ then
 else
 	info -f "${LBLUE}non${NORM}, fortement conseillé..."
 fi
+LN
 
 info -n "Vérifie si nc est installé : "
 if $(test_if_cmd_exists nc)
@@ -191,6 +193,16 @@ then
 else
 	info -f "[$KO]"
 	nc_is_ok=1
+fi
+LN
+
+info -n "Vérifie si ssh est installé : "
+if $(test_if_cmd_exists ssh)
+then
+	info -f "[$OK]"
+else
+	info -f "[$KO]"
+	ssh_is_ok=1
 fi
 LN
 
@@ -205,7 +217,7 @@ if [ $bad_ip_host -ne 0 ] 											\
 	|| [ $iso_olinux_ok -ne 0 ] || [ $unzipped_orcl_grid_ok -ne 0 ]	\
 	|| [ $resolv_conf_ok -ne 0 ] 									\
 	|| [ $vbox_is_ok -ne 0 ]										\
-	|| [ $nc_is_ok -ne 0 ]
+	|| [ $nc_is_ok -ne 0 ] || [ $ssh_is_ok -ne 0 ]
 then
 	info "Corriger les erreurs avant de continuer."
 	exit 1
