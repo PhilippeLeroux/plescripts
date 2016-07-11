@@ -302,11 +302,12 @@ function add_dbca_param
 	fi
 }
 
+#	Return 0 if server pool $1 exists, else 1
 function test_if_serverpool_exists
 {
 	typeset -r serverPoolName=$1
 
-	info "Test si le pool de serveurs $serverPoolName"
+	info "Test si le pool de serveurs $serverPoolName exists :"
 	exec_cmd -ci "srvctl status srvpool -serverpool $serverPoolName"
 }
 
