@@ -75,7 +75,7 @@ la base soit SINGLE ou bien RAC.
 		* Avec git : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
 		* Ou télécharger le zip : https://github.com/PhilippeLeroux/plescripts.git
 
-	L'archive plescripts doit être dans $HOME
+	L'archive plescripts doit être extrait dans $HOME
 
 --------------------------------------------------------------------------------
 
