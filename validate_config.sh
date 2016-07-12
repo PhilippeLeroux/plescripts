@@ -43,21 +43,6 @@ done
 typeset -i count_errors=0
 
 line_separator
-info "L'addresse IP ${infra_network}.1 correspond au poste client $client_hostname"
-info -n "Test l'existence de l'IP ${infra_network}.1 "
-ping -c 1 ${infra_network}.1 >/dev/null 2>&1
-if [ $? -ne 0 ]
-then
-	info -f "[$KO]"
-	error "Créer avec VirtualBox le réseau ${infra_network}.0"
-	count_errors=count_errors+1
-else
-	info -f "[$OK]"
-	exec_cmd nslookup ${infra_network}.1
-fi
-LN
-
-line_separator
 info -n "Test l'existence de '$HOME/plescripts' "
 if [ ! -d "$HOME/plescripts" ]
 then
