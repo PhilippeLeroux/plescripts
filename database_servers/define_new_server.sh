@@ -264,4 +264,4 @@ else
 	normalyse_fs_disks
 fi
 
-~/plescripts/shell/show_db_servers -db=$db
+~/plescripts/shell/show_infra -db=$db

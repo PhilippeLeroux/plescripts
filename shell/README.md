@@ -52,9 +52,9 @@
 
 	À utiliser sur un serveur : permet de voir les messages au démarrage du serveur.
 
-- show_db_servers -db=<str>
+- show_infra -db=<str>
 
-	Affiche la description d'un base
+	Affiche l'infrastructure correspondant à une base
 
 - show_grid_status [db] ou base définie par set_db
 
