@@ -34,8 +34,9 @@ function virtualbox_start
 
 	[ $max_vms -eq 0 ] && error "Server for $server not found." && exit 1
 
+	typeset -i nr_vm_started=0
 	exec_cmd -c "VBoxManage startvm ${vm_list[0]} --type headless"
-	[ $? -ne 0 ] && error "Failed to start ${vm_list[0]}"
+	[ $? -ne 0 ] && error "Failed to start ${vm_list[0]}" || nr_vm_started=1
 	LN
 
 	for i in $( seq 1 $(( max_vms - 1 )) )
@@ -53,11 +54,9 @@ function virtualbox_start
 		fi
 
 		exec_cmd "VBoxManage startvm ${vm_list[$i]} --type headless"
-		[ $? -ne 0 ] && error "Failed to start ${vm_list[$i]}"
+		[ $? -ne 0 ] && error "Failed to start ${vm_list[$i]}" || nr_vm_started=nr_vm_started+1
 		LN
 	done
-
-	show_grid_status
 }
 
 case ${hostvm##*_} in
