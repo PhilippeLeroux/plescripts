@@ -1,0 +1,14 @@
+Télécharger le driver NVidia :
+http://www.nvidia.fr/content/DriverDownload-March2009/confirmation.php?url=/XFree86/Linux-x86_64/367.27/NVIDIA-Linux-x86_64-367.27.run&lang=fr&type=GeForce
+
+cd "le répertoire"
+sh NVIDIA-Linux-x86_64-367.27.run
+
+le script blacklist nouveau ici :
+/etc/modprobe.d/nvidia...conf
+
+Rebooter, relancer le script si ca ne marche par : mkinitrd
+
+Blacklister le driver nouveau :
+echo "blacklist nouveau" >> /etc/modprobe.d/50-blacklist.conf && mkinitrd && reboot
+
