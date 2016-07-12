@@ -10,15 +10,32 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-typeset -r str_usage="Usage : $ME [-db=<str>]"
+typeset -r str_usage=\
+"Usage : $ME
+	[-db=<str>]            Préciser la base sinon s'appuie sur set_db
+	[-wait_time_secs=<#>]  Temps de pause entre chaque tentative.
+	[-node=<#>]            N° du nœud à attendre.
+"
 
-typeset db=undef
+typeset		db=undef
+typeset	-i	nr_node=1
+typeset	-i	wait_time_secs=10
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-db=*)
 			db=${1##*=}
+			shift
+			;;
+
+		-wait_time_secs=*)
+			wait_time_secs=${1##*=}
+			shift
+			;;
+
+		-node=*)
+			nr_node=${1##*=}
 			shift
 			;;
 
@@ -34,7 +51,7 @@ done
 [[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db
 
-node=srv${db}01
+typeset -r node=$(printf "srv%s%02d" ${db} $nr_node)
 wait_server $node
 [ $? -ne 0 ] && exit 1
 
@@ -43,8 +60,8 @@ while [ 0 -eq 0 ]
 do
 	exec_cmd -c "ssh grid@$node \". ~/.profile; crsctl stat res -t\""
 	[ $? -eq 0 ] && exit 0
-	info -n "Waiting : "; pause_in_secs 10
+	info -n "Waiting : "; pause_in_secs $wait_time_secs
 	duration=$(( $SECONDS - $start_s ))
-	echo -e ", ${YELLOW}Total wait $(fmt_seconds $duration)${NORM} -> again..."
+	info -f ", ${YELLOW}Total wait $(fmt_seconds $duration)${NORM}..."
 	LN
 done
