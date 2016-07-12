@@ -36,6 +36,9 @@ exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_ip}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
 LN
 
+line_separtor
+exec_cmd "$vm_scripts_path/create_iface.sh"
+
 line_separator
 info "Create VM $master_name"
 exec_cmd VBoxManage createvm --name $master_name --basefolder \"$vm_path\" --register

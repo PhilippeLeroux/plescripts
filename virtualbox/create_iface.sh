@@ -35,5 +35,7 @@ do
 	esac
 done
 
+info "Create Iface vboxnet0"
 exec_cmd "VBoxManage hostonlyif create"
 exec_cmd "VBoxManage hostonlyif ipconfig vboxnet0 --ip ${infra_network}.1"
+LN
