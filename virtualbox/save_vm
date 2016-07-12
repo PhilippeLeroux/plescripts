@@ -1,0 +1,56 @@
+#!/bin/sh
+
+#	ts=4	sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+typeset -r str_usage=\
+"Usage : $ME <str>"
+
+info "$ME $@"
+
+[[ $# -eq 0 ]] && [[ -v ID_DB ]] && server=$ID_DB || server=$1
+
+if [ x"$server" == x ]
+then
+	error "$str_usage"
+	exit 1
+fi
+
+function virtualbox_save
+{
+	typeset -a vm_list
+	typeset -i ivm=0
+	while read vm_name
+	do
+		vm_list[$ivm]=$vm_name
+		ivm=ivm+1
+	done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+
+	typeset -ri max_vms=${#vm_list[@]}
+
+	[ $max_vms -eq 0 ] && error "Server for $server not found." && exit 1
+
+	for ivm in $( seq 0 $(( max_vms - 1 )) )
+	do
+		exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} savestate"
+		[ $? -ne 0 ] && error "Failed to save ${vm_list[$ivm]}"
+		LN
+	done
+}
+
+case ${hostvm##*_} in
+	virtualbox)
+		virtualbox_save
+		exit 0
+		;;
+
+	*)
+		error "${hostvm##*_} not implemented."
+		exit 1
+		;;
+esac
+
