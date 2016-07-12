@@ -58,7 +58,7 @@ la base soit SINGLE ou bien RAC.
 	Temps de création cdb + 1 pdb : 1 h 20
 
 --------------------------------------------------------------------------------
-# Prérequis :
+# Pré requis :
 * Disposer d'une machine assez puissante pour un RAC il faut au minimum 8Gb de RAM.
 
 * Télécharger les logiciels suivants :
@@ -76,11 +76,6 @@ la base soit SINGLE ou bien RAC.
 		* Ou télécharger le zip : https://github.com/PhilippeLeroux/plescripts.git
 
 	L'archive plescripts doit être dans $HOME
-
---------------------------------------------------------------------------------
-# Poste client.
-
-[Configuration](https://github.com/PhilippeLeroux/plescripts/blob/master/myconfig/README.md)
 
 --------------------------------------------------------------------------------
 
