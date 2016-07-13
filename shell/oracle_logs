@@ -51,29 +51,33 @@ typeset -r	upper_db=$(to_upper $db)
 typeset -r	cfg_path=~/plescripts/database_servers/$db
 typeset -r	max_nodes=$(ls -1 $cfg_path/node* | wc -l)
 
-[ $max_nodes -ne 2 ] && error "Uniquement RAC 2 nœuds" && exit 1
+[ $max_nodes -gt 2 ] && error "Maximum RAC 2 nœuds" && exit 1
 
 typeset -r	db_type=$(cat $cfg_path/node1 | cut -d: -f1)
-typeset -r	node1=$(cat $cfg_path/node1 | cut -d: -f2)
-typeset -r	node2=$(cat $cfg_path/node2 | cut -d: -f2)
+typeset -r	server1=$(cat $cfg_path/node1 | cut -d: -f2)
 
-typeset -r	session_name="ORCL Top $node1 / Bottom $node2"
-exec_cmd -ci tmux kill-session -t \"$session_name\"
+inst1=$(ssh oracle@$server1 plescripts/db/get_active_instance.sh)
 
-case $db_type in
-	rac)
-		typeset -r name1=${upper_db}1
-		typeset -r name2=${upper_db}2
-		;;
+if [ $max_nodes -eq 2 ]
+then	#	RAC 2 nœuds.
+	typeset -r	server2=$(cat $cfg_path/node2 | cut -d: -f2)
+	inst2=$(ssh oracle@$server2 plescripts/db/get_active_instance.sh)
 
-	raco)
-		typeset -r name1=${upper_db}_1
-		typeset -r name2=${upper_db}_2
-		;;
-esac
+	typeset -r	session_name="ORCL Top $server1 / Bottom $server2"
+	exec_cmd -ci tmux kill-session -t \"$session_name\"
 
-set -x
-tmux new -s "$session_name"	"ssh oracle@${node1} tail -1000f /u01/app/oracle/diag/rdbms/$db/${name1}/trace/alert_${name1}.log"			\;\
-							split-window -v "ssh root@${node2} tail -1000f /u01/app/oracle/diag/rdbms/$db/${name2}/trace/alert_${name2}.log"			\;\
-							selectp -t 0
 
+	alert1=$(printf "/u01/app/oracle/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst1 $inst1)
+	alert2=$(printf "/u01/app/oracle/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst2 $inst2)
+
+	tmux new -s "$session_name"	"ssh oracle@${server1} tail -1000f $alert1"			\;\
+								split-window -v "ssh oracle@${server2} tail -1000f $alert2"			\;\
+								selectp -t 0
+else	#	Mono Instance.
+	typeset -r	session_name="ORCL Top $server1 / Bottom $server2"
+	exec_cmd -ci tmux kill-session -t \"$session_name\"
+
+
+	alert1=$(printf "/u01/app/oracle/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst1 $inst1)
+	ssh oracle@${server1} tail -1000f $alert1
+fi
