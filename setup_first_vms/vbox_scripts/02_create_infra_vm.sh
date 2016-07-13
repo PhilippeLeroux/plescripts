@@ -61,6 +61,10 @@ exec_cmd VBoxManage modifyvm $infra_hostname --nictype3 virtio
 LN
 
 line_separator
+info "Attribution de 2 cpus"
+exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
+
+line_separator
 info "Ajout d'un disque pour le SAN (targetcli)"
 exec_cmd VBoxManage createhd --filename \"$vm_path/$infra_hostname/asm01.vdi\" --size 524288
 exec_cmd VBoxManage storageattach $infra_hostname --storagectl SATA --port 1 --device 0 --type hdd --medium \"$vm_path/$infra_hostname/asm01.vdi\"
