@@ -289,17 +289,23 @@ function info
 {
 	first_arg=""
 	symbol="# "
-	case "$1" in
-		"-n")
-			first_arg="-n"
-			shift
-			;;
+	while [ $# -ne 0 ]
+	do
+		case "$1" in
+			"-n")
+				[ x"$first_arg" == x ] && first_arg="-n" || first_arg="$first_arg -n"
+				shift
+				;;
 
-		"-f")
-			symbol="no_symbol"
-			shift
-			;;
-	esac
+			"-f")
+				symbol="no_symbol"
+				shift
+				;;
+
+			*)
+				break;
+		esac
+	done
 
 	my_echo $first_arg "${PURPLE}" "$symbol" "$@"
 }
