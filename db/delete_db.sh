@@ -79,20 +79,20 @@ typeset -r rm_2="rm -rf $ORACLE_BASE/diag/rdbms/$db"
 line_separator
 info "Purge des répertoires :"
 LN
-
 exec_cmd "$rm_1"
 execute_on_other_nodes "$rm_1"
 LN
-
 exec_cmd "$rm_2"
 execute_on_other_nodes "$rm_2"
 LN
 
 if [ x"$node_list" != x ]
-then	#	Sur les RACs j'ajoute le nom des instances
+then	#	Sur les RACs les nom des instances ont été ajoutés.
 	typeset -r clean_oratab_cmd1="sed  '/${upper_db:0:8}_\{,1\}[0-9].*/d' /etc/oratab > /tmp/oracle_oratab"
 	typeset -r clean_oratab_cmd2="cat /tmp/oracle_oratab > /etc/oratab && rm /tmp/oracle_oratab"
 
+	line_separator
+	info "Remove instance name from /etc/oratab."
 	exec_cmd "$clean_oratab_cmd1"
 	exec_cmd "$clean_oratab_cmd2"
 	execute_on_other_nodes "$clean_oratab_cmd1"
