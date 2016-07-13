@@ -168,7 +168,14 @@ LN
 line_separator
 function in_path
 {
-	typeset -r cmd=$1
+	typeset		option=no
+	if [ "$1" == "-o" ]
+	then
+		option=yes
+		shift
+	fi
+	typeset -r	cmd=$1
+	typeset -r	error_msg=$2
 
 	typeset -r msg=$(printf "%-10s " $cmd)
 	info -n "$msg"
@@ -176,15 +183,22 @@ function in_path
 	then
 		info -f "[$OK]"
 	else
-		count_errors=count_errors+1
-		info -f "[$KO]"
+		if [ $option == yes ]
+		then
+			info -f -n "[${BLUE}optional${NORM}]"
+		else
+			count_errors=count_errors+1
+			info -f -n "[$KO]"
+		fi
+		info -f " $error_msg"
 	fi
 }
 
-in_path VBoxManage
-in_path nc
-in_path ssh
-in_path git
+in_path VBoxManage	"Install VirtualVox"
+in_path nc			"Install nc"
+in_path ssh			"Install ssh"
+in_path -o git		"Install git"
+in_path -o tmux		"Install tmux"
 LN
 
 line_separator
