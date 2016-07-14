@@ -41,6 +41,7 @@ info "Select hypervisor :"
 info "	1 : vbox for linux"
 info "	2 : vbox for windows"
 info "	x : other"
+vm_p="$(VBoxManage list systemproperties | grep "Default machine folder:" | tr -s [:space:] | cut -d' ' -f4-)"
 while [ 0 -eq 0 ] # forever
 do
 	read -s -n 1 keyboard
@@ -50,7 +51,6 @@ do
 			hostvm_type=linux_virtualbox
 			client_h=$(hostname -s)
 			common_user_n=$USER
-			vm_p="\$HOME/VirtualBox VMs"
 			full_linux_iso_n="\$HOME/ISO/oracle_linux_7/V100082-01.iso"
 			break;
 			;;
@@ -60,7 +60,6 @@ do
 			exit 0
 			info "==> VirtualBox for Windows"
 			hostvm_type=windows_virtualbox
-			vm_p="C:\Users\kangs\VirtualBox VMs"
 			full_linux_iso_n="C:\Users\kangs\Desktop\iso_linux\V100082-01.iso"
 			break;
 			;;
