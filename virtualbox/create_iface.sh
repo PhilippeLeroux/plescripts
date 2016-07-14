@@ -35,7 +35,13 @@ do
 	esac
 done
 
-info "Create Iface vboxnet0"
-exec_cmd "VBoxManage hostonlyif create"
-exec_cmd "VBoxManage hostonlyif ipconfig vboxnet0 --ip ${infra_network}.1"
+VBoxManage list hostonlyifs | grep vboxnet0 >/dev/null 2>&1
+if [ $? -ne 0 ]
+then
+	info "Create Iface vboxnet0"
+	exec_cmd "VBoxManage hostonlyif create"
+	exec_cmd "VBoxManage hostonlyif ipconfig vboxnet0 --ip ${infra_network}.1"
+else
+	info "Iface vboxnet0 exists."
+fi
 LN
