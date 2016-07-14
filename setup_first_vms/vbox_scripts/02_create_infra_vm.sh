@@ -80,10 +80,6 @@ exec_cmd VBoxManage sharedfolder add $master_name --name "plescripts" --hostpath
 LN
 
 line_separator
-exec_cmd "VBoxManage showvminfo $infra_hostname > $infra_hostname.info"
-LN
-
-line_separator
 info "Démarre la VM $infra_hostname"
 exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
 LN

@@ -88,9 +88,5 @@ exec_cmd VBoxManage modifyvm "$master_name" --groups "/Master"
 LN
 
 line_separator
-exec_cmd "VBoxManage showvminfo $master_name > $master_name.info"
-LN
-
-line_separator
 info "Démarrage de la VM $master_name, l'installation va commencer..."
 exec_cmd VBoxManage startvm  $master_name
