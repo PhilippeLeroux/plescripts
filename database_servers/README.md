@@ -66,23 +66,63 @@ Création de nouveaux serveurs :
 	Le compte oracle est configuré pour se connecter grid sans mot de passe via
 	l'alias sugrid.
 
-	Visuliser la configuration du DNS et du SAN.
+	Visualiser la configuration du DNS et du SAN.
 	```
 	ssh root@K2
 	cd plescripts/dns
 	./show_dns.sh
+	[root@K2:~]$ cd plescripts/dns/
+	[root@K2:dns]$ ./show_dns.sh
+	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	# Server             | ip
+	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	# kangs              | 192.170.100.1
+	# orclmaster         | 192.170.100.2
+	# K2                 | 192.170.100.5
+	# srvdaisy01         | 192.170.100.11
+	# srvdaisy01-vip     | 192.170.100.12
+	# srvdaisy02         | 192.170.100.13
+	# srvdaisy02-vip     | 192.170.100.14
+	# daisy-scan         | 192.170.100.15
+	# daisy-scan         | 192.170.100.16
+	# daisy-scan         | 192.170.100.17
+	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	[root@K2:dns]$ cd ../san
+	[root@K2:san]$ ./show_db_info.sh -db=daisy
+	# RAC cluster 2 nodes.
+	# LUNs for daisy :
+	12h29> targetcli ls /iscsi/iqn.1970-05.com.srvdaisy:01/tpg1/acls/iqn.1970-05.com.srvdaisy:01
+	o- iqn.1970-05.com.srvdaisy:01 ................................................ [Mapped LUNs: 11]
+	  o- mapped_lun1 .............................................. [lun1 block/asm01_lvdaisy01 (rw)]
+	  o- mapped_lun2 .............................................. [lun2 block/asm01_lvdaisy02 (rw)]
+	  o- mapped_lun3 .............................................. [lun3 block/asm01_lvdaisy03 (rw)]
+	  o- mapped_lun4 .............................................. [lun4 block/asm01_lvdaisy04 (rw)]
+	  o- mapped_lun5 .............................................. [lun5 block/asm01_lvdaisy05 (rw)]
+	  o- mapped_lun6 .............................................. [lun6 block/asm01_lvdaisy06 (rw)]
+	  o- mapped_lun7 .............................................. [lun7 block/asm01_lvdaisy07 (rw)]
+	  o- mapped_lun8 .............................................. [lun8 block/asm01_lvdaisy08 (rw)]
+	  o- mapped_lun9 .............................................. [lun9 block/asm01_lvdaisy09 (rw)]
+	  o- mapped_lun10 ............................................ [lun10 block/asm01_lvdaisy10 (rw)]
+	  o- mapped_lun11 ............................................ [lun11 block/asm01_lvdaisy11 (rw)]
+
+	12h29> targetcli ls /iscsi/iqn.1970-05.com.srvdaisy:02/tpg1/acls/iqn.1970-05.com.srvdaisy:02
+	o- iqn.1970-05.com.srvdaisy:02 ................................................ [Mapped LUNs: 11]
+	  o- mapped_lun1 .............................................. [lun1 block/asm01_lvdaisy01 (rw)]
+	  o- mapped_lun2 .............................................. [lun2 block/asm01_lvdaisy02 (rw)]
+	  o- mapped_lun3 .............................................. [lun3 block/asm01_lvdaisy03 (rw)]
+	  o- mapped_lun4 .............................................. [lun4 block/asm01_lvdaisy04 (rw)]
+	  o- mapped_lun5 .............................................. [lun5 block/asm01_lvdaisy05 (rw)]
+	  o- mapped_lun6 .............................................. [lun6 block/asm01_lvdaisy06 (rw)]
+	  o- mapped_lun7 .............................................. [lun7 block/asm01_lvdaisy07 (rw)]
+	  o- mapped_lun8 .............................................. [lun8 block/asm01_lvdaisy08 (rw)]
+	  o- mapped_lun9 .............................................. [lun9 block/asm01_lvdaisy09 (rw)]
+	  o- mapped_lun10 ............................................ [lun10 block/asm01_lvdaisy10 (rw)]
+	  o- mapped_lun11 ............................................ [lun11 block/asm01_lvdaisy11 (rw)]
+
+	alias: srvdaisy01.orcl  sid: 1 type: Normal session-state: LOGGED_IN
+	alias: srvdaisy02.orcl  sid: 1 type: Normal session-state: LOGGED_IN
+	# Connected !
 	```
-
-	![Broken DNS](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/screen/show_dns_daisy.png "DNS")
-
-	```
-	cd ../san
-	./show_db_info.sh -db=daisy
-	```
-
-	![Broken SAN](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/screen/show_san_daisy.png "SAN")
-
-	Note : sur ce screen il y a 4 LUNs en plus par rapport à ce que vous obtiendrez.
 
 3.	Installation du grid.
 
