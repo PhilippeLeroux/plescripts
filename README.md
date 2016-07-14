@@ -9,7 +9,7 @@ sont très loin des exigences d'une entreprise.**
 Mettre en œuvre d'un réseau de VMs pour installer des bases Oracle de tout types
 en essayant d'être le plus indépendant possible du logiciel de virtualisation utilisé.
 La création des VMs ou des bases Oracle, en SINGLE ou RAC, ne demandent pas de
-compétences particulières le tout étant automatisé, ainsi que la suppression.
+compétences particulières le tout étant automatisé.
 
 La première version se basait sur KVM, Oracle Linux 6, OpenFiler et un serveur DNS.
 Il était possible d'installer Oracle 11gR2 ou Oracle 12cR1 en SINGLE ou RAC.
@@ -53,7 +53,7 @@ la base soit SINGLE ou bien RAC.
 
 	Temps d'installation : ~25mn
 
-* Création d'une base de donner : un seul script également.
+* Création d'une base de données : un seul script également.
 
 	Temps de création cdb + 1 pdb : 1 h 20
 
@@ -66,6 +66,7 @@ la base soit SINGLE ou bien RAC.
 	* [Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
 		Uniquement pour windows, sous linux yum install [...] ou apt-get install [...]
+		(Pour le moment le support de Windows est suspendu)
 
 	* [Oracle Linux 7](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
 
