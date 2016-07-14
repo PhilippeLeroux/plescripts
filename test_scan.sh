@@ -28,7 +28,9 @@ line_separator
 info "Test $scan_name"
 for i in $( seq 1 3 )
 do
+	info -n "Ping #${i} "
 	ip_list[$((i-1))]=$(ping -c 1 $scan_name | head -2 | tail -1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/")
+	pause_in_secs 1; LN
 done
 
 # $1 indice de l'IP dans ip_list
