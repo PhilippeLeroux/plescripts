@@ -69,8 +69,6 @@ Création de nouveaux serveurs :
 	Visualiser la configuration du DNS et du SAN.
 	```
 	ssh root@K2
-	cd plescripts/dns
-	./show_dns.sh
 	[root@K2:~]$ cd plescripts/dns/
 	[root@K2:dns]$ ./show_dns.sh
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
