@@ -12,23 +12,26 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-		-server=<str>         : nom du serveur.
-		-initiator_name=<str> : nom de l'initiateur si server n'est pas spécifié.
-		-vg_name=<str>        : nom du VG.
-		-prefix=<str>         : préfixe du LV si server n'est pas spécifié.
-		-count=<#>            : nombre de LV à ajouter dans le VG $vg_name
-		[-size_gb=<#>]        : taille des LV, si omis prend la taille de la dernière LUN
+	-export_to=\"srv1 srv2 ...\" : Liste des serveurs, séparés par un espace, ou doivent être exportées les LUNs (1)
+	-initiator_name=<str>      : nom de l'initiateur si export_to n'est pas spécifié.
+	-vg_name=<str>             : nom du VG.
+	-prefix=<str>              : préfixe du LV si export_to n'est pas spécifié.
+	-count=<#>                 : nombre de LV à ajouter dans le VG $vg_name
+	[-size_gb=<#>]             : taille des LV, si omis prend la taille de la dernière LUN
 
-		[-no_backup]          : A utiliser quand le backup est effectué par un autre script qui effectura le backup.
+	[-no_backup]               : A utiliser quand le backup est effectué par un autre script qui effectura le backup.
 
 
-		Si -server est spécifié les paramètres -initiator_name et -prefix seront
-		déduites du nom du serveur.
+	(1) Si -export_to est spécifié les paramètres -initiator_name et -prefix
+	seront obtenu grâce au nom du serveur.
+	Si plus de 1 serveur, les noms doivent correspondent aux noms des nœuds d'un RAC
+	-export_to est utilisé manuellement, alors que -initiator_name et -prefix sont
+	utilisés par les autres scripts.
 
-		1) Création des LV dans le VG.
-		2) Export des LV"
+	1) Création des LV dans le VG.
+	2) Export des LV"
 
-typeset		server=undef
+typeset		export_to=undef
 typeset		initiator_name=undef
 typeset		vg_name=undef
 typeset		prefix=undef
@@ -39,8 +42,13 @@ typeset		do_backup=yes
 while [ $# -ne 0 ]
 do
 	case $1 in
-		-server=*)
-			server=${1##*=}
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-export_to=*)
+			export_to=${1##*=}
 			shift
 			;;
 
@@ -83,30 +91,23 @@ do
 	esac
 done
 
-if [ $server != undef ]
-then	# srvDB*XX
+if [ "$export_to" == undef ]
+then
+	exit_if_param_undef initiator_name	"$str_usage"
+	exit_if_param_undef prefix			"$str_usage"
+	typeset -r auto_detect=no
+else
 	if [[ $initiator_name != undef || $prefix != undef ]]
 	then
-		error "Ne pas spécifier -initiator_name ou -prefix avec -server."
+		error "Ne pas spécifier -initiator_name ou -prefix avec -export_to."
 		LN
 		info "$str_usage"
+	else
+		typeset -r auto_detect=yes
 	fi
-
-	read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$server" )"
-	initiator_name=$(get_initiator_for $prefix $num_node)
 fi
-
-exit_if_param_undef initiator_name	"$str_usage"
 exit_if_param_undef vg_name			"$str_usage"
-exit_if_param_undef prefix			"$str_usage"
 exit_if_param_undef count			"$str_usage"
-
-#	Ces variables sont initialisées par load_lv_info
-typeset lv_first_no=0
-typeset lv_last_no=0
-typeset lv_size_gb=0
-typeset lv_nb=0
-typeset new_lv_number=0
 
 function get_vg_free_gb # $1 vg_name
 {
@@ -118,11 +119,21 @@ function get_vg_free_gb # $1 vg_name
 }
 
 #	============================================================
-load_lv_info $vg_name $prefix
-if [ $size_gb -ne -1 ]
+if [ $auto_detect == yes ]
 then
-	lv_size_gb=$size_gb
+	typeset -r sname=$(echo $export_to | cut -d' ' -f1)
+	read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$sname" )"
 fi
+
+#	Ces variables sont initialisées par load_lv_info
+typeset lv_first_no=0
+typeset lv_last_no=0
+typeset lv_size_gb=0
+typeset lv_nb=0
+typeset new_lv_number=0
+
+load_lv_info $vg_name $prefix
+[ $size_gb -ne -1 ] && lv_size_gb=$size_gb
 
 if [ $lv_nb -eq 0 ]
 then
@@ -153,6 +164,7 @@ then
 	error "Not enougth space."
 	exit 1
 fi
+LN
 
 exec_cmd ./create_lv.sh -vg_name=$vg_name			\
 						-prefix=$prefix				\
@@ -161,13 +173,22 @@ exec_cmd ./create_lv.sh -vg_name=$vg_name			\
 						-count=$count
 LN
 
-exec_cmd ./export_lv.sh -initiator_name=$initiator_name	\
-						-vg_name=$vg_name				\
-						-prefix=$prefix					\
-						-first_no=$new_lv_number		\
-						-count=$count					\
-						-no_backup
-LN
+for server_name in $export_to
+do
+	if [ $auto_detect == yes ]
+	then
+		read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$server_name" )"
+		initiator_name=$(get_initiator_for $prefix $num_node)
+	fi
+
+	exec_cmd ./export_lv.sh -initiator_name=$initiator_name	\
+							-vg_name=$vg_name				\
+							-prefix=$prefix					\
+							-first_no=$new_lv_number		\
+							-count=$count					\
+							-no_backup
+	LN
+done
 
 [ $do_backup = yes ] && exec_cmd ~/plescripts/san/save_targetcli_config.sh -name="after_add_and_export_lv" || true
 
