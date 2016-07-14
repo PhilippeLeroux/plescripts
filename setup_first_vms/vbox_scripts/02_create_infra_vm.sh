@@ -148,7 +148,7 @@ case $type_shared_fs in
 		;;
 
 	nfs)
-		info "Création des point de montage NFS :"
+		info "Création des points de montage NFS :"
 		run_ssh "mkdir plescripts"
 		run_ssh "mount 192.170.100.1:/home/$common_user_name/plescripts /root/plescripts"
 		run_ssh "mkdir -p ~/$oracle_install"
