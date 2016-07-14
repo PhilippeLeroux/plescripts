@@ -9,18 +9,16 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 
 typeset scan_name=$1
-[ x"$scan_name" == x ] && scan_name=$(olsnodes -c)
-
+[ x"$scan_name" == x ] && scan_name=$(olsnodes -c 2>/dev/null)
+[ x"$scan_name" == x ] && error "$ME <scan-adress>" && exit 1
 
 exec_cmd -ci "systemctl status nscd.service 2>/dev/null 1>&2"
 if [ $? -eq 0 ]
 then
 	LN
-	LN
 	line_separator
 	warning "La cache DNS est actif, seul une IP de l'adresse de SCAN sera donc utilisée"
 	line_separator
-	LN
 fi
 LN
 
@@ -53,7 +51,6 @@ function test_ip_uniq
 }
 
 info "Nombre d'IPs : ${#ip_list[@]}"
-#info "IPs : ${ip_list[@]}"
 typeset	-i	dup=0
 typeset -i	i=0
 while [ $i -lt ${#ip_list[@]} ]
