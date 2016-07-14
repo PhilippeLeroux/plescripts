@@ -66,7 +66,7 @@ la base soit SINGLE ou bien RAC.
 	* [Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
 		Uniquement pour windows, sous linux yum install [...] ou apt-get install [...]
-		(Pour le moment le support de Windows est suspendu)
+		(Pour le moment le support de Windows est suspendu...)
 
 	* [Oracle Linux 7](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
 
