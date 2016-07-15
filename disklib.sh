@@ -11,7 +11,7 @@ function disk_size_bytes
 function count_partition_for
 {
 	typeset -i count=$(ls -1 $1* | wc -l)-1
-	return $count
+	echo $count
 }
 
 #*> Retourne l'uuid du disque $1
