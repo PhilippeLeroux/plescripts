@@ -46,7 +46,7 @@ function virtualbox_start
 			info "sudo systemctl restart vboxdrv, peut résoudre le problème..."
 			info "Attend le démarrage du crs pour éviter le 'GURU MEDITATION'"
 
-			show_grid_status -wait_time_secs=60 -node=$i
+			show_grid_status -server=${vm_list[$((i-1))]} -wait_time_secs=60
 			LN
 		else
 			info "La variable GURU_MEDITATION n'est pas définie, pas d'attente du crs."
@@ -62,7 +62,7 @@ function virtualbox_start
 			if [ $nr_vm_started -eq $max_vms ]
 			then
 				wait_server ${vm_list[$i]}
-				show_grid_status -wait_time_secs=60 -node=$((i+1))
+				show_grid_status -wait_time_secs=60 -server=${vm_list[$i]}
 			fi
 		fi
 		LN
