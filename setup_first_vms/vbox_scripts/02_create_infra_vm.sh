@@ -20,6 +20,7 @@ do
 		-h|-help|help)
 			info "$str_usage"
 			LN
+			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
