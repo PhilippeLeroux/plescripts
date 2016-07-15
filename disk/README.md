@@ -30,7 +30,7 @@ Répertoire plescript/disk : permet de gérer les disques du serveur.
 	serveur.
 
 *	Effacer les en-têtes des disques utilisés par oracleasm : `clear_oracle_disk_headers.sh`
-	
+
 	*Une fois ce script exécuté oracleasm n'a plus aucun disque.*
 
 *	Déconnecter toutes les LUNs : `logout_sessions.sh`
@@ -41,7 +41,7 @@ Répertoire plescript/disk : permet de gérer les disques du serveur.
 
 *	Efface les en-têtes des disques iscsi : `clear_all_iscsi_header.sh`
 
-*	create_oracle_fs_on_new_disks.sh	
+*	create_oracle_fs_on_new_disks.sh
 	* Recherche un disque iscsi non utilisé.
 	* Crée le point de montage /u01/app/oracle/oradata
 	* Crée un VG vg_oradata
@@ -50,7 +50,7 @@ Répertoire plescript/disk : permet de gérer les disques du serveur.
 	* Monte /u01/app/oracle/oradata sur lv_oradata
 
 *	oracleasm_discovery_first_node.sh
-	
+
 	Ce script est utilisé par `clone_master.sh`, il effectue toutes les actions
 	nécessaires pour créer les disques sur le premier nœud d'un RAC ou un serveur
 	standalone.
