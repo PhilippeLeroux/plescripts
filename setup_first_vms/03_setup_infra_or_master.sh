@@ -202,13 +202,6 @@ case $role in
 		info "Configure SAN"
 		exec_cmd "~/plescripts/san/targetcli_default_cfg.sh"
 		LN
-
-		line_separator
-		info "Install workaround for target :"
-		exec_cmd "cp ~/plescripts/san/pletarget.service /usr/lib/systemd/system/"
-		exec_cmd systemctl disable target
-		exec_cmd systemctl enable pletarget
-		LN
 		;;
 esac
 
