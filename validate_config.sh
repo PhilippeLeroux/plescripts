@@ -9,7 +9,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-Ce script vérifie le l'OS host remplie les conditions nécessaire au bon
+Ce script vérifie que l'OS host remplie les conditions nécessaires au bon
 fonctionnement de la démo."
 
 info "$ME $@"
