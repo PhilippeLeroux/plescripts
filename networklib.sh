@@ -69,4 +69,6 @@ function remove_from_known_hosts
 		exec_cmd "sed -i /^$ip/d" ~/.ssh/known_hosts
 		LN
 	fi
+
+	exec_cmd sed -i '/^$/d' ~/.ssh/known_hosts
 }
