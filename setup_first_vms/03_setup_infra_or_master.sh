@@ -53,7 +53,8 @@ then
 
 	if [ \$count_lv_error -ne 0 ]
 	then
-		echo -e "\${RED}\$count_lv_error lvs errors : reboot me !\${NORM}"
+		echo -e "\${RED}\$count_lv_error lvs errors : poweroff + start !\${NORM}"
+		systemctl status target -l
 	else
 		echo -e "\${GREEN}lvs OK\${NORM}"
 	fi
