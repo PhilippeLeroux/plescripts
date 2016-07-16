@@ -53,70 +53,68 @@ else
 	info -f "[$OK]"
 fi
 
-if [ $type_shared_fs == nfs ]
-then
-	info -n "Test l'existence de '$HOME/ISO/$oracle_install' "
-	if [ ! -d "$HOME/ISO/$oracle_install" ]
-	then
-		info -f "[$KO]"
-		error "	Ce répertoire doit contenir les zips d'Oracle et du Grid."
-		count_errors=count_errors+1
-	else
-		info -f "[$OK]"
-	fi
-	LN
-fi
-
-if [ $type_shared_fs == vbox ]
-then
-	info -n "Test l'existence de '$HOME/$oracle_install/database/runInstaller' "
-	if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
-	then
-		info -f "[$KO]"
-		error "	Ce répertoire doit contenir les fichiers dézipés d'Oracle."
-		count_errors=count_errors+1
-	else
-		info -f "[$OK]"
-	fi
-	info -n "Test l'existence de '$HOME/$oracle_install/grid/runInstaller' "
-	if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
-	then
-		info -f "[$KO]"
-		error "	Ce répertoire doit contenir les fichiers dézipés du Grid."
-		count_errors=count_errors+1
-	else
-		info -f "[$OK]"
-	fi
-	LN
-fi
-
-if [ $type_shared_fs == nfs ]
-then
-	if [ $plescripts_ok -eq 0 ]
-	then
-		info "$client_hostname doit exporter via NFS les répertoires :"
-		info -n "	- $HOME/plescripts "
-		grep "$HOME/plescripts" /etc/exports >/dev/null 2>&1
-		if [ $? -ne 0 ]
+case $type_shared_fs in
+	nfs)
+		info -n "Test l'existence de '$HOME/ISO/$oracle_install' "
+		if [ ! -d "$HOME/ISO/$oracle_install" ]
 		then
-			count_errors=count_errors+1
 			info -f "[$KO]"
+			error "	Ce répertoire doit contenir les zips d'Oracle et du Grid."
+			count_errors=count_errors+1
 		else
 			info -f "[$OK]"
 		fi
-	fi
+		LN
+		;;
 
-	if [ $zip_orcl_grid_ok -eq 0 ]
-	then
-		info -n "	- $HOME/ISO/$oracle_install "
-		grep "$HOME/ISO/$oracle_install" /etc/exports >/dev/null 2>&1
-		if [ $? -ne 0 ]
+	vbox)
+		info -n "Test l'existence de '$HOME/$oracle_install/database/runInstaller' "
+		if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
 		then
-			count_errors=count_errors+1
 			info -f "[$KO]"
+			error "	Ce répertoire doit contenir les fichiers dézipés d'Oracle."
+			count_errors=count_errors+1
 		else
 			info -f "[$OK]"
 		fi
+		info -n "Test l'existence de '$HOME/$oracle_install/grid/runInstaller' "
+		if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
+		then
+			info -f "[$KO]"
+			error "	Ce répertoire doit contenir les fichiers dézipés du Grid."
+			count_errors=count_errors+1
+		else
+			info -f "[$OK]"
+		fi
+		LN
+		;;
+
+	*)
+		error "type_shared_fs = $type_shared_fs invalid."
+		exit 1
+esac
+
+if [ $type_shared_fs == nfs ]
+then
+	info "$client_hostname doit exporter via NFS les répertoires :"
+	info -n "	- $HOME/plescripts "
+	grep "$HOME/plescripts" /etc/exports >/dev/null 2>&1
+	if [ $? -ne 0 ]
+	then
+		count_errors=count_errors+1
+		info -f "[$KO]"
+	else
+		info -f "[$OK]"
+	fi
+
+	info -n "	- $HOME/ISO/$oracle_install "
+	grep "$HOME/ISO/$oracle_install" /etc/exports >/dev/null 2>&1
+	if [ $? -ne 0 ]
+	then
+		count_errors=count_errors+1
+		info -f "[$KO]"
+	else
+		info -f "[$OK]"
 	fi
 	LN
 fi
