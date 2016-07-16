@@ -166,11 +166,11 @@ then
 fi
 LN
 
-exec_cmd ./create_lv.sh -vg_name=$vg_name			\
-						-prefix=$prefix				\
-						-size_gb=$lv_size_gb		\
-						-first_no=$new_lv_number	\
-						-count=$count
+exec_cmd ~/plescripts/san/create_lv.sh	-vg_name=$vg_name			\
+										-prefix=$prefix				\
+										-size_gb=$lv_size_gb		\
+										-first_no=$new_lv_number	\
+										-count=$count
 LN
 
 for server_name in $export_to
@@ -181,12 +181,12 @@ do
 		initiator_name=$(get_initiator_for $prefix $num_node)
 	fi
 
-	exec_cmd ./export_lv.sh -initiator_name=$initiator_name	\
-							-vg_name=$vg_name				\
-							-prefix=$prefix					\
-							-first_no=$new_lv_number		\
-							-count=$count					\
-							-no_backup
+	exec_cmd ~/plescripts/san/export_lv.sh	-initiator_name=$initiator_name	\
+											-vg_name=$vg_name				\
+											-prefix=$prefix					\
+											-first_no=$new_lv_number		\
+											-count=$count					\
+											-no_backup
 	LN
 done
 
