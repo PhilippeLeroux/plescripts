@@ -93,6 +93,8 @@ exit_if_param_undef db	"$str_usage"
 
 [ $db_type == rac ] && [ $usefs == yes ] && error "RAC non supporté sur un FS." && exit 1
 
+exec_cmd ~/plescripts/validate_config.sh
+
 typeset -c	cfg_path=~/plescripts/database_servers/$db
 
 function test_ip_node_used
