@@ -270,7 +270,7 @@ function configure_disks_node1
 	info "Mount point for oracle installation"
 	case $type_shared_fs in
 		nfs)
-			fstab="$client_hostname:/root/${oracle_install} /mnt/oracle_install nfs rsize=8192,wsize=8192,timeo=14,intr,noauto"
+			fstab="$client_hostname:/home/$common_user_name/${oracle_install} /mnt/oracle_install nfs rw,noatime,nodiratime,async,noauto"
 			;;
 
 		vbox)
