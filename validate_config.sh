@@ -43,7 +43,7 @@ done
 typeset -i count_errors=0
 
 line_separator
-info -n "Script configure_global.cfg.sh exécuté : "
+info -n "Script configure_global.cfg.sh exécuté "
 hn=$(hostname -s)
 if [[ "$hn" == "$client_hostname" && "$USER" == "$common_user_name" ]]
 then
@@ -144,18 +144,9 @@ fi
 LN
 
 line_separator
-info "Validation de resolv.conf :"
-info -n " - nameserver $infra_ip "
-if grep -q "^nameserver.*${infra_ip}" /etc/resolv.conf
-then
-	info -f "[$OK]"
-else
-	info -f "[$KO]"
-	count_errors=count_errors+1
-fi
-
-info -n " - search $infra_domain .* "
-if grep -q "^search.*${infra_domain}.*" /etc/resolv.conf
+info -n "Validation de resolv.conf "
+nslookup K2 >/dev/null 2>&1
+if [ $? -eq 0 ]
 then
 	info -f "[$OK]"
 else
