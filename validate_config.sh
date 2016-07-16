@@ -43,6 +43,18 @@ done
 typeset -i count_errors=0
 
 line_separator
+info -n "Script configure_global.cfg.sh exécuté : "
+hn=$(hostname -s)
+if [[ "$hn" == "$client_hostname" && "$USER" == "$common_user_name" ]]
+then
+	info -f "[$OK]"
+else
+	info -f "[$KO]"
+	count_errors=count_errors+1
+fi
+LN
+
+line_separator
 info -n "Test l'existence de '$HOME/plescripts' "
 if [ ! -d "$HOME/plescripts" ]
 then
@@ -158,8 +170,7 @@ if $(test_if_cmd_exists llog)
 then
 	info -f "[$OK]"
 else
-	info -f "[$KO]"
-	count_errors=count_errors+1
+	info -f "[${BLUE}optional${NORM}] mais simplifie la vie ;)"
 fi
 LN
 
