@@ -107,7 +107,7 @@ filetype plugin on
 if has("gui_running")
 	let g:light_colors_name = 'github'
 	let g:dark_colors_name = 'sourcerer'
-	let g:colors_name=g:dark_colors_name	" Théme par défaut
+	let g:colors_name=g:light_colors_name	" Théme par défaut
 	set guifont=Monospace\ 12
 	set guioptions+=b
 	set cc=81 nonu nowrap
@@ -115,7 +115,6 @@ else
 	silent! set mouse=a
 	let g:light_colors_name = 'github'
 	let g:dark_colors_name = 'sourcerer'
-	let g:colors_name=g:light_colors_name	" Théme par défaut
 	"	Théme par défaut
 	if $HOSTNAME == 'K2'
 		let g:colors_name=g:dark_colors_name
@@ -145,7 +144,6 @@ set lazyredraw
 " For regular expressions turn magic on
 set magic
 
-
 "	============================================================================
 "	Syntastic : configuration conseillé
 "	============================================================================
@@ -163,9 +161,12 @@ let g:syntastic_check_on_wq = 0
 "	============================================================================
 "	Dictionnaire :
 "	============================================================================
-let g:languagetool_jar='/home/kangs/.vim/LanguageTool-3.4/languagetool-commandline.jar'
-let g:languagetool_disable_rules="FRENCH_WHITESPACE,WHITESPACE_RULE,FIXTURE,EMAIL,HUNSPELL_NO_SUGGEST_RULE"
-
+"let g:languagetool_jar='/home/kangs/.vim/LanguageTool-3.4/languagetool-commandline.jar'
+"let g:languagetool_disable_rules="FRENCH_WHITESPACE,WHITESPACE_RULE,FIXTURE,EMAIL,HUNSPELL_NO_SUGGEST_RULE"
+let g:grammarous#disabled_rules = {
+	\ '*' : ['FRENCH_WHITESPACE,WHITESPACE_RULE,FIXTURE,EMAIL,HUNSPELL_NO_SUGGEST_RULE'],
+	\ 'help' : ['WHITESPACE_RULE', 'EN_QUOTES', 'SENTENCE_WHITESPACE', 'UPPERCASE_SENTENCE_START'],
+	\ }
 function! FrGrammaire()
 	if (! exists ("b:grammar_is"))
 		let b:grammar_is = 'no'
@@ -179,11 +180,15 @@ function! FrGrammaire()
 	if b:grammar_is == 'no'
 		:echo "Grammaire française activée."
 		let b:grammar_is='fr'
-		:LanguageToolCheck
+		if ( &filetype == 'sh' )
+			:GrammarousCheck --lang=fr --comments-only
+		else
+			:GrammarousCheck --lang=fr --no-comments-only
+		endif
 	elseif b:grammar_is == 'fr'
 		:echo "Grammaire française désactivée."
 		let b:grammar_is='no'
-		:LanguageToolClear
+		:GrammarousReset
 	endif
 endfunction
 
@@ -239,9 +244,9 @@ function! UsGrammaire()
 endfunction
 
 nnoremap <F2> :call FrDictionnaire()<CR>
-if exists( "g:languagetool_jar" )
+"if exists( "g:languagetool_jar" )
 	nnoremap <C-g> :call FrGrammaire()<CR>
-endif
+"endif
 
 "	============================================================================
 "	Foldmethod
@@ -339,6 +344,18 @@ autocmd VimEnter * wincmd p
 "	============================================================================
 "	Thème :
 "	============================================================================
+function! SpellSettings()
+	" Améliore considérablement la lisibilité.
+	highlight clear SpellBad
+	highlight SpellBad term=standout ctermfg=1 term=underline cterm=underline
+	highlight clear SpellCap
+	highlight SpellCap term=underline cterm=underline
+	highlight clear SpellRare
+	highlight SpellRare term=underline cterm=underline
+	highlight clear SpellLocal
+	highlight SpellLocal term=underline cterm=underline
+endfunction
+
 function! ToggleColorscheme()
 	if ! exists( "g:colors_name" )
 		let g:colors_name=g:dark_colors_name
@@ -351,21 +368,15 @@ function! ToggleColorscheme()
 	endif
 
 	if !has("gui")
-		" Améliore considérablement la lisibilité.
-		highlight clear SpellBad
-		highlight SpellBad term=standout ctermfg=1 term=underline cterm=underline
-		highlight clear SpellCap
-		highlight SpellCap term=underline cterm=underline
-		highlight clear SpellRare
-		highlight SpellRare term=underline cterm=underline
-		highlight clear SpellLocal
-		highlight SpellLocal term=underline cterm=underline
+		call SpellSettings()
 	endif
 endfunction
 
 if g:first_load == 1
-	" Évite de changer de thème sur un reload
-	:call ToggleColorscheme()
+	if exists( "g:colors_name" )
+		execute "colorscheme ".g:colors_name
+		call SpellSettings()
+	endif
 endif
 map <silent> <F6> :call ToggleColorscheme()<CR>
 
@@ -390,6 +401,7 @@ function! Clean_log()
 		echo bufname("%") . " not a log file."
 	endif
 endfunction
+autocmd Filetype log :call Clean_log<CR>
 nnoremap <silent> <F8> :call Clean_log()<CR>
 
 "	============================================================================
