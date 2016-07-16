@@ -134,7 +134,7 @@ case $role in
 		case $type_shared_fs in
 			nfs)
 				line_separator
-				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rsize=8192,wsize=8192,timeo=14,intr,comment=systemd.automount\" >> /etc/fstab"
+				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rw,noatime,nodiratime,async,comment=systemd.automount"
 				exec_cmd -c mount -a /mnt/plescripts
 				LN
 			;;
@@ -168,11 +168,12 @@ case $role in
 		line_separator
 		case $type_shared_fs in
 			nfs)
-				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rsize=8192,wsize=8192,timeo=14,intr,comment=systemd.automount\" >> /etc/fstab"
+				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rw,noatime,nodiratime,async,comment=systemd.automount"
 				LN
 
+if [ 0 -eq 1 ]; then	# L'export NFS est maintenant fait depuis le poste client.
 				line_separator
-				exec_cmd "echo \"/root/$oracle_install ${infra_network}.0/${infra_mask}(rw,sync,no_root_squash,no_subtree_check)\" >> /etc/exports"
+				exec_cmd "echo \"/root/$oracle_install ${infra_network}.0/${infra_mask}(rw,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
 				LN
 
 				exec_cmd "systemctl enable rpcbind"
@@ -186,6 +187,7 @@ case $role in
 				exec_cmd "firewall-cmd --add-service=nfs --permanent --zone=trusted"
 				exec_cmd "firewall-cmd --reload"
 				LN
+fi	# [ 0 -eq 1 ]; then
 				;;
 
 			vbox)
