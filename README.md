@@ -90,7 +90,7 @@ la base soit SINGLE ou bien RAC.
    - NTP     : Pour la synchronisation des serveurs de base de données.
    - GATEWAY : Permet aux serveurs de base de données de se mettre à jour sur internet.
 
- [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/666_Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
+ [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/666-Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
 
 # Ajout de serveurs de base de données Oracle.
 Les 2 VMs orclmaster et K2 doivent avoir été créées.
