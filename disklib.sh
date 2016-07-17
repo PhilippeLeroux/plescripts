@@ -50,7 +50,7 @@ function clear_device
 	else
 		typeset size_bytes=$2
 		[ $# -eq 1 ] && size_bytes=10000000
-		info "clear device $device : $(fmt_number $size_bytes) bytes"
+		info "clear device $device : $(fmt_bytesU_2_better $size_bytes) bytes"
 		exec_cmd dd if=/dev/zero of=$device bs=$size_bytes count=1
 	fi
 }
