@@ -8,22 +8,31 @@ EXEC_CMD_ACTION=NOP
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME [-doit]
+"Usage : $ME [-doit] [-force]
 	Le GI et le logiciel Oracle doivent avoir été désinstallés.
 
 	- Supprime les comptes oracle & grid.
 	- Renomme le serveur en $master_name
 	- Positionne l'IP ${if_pub_network}.${master_ip_node} sur $if_pub_name
 	- Supprime de /etc/fstab : /mnt/oracle_install
+
+	Le paramètre -force permet de ne pas tester si le Grid Infra est installé.
 "
 
 info "$ME $@"
+
+typeset force=no
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-doit)
 			EXEC_CMD_ACTION=EXEC
+			shift
+			;;
+
+		-force)
+			force=yes
 			shift
 			;;
 
@@ -45,14 +54,17 @@ done
 [ $USER != root ] && error "Only root !" && info "$str_usage" && exit 1
 
 typeset -i nr_files=0
-[ -d $GRID_HOME ] && nr_files=$(ls -1 $GRID_HOME | wc -l)
-info "$nr_files fichiers dans '$GRID_HOME'"
-if [ $nr_files -ne 0 ]
+if [ $force == no ]
 then
-	error "Le GI et oracle doivent être désinstallés."
-	LN
-	info "$str_usage"
-	exit 1
+	[[ -v GRID_HOME && -d $GRID_HOME ]] && nr_files=$(ls -1 $GRID_HOME | wc -l)
+	info "$nr_files fichiers dans '$GRID_HOME'"
+	if [ $nr_files -ne 0 ]
+	then
+		error "Le GI et oracle doivent être désinstallés."
+		LN
+		info "$str_usage"
+		exit 1
+	fi
 fi
 
 exec_cmd "sed -i "/${infra_network}/d" /etc/hosts"
