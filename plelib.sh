@@ -866,22 +866,24 @@ function test_pause # $1 message
 
 #*> Eval an arithmetic expression
 #*> Flags
-#*>    -l : use real numbers
+#*>    -l[#] : use real numbers with # number decimals
 #*>    -i : remove all decimals
 function compute
 {
 	bc_args=""
+	scale=""
 	return_int=no
 
 	while [ $# -ne 0 ]
 	do
 		case "$1" in
-			"-l")
+			-l*)
 				bc_args="-l"
+				[ ${#1} -gt 2 ] && scale="${1:2}"
 				shift
 				;;
 
-			"-i")
+			-i)
 				return_int=yes
 				shift
 				;;
@@ -890,7 +892,8 @@ function compute
 		esac
 	done
 
-	val=$(bc $bc_args <<< "$@")
+	val=$(echo "$@" | bc $bc_args)
+	[ x"$scale" != x ] && val=$(LANG=C printf "%.${scale}f" $val)
 	[ $return_int = yes ] && echo ${val%%.*} || echo $val
 }
 
@@ -983,6 +986,66 @@ function to_mb
 			compute -i "$size_value/1024/1024"
 			;;
 	esac
+}
+
+#*> Convert value $1 to bytes
+#*> Units can be b,k,m or g (or upper case)
+function convert_2_bytes
+{
+	typeset -r	str_value=$1
+	typeset -r	last_car=${str_value:${#str_value}-1}
+
+	typeset -i	value=-1
+
+	case $last_car in
+		b|B)
+			value=${str_value:0:${#str_value}-1}
+			;;
+
+		k|kb|K|Kb|KiB)
+			value=${str_value:0:${#str_value}-1}
+			value=value*1024
+			;;
+
+		m|mb|M|Mb|MiB)
+			value=${str_value:0:${#str_value}-1}
+			value=value*1024*1024
+			;;
+
+		g|gb|G|Gb|GiB)
+			value=${str_value:0:${#str_value}-1}
+			value=value*1024*1024*1024
+			;;
+
+		*)	# Pas d'unité donc des bytes.
+			value=$str_value
+			;;
+	esac
+
+	echo $value
+}
+
+#*> Convert value $1 to better.
+#*> Units can be b,k,m or g (or upper case)
+#*>
+#*> 1024K == 1Mb
+#*> 1024M == 1Gb
+function fmt_bytesU_2_better
+{
+	typeset -i bytes=$(convert_2_bytes $1)
+
+	if [ $bytes -ge $(( 1024*1024*1024 )) ]
+	then	# Gb
+		echo "$(compute -l2 $bytes / 1024 / 1024 / 1024)Gb"
+	elif [ $bytes -ge $(( 1024*1024 )) ]
+	then	# Mb
+		echo "$(compute -l2 $bytes / 1024 / 1024)Mb"
+	elif [ $bytes -ge 1024 ]
+	then	# Kb
+		echo "$(compute -l2 $bytes / 1024)Kb"
+	else
+		echo "${bytes}b"
+	fi
 }
 
 ################################################################################
