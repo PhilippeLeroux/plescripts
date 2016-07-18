@@ -6,8 +6,8 @@
 EXEC_CMD_ACTION=EXEC
 
 line_separator
-info "Database Server 12cR1"
-exec_cmd yum -y install oracle-rdbms-server-12cR1-preinstall
+info "Install Oracle rdbms rpm"
+exec_cmd yum -y $oracle_rdbms_rpm
 LN
 
 line_separator
