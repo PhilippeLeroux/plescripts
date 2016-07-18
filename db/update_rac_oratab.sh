@@ -47,7 +47,6 @@ exit_if_param_undef		prefixInstance 	"$str_usage"
 typeset	-ri	max_nodes=$(olsnodes | wc -l)
 typeset -r	upper_db=$(to_upper $db)
 
-line_separator
 info "Mise à jour de /etc/oratab sur $(hostname -s)"
 info "Le nom de toutes les instances sont ajoutées, utile pour les RACs Policy managed & one node"
 for inode in $( seq 1 $max_nodes )

@@ -30,11 +30,12 @@ typeset		node_list=undef
 typeset		usefs=no
 typeset		cdb=yes
 typeset		lang=french
-typeset		verbose=no
 typeset		pdbName=undef
 typeset		serverPoolName=undef
-typeset		skip_db_create=no
 typeset		policyManaged=no
+
+typeset		skip_db_create=no
+typeset		graph=no
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -49,6 +50,7 @@ typeset -r str_usage=\
 	[-templateName=$templateName]
 	[-db_type=SINGLE|RAC|RACONENODE]	(3)
 	[-policyManaged]  : créer une base en 'Policy Managed'	(4)
+	[-serverPoolName=<str> : nom du pool à utiliser, s'il n'existe pas il sera créée.
 
 	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == name || 01
 	    Le service de la pdb sera : pdb || name || 01
@@ -56,15 +58,17 @@ typeset -r str_usage=\
 	2 : Si -pdbName est précisé -cdb vaut automatiquement yes
 
 	3 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
-	de noeuds, si 1 seul noeud c'est SINGLE sinon c'est RAC.
-	Donc pour créer un RAC One Node database il faut impérativement le préciser !
+	    de noeuds, si 1 seul noeud c'est SINGLE sinon c'est RAC.
+	    Donc pour créer un RAC One Node database il faut impérativement le préciser !
 
-	4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera crée.
+	4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera crée
+	    si -serverPollName n'est pas précisé.
 
 	[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
 	les scripts post installations.
 
-	[-verbose]"
+	[-graph] génération de logs sur l'évolution de la mémoire cf memplots.
+"
 
 info "$ME $@"
 
@@ -142,18 +146,18 @@ do
 			shift
 			;;
 
-		-skip_db_create)
-			skip_db_create=yes
-			shift
-			;;
-
 		-policyManaged)
 			policyManaged=yes
 			shift
 			;;
 
-		-verbose)
-			verbose=yes
+		-skip_db_create)
+			skip_db_create=yes
+			shift
+			;;
+
+		-graph)
+			graph=yes
 			shift
 			;;
 
@@ -198,52 +202,8 @@ function is_rac_or_single_server
 
 	[ $db_type == undef ] && db_type=SINGLE
 
-	#	Note sur un single olsnodes existe mais retourne du vide.
+	#	Note sur un single olsnodes existe mais ne retourne rien.
 	[ x"$node_list" = x ] && node_list=undef
-}
-
-function launch_memstat
-{
-	exec_cmd -c -h "nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &"
-	if [ $node_list != undef ]
-	then
-		while read node_name
-		do
-			if [ $node_name != $(hostname -s) ]
-			then
-				exec_cmd -h -c "ssh -n ${node_name} \
-				\"nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &\""
-			fi
-		done<<<"$(olsnodes)"
-	fi
-}
-
-function stop_memstat
-{
-	if [ "$DEBUG_PLE" = yes ]
-	then
-		exec_cmd -c "~/plescripts/memory/memstats.sh -title=create_db -kill"
-	else
-		exec_cmd -c -h "~/plescripts/memory/memstats.sh -title=create_db -kill" >/dev/null 2>&1
-	fi
-
-	if [ $node_list != undef ]
-	then
-		while read node_name
-		do
-			if [ $node_name != $(hostname -s) ]
-			then
-				if [ "$DEBUG_PLE" = yes ]
-				then
-					exec_cmd -c "ssh ${node_name} \
-					\"~/plescripts/memory/memstats.sh -title=create_db -kill\""
-				else
-					exec_cmd -c -h "ssh ${node_name} \
-					\"~/plescripts/memory/memstats.sh -title=create_db -kill\"" >/dev/null 2>&1
-				fi
-			fi
-		done<<<"$(olsnodes)"
-	fi
 }
 
 function show_db_settings
@@ -397,126 +357,57 @@ function remove_all_log_and_db_fs_files
 	LN
 }
 
-#	$1 max len
-#	$2 string
-#
-#	Si la longueur de string est supérieur à max len alors
-#	string est raccourcie pour ne faire que max len caractères.
-#
-#	Par exemple
-#				XXXXXXXXXXXXXXXXXXX
-#	deviendra	XXX...XXX
-function shorten_string
+################################################################################
+# Fonctions techniques/utilitaire
+function launch_memstat
 {
-	typeset -i	max_len=$1
-	typeset -r	string=$2
-	typeset -ri	string_len=${#string}
-
-	if [ $string_len -gt $max_len ]
+	exec_cmd -c -h "nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &"
+	if [ $node_list != undef ]
 	then
-		max_len=max_len-3 #-3 pour les ...
-		typeset -ri	car_to_remove=$(compute -i "($string_len - $max_len)/2")
-		typeset -ri begin_len=$(compute -i "$string_len / 2 - $car_to_remove")
-		typeset -ri end_start=$(compute -i "$string_len - ( $string_len / 2 - $car_to_remove )" )
-		comp="${string:0:$begin_len}...${string:$end_start}"
-		echo "$comp"
-	else
-		echo $string
-	fi
-}
-
-# $1 gap		(si non précisé vaudra 0)
-# $2 string
-function string_fit_on_screen
-{
-	typeset -i	gap=1
-	typeset 	string="$1"
-	if [ $# -eq 2 ]
-	then
-		gap=$1
-		string="$2"
-	fi
-
-	typeset -i len=$(term_cols)
-	len=len-gap
-
-	shorten_string $len "$string"
-}
-
-#	Attend l'existence d'un fichier
-function wait_file
-{
-	typeset -r	file_name="$1"
-	typeset		tag="=-"
-	typeset		file_exists=no
-	typeset	-i	duration=0
-
-	[ -f $file_name ] && return 0
-
-	info $(string_fit_on_screen 4 "Wait until $file_name exists.")
-	typeset -i begin_at=$SECONDS
-	hide_cursor
-	while [ $file_exists = no ] && [ $duration -lt 180 ]
-	do
-		typeset -i col=$(term_cols)
-		typeset -i loops=col-2
-		printf "["
-		for i in $( seq 1 $loops )
+		while read node_name
 		do
-			echo -n $tag
-			sleep 1
-			printf "\b"
-			[ -f $file_name ] && file_exists=yes && break
-		done
-		printf "]\n"
-		duration=$(( SECONDS - begin_at ))
-	done
-	show_cursor
-
-	[ $file_exists = yes ] && return 0 || return 1
+			if [ $node_name != $(hostname -s) ]
+			then
+				exec_cmd -h -c "ssh -n ${node_name} \
+				\"nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &\""
+			fi
+		done<<<"$(olsnodes)"
+	fi
 }
 
-# Arrête un process :
-# $1 nom du process
-# $2 nom de la variable contenant le pid
-#	la variable sera mise à -1 si le process est stoppé.
-function stop_process
+function stop_memstat
 {
-	typeset pid_name=$1
-	typeset pid_value=${!2}
-
-	[ "$DEBUG_PLE" = yes ] && info -n "Stop process $pid_name "
-	if [ $pid_value -ne -1 ]
+	if [ "$DEBUG_PLE" = yes ]
 	then
-		kill -1 $pid_value >/dev/null 2>&1
-		kill_return=$?
-		if [ $kill_return -eq 0 ]
-		then
-			eval $2=-1
-			[ "$DEBUG_PLE" = yes ] && info -f "[$OK]"
-			return 0
-		else
-			[ "$DEBUG_PLE" = yes ] && info -f "[$KO]"
-			return 1
-		fi
+		exec_cmd -c "~/plescripts/memory/memstats.sh -title=create_db -kill"
 	else
-		[ "$DEBUG_PLE" = yes ] && info -f ": ${BOLD}not running.${NORM}"
+		exec_cmd -c -h "~/plescripts/memory/memstats.sh -title=create_db -kill" >/dev/null 2>&1
 	fi
 
-	return 0
+	if [ $node_list != undef ]
+	then
+		while read node_name
+		do
+			if [ $node_name != $(hostname -s) ]
+			then
+				if [ "$DEBUG_PLE" = yes ]
+				then
+					exec_cmd -c "ssh ${node_name} \
+					\"~/plescripts/memory/memstats.sh -title=create_db -kill\""
+				else
+					exec_cmd -c -h "ssh ${node_name} \
+					\"~/plescripts/memory/memstats.sh -title=create_db -kill\"" >/dev/null 2>&1
+				fi
+			fi
+		done<<<"$(olsnodes)"
+	fi
 }
 
-typeset -i pid_tail=-1
-typeset -i pid_dbca=-1
 function stop_all_background_processes
 {
 	[ "$DEBUG_PLE" = yes ] && line_separator && info "cleanup :"
 
-	stop_process dbca pid_dbca
-
-	stop_memstat
-
-	stop_process log_process pid_tail
+	[ $graph == yes ] && stop_memstat || true
 
 	[ "$DEBUG_PLE" = yes ] && LN
 }
@@ -528,6 +419,7 @@ function on_ctrl_c
 	show_cursor
 	exit 1
 }
+################################################################################
 
 #	============================================================================
 #	MAIN
@@ -553,7 +445,10 @@ fi
 
 exit_if_param_undef name "$str_usage"
 
+#	Détermine le nom de la PDB si non précisée.
 [ $cdb == yes ] && [ $pdbName == undef ] && pdbName=${lower_name}01
+
+#	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
 [ $policyManaged == "yes" ] && [ $serverPoolName == undef ] && serverPoolName=poolAllNodes
 
 show_db_settings
@@ -572,11 +467,11 @@ trap on_ctrl_c INT
 
 if [ $skip_db_create == no ]
 then
-	launch_memstat
+	[ $graph == yes ] && launch_memstat
 
 	make_dbca_args
 
-	chrono_start
+	chrono_start # mesure le temps d'exécution de dbca.
 
 	remove_all_log_and_db_fs_files
 
@@ -584,73 +479,16 @@ then
 	if [ $? -eq 0 ]
 	then
 		#	Lance dbca en tâche de fond.
-		dbca $dbca_args > ${LOG_DBCA} 2>&1 &
-		pid_dbca=$!
+		dbca $dbca_args
+		dbca_return=$?
 	fi
 	LN
 
-	if [ $verbose == yes ]
-	then
-		[[ $db_type == RAC* ]] && noi=1
-		alert_log=$ORACLE_BASE/diag/rdbms/$lower_name/${name}${noi}/trace/alert_${name}${noi}.log
-
-		wait_file $alert_log
-		if [ $? -ne 0 ]
-		then
-			info "Wait again."
-			wait_file $alert_log
-			[ $? -ne 0 ] && wait_file $alert_log
-							[ $? -ne 0 ] && verbose=no
-		fi
-
-		if [ $verbose = yes ]
-		then
-			tail -1000f $alert_log | tee -a $PLELIB_LOG_FILE &
-			pid_tail=$!
-			pid_tail=pid_tail-1
-		fi
-	fi
-
-	if [ $verbose = no ]
-	then
-		wait_file $LOG_DBCA
-		tail -1000f $LOG_DBCA | tee -a $PLELIB_LOG_FILE &
-		pid_tail=$!
-		pid_tail=pid_tail-1
-	fi
-
-	#	Attend la fin de dbca
-	wait $pid_dbca
-	dbca_return=$?
 	[ $dbca_return -eq 0 ] && dbca_status="[$OK]" || dbca_status="[$KO] return $dbca_return"
 	info "dbca $dbca_status ${BOLD}$(fmt_seconds $(chrono_stop -q))"
-	pid_dbca=-1
 	LN
 
-	stop_process log_process pid_tail
-
-	if [ $verbose = yes ]
-	then
-		line_separator
-		exec_cmd "cat $LOG_DBCA"
-		LN
-	fi
-
-	if [ $dbca_return -ne 0 ]
-	then
-		line_separator
-		exec_cmd "cat $LOG_DBCA"
-		LN
-	fi
-
-	exec_cmd "rm -f $LOG_DBCA"  >/dev/null 2>&1
-
-	if [ $dbca_return -ne 0 ]
-	then
-		error "dbca failed."
-		exit 1
-	fi
-	LN
+	[ $dbca_return -ne 0 ] && exit 1 || true
 fi	#	skip_db_create == no
 
 typeset prefixInstance=${name:0:8}
@@ -673,14 +511,18 @@ then
 	case $db_type in
 		RAC)
 			if [ $serverPoolName == "undef" ]
-			then
+			then	
+				# Lecture des noms de toutes les instances.
 				typeset inst_list
 				while IFS=':' read inst_name rem
 				do
 					[ x"$inst_list" = x ] && inst_list=$inst_name || inst_list=${inst_list}",$inst_name"
 				done<<<"$(cat /etc/oratab | grep "^${prefixInstance}[1-9]:")"
+
+				info "Création du service pour un 'RAC Administrator Managed'"
 				exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
 			else
+				info "Création du service pour un 'RAC Policy Managed'"
 				exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -serverpool $serverPoolName"
 			fi
 			exec_cmd srvctl start service -db $name -service pdb$pdbName
@@ -688,12 +530,14 @@ then
 			;;
 
 		RACONENODE)
+			info "Création du service pour un 'RAC One Node'"
 			exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
 			exec_cmd srvctl start service -db $name -service pdb$pdbName
 			LN
 			;;
 
 		SINGLE)
+			info "Création du service pour une base 'SINGLE'"
 			exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
 			exec_cmd srvctl start service -db $name -service pdb$pdbName
 			LN
@@ -704,14 +548,18 @@ fi
 line_separator
 info "Enable archivelog :"
 export ORACLE_DB=${name}
-ORACLE_SID=${prefixInstance}
 case $db_type in
 	RAC|RACONENODE)
 		ORACLE_SID=${prefixInstance}1
 		;;
+
+	SINGLE)
+		ORACLE_SID=${prefixInstance}
+		;;
 esac
 ORAENV_ASK=NO . oraenv
 
+info "Instance : $ORACLE_SID"
 exec_cmd "~/plescripts/db/enable_archive_log.sh"
 LN
 
