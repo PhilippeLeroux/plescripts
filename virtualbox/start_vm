@@ -40,42 +40,48 @@ function virtualbox_start
 
 	typeset -i nr_vm_started=0
 	exec_cmd -c "VBoxManage startvm ${vm_list[0]} --type headless"
-	[ $? -ne 0 ] && error "Failed to start ${vm_list[0]}" || nr_vm_started=1
+	typeset -i vm_started=$?
+	[ $vm_started -ne 0 ] && error "Failed to start ${vm_list[0]}" || nr_vm_started=1
 	LN
 
 	for i in $( seq 1 $(( max_vms - 1 )) )
 	do
-		if [ "$GURU_MEDITATION" == "1" ]
+		if [ $vm_started -eq 0 ]
 		then
-			info "sudo systemctl restart vboxdrv, peut résoudre le problème..."
-			info "Attend le démarrage du crs pour éviter le 'GURU MEDITATION'"
-
-			show_grid_status -server=${vm_list[$((i-1))]} -wait_time_secs=60
-			LN
-		else
-			info "La variable GURU_MEDITATION n'est pas définie, pas d'attente du crs."
-			wait_server ${vm_list[$((i-1))]}
-		fi
-
-		exec_cmd "VBoxManage startvm ${vm_list[$i]} --type headless"
-		if [ $? -ne 0 ]
-		then
-			error "Failed to start ${vm_list[$i]}"
-		else
-			nr_vm_started=nr_vm_started+1
-			if [ $nr_vm_started -eq $max_vms ]
+			if [ "$GURU_MEDITATION" == "1" ]
 			then
-				wait_server ${vm_list[$i]}
-				show_grid_status -wait_time_secs=60 -server=${vm_list[$i]}
+				info "sudo systemctl restart vboxdrv, peut résoudre le problème..."
+				info "Attend le démarrage du crs pour éviter le 'GURU MEDITATION'"
+
+				show_grid_status -server=${vm_list[$((i-1))]} -wait_time_secs=60
+				LN
+			else
+				info "La variable GURU_MEDITATION n'est pas définie, pas d'attente du crs."
+				wait_server ${vm_list[$((i-1))]}
 			fi
 		fi
+
+		exec_cmd -c "VBoxManage startvm ${vm_list[$i]} --type headless"
+		vm_started=$?
+		[ $vm_started -ne 0 ] && error "Failed to start ${vm_list[$i]}" || nr_vm_started=nr_vm_started+1
 		LN
 	done
+
+	if [ $vm_started -eq 0 ]
+	then
+		wait_server ${vm_list[$((i-1))]}
+		show_grid_status -server=${vm_list[$((i-1))]} -wait_time_secs=60
+		LN
+		return 0
+	else
+		return 1
+	fi
 }
 
 case ${hostvm##*_} in
 	virtualbox)
 		virtualbox_start
+		exit $?
 		;;
 
 	*)
