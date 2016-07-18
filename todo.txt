@@ -12,22 +12,5 @@ A scripter :
 	/etc/sysconfig/named
 	Ajouter OPTIONS="-4"
 
-Dans shell :
-	Créer un script pour synchroniser l'heure les serveurs sur K2.
-	Quand l'OS guess se met en hibernation les horloges mettent trop de temps à
-	se synchroniser.
+Mettre dans PATH : /u01/app/oracle/12.1.0.2/dbhome_1/OPatch
 
-	Nom      : synctime
-	Commande : chronyc -a makestep
-	Test     : les nœuds d'un RAC vont ils survivre.
-
-A documenter :
-	ACFS pas compatible : en root : acfsdriverstate -orahome $GRID_HOME
-	- Création d'un FS ACFS
-		root@K2 : ajouter des disques.
-		ACFS n'est pas supporté sur Linux 7
-		https://docs.oracle.com/cd/E11882_01/server.112/e18951/asmfs_util001.htm#OSTMG94787
-		volcreate -G ACFS -s 10G volume1
-		volinfo -G ACFS volume1
-
-		/sbin/mkfs -t acfs /dev/asm/volume1-123
