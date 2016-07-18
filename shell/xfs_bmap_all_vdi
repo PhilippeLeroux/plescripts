@@ -72,14 +72,14 @@ function xfs_bmap_file
 
 	typeset -ri nr_extents=$(sudo xfs_bmap "$vdi_file" | tail -1 | tr -s [:space:] | cut -d: -f1)
 
-	msg=$(printf "%-16s : %02d extents." ${vdi_file##*/} $nr_extents)
+	msg=$(printf "%-16s : %02d extents : " ${vdi_file##*/} $nr_extents)
 	if [ $nr_extents -le $max_ext ]
 	then
 		info "$msg [$OK]"
 		return 0
 	else
 		LN
-		info "$msg [$KO] reorg needed..."
+		info "$msg [$KO] limit $max_ext extents, reorg needed..."
 		return 1
 	fi
 }
@@ -102,14 +102,21 @@ fake_exec_cmd "$cmd"
 while read vdi_file
 do
 	xfs_bmap_file "$vdi_file"
-	if [[ $? -ne 0 && $reorg == yes ]]
+	if [ $? -ne 0 ]
 	then
-		if [[ $max_reorgs -eq 0 || $count_reorgs -lt $max_reorgs ]]
+		if [ $reorg == yes ]
 		then
-			info "Start reorg..."
-			exec_cmd sudo xfs_fsr -v \"$vdi_file\"
-			count_reorgs=count_reorgs+1
-			xfs_bmap_file "$vdi_file"
+			if [[ $max_reorgs -eq 0 || $count_reorgs -lt $max_reorgs ]]
+			then
+				info "Start reorg..."
+				exec_cmd sudo xfs_fsr -v \"$vdi_file\"
+				count_reorgs=count_reorgs+1
+				xfs_bmap_file "$vdi_file"
+				LN
+			fi
+		else
+			info "    Details with :"
+			info "    sudo xfs_bmap -v \"$vdi_file\""
 			LN
 		fi
 	fi
