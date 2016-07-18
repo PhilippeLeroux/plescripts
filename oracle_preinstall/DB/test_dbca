@@ -1,1 +1,0 @@
-dbca -silent -createDatabase -templateName General_Purpose.dbc -gdbName RDB1AAA -sysPassword password -systemPassword password -redoLogFileSize 512 -storageType ASM -diskGroupName DATA -recoveryGroupName FRA -automaticMemoryManagement true -totalMemory 3072 -characterSet   AL32UTF8 -nodelist   linraaa01,linraaa02 -initParams     nls_language=FRENCH,NLS_TERRITORY=FRANCE
