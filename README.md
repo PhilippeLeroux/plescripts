@@ -25,7 +25,8 @@ L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable.
 # Étapes pour la création d'une base :
 
 La création d'une nouvelle base SINGLE ou RAC se fait en 5 étapes :
-* Définition du nom de la base et du nombre de nœuds : le nommage des serveurs et
+
+* Définition du nom de la base et du nombre de nœuds : les noms des serveurs et
 des disques sont déduits du nom de la base.
 
 * Clonage du serveur de référence, actions effectuées :
@@ -90,7 +91,7 @@ la base soit SINGLE ou bien RAC.
    - NTP     : Pour la synchronisation des serveurs de base de données.
    - GATEWAY : Permet aux serveurs de base de données de se mettre à jour sur internet.
 
- [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/666-Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
+ [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
 
 # Ajout de serveurs de base de données Oracle.
 Les 2 VMs orclmaster et K2 doivent avoir été créées.
