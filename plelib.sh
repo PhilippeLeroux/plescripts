@@ -382,15 +382,19 @@ function get_ssh_command
 
 	typeset cmd=${argv[argc+1]}
 
-	# Si la commande débute par une " elle est supprimée.
+	# Si la commande débute par une double quote (") elle est supprimée.
 	[ "${cmd:0:1}" = \" ] && cmd=${cmd:1} || true
-	# Si la commande termnie par une " elle est supprimée.
+	# Si la commande termine par une double quote (") elle est supprimée.
 	[ "${cmd:${#cmd}-1:1}" = \" ] && cmd=${cmd:0:${#cmd}-1} || true
+
+	#	TODO : ne plus mémoriser la commande mais la position !
+
+	[ "$cmd" == "sudo" ] && cmd=${argv[argc+2]}
 
 	# Si la commande est LANG=C on passe à la suivante.
 	[ "$cmd" == "LANG=C" ] && cmd=${argv[argc+2]}
 
-	# Si la commande est . c'est qu'un fichier profile est chargé on passe le
+	# Si la commande est '.' c'est qu'un fichier profile est chargé on passe le
 	# profile : . ./.profile ... donc pointe sur 3
 	[ "$cmd" == "." ] && cmd=${argv[argc+3]}
 	# Arrive dans ce scénario : . ./.profile \; ....
@@ -906,6 +910,31 @@ function test_pause # $1 message
 		[ $# -ne 0 ] && info "$@"
 		info "Press a key to continue" && read keyboard
 	fi
+}
+
+#	Affiche le message $1 ou $@ suive de Yes or No ?
+#	Si No est saisie met fin au script par un exit 1
+function continue_yes_or_no	
+{
+	while [ 0 -eq 0 ]	# forever
+	do
+		info "$@ Yes or No ?"
+		read keyboard
+		LN
+		case "$keyboard" in
+			y|yes|Y|YES)
+				return 0
+				;;
+
+			n|no|N|NO)
+				exit 1
+				;;
+
+			*)
+				error "'$keyboard' invalid."
+				;;
+		esac
+	done
 }
 
 ################################################################################
