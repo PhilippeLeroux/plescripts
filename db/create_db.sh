@@ -178,8 +178,8 @@ do
 done
 
 #	============================================================================
-typeset -r LOG_DBCA=${PLELIB_LOG_FILE}_dbca
-
+#	Test si l'installation est de type RAC ou SINGLE.
+#	Se base sur olsnodes.
 function is_rac_or_single_server
 {
 	test_if_cmd_exists olsnodes
@@ -206,46 +206,6 @@ function is_rac_or_single_server
 	[ x"$node_list" = x ] && node_list=undef
 }
 
-function show_db_settings
-{
-	info "Create DB              : $name"
-	info "lang                   : $lang"
-	info "Type                   : $db_type"
-	[ "$node_list" != undef ] && info "Nodes                  : $node_list"
-	info "sys & system passwords : $sysPassword"
-	info "memory                 : $(fmt_number $memory_mb)Mb $mem_suffix"
-	if [ "$usefs" = "no" ]
-	then
-		info "dg data                : $data"
-		info "dg fra                 : $fra"
-	else
-		info "fs data                : $data"
-		info "fs fra                 : $fra"
-	fi
-	info "template               : $templateName"
-	info "container database     : $cdb"
-	if [ $pdbName != undef ]
-	then
-		numberOfPDBs=1
-		pdbAdminPassword=$sysPassword
-		info "   numberOfPDBs     : $numberOfPDBs"
-		info "   pdbName          : $pdbName"
-		info "   pdbAdminPassword : $pdbAdminPassword"
-	fi
-	if [ "$serverPoolName" != undef ]
-	then
-		info "policyManaged"
-		info "	serverPoolName : ${serverPoolName}"
-	fi
-	LN
-
-	if [ $skip_db_create == yes ]
-	then
-		warning "La base ne sera pas créée, elle doit donc exister."
-		LN
-	fi
-}
-
 #	Ajoute le paramètre $1 à la liste de paramètres pour dbca
 #		2 variables sont utilisées
 #		- fake_dbca_args utilisée pour l'affichage : formatage visuel
@@ -260,15 +220,6 @@ function add_dbca_param
 		fake_dbca_args=$fake_dbca_args$(printf "\\\\\n    %-55s" "$1")
 		dbca_args="$dbca_args $1"
 	fi
-}
-
-#	Return 0 if server pool $1 exists, else 1
-function test_if_serverpool_exists
-{
-	typeset -r serverPoolName=$1
-
-	info "Test si le pool de serveurs $serverPoolName exists :"
-	exec_cmd -ci "srvctl status srvpool -serverpool $serverPoolName"
 }
 
 #	Fabrique les arguments à passer à dbca en fonction des variables
@@ -332,6 +283,15 @@ function make_dbca_args
 		*)
 			add_dbca_param "-initParams shared_pool_size=${min_shared_pool_size_mb}M,threaded_execution=true"
 	esac
+}
+
+#	Return 0 if server pool $1 exists, else 1
+function test_if_serverpool_exists
+{
+	typeset -r serverPoolName=$1
+
+	info "Test si le pool de serveurs $serverPoolName exists :"
+	exec_cmd -ci "srvctl status srvpool -serverpool $serverPoolName"
 }
 
 function remove_all_log_and_db_fs_files
@@ -445,40 +405,50 @@ fi
 
 exit_if_param_undef name "$str_usage"
 
+#===============================================================================
+#	Ajustement des paramètres
+
 #	Détermine le nom de la PDB si non précisée.
 [ $cdb == yes ] && [ $pdbName == undef ] && pdbName=${lower_name}01
 
+if [ $pdbName != undef ]
+then
+	numberOfPDBs=1
+	pdbAdminPassword=$sysPassword
+fi
+
 #	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
 [ $policyManaged == "yes" ] && [ $serverPoolName == undef ] && serverPoolName=poolAllNodes
-
-show_db_settings
 
 if [ $memory_mb -lt $min_memory_mb ]
 then
 	error "Minimum memory for Oracle Database 12c : ${min_memory_mb}Mb"
 	exit 1
 fi
-
-info "Press a key to continue."
-read keyboard
-
-trap stop_all_background_processes EXIT
-trap on_ctrl_c INT
+#===============================================================================
 
 if [ $skip_db_create == no ]
 then
-	[ $graph == yes ] && launch_memstat
-
 	make_dbca_args
+
+	info "Execute : "
+	info "dbca\\\\\n$fake_dbca_args"
+	continue_yes_or_no "Continue :"
+
+	trap stop_all_background_processes EXIT
+	trap on_ctrl_c INT
+
+	[ $graph == yes ] && launch_memstat
 
 	chrono_start # mesure le temps d'exécution de dbca.
 
 	remove_all_log_and_db_fs_files
 
+	typeset -i dbca_return=1
+
 	fake_exec_cmd "dbca\\\\\n$fake_dbca_args"
 	if [ $? -eq 0 ]
 	then
-		#	Lance dbca en tâche de fond.
 		dbca $dbca_args
 		dbca_return=$?
 	fi
