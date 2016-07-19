@@ -67,8 +67,8 @@ fi
 
 case $type_shared_fs in
 	nfs)
-		info -n "Test l'existence de '$HOME/ISO/$oracle_install' "
-		if [ ! -d "$HOME/ISO/$oracle_install" ]
+		info -n "Test l'existence de '$HOME/$oracle_install' "
+		if [ ! -d "$HOME/$oracle_install" ]
 		then
 			info -f "[$KO]"
 			error "	Ce répertoire doit contenir les zips d'Oracle et du Grid."
@@ -119,8 +119,8 @@ then
 		info -f "[$OK]"
 	fi
 
-	info -n "	- $HOME/ISO/$oracle_install "
-	grep "$HOME/ISO/$oracle_install" /etc/exports >/dev/null 2>&1
+	info -n "	- $HOME/$oracle_install "
+	grep "$HOME/$oracle_install" /etc/exports >/dev/null 2>&1
 	if [ $? -ne 0 ]
 	then
 		count_errors=count_errors+1
