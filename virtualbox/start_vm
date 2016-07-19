@@ -69,9 +69,6 @@ function virtualbox_start
 
 	if [ $vm_started -eq 0 ]
 	then
-		wait_server ${vm_list[$((i-1))]}
-		show_grid_status -server=${vm_list[$((i-1))]} -wait_time_secs=60
-		LN
 		return 0
 	else
 		return 1
