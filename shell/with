@@ -18,7 +18,7 @@ else
 fi
 
 typeset -r cfg_path=~/plescripts/database_servers
-exit_if_dir_not_exists $cfg_path
+exit_if_dir_not_exists $cfg_path/$db
 
 typeset -ri max_nodes=$(ls -1 $cfg_path/$db/node*|wc -l)
 
