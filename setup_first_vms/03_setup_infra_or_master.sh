@@ -156,7 +156,7 @@ case $role in
 		LN
 
 		line_separator
-		exec_cmd yum -y install nfs-utils git targetcli deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm
+		exec_cmd yum -y install nfs-utils git targetcli deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm createrepo
 		LN
 
 		line_separator
@@ -174,8 +174,9 @@ case $role in
 
 if [ 0 -eq 1 ]; then	# L'export NFS est maintenant fait depuis le poste client.
 				line_separator
-				exec_cmd "echo \"/root/$oracle_install ${infra_network}.0/${infra_mask}(rw,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
+				exec_cmd "echo \"/root/$oracle_install ${infra_network}.0/${infra_mask}(ro,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
 				LN
+fi	# [ 0 -eq 1 ]; then
 
 				exec_cmd "systemctl enable rpcbind"
 				exec_cmd "systemctl start rpcbind"
@@ -188,7 +189,6 @@ if [ 0 -eq 1 ]; then	# L'export NFS est maintenant fait depuis le poste client.
 				exec_cmd "firewall-cmd --add-service=nfs --permanent --zone=trusted"
 				exec_cmd "firewall-cmd --reload"
 				LN
-fi	# [ 0 -eq 1 ]; then
 				;;
 
 			vbox)
