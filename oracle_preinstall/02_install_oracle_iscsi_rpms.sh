@@ -3,11 +3,12 @@
 #	ts=4 sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 line_separator
 info "Install Oracle rdbms rpm"
-exec_cmd yum -y $oracle_rdbms_rpm
+exec_cmd yum -y install $oracle_rdbms_rpm
 LN
 
 line_separator
