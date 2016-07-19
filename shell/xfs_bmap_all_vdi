@@ -72,7 +72,7 @@ function xfs_bmap_file
 
 	typeset -ri nr_extents=$(sudo xfs_bmap "$vdi_file" | tail -1 | tr -s [:space:] | cut -d: -f1)
 
-	msg=$(printf "%-16s : %02d extents : " ${vdi_file##*/} $nr_extents)
+	msg=$(printf "%-18s : %02d extents " ${vdi_file##*/} $nr_extents)
 	if [ $nr_extents -le $max_ext ]
 	then
 		info "$msg [$OK]"
