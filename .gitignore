@@ -22,7 +22,7 @@ san/targetcli_backup/**
 nohup.out
 afiedt.buf
 database_servers/albator
-database_servers/babar
+database_servers/canal
 database_servers/daisy
 database_servers/loulou
 database_servers/picsou
