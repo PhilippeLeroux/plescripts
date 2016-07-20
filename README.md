@@ -33,7 +33,7 @@ des disques sont déduits du nom de la base.
 	* Cloner la VM master.
 	* Créer les disques sur le SAN : utilisation du protocole iscsi.
 	* Enregistrer le serveur dans le DNS : utilisation de bind9.
-	* Mapper les disques du SAN sur le ou les serveurs : utilisation d'oracleasm.
+	* Attacher les disques du SAN sur le ou les serveurs : utilisation d'oracleasm.
 
 	Toutes ces actions sont effectuées par un seul script.
 
