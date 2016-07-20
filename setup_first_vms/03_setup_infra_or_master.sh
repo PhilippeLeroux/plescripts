@@ -135,6 +135,7 @@ case $role in
 		exec_cmd "cp -fp ~/plescripts/yum/public-yum-ol7.repo /etc/yum.repos.d/public-yum-ol7.repo"
 		LN
 		exec_cmd "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux_repository_path nfs ro,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
+		exec_cmd mount /mnt$infra_olinux_repository_path
 		LN
 
 		line_separator
