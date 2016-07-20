@@ -76,9 +76,9 @@ la base soit SINGLE ou bien RAC.
 
 	* plescripts
 		* Avec git : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
-		* Ou télécharger le zip : https://github.com/PhilippeLeroux/plescripts.git
+		* Ou télécharger le zip en cliquant sur le boutton vert "Clone or download" en haut de la page.
 
-	L'archive plescripts doit être extrait dans $HOME
+		  L'archive plescripts doit être extrait dans $HOME
 
 --------------------------------------------------------------------------------
 
@@ -89,7 +89,8 @@ la base soit SINGLE ou bien RAC.
    - DNS     : Gestion du DNS.
    - SAN     : Gestion des disques des bases de données.
    - NTP     : Pour la synchronisation des serveurs de base de données.
-   - GATEWAY : Permet aux serveurs de base de données de se mettre à jour sur internet.
+   - GATEWAY : Permet aux machines du réseau interne d'aller sur internet.
+   - Dépôt   : Le dépôt Oracle Linux est cloné permettant la mise à jour des serveurs.
 
  [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
 
