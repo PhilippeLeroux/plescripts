@@ -16,10 +16,36 @@ Création d'une base de donnée.
 
 3. Exécution du script create_db.sh :
 
-	`./create_db.sh -name=daisy`
+	```sh
+	oracle@srvdaisy01:DAISY1:db> ./create_db.sh -name=daisy
+	# ./create_db.sh -name=daisy
+	# Execute :
+	# dbca\
+		-createDatabase -silent                                \
+		-databaseConfType RAC                                  \
+		-nodelist srvdaisy01,srvdaisy02                        \
+		-gdbName DAISY                                         \
+		-totalMemory 444                                       \
+		-characterSet AL32UTF8                                 \
+		-storageType ASM                                       \
+			-diskGroupName     DATA                            \
+			-recoveryGroupName FRA                             \
+		-templateName General_Purpose.dbc                      \
+		-createAsContainerDatabase true                        \
+			-numberOfPDBs     1                                \
+			-pdbName          daisy01                          \
+			-pdbAdminPassword Oracle12                         \
+		-sysPassword    Oracle12                               \
+		-systemPassword Oracle12                               \
+		-redoLogFileSize 512                                   \
+		-initParams shared_pool_size=256M,nls_language=FRENCH,NLS_TERRITORY=FRANCE,threaded_execution=true
+	# Continue : Yes or No ?
+	```
+	
+	Confirmer la création si les paramètres conviennent. Pour afficher la liste
+	des paramètres modifiables : `./create_db.sh -h`
 
-	La base sera de type "Container Database", la configuration de la base SINGLE
-	ou RAC sera détectée automatiquement. 
+	La configuration de la base SINGLE ou RAC sera détectée automatiquement. 
 	
 	Pour une configuration de type RAC One Node ajouter le paramète -db_type=RACONENODE.
 	Le service associé sera ron_daisy (ron = **r**ac **o**ne **n**ode)
