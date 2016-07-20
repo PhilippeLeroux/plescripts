@@ -10,13 +10,13 @@ Objectif des scripts
 Le but de ces scripts et de créer une infrastructure complète avec un minimum
 d'interventions
 
-Toutes les actions nécessaires sur K2 sont scriptées et transparente :
+Toutes les actions nécessaires sur K2 sont scriptées et transparentes :
 - Le DNS est mis à jour.
 - Le SAN est mis à jour.
 - Les horloges des serveurs synchronisées sur la même source.
 - Les disques sont attachés via oracleasm.
 
-La VM master sera cloné afin d'éviter d'installer l'OS à chaque fois.
+La VM master sera clonée afin d'éviter d'installer l'OS à chaque fois.
 
 **Note** : Tous les scripts sont exécutés depuis le poste client.
 
@@ -69,9 +69,7 @@ Se postionner dans le répertoire ~/plescrits/database_servers
 
 	Visualiser la configuration du DNS et du SAN.
 	```
-	ssh root@K2
-	[root@K2:~]$ cd plescripts/dns/
-	[root@K2:dns]$ ./show_dns.sh
+	ssh root@K2 plescripts/dns/show_dns.sh
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	# Server             | ip
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,8 +84,7 @@ Se postionner dans le répertoire ~/plescrits/database_servers
 	# daisy-scan         | 192.170.100.16
 	# daisy-scan         | 192.170.100.17
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	[root@K2:dns]$ cd ../san
-	[root@K2:san]$ ./show_db_info.sh -db=daisy
+	ssh -t root@K2 plescripts/san/show_db_info.sh -db=daisy
 	# RAC cluster 2 nodes.
 	# LUNs for daisy :
 	12h29> targetcli ls /iscsi/iqn.1970-05.com.srvdaisy:01/tpg1/acls/iqn.1970-05.com.srvdaisy:01
