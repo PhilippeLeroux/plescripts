@@ -280,16 +280,16 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	line_separator
 	info "Exécution des 2 scripts post install GI sur le noeud ${node_names[$inode]}"
 	info "Attente ~10mn"
-	exec_cmd "ssh -t root@${node_names[$inode]} /u01/app/oraInventory/orainstRoot.sh"
+	exec_cmd "ssh -t root@${node_names[$inode]} \"LANG=C /u01/app/oraInventory/orainstRoot.sh\""
 	LN
-	exec_cmd "ssh -t root@${node_names[$inode]} $ORACLE_HOME/root.sh"
+	exec_cmd "ssh -t root@${node_names[$inode]} \"LANG=C $ORACLE_HOME/root.sh\""
 }
 
 function runConfigToolAllCommands
 {
 	line_separator
 	info "Exécute ConfigTool"
-	exec_cmd "ssh -t grid@${node_names[0]} $ORACLE_HOME/cfgtoollogs/configToolAllCommands RESPONSE_FILE=/home/grid/grid_${db}.properties"
+	exec_cmd "ssh -t grid@${node_names[0]} \"LANG=C $ORACLE_HOME/cfgtoollogs/configToolAllCommands RESPONSE_FILE=/home/grid/grid_${db}.properties\""
 }
 
 function create_dg # $1 nom du DG
