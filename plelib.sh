@@ -648,13 +648,13 @@ function remove_value
 
 #*> exit_if_param_undef <var> [message]
 #*>
-#*> Script aborted if var = undef or -1
+#*> Script aborted if var == undef or == -1 or empty
 function exit_if_param_undef #var_name
 {
 	typeset -r var_name=$1
 	typeset -r var_value=$(eval echo \$$var_name)
 
-	if [ "$var_value" = "undef" ] || [ "$var_value" = "-1" ]
+	if [ "$var_value" = "undef" ] || [ "$var_value" = "-1" ] || [ x$"var_name" == x ]
 	then
 		error "-$var_name missing"
 		shift
