@@ -37,7 +37,7 @@ des disques sont déduits du nom de la base.
 
 	Toutes ces actions sont effectuées par un seul script.
 
-	Temps de clonage : ~10 à 15mn par serveurs.
+	Temps de clonage : ~8mn par serveur.
 
 * Installation du Grid Infrastructure et création des DGs.
 
@@ -52,11 +52,11 @@ des nœuds d'un RAC.
 	Comme pour le GI un seul script prend en charge l'ensemble des opérations que
 la base soit SINGLE ou bien RAC.
 
-	Temps d'installation : ~25mn
+	Temps d'installation : ~20mn
 
 * Création d'une base de données : un seul script également.
 
-	Temps de création cdb + 1 pdb : 1 h 20
+	Temps de création cdb + 1 pdb : ~35mn
 
 --------------------------------------------------------------------------------
 # Pré requis :
