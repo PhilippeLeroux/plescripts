@@ -32,7 +32,7 @@ do
 	esac
 done
 
-function run_ssh
+function infra_ssh
 {
 	exec_cmd "ssh root@${infra_network}.${master_ip_node} \"$@\""
 }
@@ -61,9 +61,9 @@ LN
 if [ $type_shared_fs == vbox ]
 then
 	line_separator
-	run_ssh "echo DNS1=$infra_ip >> $if_pub_file"
-	run_ssh "echo GATEWAY=$infra_ip >> $if_pub_file"
-	run_ssh "systemctl restart network"
+	infra_ssh "echo DNS1=$infra_ip >> $if_pub_file"
+	infra_ssh "echo GATEWAY=$infra_ip >> $if_pub_file"
+	infra_ssh "systemctl restart network"
 	LN
 
 	line_separator
@@ -77,26 +77,26 @@ then
 fi
 
 line_separator
-info "Prépartation du répertoire plescripts."
-run_ssh "mkdir /mnt/plescripts"
+info "Préparation du répertoire plescripts."
+infra_ssh "mkdir /mnt/plescripts"
 LN
 
 info "Montage provisoire de /mnt/plescripts"
 case $type_shared_fs in
 	vbox)
-		run_ssh "mount -t vboxsf plescripts /mnt/plescripts"
+		infra_ssh "mount -t vboxsf plescripts /mnt/plescripts"
 		;;
 
 	nfs)
-		run_ssh "mount 192.170.100.1:/home/kangs/plescripts /mnt/plescripts"
+		infra_ssh "mount ${infra_network}.1:/home/kangs/plescripts /mnt/plescripts -type nfs -o rw,$nfs_options"
 		;;
 esac
 
-run_ssh "ln -s /mnt/plescripts ./plescripts"
+infra_ssh "ln -s /mnt/plescripts ./plescripts"
 LN
 
-run_ssh "~/plescripts/setup_first_vms/02_update_config.sh"
-run_ssh "~/plescripts/setup_first_vms/03_setup_infra_or_master.sh -role=master"
+infra_ssh "~/plescripts/setup_first_vms/02_update_config.sh"
+infra_ssh "~/plescripts/setup_first_vms/03_setup_infra_or_master.sh -role=master"
 LN
 
 exec_cmd "$vm_scripts_path/stop_vm $master_name"

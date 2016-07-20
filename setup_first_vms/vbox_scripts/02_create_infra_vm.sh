@@ -44,6 +44,31 @@ exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_ip}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_hostname}
 LN
 
+#===============================================================================
+#	Validation des exports NFS depuis le poste client.
+line_separator
+info "Validation exports NFS :"
+exec_cmd -c "sudo showmount -e"
+typeset -i	nfs_errors=0
+if [ $type_shared_fs == nfs ]
+then
+	exec_cmd -c "sudo showmount -e | grep -q /home/$common_user_name/$oracle_install"
+	[ $? -ne 0 ] && nfs_errors=nfs_errors+1
+
+	exec_cmd -c "sudo showmount -e | grep -q /home/$common_user_name/plescripts"
+	[ $? -ne 0 ] && nfs_errors=nfs_errors+1
+fi
+
+exec_cmd -c "sudo showmount -e | grep -q /home/$common_user_name/ISO/oracle_linux_7"
+[ $? -ne 0 ] && nfs_errors=nfs_errors+1
+LN
+if [ $nfs_errors -ne 0 ]
+then
+	info "Les exports NFS attendus depuis $client_hostname ne sont pas présent."
+	exit 1
+fi
+#===============================================================================
+
 line_separator
 info "Arrêt de la VM $master_name"
 exec_cmd -c VBoxManage controlvm $master_name acpipowerbutton
@@ -147,10 +172,10 @@ case $type_shared_fs in
 	nfs)
 		info "Création des points de montage NFS :"
 		run_ssh "mkdir plescripts"
-		run_ssh "mount 192.170.100.1:/home/$common_user_name/plescripts /root/plescripts"
+		run_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,$nfs_options"
 		run_ssh "mkdir -p ~/$oracle_install"
 		run_ssh "mkdir zips"
-		run_ssh "mount 192.170.100.1:/$common_user_name/kangs/ISO/$oracle_install /root/zips"
+		run_ssh "mount ${infra_network}.1:/$common_user_name/ISO/$oracle_install /root/zips -t nfs -o ro,$nfs_options"
 		;;
 esac
 

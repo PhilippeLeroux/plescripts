@@ -129,13 +129,21 @@ case $role in
 		exec_cmd "systemctl stop firewalld"
 		LN
 
+		line_separtor
+		info "Configuration du dépôt"
+		# TODO rendre configurable le nom du fichier !
+		exec_cmd "cp -fp ~/plescripts/yum/public-yum-ol7.repo /etc/yum.repos.d/public-yum-ol7.repo"
+		LN
+		exec_cmd "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux_repository_path nfs ro,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
+		LN
+
 		line_separator
 		exec_cmd yum -y install nfs-utils iscsi-initiator-utils deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm
 
 		case $type_shared_fs in
 			nfs)
 				line_separator
-				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rw,noatime,nodiratime,async,comment=systemd.automount"
+				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rw,$nfs_options,comment=systemd.automount"
 				exec_cmd -c mount -a /mnt/plescripts
 				LN
 			;;
@@ -167,27 +175,23 @@ case $role in
 		LN
 
 		line_separator
+		info "Activation des services NFS serveur."
+		exec_cmd "systemctl enable rpcbind"
+		exec_cmd "systemctl start rpcbind"
+		LN
+
+		exec_cmd "systemctl enable nfs-server"
+		exec_cmd "systemctl start nfs-server"
+		LN
+
+		exec_cmd "firewall-cmd --add-service=nfs --permanent --zone=trusted"
+		exec_cmd "firewall-cmd --reload"
+		LN
+
+		line_separator
 		case $type_shared_fs in
 			nfs)
-				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rw,noatime,nodiratime,async,comment=systemd.automount"
-				LN
-
-if [ 0 -eq 1 ]; then	# L'export NFS est maintenant fait depuis le poste client.
-				line_separator
-				exec_cmd "echo \"/root/$oracle_install ${infra_network}.0/${infra_mask}(ro,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
-				LN
-fi	# [ 0 -eq 1 ]; then
-
-				exec_cmd "systemctl enable rpcbind"
-				exec_cmd "systemctl start rpcbind"
-				LN
-
-				exec_cmd "systemctl enable nfs-server"
-				exec_cmd "systemctl start nfs-server"
-				LN
-
-				exec_cmd "firewall-cmd --add-service=nfs --permanent --zone=trusted"
-				exec_cmd "firewall-cmd --reload"
+				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rw,$nfs_options,async,comment=systemd.automount"
 				LN
 				;;
 
@@ -205,6 +209,10 @@ fi	# [ 0 -eq 1 ]; then
 		info "Configure SAN"
 		exec_cmd "~/plescripts/san/targetcli_default_cfg.sh"
 		LN
+
+		line_separator
+		info "Clonage du dépôt Oracle Linux"
+		exec_cmd "~/plescripts/yum/sync_oracle_repository.sh -copy_iso"
 		;;
 esac
 
