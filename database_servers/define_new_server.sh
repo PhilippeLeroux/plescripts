@@ -267,3 +267,6 @@ else
 fi
 
 ~/plescripts/shell/show_infra -db=$db
+
+info -n "Exécuter : ./clone_master.sh -db=$db"
+[ $db_type == rac ] && info -f " -node=1" || LN
