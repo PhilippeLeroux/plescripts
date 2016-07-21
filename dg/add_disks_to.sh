@@ -56,14 +56,23 @@ then
 	error "Disponible ${#disk_list[@]} disks"
 	exit 1
 fi
-
-(
-	echo "alter diskgroup $name add"
-	echo "disk"
-	echo "	'${disk_list[0]}'"
+function make_sql_cmd
+{
 	for i in $(seq 1 $(( $disks - 1 )) )
 	do
-		echo ",	'${disk_list[$i]}'"
+		other_disks="$other_disks\n,   '${disk_list[$i]}'"
 	done
-	echo ";"
-)	| sqlplus -s / as sysasm
+	cat <<EOS
+alter diskgroup $name add
+disk
+    '${disk_list[0]}'$other_disks
+;
+EOS
+}
+
+cmd=$(printf "$(make_sql_cmd)\n")
+
+fake_exec_cmd sqlplus -s / as sysasm
+printf "$cmd\n"
+
+printf "set echo off\nset timin on\n$cmd\n" | sqlplus -s / as sysasm

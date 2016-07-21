@@ -6,11 +6,15 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME -name<str> -disks=<#>
-	-name  : nom du DG à créer.
-	-disks : nombre de disques à utiliser."
+	-name    : nom du DG à créer.
+	-disks   : nombre de disques à utiliser.
+	-nomount : ne monte pas le DG sur les autres nœuds.
+"
 
 typeset		name=undef
 typeset -i	disks=-1
+
+typeset		mount_on_other_nodes=yes
 
 while [ $# -ne 0 ]
 do
@@ -22,6 +26,11 @@ do
 
 		-disks=*)
 			disks=${1##*=}
+			shift
+			;;
+
+		-nomount)
+			mount_on_other_nodes=no
 			shift
 			;;
 
@@ -57,17 +66,40 @@ then
 	exit 1
 fi
 
-(
-	echo "create diskgroup $name external redundancy"
-	echo "disk"
-	echo "	'${disk_list[0]}'"
+function make_sql_cmd
+{
 	for i in $(seq 1 $(( $disks - 1 )) )
 	do
-		echo ",	'${disk_list[$i]}'"
+		other_disks="$other_disks\n,   '${disk_list[$i]}'"
 	done
-	echo "attribute"
-	echo "	'compatible.asm' = '12.1.0.2.0'"
-	echo ",	'compatible.rdbms' = '12.1.0.2.0'"
-	echo ";"
-	echo ""
-)	| sqlplus -s / as sysasm
+
+	cat <<EOS 
+create diskgroup $name external redundancy
+disk
+    '${disk_list[0]}'$other_disks
+attribute
+    'compatible.asm' = '12.1.0.2.0'
+,   'compatible.rdbms' = '12.1.0.2.0'
+;
+EOS
+}
+
+cmd=$(printf "$(make_sql_cmd)\n")
+
+fake_exec_cmd sqlplus -s / as sysasm
+printf "$cmd\n"
+
+printf "set echo off\nset timin on\n$cmd\n" | sqlplus -s / as sysasm
+LN
+
+if [ $mount_on_other_nodes == yes ]
+then
+	typeset -r hostn=$(hostname -s)
+	olsnodes | while read server_name
+	do
+		[ x"$server_name" == x ] && break || true	# Pas un RAC
+		[ $hostn == $server_name ] && continue
+		exec_cmd "ssh $server_name \". ./.profile; asmcmd mount $name\""
+		LN
+	done
+fi

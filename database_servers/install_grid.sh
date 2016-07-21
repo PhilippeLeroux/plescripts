@@ -299,7 +299,7 @@ function create_dg # $1 nom du DG
 	info "Création du DG : $DG"
 	IFS=':' read dg_name size first last<<<"$(cat $cfg_path/disks | grep "^${DG}")"
 	total_disks=$(( $last - $first + 1 ))
-	exec_cmd "ssh -t grid@${node_names[0]} \". ./.profile; ~/plescripts/dg/create_new_dg.sh -name=$DG -disks=$total_disks\""
+	exec_cmd "ssh -t grid@${node_names[0]} \". ./.profile; ~/plescripts/dg/create_new_dg.sh -name=$DG -disks=$total_disks -nomount\""
 }
 
 #	Création des DGs.
