@@ -74,7 +74,6 @@ function map_devices
 	typeset -i	count_disks_used=0
 	typeset -i	count_added_oracle_disks=0
 
-	get_iscsi_disks |\
 	while read disk_name disk_num
 	do
 		info "Disk $disk_nun : $disk_name"
@@ -104,7 +103,7 @@ function map_devices
 			info "Partition $part_name not exists."
 			LN
 		fi
-	done
+	done<<<"$(get_iscsi_disks)"
 
 	exec_cmd "oracleasm scandisks"
 	LN

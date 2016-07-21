@@ -54,7 +54,6 @@ done
 function create_partitions
 {
 	typeset -i count_new_part=0
-	typeset -i count_existing_parts=0
 
 	info "Update iscsi luns"
 	exec_cmd -f iscsiadm -m node --rescan
@@ -65,18 +64,17 @@ function create_partitions
 
 	info "Search disks without partition :"
 
-	get_iscsi_disks |\
 	while read disk_name disk_num
 	do
 		part_name=${disk_name}1
 		name_type=$(disk_type $disk_name)
-		if [[ "$name_type" = "unused" ]]
+		if [[ "$name_type" == "unused" ]]
 		then
-			count_partition_for $disk_name
-			if [ $? -eq 0 ]
+			typeset -i nb_part=$(count_partition_for $disk_name)
+			if [ $nb_part -eq 0 ]
 			then
 				add_partition_to $disk_name
-				count_new_part=$count_new_part+1
+				count_new_part=count_new_part+1
 				LN
 			else
 				info "$disk_name partition exists."
@@ -86,10 +84,9 @@ function create_partitions
 			info "$disk_name is $name_type"
 			LN
 		fi
-	done
+	done<<<"$(get_iscsi_disks)"
 
 	info "$count_new_part partitions added."
-	info "Total partitions : $(( $count_existing_parts + $count_new_part ))"
 }
 
 line_separator
