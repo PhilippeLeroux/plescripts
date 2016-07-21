@@ -329,6 +329,10 @@ function configure_server
 	exec_cmd "$vm_scripts_path/start_vm $server_name"
 	wait_master
 
+	line_separator
+	exec_cmd "ssh -t root@$master_name \"yum -y update\""
+	LN
+
 	#N'est plus utile, la clef est créée sur le master.
 	#line_separator
 	#connection_ssh_with_root_on_orclmaster
