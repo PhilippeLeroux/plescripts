@@ -110,3 +110,7 @@ done
 LN
 
 exec_cmd "~/plescripts/san/save_targetcli_config.sh -name=delete_db_luns"
+LN
+
+exec_cmd "~/plescripts/san/remove_lv.sh -vg_name=$vg_name -prefix=$db -first_no=$lun -count=$count"
+LN
