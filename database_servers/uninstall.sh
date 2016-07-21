@@ -326,5 +326,5 @@ LN
 
 line_separator
 
-info "Éventuellement faire un rm -rf /tmp/* en root"
+info "Execute ./revert_to_master.sh -doit on each nodes"
 LN
