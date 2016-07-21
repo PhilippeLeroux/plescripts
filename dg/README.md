@@ -4,7 +4,7 @@
 
 	Création d'un DG nommé ACFS avec 4 disques :
 	
-	./create_new_dg.sh -name=ACFS -disks=4
+	```./create_new_dg.sh -name=ACFS -disks=4```
 
 	S'il n'y a pas assez de disques le script échoue.
 
@@ -12,6 +12,14 @@
 
 	Ajout de 2 disques au DG ACFS :
 
-	./add_disk_to.sh -name=ACFS -disks=2
+	```./add_disk_to.sh -name=ACFS -disks=2```
 
 	S'il n'y a pas assez de disques le script échoue.
+
+* drop_oracleasm_disks.sh : supprime des disques d'oracleasm puis sur le SAN
+
+	```./drop_oracleasm_disks.sh -db=albator -nr_disk=12 -count=4```
+
+	Les disques de 12 à 15 seront supprimés sur l'ensemble des noeuds.
+
+	Les LUNs correspondantes sur le SAN sont supprimées ainsi que les LVs.
