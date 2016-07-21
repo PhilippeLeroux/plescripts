@@ -67,6 +67,9 @@ then
 	fi
 fi
 
+exec_cmd "~/plescripts/disk/logout_sessions.sh"
+LN
+
 exec_cmd "sed -i "/${infra_network}/d" /etc/hosts"
 exec_cmd "sed -i "/${if_priv_network}/d" /etc/hosts"
 LN
