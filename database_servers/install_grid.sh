@@ -269,7 +269,7 @@ function start_grid_installation
 	info "Démarre l'installation du grid, attente ~17mn"
 	exec_cmd -c "ssh -t grid@${node_names[0]} \"LANG=C /mnt/oracle_install/grid/runInstaller -silent -showProgress -waitforcompletion -responseFile /home/grid/grid_$db.rsp\""
 	ret=$?
-	[ $ret -eq 254 ] && exit 1
+	[ $ret -gt 250 ] && exit 1
 }
 
 function run_post_install_root_scripts_on_node	# $1 No node
@@ -282,7 +282,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	info "Attente ~10mn"
 	exec_cmd "ssh -t root@${node_names[$inode]} \"LANG=C /u01/app/oraInventory/orainstRoot.sh\""
 	LN
-	exec_cmd "ssh -t root@${node_names[$inode]} \"LANG=C $ORACLE_HOME/root.sh\""
+	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C $ORACLE_HOME/root.sh\""
 }
 
 function runConfigToolAllCommands
@@ -349,6 +349,8 @@ function launch_memstat
 
 function on_exit
 {
+	[ "$INSTALL_GRAPH" != YES ] && return 0
+
 	typeset mode="-h"
 	[ "$DEBUG_PLE" = yes ] && mode=""
 
@@ -459,7 +461,7 @@ then
 	prepare_installation_directory
 	LN
 
-	launch_memstat
+	[ "$INSTALL_GRAPH" == YES ] && launch_memstat
 
 	if [ $skip_grid_installation != yes ]
 	then

@@ -182,6 +182,8 @@ function launch_memstat
 
 function on_exit
 {
+	[ "$INSTALL_GRAPH" != YES ] && return 0
+
 	typeset mode="-h"
 	[ "$DEBUG_PLE" = yes ] && mode=""
 
@@ -213,9 +215,7 @@ then
 fi
 LN
 
-line_separator
-launch_memstat
-LN
+[ "$INSTALL_GRAPH" == YES ] && launch_memstat
 
 create_response_file
 
