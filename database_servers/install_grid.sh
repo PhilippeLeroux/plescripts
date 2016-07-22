@@ -436,7 +436,7 @@ info "ORACLE_BASE = '$ORACLE_BASE'"
 
 [ x"$ORACLE_HOME" == x ] && error "Can't read ORACLE_HOME for user grid on ${node_names[0]}" && exit 1
 
-if [ $skip_grid_installation == yes ]
+if [ $skip_grid_installation == no ]
 then
 	if [ $action = config ] || [ $action = install ]
 	then
