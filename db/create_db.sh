@@ -27,7 +27,6 @@ typeset		fra=FRA
 typeset		templateName=General_Purpose.dbc
 typeset		db_type=undef
 typeset		node_list=undef
-typeset		usefs=no
 typeset		cdb=yes
 typeset		lang=french
 typeset		pdbName=undef
@@ -176,6 +175,8 @@ do
 			;;
 	esac
 done
+
+typeset		usefs=no
 
 #	============================================================================
 #	Test si l'installation est de type RAC ou SINGLE.
@@ -433,7 +434,7 @@ then
 
 	info "Execute : "
 	info "dbca\\\\\n$fake_dbca_args"
-	continue_yes_or_no "Continue :"
+	ask_if_exit "Continue"
 
 	trap stop_all_background_processes EXIT
 	trap on_ctrl_c INT
@@ -507,10 +508,13 @@ then
 			;;
 
 		SINGLE)
-			info "Création du service pour une base 'SINGLE'"
-			exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
-			exec_cmd srvctl start service -db $name -service pdb$pdbName
-			LN
+			if [ $usefs == no ]
+			then
+				info "Création du service pour une base 'SINGLE'"
+				exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
+				exec_cmd srvctl start service -db $name -service pdb$pdbName
+				LN
+			fi
 			;;
 	esac
 fi
