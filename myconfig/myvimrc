@@ -320,6 +320,19 @@ function! ToggleHOME2Plescripts ()
 endfunction
 map <silent> <F4> :call ToggleHOME2Plescripts()<CR>
 
+"	NERDTreeChDirMode
+function! ToggleHOME2Plewiki ()
+	let l:new_dir=$HOME
+	if getcwd() == $HOME
+		let l:new_dir='$HOME/plewiki'
+	endif
+	execute "cd ".l:new_dir
+	execute "NERDTree ".l:new_dir
+	wincmd p	"Go to previous windows
+endfunction
+"map <silent> <C-F4> :call ToggleHOME2Plewiki()<CR>
+
+
 "	============================================================================
 "	NERDTree
 "	============================================================================
@@ -375,7 +388,9 @@ endfunction
 if g:first_load == 1
 	if exists( "g:colors_name" )
 		execute "colorscheme ".g:colors_name
-		call SpellSettings()
+		if !has("gui")
+			call SpellSettings()
+		endif
 	endif
 endif
 map <silent> <F6> :call ToggleColorscheme()<CR>
