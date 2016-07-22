@@ -172,7 +172,14 @@ function reboot_server
 	info -n "Wait : "; pause_in_secs 20; LN
 	LN
 
-	exec_cmd "$vm_scripts_path/start_vm $server"
+	while [ 0 -eq 0 ]	# forever
+	do
+		exec_cmd -c "$vm_scripts_path/start_vm $server"
+		[ $? -eq 0 ] && break
+
+		LN
+		ask_if_exit "Start failed, try again "
+	done
 
 	loop_wait_server $server
 }
@@ -330,7 +337,8 @@ function configure_server
 	wait_master
 
 	line_separator
-	exec_cmd "ssh -t root@$master_name \"yum -y update\""
+	test_if_rpm_update_available
+	[ $? -eq 0 ] && exec_cmd "ssh -t root@$master_name \"yum -y update\""
 	LN
 
 	#N'est plus utile, la clef est créée sur le master.

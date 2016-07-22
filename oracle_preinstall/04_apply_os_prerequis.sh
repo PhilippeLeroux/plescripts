@@ -111,8 +111,13 @@ function dev_shm_setting
 
 	case "$max_shm_size" in
 		config)
-			[ $db_type = single ] && shm_size=$min_shm_size_single || shm_size=$min_shm_size_rac
-			exec_cmd "echo \"tmpfs	/dev/shm	tmpfs	defaults,size=$shm_size 0 0\" >> /etc/fstab"
+			if [ $db_type == single_fs ]
+			then	# En mode fs on laisse le défaut.
+				exec_cmd "echo \"tmpfs	/dev/shm	tmpfs	defaults 0 0\" >> /etc/fstab"
+			else
+				[ $db_type == single ] && shm_size=$min_shm_size_single || shm_size=$min_shm_size_rac
+				exec_cmd "echo \"tmpfs	/dev/shm	tmpfs	defaults,size=$shm_size 0 0\" >> /etc/fstab"
+			fi
 			LN
 			;;
 

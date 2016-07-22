@@ -161,7 +161,8 @@ case $role in
 	infra)
 		line_separator
 		info "Update OS"
-		exec_cmd yum -y update
+		test_if_rpm_update_available
+		[ $? -eq 0 ] && exec_cmd yum -y update || true
 		LN
 
 		line_separator

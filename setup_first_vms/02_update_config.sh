@@ -19,6 +19,7 @@ mv new_inputrc /etc/inputrc
 LN
 
 line_separator
-exec_cmd yum -y update
+test_if_rpm_update_available
+[ $? -eq 0 ] && exec_cmd yum -y update || true
 LN
 
