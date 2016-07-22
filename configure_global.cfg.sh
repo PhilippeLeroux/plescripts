@@ -52,24 +52,19 @@ do
 			client_h=$(hostname -s)
 			common_user_n=$USER
 			full_linux_iso_n="\$HOME/ISO/oracle_linux_7/V100082-01.iso"
-			break;
+			break
 			;;
 
 		2)	LN
 			info "N'est plus à jour"
 			exit 0
-			info "==> VirtualBox for Windows"
-			hostvm_type=windows_virtualbox
-			full_linux_iso_n="C:\Users\kangs\Desktop\iso_linux\V100082-01.iso"
-			break;
+			break
 			;;
 
 		x)	LN
 			warning "No scripts provided to create VMs."
 			warning "And you must configure global.cfg manually !"
 			exit 0
-			hostvm_type=unknow
-			break;
 			;;
 
 		*)	error "$keyboard invalid."
@@ -107,11 +102,8 @@ ask_for vm_p "Localisation des VMs :"
 ask_for full_linux_iso_n "Full path for Oracle Linux 7 ISO (...V100082-01.iso) :"
 
 line_separator
-if [ $hostvm_type != unknow ]
-then
-	exec_cmd "sed -i 's/hostvm=.*$/hostvm=$hostvm_type/g' ~/plescripts/global.cfg"
-	LN
-fi
+exec_cmd "sed -i 's/hostvm=.*$/hostvm=$hostvm_type/g' ~/plescripts/global.cfg"
+LN
 
 exec_cmd "sed -i 's/client_hostname=.*/client_hostname=$client_h/g' ~/plescripts/global.cfg"
 LN

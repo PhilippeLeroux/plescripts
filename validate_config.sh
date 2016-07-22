@@ -175,7 +175,9 @@ function in_path
 		shift
 	fi
 	typeset -r	cmd=$1
-	typeset -r	error_msg=$2
+	typeset -r	cmd_msg=$2
+
+	typeset -r	distrib=$(grep ^NAME /etc/os-release | cut -d= -f2)
 
 	typeset -r msg=$(printf "%-10s " $cmd)
 	info -n "$msg"
@@ -190,7 +192,8 @@ function in_path
 			count_errors=count_errors+1
 			info -f -n "[$KO]"
 		fi
-		info -f " $error_msg"
+		info -f " $cmd_msg"
+		[[ $option == no && $distrib == openSUSE ]] && exec_cmd -ci cnf $cmd
 	fi
 }
 
