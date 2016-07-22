@@ -436,13 +436,16 @@ info "ORACLE_BASE = '$ORACLE_BASE'"
 
 [ x"$ORACLE_HOME" == x ] && error "Can't read ORACLE_HOME for user grid on ${node_names[0]}" && exit 1
 
-if [ $action = config ] || [ $action = install ]
+if [ $skip_grid_installation == yes ]
 then
-	create_response_file $cfg_path/disks
-	LN
+	if [ $action = config ] || [ $action = install ]
+	then
+		create_response_file $cfg_path/disks
+		LN
 
-	create_properties_file
-	LN
+		create_properties_file
+		LN
+	fi
 fi
 
 if [ $action == install ]
@@ -455,16 +458,16 @@ then
 
 	~/plescripts/shell/wait_server ${node_names[0]}
 
-	copy_response_and_properties_files
-	LN
-
-	prepare_installation_directory
-	LN
-
 	[ "$INSTALL_GRAPH" == YES ] && launch_memstat
 
 	if [ $skip_grid_installation != yes ]
 	then
+		copy_response_and_properties_files
+		LN
+
+		prepare_installation_directory
+		LN
+
 		start_grid_installation
 		LN
 	fi
