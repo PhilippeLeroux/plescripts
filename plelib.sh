@@ -325,6 +325,30 @@ function LN
 	my_echo "${NORM}" ""
 }
 
+#*> Afficher le message $1
+#*> Si l'utilisateur répond n le script est terminé par un exit 1
+function ask_if_exit
+{
+	while [ 0 -eq 0 ]	# forever
+	do
+		info "$@ y/n ?"
+		read keyboard
+		case "$keyboard" in
+			y)
+				return 0
+				;;
+
+			n)
+				exit 1
+				;;
+
+			*)
+				error "'$keyboard' invalid."
+				;;
+		esac
+	done
+}
+
 ################################################################################
 #	Fonctions permettant d'exécuter des commandes ou scripts.
 ################################################################################
@@ -912,31 +936,6 @@ function test_pause # $1 message
 	fi
 }
 
-#	Affiche le message $1 ou $@ suive de Yes or No ?
-#	Si No est saisie met fin au script par un exit 1
-function continue_yes_or_no	
-{
-	while [ 0 -eq 0 ]	# forever
-	do
-		info "$@ Yes or No ?"
-		read keyboard
-		LN
-		case "$keyboard" in
-			y|yes|Y|YES)
-				return 0
-				;;
-
-			n|no|N|NO)
-				exit 1
-				;;
-
-			*)
-				error "'$keyboard' invalid."
-				;;
-		esac
-	done
-}
-
 ################################################################################
 #	Fonctions de formatage et de manipulation de nombres.
 ################################################################################
@@ -1144,4 +1143,12 @@ function get_initiator_for
 
 	printf "%s%s:%02d" $iscsi_initiator_prefix $db $num_node
 }
+
+#*> return 0 if rpm update available else return 1
+function test_if_rpm_update_available
+{
+	exec_cmd -c yum check-update >/dev/null 2>&1
+	[ $? -eq 100 ] && return 0 && return 1
+}
+
 
