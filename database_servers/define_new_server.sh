@@ -93,7 +93,13 @@ exit_if_param_undef db	"$str_usage"
 
 [ $db_type == rac ] && [ $usefs == yes ] && error "RAC non supporté sur un FS." && exit 1
 
-exec_cmd ~/plescripts/validate_config.sh
+exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"
+if [ $? -ne 0 ]
+then
+	cat /tmp/vc
+	rm -f /tmp/vc
+	exit 1
+fi
 
 typeset -c	cfg_path=~/plescripts/database_servers/$db
 
