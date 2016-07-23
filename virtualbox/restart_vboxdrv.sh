@@ -35,7 +35,46 @@ do
 	esac
 done
 
+typeset		infra_running=no
+typeset	-a	vm_list
+typeset	-i	vm_count=0
+while read vm_name rem
+do
+	if [ "$vm_name" == \"$infra_hostname\" ]
+	then
+		infra_running=yes
+	else
+		vm_list[$vm_count]=$vm_name
+		vm_count=vm_count+1
+	fi
+done<<<"$(VBoxManage list runningvms)"
+
+line_separator
+info "Save state for running VMs."
+for i in $( seq 0 $(( vm_count-1 )) )
+do
+	exec_cmd -c "VBoxManage controlvm ${vm_list[$i]}  savestate" &
+	LN
+done
+LN
+
+info "Wait all VMs...."
+wait
+[ $infra_running == yes ] && exec_cmd -c "VBoxManage controlvm $infra_hostname savestate" && LN
+
+line_separator
 exec_cmd "sudo systemctl stop vboxdrv"
+info -n "Wait : "; pause_in_secs 10; LN
 exec_cmd "sudo systemctl start vboxdrv"
 exec_cmd "~/plescripts/virtualbox/create_iface.sh"
 exec_cmd "sudo ifconfig"
+LN
+
+line_separator
+info "Start vms"
+[ $infra_running == yes ] && exec_cmd -c "VBoxManage startvm $infra_hostname --type headless"
+for i in $( seq 0 $(( vm_count-1 )) )
+do
+	exec_cmd -c "VBoxManage startvm ${vm_list[$i]} --type headless"
+done
+
