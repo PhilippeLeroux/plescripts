@@ -1145,10 +1145,27 @@ function get_initiator_for
 }
 
 #*> return 0 if rpm update available else return 1
+#*> $1 server name
 function test_if_rpm_update_available
 {
-	exec_cmd -c yum check-update >/dev/null 2>&1
-	[ $? -eq 100 ] && return 0 && return 1
+	case $# in
+		1)
+			typeset -r server=$1
+
+			exec_cmd -c "ssh -t root@$server 'yum check-update >/dev/null 2>&1'"
+			[ $? -eq 100 ] && return 0 && return 1
+			;;
+
+		0)
+			exec_cmd -c "yum check-update >/dev/null 2>&1"
+			[ $? -eq 100 ] && return 0 && return 1
+			;;
+
+		*)
+			error "$0 invalid parameter !"
+			exit 1
+			;;
+	esac
 }
 
 
