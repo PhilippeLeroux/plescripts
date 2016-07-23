@@ -128,9 +128,20 @@ function run_oracle_preinstall
 	exec_cmd "ssh -t root@$server_name plescripts/oracle_preinstall/run_all.sh $db_type"
 	LN
 
-	info "Création des liens symboliques sur /mnt/plescripts pour oracle & grid"
+	line_separator
+	info "Création des liens symboliques pour le compte root"
+	exec_cmd "ssh -t root@$server_name 'ln -s ~/plescripts/disk ~/disk'"
+	exec_cmd "ssh -t root@$server_name 'ln -s ~/plescripts/yum ~/yum'"
+	LN
+
+	info "Création des liens symboliques pour le compte grid"
 	exec_cmd "ssh -t root@$server_name ln -s /mnt/plescripts /home/grid/plescripts"
+	exec_cmd "ssh -t root@$server_name ln -s /home/grid/plescripts/dg /home/grid/dg"
+	LN
+
+	info "Création des liens symboliques pour le compte oracle"
 	exec_cmd "ssh -t root@$server_name ln -s /mnt/plescripts /home/oracle/plescripts"
+	exec_cmd "ssh -t root@$server_name ln -s /home/oracle/plescripts/db /home/oracle/db"
 	LN
 
 	info "Ajoute grid & oracle dans le groupe users pour pouvoir lire les montages NFS."
@@ -337,7 +348,7 @@ function configure_server
 	wait_master
 
 	line_separator
-	test_if_rpm_update_available
+	test_if_rpm_update_available $master_name
 	[ $? -eq 0 ] && exec_cmd "ssh -t root@$master_name \"yum -y update\""
 	LN
 

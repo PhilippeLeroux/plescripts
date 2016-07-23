@@ -160,6 +160,12 @@ case $role in
 
 	infra)
 		line_separator
+		info "Création des liens symboliques sur les répertoires les plus utilisés."
+		exec_cmd "ln -s ~/plescripts/san ~/san"
+		exec_cmd "ln -s ~/plescripts/dns ~/dns"
+		LN
+
+		line_separator
 		info "Update OS"
 		test_if_rpm_update_available
 		[ $? -eq 0 ] && exec_cmd yum -y update || true
