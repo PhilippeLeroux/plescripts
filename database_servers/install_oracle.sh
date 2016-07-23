@@ -236,7 +236,7 @@ then
 	done
 
 	typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
-	[ "$type_disks" == FS ] && exec_cmd "ssh -t root@${node_names[0]} \"~/plescripts/db/create_systemd_service_oracledb.sh\""
+	[ "$type_disks" == FS ] && exec_cmd "ssh -t root@${node_names[0]} \"~/plescripts/database_servers/create_systemd_service_oracledb.sh\""
 
 	info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
 	LN

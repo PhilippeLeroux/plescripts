@@ -68,17 +68,40 @@ function stop_db
 EOS
 }
 
-exec_cmd -c lsnrctl $action
-LN
+typeset -i count_error=0
 
-cat /etc/oratab | grep -E "^[A-Z].*" |\
+case $action in
+	stop)
+		ps -e|grep tnslsnr | grep -v grep >/dev/null 2>&1
+		if [ $? -eq 0 ]
+		then
+			exec_cmd -c lsnrctl $action
+			LN
+		fi
+		;;
+
+	start)
+		exec_cmd -c lsnrctl $action
+		[ $? -ne 0 ] && count_error=count_error+1
+		LN
+		;;
+esac
+
 while IFS=':' read OSID OHOME MANAGED
 do
 	if [ $MANAGED = Y ]
 	then
 		info "$action database $OSID"
-		[ $action = start ] && start_db $OSID || stop_db $OSID
+		[ $action == start ] && start_db $OSID || stop_db $OSID
+		[ $? -ne 0 ] && count_error=count_error+1
 	else
 		info "$OSID ignored."
 	fi
-done
+done<<<"$(cat /etc/oratab | grep -E "^[A-Z].*")"
+LN
+
+[ $action == start ] && exec_cmd lsnrctl status
+
+
+info "$count_error $action failed."
+[ $count_error -ne 0 ] && exit 1 || exit 0

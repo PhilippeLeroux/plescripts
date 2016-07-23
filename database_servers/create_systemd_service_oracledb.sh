@@ -50,8 +50,8 @@ After=iscsi.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/su - oracle -c "~/plescripts/db/fsdb.sh -start"
-ExecStop=/usr/bin/su - oracle -c "~/plescripts/db/fsdb.sh -stop"
+ExecStart=/usr/bin/su - oracle -c "~/plescripts/db/fsdb_manager.sh -start"
+ExecStop=/usr/bin/su - oracle -c "~/plescripts/db/fsdb_manager.sh -stop"
 
 [Install]
 WantedBy=multi-user.target

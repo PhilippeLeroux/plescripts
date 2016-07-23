@@ -396,7 +396,7 @@ then
 		usefs=no
 	else	# Pas de GI alors on est sur FS
 		usefs=yes
-		if [[ $data = DATA && $fra = FRA ]]
+		if [[ $data == DATA && $fra == FRA ]]
 		then
 			data=/u01/app/oracle/oradata/data
 			fra=/u01/app/oracle/oradata/fra
@@ -549,7 +549,7 @@ then
 else
 	line_separator
 	info "Active le démarrage/arrêt automatique de la base."
-	exec_cmd "sed \"s/^\(${name}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
+	exec_cmd "sed \"s/^\(${name:0:8}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
 	exec_cmd "cat /tmp/ot > /etc/oratab"
 	exec_cmd "rm /tmp/ot"
 	LN
