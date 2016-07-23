@@ -193,7 +193,7 @@ function in_path
 			info -f -n "[$KO]"
 		fi
 		info -f " $cmd_msg"
-		[[ $option == no && $distrib == openSUSE ]] && exec_cmd -ci cnf $cmd
+		[[ $option == no && $distrib == openSUSE ]] && ( exec_cmd -ci cnf $cmd; LN )
 	fi
 }
 
