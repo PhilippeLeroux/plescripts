@@ -67,18 +67,16 @@ la base soit SINGLE ou bien RAC.
 	* [Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
 		Uniquement pour windows, sous linux yum install [...] ou apt-get install [...]
-		
+
 		(Pour le moment le support de Windows est suspendu...)
 
 	* [Oracle Linux 7](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
 
 	* [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 
-	* plescripts
+	* Télécharger plescripts qui doit être extrait dans $HOME.
 		* Avec git : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
 		* Ou télécharger le zip en cliquant sur le boutton vert "Clone or download" en haut de la page.
-
-		  L'archive plescripts doit être extrait dans $HOME
 
 --------------------------------------------------------------------------------
 
@@ -99,7 +97,7 @@ Les 2 VMs orclmaster et K2 doivent avoir été créées.
 
 [Création des serveurs Oracle](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
 
-La création des serveurs inclue l'installation du Grid Infrastructue et d'Oracle.
+La création des serveurs inclue l'installation du Grid Infrastructure et d'Oracle.
 Une fois cette étape terminée les bases peuvent être [créées](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
 --------------------------------------------------------------------------------

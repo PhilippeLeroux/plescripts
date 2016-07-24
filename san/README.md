@@ -6,6 +6,11 @@ sont très loin des exigences d'une entreprise.**
 
 Ces scripts prennent en charge la création des LVs et de l'export sur le réseau.
 
+Cette page décrit brièvement les scripts, pour avoir des informations _plus fonctionnelles_
+sur la façon de se servir des scripts :
+* [Ajout de disques](https://github.com/PhilippeLeroux/plescripts/wiki/01-Ajout-de-disques-sur-des-DGs-Oracle)
+* [Suppression de disques](https://github.com/PhilippeLeroux/plescripts/wiki/02-Suppression-de-disques-sur-des-DGs-Oracle)
+
 --------------------------------------------------------------------------------
 
 __Bibliothèques :__
@@ -20,6 +25,8 @@ __Création de nouveaux disques :__
 create_lun_for_db.sh est utilisé par clone_master.sh, ce script va enchainer les
 scripts de plus bas niveaux pour créer les disques et les exporter sur le réseau.
 
+Ne peut être utilisé hors du script clone_master.sh.
+
 --------------------------------------------------------------------------------
 
 __Utilisation des scripts génériques :__
@@ -27,13 +34,13 @@ __Utilisation des scripts génériques :__
 * create_initiator.sh : Création de l'initiator dans targetcli.
 
 * Ajout de disques et/ou exports
-	* add_and_export_lv.sh : Création des LV dans un VG puis export dans targetcli
+	* add_and_export_lv.sh : Création des LVs dans un VG puis export dans targetcli
 
 	* export_lv.sh : Export de LVs existants dans targetcli.
 
 	Les LUNs seront visibles pour les serveurs clients.
 
-Puis aller sur le client pour mapper les LUNs (cf ../disk)
+Puis aller sur le client pour mapper les LUNs (cf répertoire disk)
 
 --------------------------------------------------------------------------------
 
@@ -55,7 +62,7 @@ __Scripts divers :__
 
 * reset_all_for_db.sh
 	
-	Supprime-le ou les initiators pour une base, le backstore et tous les LVS de
+	Supprime-le ou les initiators pour une base, le backstore et tous les LVs de
 	la base seront remis à zéro.
 	
 * delete_intiator.sh
