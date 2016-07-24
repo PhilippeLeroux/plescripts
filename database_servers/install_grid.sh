@@ -364,7 +364,7 @@ function on_exit
 function stop_and_disable_unwanted_grid_ressources
 {
 	line_separator
-	info "Opération non supportées par le support Oracle"
+	info "Opération non supportée par le support Oracle"
 	info "Mais permet d'optimiser considérablement la démo"
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; crsctl stop res ora.crf -init"
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; crsctl delete res ora.crf -init"
@@ -377,7 +377,7 @@ function stop_and_disable_unwanted_grid_ressources
 function set_ASM_memory_target_low_and_restart_cluster
 {
 	line_separator
-	info "Opération non supportées par le support Oracle"
+	info "Opération non supportée par le support Oracle"
 	info "Mais permet d'optimiser considérablement la démo"
 	exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
 	exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop cluster -all\""
@@ -388,7 +388,7 @@ function set_ASM_memory_target_low_and_restart_cluster
 function remove_tfa_on_all_nodes
 {
 	line_separator
-	info "Opération non supportées par le support Oracle"
+	info "Opération non supportée par le support Oracle"
 	info "Mais permet d'optimiser considérablement la démo"
 	for i in $( seq 0 $(( max_nodes - 1 )) )
 	do
@@ -508,7 +508,7 @@ then
 			LN
 
 			line_separator
-			info "Opération non supportées par le support Oracle"
+			info "Opération non supportée par le support Oracle"
 			info "Mais permet d'optimiser considérablement la démo"
 			exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
 			exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop has\""
