@@ -15,9 +15,7 @@ typeset -r str_usage=\
 	-db=<str>            identifiant de la base
 	[-node=<#>]          n° du nœud si base de type RAC
 
-	[-skip_clone]        le clonage est déjà effectué.
 	[-start_server_only] le serveur est cloné mais n'est pas démarré, utile que pour le nœud 1.
-	[-skip_oracle]       la création des utilisateurs est déjà effectué.
 "
 
 info "$ME $@"
@@ -25,8 +23,6 @@ info "$ME $@"
 typeset		db=undef
 typeset -i	node=-1
 
-typeset		skip_clone=no
-typeset		skip_oracle=no
 typeset		start_server_only=no
 
 while [ $# -ne 0 ]
@@ -42,18 +38,8 @@ do
 			shift
 			;;
 
-		-skip_clone)
-			skip_clone=yes
-			shift
-			;;
-
 		-start_server_only)
 			start_server_only=yes
-			shift
-			;;
-
-		-skip_oracle)
-			skip_oracle=yes
 			shift
 			;;
 
@@ -347,6 +333,8 @@ function configure_server
 	exec_cmd "$vm_scripts_path/start_vm $server_name"
 	wait_master
 
+	#	La VM ayant été clonée elle a la configuration réseau du master.
+	#	Donc son nom est $master_name
 	line_separator
 	test_if_rpm_update_available $master_name
 	[ $? -eq 0 ] && exec_cmd "ssh -t root@$master_name \"yum -y update\""
@@ -365,9 +353,11 @@ function configure_server
 	line_separator
 	configure_ifaces_hostname_and_reboot
 
+	#	Maintenant le serveur a son nom définitif : $server_name.
+
 	line_separator
 	typeset -r local_host=$(hostname -s)
-	info "Ajoute le nom de $server_name dans ~/.ssh/known_hosts $local_host"
+	info "Ajoute le nom de $server_name dans ~/.ssh/known_hosts de $local_host"
 	typeset -r remote_keyscan=$(ssh-keyscan -t ecdsa $server_name | tail -1)
 	typeset -r rks_escaped=$(escape_slash "$remote_keyscan")
 	exec_cmd -c "sed -i '/${rks_escaped}/d' ~/.ssh/known_hosts 1>/dev/null"
@@ -388,9 +378,12 @@ function configure_oracle_accounts
 
 	exec_cmd "ssh -t root@$server_name plescripts/gadgets/install.sh"
 	LN
+}
 
+function copy_color_file
+{
 	line_separator
-	info "Couleur par défaut plus adapté au fond clair."
+	info "Couleurs par défaut plus adaptées au fond clair."
 	typeset -r DIR_COLORS=~/plescripts/myconfig/suse_dir_colors
 	exec_cmd "scp $DIR_COLORS root@$server_name:.dir_colors"
 	exec_cmd "scp $DIR_COLORS grid@$server_name:.dir_colors"
@@ -433,9 +426,11 @@ typeset -r script_start_at=$SECONDS
 
 [ $node -gt 1 ]			&& test_if_other_nodes_up || true
 
-[ $skip_clone == no ]	&& configure_server || true
+configure_server
 
-[ $skip_oracle == no ]	&& configure_oracle_accounts || true
+configure_oracle_accounts
+
+copy_color_file
 
 if [ $node -eq 1 ]
 then
