@@ -21,11 +21,4 @@ san/saveconfig-*
 san/targetcli_backup/**
 nohup.out
 afiedt.buf
-database_servers/albator
-database_servers/loulou
-database_servers/oldschool
-database_servers/picsou
-database_servers/plutot
-database_servers/riri
-database_servers/riri/vms_virtualbox
-database_servers/riri/vms_virtualbox/clone
+database_servers/**/
