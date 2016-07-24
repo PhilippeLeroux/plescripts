@@ -553,6 +553,14 @@ else
 	exec_cmd "cat /tmp/ot > /etc/oratab"
 	exec_cmd "rm /tmp/ot"
 	LN
+
+	if [ $pdbName != undef ]
+	then
+		line_separator
+		warning "Pour que le pdb $pdbName soit ouvert automatiquement créer un service et le trigger qui va bien."
+		line_separator
+		LN
+	fi
 fi
 
 info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
