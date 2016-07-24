@@ -8,11 +8,14 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r	SQL_PROMPT="prompt SQL>"
 
+#	$@	liste des mots constituant l'instruction sql à exécuter.
 function exec_sql
 {
-	echo "$SQL_PROMPT $@"
-	echo "$@"
-	echo "prompt"
+    typeset -r sql_cmd="$@"
+    [ "${sql_cmd:${#sql_cmd}-1}" == ";" ] && typeset -r eoc=";"
+    echo "$SQL_PROMPT $sql_cmd$eoc"
+    echo "$sql_cmd"
+    echo "prompt"
 }
 
 function make_sql_cmds_without_srvctl
@@ -38,7 +41,7 @@ EOS
 
 function enable_archivelog_without_srvctl
 {
-	typeset -r cmds=$(printf "$(make_sql_cmds_without_srvctl)\n")
+	typeset -r cmds="$(make_sql_cmds_without_srvctl)"
 	fake_exec_cmd "sqlplus sys/$oracle_password as sysdba"
 	printf "set echo off\nset timin on\n$cmds\n" | sqlplus -s sys/$oracle_password as sysdba
 	LN
@@ -61,7 +64,7 @@ EOS
 
 function enable_archivelog
 {
-	typeset -r cmds=$(printf "$(make_sql_cmds)\n")
+	typeset -r cmds="$(make_sql_cmds)"
 
 	if [ ! -v ORACLE_DB ]
 	then
