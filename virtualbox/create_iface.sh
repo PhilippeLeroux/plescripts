@@ -35,13 +35,12 @@ do
 	esac
 done
 
-VBoxManage list hostonlyifs | grep vboxnet0 >/dev/null 2>&1
-if [ $? -ne 0 ]
+typeset -r iface_name=$(VBoxManage hostonlyif create | tail -1 | sed "s/.*'\(.*\)'.*$/\1/g")
+if [ $? -eq 0 ]
 then
-	info "Create Iface vboxnet0"
-	exec_cmd "VBoxManage hostonlyif create"
-	exec_cmd "VBoxManage hostonlyif ipconfig vboxnet0 --ip ${infra_network}.1"
+	info "Setup Iface $iface_name"
+	exec_cmd -c "VBoxManage hostonlyif ipconfig $iface_name --ip ${infra_network}.1"
 else
-	info "Iface vboxnet0 exists."
+	info "Iface $iface_name exists."
 fi
 LN
