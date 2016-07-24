@@ -241,5 +241,9 @@ then
 	info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
 	LN
 
-	info "Database can be created."
+	line_separator
+	info "Création de la base de données :"
+	info "$ ssh oracle@${node_names[0]}"
+	info "oracle@${node_names[0]}:NOSID:oracle> cd db"
+	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db"
 fi
