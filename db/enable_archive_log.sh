@@ -6,61 +6,73 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
+typeset -r	SQL_PROMPT="prompt SQL>"
+
+function exec_sql
+{
+	echo "$SQL_PROMPT $@"
+	echo "$@"
+	echo "prompt"
+}
+
+function make_sql_cmds_without_srvctl
+{
+	cat <<EOS
+$(exec_sql archive log list)
+
+$(exec_sql shutdown immediate)
+
+$(exec_sql startup mount)
+
+$(exec_sql alter database archivelog\;)
+
+$(exec_sql alter database open\;)
+
+$(exec_sql shutdown immediate)
+
+$(exec_sql startup)
+
+$(exec_sql archive log list)
+EOS
+}
+
 function enable_archivelog_without_srvctl
 {
-fake_exec_cmd "sqlplus sys/$oracle_password as sysdba"
-sqlplus sys/$oracle_password as sysdba<<EOS
-set echo off
+	typeset -r cmds=$(printf "$(make_sql_cmds_without_srvctl)\n")
+	fake_exec_cmd "sqlplus sys/$oracle_password as sysdba"
+	printf "set echo off\nset timin on\n$cmds\n" | sqlplus -s sys/$oracle_password as sysdba
+	LN
+}
 
-prompt archive log list;
-archive log list;
+function make_sql_cmds
+{
+	cat <<EOS
+$(exec_sql startup mount)
 
-prompt shutdown immediate
-shutdown immediate
+$(exec_sql alter database archivelog\;)
 
-prompt startup mount
-startup mount
+$(exec_sql alter database open\;)
 
-prompt alter database archivelog;
-alter database archivelog;
+$(exec_sql archive log list)
 
-prompt alter database open;
-alter database open;
-
-prompt shutdown immediate
-shutdown immediate
-
-prompt startup
-startup
-
-prompt archive log list;
-archive log list;
+$(exec_sql shutdown immediate)
 EOS
 }
 
 function enable_archivelog
 {
-exec_cmd "srvctl stop database -db $ORACLE_DB"
-fake_exec_cmd "sqlplus sys/$oracle_password as sysdba"
-sqlplus sys/$oracle_password as sysdba<<EOS
-set echo off
+	typeset -r cmds=$(printf "$(make_sql_cmds)\n")
 
-prompt startup mount
-startup mount
+	if [ ! -v ORACLE_DB ]
+	then
+		error "Définir la variable ORACLE_DB avec le nom de la base."
+		exit 1
+	fi
 
-prompt alter database archivelog
-alter database archivelog
-
-prompt alter database open
-alter database open
-
-prompt archive log list
-archive log list
-
-prompt shutdown immediate
-shutdown immediate
-EOS
-exec_cmd "srvctl start database -db $ORACLE_DB"
+	exec_cmd "srvctl stop database -db $ORACLE_DB"
+	fake_exec_cmd "sqlplus sys/$oracle_password as sysdba"
+	printf "set echo off\nset timin on\n$cmds\n" | sqlplus -s sys/$oracle_password as sysdba
+	exec_cmd "srvctl start database -db $ORACLE_DB"
 }
 
 test_if_cmd_exists olsnodes
