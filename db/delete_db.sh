@@ -70,7 +70,7 @@ info "Suppression de la base :"
 LN
 
 [ x"$node_list" == x ] && sourcedb=$upper_db || sourcedb=$db
-exec_cmd "dbca -deleteDatabase -sourcedb $sourcedb -sysDBAUserName sys -sysDBAPassword $oracle_password -silent"
+exec_cmd "dbca -deleteDatabase -sourcedb ${sourcedb:0:8} -sysDBAUserName sys -sysDBAPassword $oracle_password -silent"
 LN
 
 typeset -r rm_1="rm -rf $ORACLE_BASE/cfgtoollogs/dbca/$upper_db"
