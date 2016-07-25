@@ -1217,12 +1217,12 @@ function test_if_rpm_update_available
 			typeset -r server=$1
 
 			exec_cmd -c "ssh -t root@$server 'yum check-update >/dev/null 2>&1'"
-			[ $? -eq 100 ] && return 0 && return 1
+			[ $? -eq 100 ] && return 0 || return 1
 			;;
 
 		0)
 			exec_cmd -c "yum check-update >/dev/null 2>&1"
-			[ $? -eq 100 ] && return 0 && return 1
+			[ $? -eq 100 ] && return 0 || return 1
 			;;
 
 		*)
@@ -1231,5 +1231,3 @@ function test_if_rpm_update_available
 			;;
 	esac
 }
-
-
