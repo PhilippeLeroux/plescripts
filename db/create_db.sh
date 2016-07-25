@@ -434,7 +434,7 @@ then
 
 	info "Execute : "
 	info "dbca\\\\\n$fake_dbca_args"
-	ask_if_exit "Continue"
+	confirm_or_exit "Continue"
 
 	trap stop_all_background_processes EXIT
 	trap on_ctrl_c INT

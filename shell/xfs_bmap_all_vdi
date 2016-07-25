@@ -8,18 +8,18 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME 
-	[-reorg]       	Lance la réorganisation si elle est nécessaire.
+"Usage : $ME
+	[-ask]			Demande si il faut réorganiser.
+	[-reorg]       	Lance la réorganisation si elle est nécessaire (cf -max_ext et -skip_gt)
 	[-max_ext=#]   	Nombre d'extents maximum par disque.
-	[-max_reorgs=#] Nombre maximum de réorganisation à effectuer.
 	[-skip_gt=#]   	Ne pas réorganiser les fichiers de plus de # extents.
 "
 
 info "$ME $@"
 
 typeset		reorg=no
+typeset		ask=no
 typeset	-i	max_ext=8
-typeset	-i	max_reorgs=0
 typeset -i	skip_gt=0
 
 while [ $# -ne 0 ]
@@ -36,13 +36,13 @@ do
 			shift
 			;;
 
-		-max_ext=*)
-			max_ext=${1##*=}
+		-ask)
+			ask=yes
 			shift
 			;;
 
-		-max_reorgs=*)
-			max_reorgs=${1##*=}
+		-max_ext=*)
+			max_ext=${1##*=}
 			shift
 			;;
 
@@ -72,7 +72,8 @@ function xfs_bmap_file
 
 	typeset -ri nr_extents=$(sudo xfs_bmap "$vdi_file" | tail -1 | tr -s [:space:] | cut -d: -f1)
 
-	msg=$(printf "%-18s : %02d extents " ${vdi_file##*/} $nr_extents)
+	typeset -r file_size=$(fmt_bytesU_2_better $(stat --printf="%s" "$vdi_file"))
+	msg=$(printf "%-18s %8s : %02d extents " ${vdi_file##*/} $file_size $nr_extents)
 	if [ $nr_extents -le $max_ext ]
 	then
 		info "$msg [$OK]"
@@ -84,14 +85,16 @@ function xfs_bmap_file
 	fi
 }
 
-if [ $reorg == yes ]
+[ $ask == yes ] && reorg=yes
+
+if [[ $reorg == yes && $ask == no ]]
 then
+	LN
 	info "La réorganisation sera faite s'il y a plus de $max_ext extents à réorganiser."
-	[ $max_reorgs -ne 0 ] && info "    - Sur les $max_reorgs premiers fichiers."
 	[ $skip_gt -ne 0 ] && info "    - Si le nombre d'extents à réorganiser est inférieur à $skip_gt"
 	LN
-	info "Press a key to continue or ctrl+c to abort"
-	read keyboard
+
+	confirm_or_exit "Continuer"
 	LN
 fi
 
@@ -106,16 +109,34 @@ do
 	then
 		if [ $reorg == yes ]
 		then
-			if [[ $max_reorgs -eq 0 || $count_reorgs -lt $max_reorgs ]]
+			reorg_this_file=yes
+			if [ $ask == yes ]
 			then
-				info "Start reorg..."
+				ask_for -reply_list="o n a" -print="o/n/a ?" \
+						"Réorganiser le fichier (a : oui toujours)"
+				case $? in
+					0)	: # OK
+						;;
+
+					1)	reorg_this_file=no
+						;;
+
+					3)	ask=no
+						;;
+				esac
+				LN
+			fi
+
+			if [ $reorg_this_file == yes ]
+			then
+				info "Démarrage..."
 				exec_cmd sudo xfs_fsr -v \"$vdi_file\"
 				count_reorgs=count_reorgs+1
 				xfs_bmap_file "$vdi_file"
 				LN
 			fi
 		else
-			info "    Details with :"
+			info "    Détails avec :"
 			info "    sudo xfs_bmap -v \"$vdi_file\""
 			LN
 		fi

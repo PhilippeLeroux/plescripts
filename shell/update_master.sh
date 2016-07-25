@@ -40,7 +40,7 @@ info "	- démarre la VM master ${mater_name}"
 info "	- se connecte est exécute yum -y update"
 info "	- stop la VM master."
 LN
-ask_if_exit "Continuer"
+confirm_or_exit "Continuer"
 
 start_vm $master_name
 [ $? -ne 0 ] && exit 1

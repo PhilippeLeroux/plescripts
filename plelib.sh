@@ -325,21 +325,61 @@ function LN
 	my_echo "${NORM}" ""
 }
 
-#*> Afficher le message $1
-#*> Si l'utilisateur répond n le script est terminé par un exit 1
-function ask_if_exit
+#*> -reply_list=str	liste des réponses séparées par un espace, par défaut "y n"
+#*> -print=str		les réponses à afficher, par défaut "y/n ?"
+#*> Les autres paramètres sont la questions.
+#*>	return :
+#*>		0	for first answer.
+#*>		1	for second answer.
+#*>		3	for third answer.
+function ask_for
 {
+	typeset reply_list="y n"
+	typeset print="y/n ?"
 	while [ 0 -eq 0 ]	# forever
 	do
-		info "$@ y/n ?"
-		read keyboard
+		case $1 in
+			-fr)
+				typeset reply_list="o n"
+				typeset print="o/n ?"
+				shift
+				;;
+
+			-reply_list=*)
+				reply_list="${1##*=}"
+				shift
+				;;
+
+			-print=*)
+				print="${1##*=}"
+				shift
+				;;
+
+			*)
+				break;
+		esac
+	done
+
+	typeset yes_reply
+	typeset no_reply
+	typeset third_reply
+	read yes_reply no_reply third_reply <<<"$reply_list"
+
+	while [ 0 -eq 0 ]	# forever
+	do
+		info -n "$@ $print "
+		read keyboard</dev/tty
 		case "$keyboard" in
-			y)
+			$yes_reply)
 				return 0
 				;;
 
-			n)
-				exit 1
+			$no_reply)
+				return 1
+				;;
+
+			$third_reply)
+				return 3
 				;;
 
 			*)
@@ -347,6 +387,14 @@ function ask_if_exit
 				;;
 		esac
 	done
+}
+
+#*> Pour les paramètres voir ask_for
+#*> Si l'utilisateur répond non le script est terminé par un exit 1
+function confirm_or_exit
+{
+	ask_for "$@"
+	[ $? -eq 1 ] && exit 1 || return 0
 }
 
 ################################################################################
@@ -374,11 +422,27 @@ function fake_exec_cmd
 
 #*< Extrait la commande de "$@"
 #*< Si la première commande est ssh alors recherche la commande exécutée par ssh
-function get_ssh_command
+function get_cmd_name
 {
 	read -a argv <<<"$@"
 
 	typeset -ri size=${#argv[@]}
+
+	case "${argv[0]}" in
+		sudo)
+			echo "${argv[1]} (${argv[0]})"
+			return 0
+			;;
+	esac
+
+	# TODO prendre charge su :
+	#		Formats root
+	#		su - root -c cmd
+	#		su - -c cmd
+	#		su root -c cmd
+	#		Formats utilisateur
+	#		su - username -c cmd
+	#		su username -c cmd
 
 	if [ "${argv[0]}" != ssh ] || [ $size -eq 1 ]
 	then	# Ce n'est pas ssh ou il n'y a qu'une seule commande
@@ -512,7 +576,7 @@ function exec_cmd
 				eval_duration=$(( $SECONDS - $eval_start_at ))
 				if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 				then
-					my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$(get_ssh_command "$@") running time : $(fmt_seconds $eval_duration)"
+					my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$(get_cmd_name "$@") running time : $(fmt_seconds $eval_duration)"
 				fi
 			fi
 

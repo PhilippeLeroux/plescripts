@@ -1,13 +1,13 @@
 ################################################################################
-Resume 2016/06/12 :
+Resume 2016/07/25 :
 ~~~~~~~~~~~~~~~~~~~
 
-# 36 publics functions
+# 43 publics functions
 # 10 privates functions
 # 1 undocumented functions
 
 ################################################################################
-36 publics functions :
+43 publics functions :
 ~~~~~~~~~~~~~~~~~~~~~~
 
 #*> Remove all visual makers from file $1
@@ -45,6 +45,19 @@ function line_separator
 
 #*> New line
 function LN
+
+#*> -reply_list=str	liste des réponses séparées par un espace, par défaut "y n"
+#*> -print=str		les réponses à afficher, par défaut "y/n ?"
+#*> Les autres paramètres sont la questions.
+#*>	return :
+#*>		0	for first answer.
+#*>		1	for second answer.
+#*>		3	for third answer.
+function ask_for
+
+#*> Pour les paramètres voir ask_for
+#*> Si l'utilisateur répond non le script est terminé par un exit 1
+function confirm_or_exit
 
 #*> Fake exec_cmd command
 #*> Command printed but not executed.
@@ -98,7 +111,7 @@ function remove_value
 
 #*> exit_if_param_undef <var> [message]
 #*>
-#*> Script aborted if var = undef or -1
+#*> Script aborted if var == undef or == -1 or empty
 function exit_if_param_undef #var_name
 
 #*> exit_if_param_invalid var_name val_list [message]
@@ -129,6 +142,23 @@ function to_lower
 #*> Upper case the first caractere of $1
 function initcap
 
+#*> A supprimer ?
+#*>	$1 max len
+#*>	$2 string
+#*>
+#*>	Si la longueur de string est supérieur à max len alors
+#*>	string est raccourcie pour ne faire que max len caractères.
+#*>
+#*>	Par exemple
+#*>				XXXXXXXXXXXXXXXXXXX
+#*>	deviendra	XXX...XXX
+function shorten_string
+
+#*> A supprimer ?
+#*> $1 gap		(si non précisé vaudra 0)
+#*> $2 string
+function string_fit_on_screen
+
 #*> return string :
 #*>	  true	if $1 in( y, yes )
 #*>   false if $1 in( n, no )
@@ -141,8 +171,8 @@ function fill
 #*> pause_in_secs <seconds>
 #*> Fait une pause de <seconds> secondes.
 #*> Le décompte du temps écoulé sera affiché à la position courante du curseur.
-#*> Retourne la longeur utilisée pour afficher le décompte ce qui permet
-#*> d'éffacer l'affichage.
+#*> Retourne la longueur utilisée pour afficher le décompte ce qui permet
+#*> d'effacer l'affichage.
 function pause_in_secs
 
 #*> chrono_start
@@ -156,7 +186,7 @@ function chrono_stop
 
 #*> Eval an arithmetic expression
 #*> Flags
-#*>    -l : use real numbers
+#*>    -l[#] : use real numbers with # number decimals
 #*>    -i : remove all decimals
 function compute
 
@@ -179,8 +209,23 @@ function fmt_kb2mb
 #*>		Unit : G, Gb, M, Mb, Kb or K
 function to_mb
 
+#*> Convert value $1 to bytes
+#*> Units can be b,k,m or g (or upper case)
+function convert_2_bytes
+
+#*> Convert value $1 to better.
+#*> Units can be b,k,m or g (or upper case)
+#*>
+#*> 1024K == 1Mb
+#*> 1024M == 1Gb
+function fmt_bytesU_2_better
+
 #*> return 0 if cmd $1 exists else return 1
 function test_if_cmd_exists
+
+#*> return 0 if rpm update available else return 1
+#*> $1 server name
+function test_if_rpm_update_available
 
 
 ################################################################################
@@ -215,7 +260,7 @@ function my_echo
 
 #*< Extrait la commande de "$@"
 #*< Si la première commande est ssh alors recherche la commande exécutée par ssh
-function get_ssh_command
+function get_cmd_name
 
 #*<	Test if a variable exists, format ^var\s*=\s*value
 #*<	1	variable name

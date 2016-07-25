@@ -175,7 +175,7 @@ function reboot_server
 		[ $? -eq 0 ] && break
 
 		LN
-		ask_if_exit "Start failed, try again "
+		confirm_or_exit "Start failed, try again"
 	done
 
 	loop_wait_server $server
