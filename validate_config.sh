@@ -43,18 +43,6 @@ done
 typeset -i count_errors=0
 
 line_separator
-info -n "Script configure_global.cfg.sh exécuté "
-hn=$(hostname -s)
-if [[ "$hn" == "$client_hostname" && "$USER" == "$common_user_name" ]]
-then
-	info -f "[$OK]"
-else
-	info -f "[$KO]"
-	count_errors=count_errors+1
-fi
-LN
-
-line_separator
 info -n "Test l'existence de '$HOME/plescripts' "
 if [ ! -d "$HOME/plescripts" ]
 then
@@ -208,6 +196,22 @@ line_separator
 info "Positionne les acls sur ~/plescripts"
 # Pour supprimer les acls : setfacl -Rb ~/plescripts/
 exec_cmd -c setfacl -Rm d:g:users:rwx $HOME/plescripts
+LN
+
+line_separator
+info -n "Script configure_global.cfg.sh exécuté "
+hn=$(hostname -s)
+if [[ "$hn" == "$client_hostname" && "$USER" == "$common_user_name" ]]
+then
+	info -f "[$OK]"
+else
+	info -f "[$KO]"
+	if [ $count_errors -ne 0 ]
+	then
+		info "Corriger les erreurs précédentes avant d'exécuter configure_global.cfg.sh"
+	fi
+	count_errors=count_errors+1
+fi
 LN
 
 line_separator
