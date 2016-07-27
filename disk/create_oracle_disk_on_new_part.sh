@@ -71,7 +71,6 @@ function map_devices
 	typeset -r hostn=$(hostname -s)
 	typeset -r db=$( echo $hostn | sed "s/...\(.*\)..$/\1/" )
 
-	typeset -i	count_disks_used=0
 	typeset -i	count_added_oracle_disks=0
 
 	while read disk_name disk_num
@@ -84,14 +83,13 @@ function map_devices
 			if [ $? -eq 0 ]
 			then
 				info "	used."
-				count_disks_used=count_disks_used+1
 				LN
 			else
 				oracle_label=$(printf "s1disk${db}%02d" $disk_num)
 				info "create $oracle_label on $part_name"
 				exec_cmd -c "oracleasm createdisk $oracle_label ${part_name}"
 				# BUG: $skip_errors = false !?
-				if [ $? -ne 0 ] && [ $skip_errors = yes ]
+				if [ $? -ne 0 ] && [ $skip_errors == yes ]
 				then
 					error "abort !"
 					exit 1
