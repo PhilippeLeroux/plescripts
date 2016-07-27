@@ -13,15 +13,17 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME [-emul]
-		[-create_disk] : les disques seront crées dans le vg asm01
+		[-create_lv]   : les disques seront crées dans le vg asm01
 		-db=<str>      : identifiant de la base.
 		-node=<#>      : n° du serveur.
+		-vg_name=<str> : nom du VG sur le SAN.
 
 Ne sert que lors de la création d'un serveur.
 Ce script n'est utilisé que par ~/plescripts/database_servers/clone_master.sh"
 
 typeset db=undef
-typeset create_disk=no
+typeset vg_name=undef
+typeset create_lv=no
 typeset node=-1
 
 while [ $# -ne 0 ]
@@ -43,8 +45,13 @@ do
 			shift
 			;;
 
-		-create_disk)
-			create_disk=yes
+		-vg_name=*)
+			vg_name=${1##*=}
+			shift
+			;;
+
+		-create_lv)
+			create_lv=yes
 			shift
 			;;
 
@@ -58,6 +65,7 @@ do
 done
 
 exit_if_param_undef db		"$str_usage"
+exit_if_param_undef vg_name	"$str_usage"
 exit_if_param_undef node	"$str_usage"
 
 typeset -r config_dir=~/plescripts/database_servers/$db
@@ -75,23 +83,19 @@ while IFS=: read dg_name size_gb first_no last_no
 do
 	count=$(( $last_no - $first_no + 1 ))
 
-	info "Create $count LVs for DG $dg_name"
-	LN
-
-	if [ $create_disk = yes ]
+	if [ $create_lv == yes ]
 	then
-		info "Create disks for DG $dg_name and export LVs."
+		info "Create $count LVs for DG $dg_name and export LUNs."
 		exec_cmd -f ./add_and_export_lv.sh $first_arg	-initiator_name=$initiator_name \
-														-vg_name=asm01					\
+														-vg_name=$vg_name				\
 														-prefix=$db						\
 														-size_gb=$size_gb				\
 														-count=$count					\
 														-no_backup
 	else
-		info "export LV."
-		info "$count disks start at $first_no"
+		info "export $count LVs."
 		exec_cmd -f ./export_lv.sh $first_arg	-initiator_name=$initiator_name \
-												-vg_name=asm01					\
+												-vg_name=$vg_name				\
 												-prefix=$db						\
 												-size_gb=$size_gb				\
 												-count=$count					\

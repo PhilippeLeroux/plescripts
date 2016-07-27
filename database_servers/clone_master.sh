@@ -87,6 +87,8 @@ typeset -r server_name=$(cat $cfg_file | cut -d: -f2)
 
 typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
 
+typeset -r vg_name=asm01
+
 #	Équivalence ssh entre le poste client et root@orclmaster
 function connection_ssh_with_root_on_orclmaster
 {
@@ -108,7 +110,7 @@ function run_oracle_preinstall
 	typeset db_type=rac
 	if [ $max_nodes -eq 1 ]
 	then
-		[ $type_disks = FS ] && db_type=single_fs || db_type=single
+		[ $type_disks == FS ] && db_type=single_fs || db_type=single
 	fi
 
 	exec_cmd "ssh -t root@$server_name plescripts/oracle_preinstall/run_all.sh $db_type"
@@ -254,20 +256,16 @@ function configure_disks_node1
 {
 	line_separator
 	info "Setup SAN"
-	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -create_disk -db=${db} -node=$node"
+	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -create_lv -vg_name=$vg_name -db=${db} -node=$node"
 	LN
 
 	test_pause "Check if the disks are created on the SAN"
 
 	line_separator
 	info "Register iscsi and create oracle disks..."
-	if [ "$type_disks" == FS ]
-	then
-		exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
-		exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracle_fs_on_new_disks.sh"
-	else
-		exec_cmd "ssh -t root@${server_name} plescripts/disk/oracleasm_discovery_first_node.sh"
-	fi
+	typeset TD=ASM
+	[ $type_disks == FS ] && TD=FS
+	exec_cmd "ssh -t root@${server_name} plescripts/disk/oracleasm_discovery_first_node.sh -type_disk=$TD"
 	LN
 
 	line_separator
@@ -295,7 +293,7 @@ function configure_disks_other_node_than_1
 {
 	line_separator
 	info "Noeud $node disks on SAN exists"
-	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -db=${db} -node=$node"
+	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -vg_name=$vg_name -db=${db} -node=$node"
 	exec_cmd "ssh -t root@${server_name} plescripts/disk/oracleasm_discovery_other_nodes.sh"
 	LN
 }
@@ -459,7 +457,7 @@ then	# C'est le dernier noeud
 		LN
 	fi
 
-	if [ $type_disks = FS ]
+	if [ $type_disks == FS ]
 	then
 		info "Oracle peut être installé."
 		info "./install_oracle.sh -db=$db"
