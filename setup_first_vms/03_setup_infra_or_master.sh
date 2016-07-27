@@ -172,7 +172,7 @@ case $role in
 		LN
 
 		line_separator
-		exec_cmd yum -y install nfs-utils git targetcli deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm createrepo
+		exec_cmd yum -y install nfs-utils git targetcli deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm createrepo psmisc
 		LN
 
 		line_separator
