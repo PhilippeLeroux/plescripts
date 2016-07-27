@@ -136,6 +136,4 @@ then
 	last_backup=$(ls -1 ~/plescripts/san/targetcli_backup/* | tail -1)
 	exec_cmd "targetcli restoreconfig $last_backup"
 	exec_cmd "targetcli saveconfig"
-#	Dans /etc/lvm/lvm.conf
-#	J'ai ajouté : global_filter = ["r|^/dev/asm01|"]
 fi
