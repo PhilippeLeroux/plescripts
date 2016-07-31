@@ -19,7 +19,7 @@ info "$ME $@"
 
 typeset		reorg=no
 typeset		ask=no
-typeset	-i	max_ext=8
+typeset	-i	max_ext=40
 typeset -i	skip_gt=0
 
 while [ $# -ne 0 ]
@@ -73,7 +73,7 @@ function xfs_bmap_file
 	typeset -ri nr_extents=$(sudo xfs_bmap "$vdi_file" | tail -1 | tr -s [:space:] | cut -d: -f1)
 
 	typeset -r file_size=$(fmt_bytesU_2_better $(stat --printf="%s" "$vdi_file"))
-	msg=$(printf "%-18s %8s : %02d extents " ${vdi_file##*/} $file_size $nr_extents)
+	msg=$(printf "%-20s %8s : %02d extents " "${vdi_file##*/}" $file_size $nr_extents)
 	if [ $nr_extents -le $max_ext ]
 	then
 		info "$msg [$OK]"
