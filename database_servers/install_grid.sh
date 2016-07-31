@@ -102,7 +102,7 @@ do
 		*)
 			error "Arg '$1' invalid."
 			LN
-			info $str_usage
+			info "$str_usage"
 			exit 1
 			;;
 	esac
@@ -438,7 +438,7 @@ info "ORACLE_BASE = '$ORACLE_BASE'"
 
 if [ $skip_grid_installation == no ]
 then
-	if [ $action = config ] || [ $action = install ]
+	if [ $action == config ] || [ $action == install ]
 	then
 		create_response_file $cfg_path/disks
 		LN

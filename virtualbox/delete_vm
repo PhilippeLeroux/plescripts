@@ -1,0 +1,105 @@
+#!/bin/bash
+
+#	ts=4	sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+typeset -r str_usage=\
+"Usage : $ME
+	[-db=<str>]         Détruit la ou les VMs correspondant à la base.
+	[-server=<pattern>] Détruit les VMs correspondants au pattern.
+"
+
+info "$ME $@"
+
+typeset	db=undef
+typeset	server=undef
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-db=*)
+			db=${1##*=}
+			shift
+			;;
+
+		-server=*)
+			server=${1##*=}
+			shift
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
+
+if [ $server == undef ]
+then
+	exit_if_param_undef db "$str_usage"
+	server=srv${db}
+fi
+
+exit_if_param_undef server "$str_usage"
+
+function virtualbox_delete
+{
+	line_separator
+
+	#	Lecture de toutes les VMs correspondantes au pattern $server.
+	typeset -a vm_list
+	typeset -i ivm=0
+	while read vm_name
+	do
+		if [ x"$vm_name" != x ]
+		then
+			vm_list[$ivm]=$vm_name
+			ivm=ivm+1
+		fi
+	done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+
+	typeset -ri max_vms=${#vm_list[@]}
+
+	info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
+	[ $max_vms -eq 0 ] && exit 1
+
+	confirm_or_exit "Delete them ?"
+
+	info "Stop all VMs..."
+	for ivm in $( seq 0 $(( max_vms - 1 )) )
+	do
+		exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} poweroff"
+		[ $? -ne 0 ] && error "Failed to poweroff ${vm_list[$ivm]}" && exit 1
+	done
+	LN
+
+	info "Delete all VMs.."
+	for ivm in $( seq 0 $(( max_vms - 1 )) )
+	do
+		exec_cmd -c "VBoxManage unregistervm ${vm_list[$ivm]} --delete"
+	done
+	LN
+}
+
+case ${hostvm##*_} in
+	virtualbox)
+		virtualbox_delete
+		exit 0
+		;;
+
+	*)
+		error "${hostvm##*_} not implemented."
+		exit 1
+		;;
+esac

@@ -24,6 +24,6 @@ Se connecter sur le serveur cible en root :
 Depuis le poste client, supprimer toutes les traces d'un serveur :
 - cd ~/plescripts/database_servers
 
-- ./remove_server.sh -db=<str>
+- ./clean_up_infra.sh -db=<str>
 
 - Le DNS et le SAN sont mis à jours.
