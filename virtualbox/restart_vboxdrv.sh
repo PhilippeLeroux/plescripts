@@ -66,7 +66,7 @@ line_separator
 exec_cmd "sudo systemctl stop vboxdrv"
 info -n "Wait : "; pause_in_secs 10; LN
 exec_cmd "sudo systemctl start vboxdrv"
-exec_cmd "~/plescripts/virtualbox/create_iface.sh"
+exec_cmd "~/plescripts/virtualbox/create_iface.sh -force_iface_name=vboxnet1"
 exec_cmd "sudo ifconfig"
 LN
 
