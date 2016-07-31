@@ -95,15 +95,12 @@ if [ "$export_to" == undef ]
 then
 	exit_if_param_undef initiator_name	"$str_usage"
 	exit_if_param_undef prefix			"$str_usage"
-	typeset -r auto_detect=no
 else
 	if [[ $initiator_name != undef || $prefix != undef ]]
 	then
-		error "Ne pas spécifier -initiator_name ou -prefix avec -export_to."
+		error "Don't use -initiator_name or -prefix with -export_to."
 		LN
 		info "$str_usage"
-	else
-		typeset -r auto_detect=yes
 	fi
 fi
 exit_if_param_undef vg_name			"$str_usage"
@@ -119,10 +116,11 @@ function get_vg_free_gb # $1 vg_name
 }
 
 #	============================================================
-if [ $auto_detect == yes ]
-then
-	typeset -r sname=$(echo $export_to | cut -d' ' -f1)
-	read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$sname" )"
+if [ $export_to != undef ]
+then	#	Déduction du préfixe à partir du nom du premier serveur.
+	typeset -r first_server_name=$(echo $export_to | cut -d' ' -f1)
+	read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$first_server_name" )"
+	info "Deducted prefix '$prefix' from '$first_server_name'"
 fi
 
 #	Ces variables sont initialisées par load_lv_info
@@ -139,7 +137,7 @@ if [ $lv_nb -eq 0 ]
 then
 	if [ $size_gb -eq -1 ]
 	then
-		error "Il n'existe pas de LUN, préciser la taille des LUNs avec -size_gb"
+		error "No existing LUNs : use -size_gb"
 		exit 1
 	fi
 
@@ -175,8 +173,8 @@ LN
 
 for server_name in $export_to
 do
-	if [ $auto_detect == yes ]
-	then
+	if [ $server_name != undef ]
+	then	# Déduction du préfixe et du n° du nœud du nom du serveur.
 		read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$server_name" )"
 		initiator_name=$(get_initiator_for $prefix $num_node)
 	fi
@@ -190,5 +188,4 @@ do
 	LN
 done
 
-[ $do_backup = yes ] && exec_cmd ~/plescripts/san/save_targetcli_config.sh -name="after_add_and_export_lv" || true
-
+[ $do_backup == yes ] && exec_cmd ~/plescripts/san/save_targetcli_config.sh -name="after_add_and_export_lv" || true

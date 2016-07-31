@@ -105,4 +105,10 @@ do
 	LN
 done < $config_dir/disks
 
+#	Le nom du bookmark est le nom du serveur.
+typeset -r bookmark_name=$(echo $initiator_name | sed "s/.*\(srv.*\):\(.*\)/\1\2/")
+info "Create bookmark $bookmark_name"
+exec_cmd "targetcli /iscsi/$initiator_name/tpg1/acls/$initiator_name bookmarks add $bookmark_name"
+LN
+
 exec_cmd ./save_targetcli_config.sh -name="after_create_luns_for_$db"

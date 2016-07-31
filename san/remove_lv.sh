@@ -68,7 +68,7 @@ done
 exit_if_param_undef vg_name		"$str_usage"
 exit_if_param_undef prefix		"$str_usage"
 
-if [ $all = yes ]
+if [ $all == yes ]
 then
 	load_lv_info $vg_name $prefix
 	[ $first_no -eq -1 ] && first_no=10#$lv_first_no

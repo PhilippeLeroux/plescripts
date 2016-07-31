@@ -45,7 +45,13 @@ exit_if_param_undef db	"$str_usage"
 if [ $count_nodes -eq -1 ]
 then
 	typeset -r cfg_path=~/plescripts/database_servers/$db
-	[ ! -d $cfg_path ] && error "$db config files not exists." && exit 1
+	if [ ! -d $cfg_path ] 
+	then
+		error "$db config files not exists !"
+		LN
+		info "$str_usage"
+		exit 1
+	fi
 
 	count_nodes=$(ls -1 $cfg_path/node* | wc -l)
 fi
@@ -54,13 +60,16 @@ for node in $( seq 1 $count_nodes )
 do
 	initiator_name=$(get_initiator_for $db $node)
 	~/plescripts/san/delete_initiator.sh -name=$initiator_name
+	#	Le nom du bookmark est le nom du serveur.
+	bookmark_name=$(echo $initiator_name | sed "s/.*\(srv.*\):\(.*\)/\1\2/")
+	exec_cmd -c targetcli bookmarks del $bookmark_name
 done
 LN
 
-~/plescripts/san/delete_backstore.sh -vg_name=asm01 -prefix=$db -all
+exec_cmd ~/plescripts/san/delete_backstore.sh -vg_name=asm01 -prefix=$db -all
 LN
 
-~/plescripts/san/remove_lv.sh -vg_name=asm01 -prefix=$db -all
+exec_cmd ~/plescripts/san/remove_lv.sh -vg_name=asm01 -prefix=$db -all
 LN
 
 exec_cmd "~/plescripts/san/save_targetcli_config.sh -name=\"reset_all_$db\""
