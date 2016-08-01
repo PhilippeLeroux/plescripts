@@ -326,12 +326,14 @@ function LN
 }
 
 #*> -reply_list=str	liste des réponses séparées par un espace, par défaut "y n"
+#*> Pour CR passer CR puis -print=""
 #*> -print=str		les réponses à afficher, par défaut "y/n ?"
 #*> Les autres paramètres sont la questions.
 #*>	return :
 #*>		0	for first answer.
 #*>		1	for second answer.
 #*>		3	for third answer.
+#*> Example :
 function ask_for
 {
 	typeset reply_list="y n"
@@ -365,20 +367,33 @@ function ask_for
 	typeset third_reply
 	read yes_reply no_reply third_reply <<<"$reply_list"
 
+	typeset keyboard=nothing
+
 	while [ 0 -eq 0 ]	# forever
 	do
-		info -n "$@ $print "
+		[ x"$print" == x ] && info -n "$@" || info -n "$@ $print "
+
+		#	Wait user.
+		typeset -i start_s=$SECONDS
 		read keyboard</dev/tty
+		typeset -i diff_s=$(( SECONDS - start_s ))
+		[ $diff_s -gt 60 ] && info "Idle time $(fmt_seconds $diff_s)"
+
 		case "$keyboard" in
-			$yes_reply)
+			'')
+				info "CR"
+				[ "$yes_reply" == "CR" ] && return 0 || return 1
+				;;
+
+			"$yes_reply")
 				return 0
 				;;
 
-			$no_reply)
+			"$no_reply")
 				return 1
 				;;
 
-			$third_reply)
+			"$third_reply")
 				return 3
 				;;
 
@@ -387,6 +402,7 @@ function ask_for
 				;;
 		esac
 	done
+	info "Pas normal !"
 }
 
 #*> Pour les paramètres voir ask_for
@@ -1038,7 +1054,7 @@ function compute
 }
 
 #*> fmt_seconds <seconds>
-#*> <seconds> formated to the better format
+#*> <seconds> formate to the better format
 function fmt_seconds # $1 seconds
 {
 	typeset -ri seconds=$1
