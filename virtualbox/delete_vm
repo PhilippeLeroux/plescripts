@@ -80,7 +80,6 @@ function virtualbox_delete
 	for ivm in $( seq 0 $(( max_vms - 1 )) )
 	do
 		exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} poweroff"
-		[ $? -ne 0 ] && error "Failed to poweroff ${vm_list[$ivm]}" && exit 1
 	done
 	LN
 

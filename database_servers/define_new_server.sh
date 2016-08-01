@@ -91,7 +91,7 @@ exit_if_param_undef db	"$str_usage"
 
 [ $max_nodes -gt 1 ] && [ $db_type != rac ] && db_type=rac
 
-[ $db_type == rac ] && [ $usefs == yes ] && error "RAC non supporté sur un FS." && exit 1
+[ $db_type == rac ] && [ $usefs == yes ] && error "RAC on FS not supported." && exit 1
 
 exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"
 if [ $? -ne 0 ]
@@ -111,7 +111,7 @@ function test_ip_node_used
 		dns_test_if_ip_exist $ip_node
 		if [ $? -ne 0 ]
 		then
-			error "l'IP $if_pub_network.$ip_node est déjà dans le DNS."
+			error "IP $if_pub_network.$ip_node already registered to th DNS."
 			exit 1
 		fi
 	fi
@@ -166,6 +166,7 @@ function normalyze_scan
 	echo "$buffer" > $cfg_path/scanvips
 }
 
+#	La fonction compute a évoluée. A l'occasion remplacer round_up par compute.
 function round_up
 {
 	trace=no
@@ -220,6 +221,7 @@ function normalyse_fs_disks
 line_separator
 if [ -d $cfg_path ]
 then
+	# A L'occasion utiliser la fonction ask_for.
 	info "$cfg_path exists, remove ? (yes/no)"
 	loop=yes
 	while [ $loop = yes ]
@@ -261,7 +263,7 @@ then
 	data_lun_count=$data_lun_count+1
 	size_dg_gb=$(($size_lun_gb * $data_lun_count))
 	LN
-	info "Ajustement de la taille des DGs à ${size_dg_gb}Gb."
+	info "Adjust DGs's sizes to ${size_dg_gb}Gb."
 	LN
 fi
 
@@ -274,5 +276,5 @@ fi
 
 ~/plescripts/shell/show_infra -db=$db
 
-info -n "Exécuter : ./clone_master.sh -db=$db"
+info -n "Run : ./clone_master.sh -db=$db"
 [ $db_type == rac ] && info -f " -node=1" || LN

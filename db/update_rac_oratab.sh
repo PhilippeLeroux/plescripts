@@ -47,8 +47,8 @@ exit_if_param_undef		prefixInstance 	"$str_usage"
 typeset	-ri	max_nodes=$(olsnodes | wc -l)
 typeset -r	upper_db=$(to_upper $db)
 
-info "Mise à jour de /etc/oratab sur $(hostname -s)"
-info "Le nom de toutes les instances sont ajoutées, utile pour les RACs Policy managed & one node"
+info "Update /etc/oratab on $(hostname -s)"
+info "All instance names are added, useful for Policy Managed and One Node RAC"
 for inode in $( seq 1 $max_nodes )
 do
 	INSTANCE=$prefixInstance$inode
@@ -56,7 +56,7 @@ do
 	grep "$INSTANCE" /etc/oratab 2>/dev/null 1>&2
 	if [ $? -eq 0 ]
 	then
-		info "$INSTANCE est déjà dans /etc/oratab"
+		info "$INSTANCE present in /etc/oratab"
 	else
 		exec_cmd "echo \"${INSTANCE}:/u01/app/oracle/$oracle_release/dbhome_1:N	#added by bibi\" >> /etc/oratab"
 	fi

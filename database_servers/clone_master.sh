@@ -117,22 +117,22 @@ function run_oracle_preinstall
 	LN
 
 	line_separator
-	info "Création des liens symboliques pour le compte root"
+	info "Create link for root user."
 	exec_cmd "ssh -t root@$server_name 'ln -s ~/plescripts/disk ~/disk'"
 	exec_cmd "ssh -t root@$server_name 'ln -s ~/plescripts/yum ~/yum'"
 	LN
 
-	info "Création des liens symboliques pour le compte grid"
+	info "Create link for grid user."
 	exec_cmd "ssh -t root@$server_name ln -s /mnt/plescripts /home/grid/plescripts"
 	exec_cmd "ssh -t root@$server_name ln -s /home/grid/plescripts/dg /home/grid/dg"
 	LN
 
-	info "Création des liens symboliques pour le compte oracle"
+	info "Create link for Oracle user."
 	exec_cmd "ssh -t root@$server_name ln -s /mnt/plescripts /home/oracle/plescripts"
 	exec_cmd "ssh -t root@$server_name ln -s /home/oracle/plescripts/db /home/oracle/db"
 	LN
 
-	info "Ajoute grid & oracle dans le groupe users pour pouvoir lire les montages NFS."
+	info "Add grid & oracle accounts to group users (to read NFS mount points)."
 	exec_cmd "ssh -t root@$server_name plescripts/database_servers/add_oracle_grid_into_group_users.sh"
 	LN
 }
@@ -209,7 +209,7 @@ function connections_ssh_client_to_db_server
 #	Permet au compte root du serveur de se connecter sur le SAN sans mot de passe.
 function connections_ssh_db_server_to_san
 {
-	info "Ajoute le nom du serveur san dans ~/.ssh/known_hosts"
+	info "Add san server to file ~/.ssh/known_hosts"
 	typeset -r remote_keyscan=$(ssh-keyscan -t ecdsa $san_hostname | tail -1)
 	typeset -r rks_escaped=$(escape_slash "$remote_keyscan")
 
@@ -218,26 +218,26 @@ function connections_ssh_db_server_to_san
 	exec_cmd "ssh -t root@$server_name \"echo \\\"$remote_keyscan\\\" >> ~/.ssh/known_hosts\""
 	LN
 
-	info "Création de la clef public"
+	info "Create public key."
 	exec_cmd "ssh -t root@$server_name \"[ ! -f ~/.ssh/id_rsa ] && ssh-keygen -t rsa -N \\\"\\\" -f ~/.ssh/id_rsa\" || true"
 	LN
 
 	typeset -r public_key_file=id_rsa_${server_name}.pub
-	info "Copier la clef public de $server_name vers $san_hostname"
+	info "Copy public key from $server_name to $san_hostname"
 	exec_cmd "scp root@$server_name:/root/.ssh/id_rsa.pub /tmp/$public_key_file"
 	exec_cmd "scp /tmp/$public_key_file root@$san_hostname:/root/.ssh/$public_key_file"
 	exec_cmd "rm /tmp/$public_key_file"
 	LN
 
-	info "Supprime la clef public de $server_name du serveur $san_hostname si elle existe."
+	info "Remove public key $server_name from $san_hostname."
 	exec_cmd -c "ssh root@$san_hostname sed -i '/$server_name/d' /root/.ssh/authorized_keys"
 	LN
 
-	info "Ajoute la clef public dans ~/.ssh/authorized_keys"
+	info "Add public key to ~/.ssh/authorized_keys"
 	exec_cmd "ssh root@$san_hostname \"cat /root/.ssh/$public_key_file >> /root/.ssh/authorized_keys\""
 	LN
 
-	info "Supprime le fichier contenant la clef public de $server_name sur $san_hostname"
+	info "Remove public key file for $server_name from $san_hostname"
 	exec_cmd "ssh root@$san_hostname rm /root/.ssh/$public_key_file"
 	LN
 }
@@ -245,7 +245,7 @@ function connections_ssh_db_server_to_san
 #	Nomme l'initiator
 function setup_iscsi_inititiator
 {
-	info "Set initiator name :"
+	info "Setup initiator name :"
 	iscsi_initiator=$(get_initiator_for $db $node)
 	exec_cmd "ssh -t root@$master_name \"echo InitiatorName=$iscsi_initiator > /etc/iscsi/initiatorname.iscsi\""
 	LN
@@ -269,7 +269,7 @@ function configure_disks_node1
 	LN
 
 	line_separator
-	info "Mount point for oracle installation"
+	info "Mount point for Oracle installation"
 	case $type_shared_fs in
 		nfs)
 			fstab="$client_hostname:/home/$common_user_name/${oracle_install} /mnt/oracle_install nfs ro,$nfs_options,noauto"
@@ -292,7 +292,7 @@ function configure_disks_node1
 function configure_disks_other_node_than_1
 {
 	line_separator
-	info "Noeud $node disks on SAN exists"
+	info "Node $node disks on SAN exists"
 	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -vg_name=$vg_name -db=${db} -node=$node"
 	exec_cmd "ssh -t root@${server_name} plescripts/disk/oracleasm_discovery_other_nodes.sh"
 	LN
@@ -355,7 +355,7 @@ function configure_server
 
 	line_separator
 	typeset -r local_host=$(hostname -s)
-	info "Ajoute le nom de $server_name dans ~/.ssh/known_hosts de $local_host"
+	info "Add name '$server_name' to ~/.ssh/known_hosts de $local_host"
 	typeset -r remote_keyscan=$(ssh-keyscan -t ecdsa $server_name | tail -1)
 	typeset -r rks_escaped=$(escape_slash "$remote_keyscan")
 	exec_cmd -c "sed -i '/${rks_escaped}/d' ~/.ssh/known_hosts 1>/dev/null"
@@ -381,7 +381,7 @@ function configure_oracle_accounts
 function copy_color_file
 {
 	line_separator
-	info "Couleurs par défaut plus adaptées au fond clair."
+	info "Colors for light screen"
 	typeset -r DIR_COLORS=~/plescripts/myconfig/suse_dir_colors
 	exec_cmd "scp $DIR_COLORS root@$server_name:.dir_colors"
 	exec_cmd "scp $DIR_COLORS grid@$server_name:.dir_colors"
@@ -459,16 +459,16 @@ then	# C'est le dernier noeud
 
 	if [ $type_disks == FS ]
 	then
-		info "Oracle peut être installé."
+		info "The Oracle RDBMS software can be installed."
 		info "./install_oracle.sh -db=$db"
 	else
-		info "Le grid peut être installé."
+		info "The Grid infrastructure can be installed."
 		info "./install_grid.sh -db=$db"
 	fi
 	LN
 elif [ $max_nodes -ne 1 ]
 then	# Ce n'est pas le dernier noeud et il y a plus de 1 noeud.
-	info "Exécuter le script :"
+	info "Run script :"
 	info "$ME -db=$db -node=$(( node + 1 ))"
 	LN
 fi

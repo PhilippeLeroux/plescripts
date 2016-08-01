@@ -138,6 +138,13 @@ Se postionner dans le répertoire ~/plescrits/database_servers
 	Si vous disposez de bons CPUs et au moins 4Gb de RAM par VM alors utiliser
 	l'option -install_mgmtdb qui n'effectuera pas ces actions.
 
+	**Bug RAC** : Plantage du second script root avec le code CLSRSC-507
+	- Appliquer le patch 18456643, plus d'explications [ici](https://community.oracle.com/message/13278037#13278037).
+	Puis relancer le script `./install_grid.sh -db=daisy -skip_grid_installation -skip_root_scripts`
+
+	- Sans appliquer le patch 18456643 relancer `./install_grid.sh -db=daisy -skip_grid_installation`
+	1 ou 2 fois peut résoudre le problème.
+
 4.	Installation d'Oracle
 
 	`./install_oracle.sh -db=daisy`

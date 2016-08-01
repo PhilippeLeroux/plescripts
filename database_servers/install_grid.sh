@@ -158,7 +158,7 @@ function load_node_cfg # $1 node_file $2 idx
 function create_response_file	# $1 fichier décrivant les disques
 {
 	line_separator
-	info "Création de $rsp_file pour l'installation du grid."
+	info "Create $rsp_file for grid installation."
 	exec_cmd cp -f template_grid.rsp $rsp_file
 	LN
 
@@ -239,9 +239,9 @@ function create_response_file	# $1 fichier décrivant les disques
 	fi
 }
 
-function create_properties_file
+function create_property_file
 {
-	info "Création du fichier propriété ConfigTool : $prop_file"
+	info "Create property file ConfigTool : $prop_file"
 	(	echo "oracle.assistants.asm|S_ASMPASSWORD=$oracle_password"
 		echo "oracle.assistants.asm|S_ASMMONITORPASSWORD=$oracle_password"
 	)	>  $prop_file
@@ -252,21 +252,21 @@ function copy_response_and_properties_files
 	line_separator
 	info "Response file   : $rsp_file"
 	info "Properties file : $prop_file"
-	info "Copie des fichiers sur le noeud ${node_names[0]}:/home/grid/"
+	info "Copy files to ${node_names[0]}:/home/grid/"
 	exec_cmd "scp $rsp_file $prop_file grid@${node_names[0]}:/home/grid/"
 }
 
-function prepare_installation_directory
+function mount_install_directory
 {
 	line_separator
-	info "Montage du répertoire d'installation."
+	info "Mount install directory :"
 	exec_cmd -cont "ssh root@${node_names[0]} mount /mnt/oracle_install"
 }
 
 function start_grid_installation
 {
 	line_separator
-	info "Démarre l'installation du grid, attente ~17mn"
+	info "Start grid installation (~17mn)."
 	exec_cmd -c "ssh -t grid@${node_names[0]} \"LANG=C /mnt/oracle_install/grid/runInstaller -silent -showProgress -waitforcompletion -responseFile /home/grid/grid_$db.rsp\""
 	ret=$?
 	[ $ret -gt 250 ] && exit 1
@@ -278,8 +278,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
 
 	line_separator
-	info "Exécution des 2 scripts post install GI sur le noeud ${node_names[$inode]}"
-	info "Attente ~10mn"
+	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
 	exec_cmd "ssh -t root@${node_names[$inode]} \"LANG=C /u01/app/oraInventory/orainstRoot.sh\""
 	LN
 	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C $ORACLE_HOME/root.sh\""
@@ -288,7 +287,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 function runConfigToolAllCommands
 {
 	line_separator
-	info "Exécute ConfigTool"
+	info "Run ConfigTool"
 	exec_cmd "ssh -t grid@${node_names[0]} \"LANG=C $ORACLE_HOME/cfgtoollogs/configToolAllCommands RESPONSE_FILE=/home/grid/grid_${db}.properties\""
 }
 
@@ -296,7 +295,7 @@ function create_dg # $1 nom du DG
 {
 	typeset -r DG=$1
 
-	info "Création du DG : $DG"
+	info "Create DG : $DG"
 	IFS=':' read dg_name size first last<<<"$(cat $cfg_path/disks | grep "^${DG}")"
 	total_disks=$(( $last - $first + 1 ))
 	exec_cmd "ssh -t grid@${node_names[0]} \". ./.profile; ~/plescripts/dg/create_new_dg.sh -name=$DG -disks=$total_disks -nomount\""
@@ -361,11 +360,18 @@ function on_exit
 	done
 }
 
+function disclaimer
+{
+	info "****************************************************"
+	info "* Not supported by Oracle Corporation              *"
+	info "* For personal use only, on a desktop environment. *"
+	info "****************************************************"
+}
+
 function stop_and_disable_unwanted_grid_ressources
 {
 	line_separator
-	info "Opération non supportée par le support Oracle"
-	info "Mais permet d'optimiser considérablement la démo"
+	disclaimer
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; crsctl stop res ora.crf -init"
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; crsctl delete res ora.crf -init"
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl stop cvu"
@@ -377,19 +383,17 @@ function stop_and_disable_unwanted_grid_ressources
 function set_ASM_memory_target_low_and_restart_cluster
 {
 	line_separator
-	info "Opération non supportée par le support Oracle"
-	info "Mais permet d'optimiser considérablement la démo"
+	disclaimer
 	exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
-	exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop cluster -all\""
-	exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start cluster -all\""
+	exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl stop asm -f\""
+	exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl start asm\""
 	LN
 }
 
 function remove_tfa_on_all_nodes
 {
 	line_separator
-	info "Opération non supportée par le support Oracle"
-	info "Mais permet d'optimiser considérablement la démo"
+	disclaimer
 	for i in $( seq 0 $(( max_nodes - 1 )) )
 	do
 		exec_cmd $mode -c "ssh -n root@${node_names[$i]} . /root/.bash_profile \; tfactl uninstall"
@@ -443,7 +447,7 @@ then
 		create_response_file $cfg_path/disks
 		LN
 
-		create_properties_file
+		create_property_file
 		LN
 	fi
 fi
@@ -465,14 +469,12 @@ then
 		copy_response_and_properties_files
 		LN
 
-		prepare_installation_directory
+		mount_install_directory
 		LN
 
 		start_grid_installation
 		LN
 	fi
-
-	test_pause "GI installé, lancement des scripts root ?"
 
 	if [ $skip_root_scripts != yes ]
 	then #	Il faut toujours commencer sur le noeud d'installation du grid.
@@ -508,11 +510,10 @@ then
 			LN
 
 			line_separator
-			info "Opération non supportée par le support Oracle"
-			info "Mais permet d'optimiser considérablement la démo"
+			disclaimer
 			exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
-			exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop has\""
-			exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start has\""
+			exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl stop asm -f\""
+			exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl start asm\""
 			LN
 
 			#Pour être certain que ASM est démarré.
@@ -525,7 +526,7 @@ fi
 
 if [ $oracle_home_for_test == no ]
 then
-	info "Statut de l'installation :"
+	info "Installation status :"
 	exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; crsctl stat res -t\""
 	LN
 fi
@@ -533,7 +534,6 @@ fi
 info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
 LN
 
-info "Oracle peut être installé."
+info "The Oracle software can be installed."
 info "./install_oracle.sh -db=$db"
 LN
-

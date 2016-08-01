@@ -201,7 +201,7 @@ function sugrid
 function delete_all_db
 {
 	line_separator
-	info "delete all DB :"
+	info "delete all DBs :"
 	cat /etc/oratab | grep -E "^[A-Z].*# line added by Agent" |\
 	while IFS=':' read OSID REM
 	do
@@ -253,13 +253,13 @@ EOS
 function remove_disks
 {
 	line_separator
-	info "Supprime les disques :"
+	info "Remove disks :"
 	exec_cmd "~/plescripts/disk/clear_oracle_disk_headers.sh -doit"
 	exec_cmd -c "~/plescripts/disk/logout_sessions.sh"
 	exec_cmd "systemctl disable oracleasm.service"
 	LN
 
-	info "Supprime les disques sur les autres nœuds."
+	info "Remove disks on other nodes."
 	root_execute_on_other_nodes "oracleasm scandisks"
 	LN
 
@@ -326,5 +326,5 @@ LN
 
 line_separator
 
-info "Execute ./revert_to_master.sh -doit on each nodes"
+info "Run ./revert_to_master.sh -doit on each nodes"
 LN

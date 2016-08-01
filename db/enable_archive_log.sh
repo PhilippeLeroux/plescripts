@@ -68,7 +68,7 @@ function enable_archivelog
 
 	if [ ! -v ORACLE_DB ]
 	then
-		error "Définir la variable ORACLE_DB avec le nom de la base."
+		error "ORACLE_DB not defined."
 		exit 1
 	fi
 

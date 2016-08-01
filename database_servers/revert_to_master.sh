@@ -60,7 +60,7 @@ then
 	info "$nr_files fichiers dans '$GRID_HOME'"
 	if [ $nr_files -ne 0 ]
 	then
-		error "Le GI et oracle doivent être désinstallés."
+		error "GI & Oracle software must be installed."
 		LN
 		info "$str_usage"
 		exit 1

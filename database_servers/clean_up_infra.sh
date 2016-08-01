@@ -79,6 +79,10 @@ then
 	info "Mise à jour du san :"
 	exec_cmd "ssh -t $san_conn \"~/plescripts/san/reset_all_for_db.sh -db=$db\""
 	LN
+
+	line_separator
+	exec_cmd sudo systemctl restart nscd.service
+	LN
 else
 	warning "No servers for $db"
 	exit 1

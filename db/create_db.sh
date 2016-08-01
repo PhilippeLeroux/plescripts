@@ -116,8 +116,8 @@ do
 			shift
 			if [ ! -f $ORACLE_HOME/assistants/dbca/templates/${templateName} ]
 			then
-				echo "Le fichier template '$templateName' n'existe pas."
-				echo "Liste des templates disponibles : "
+				echo "Template file '$templateName' not exists"
+				echo "Templates availables : "
 				(	cd $ORACLE_HOME/assistants/dbca/templates
 					ls -rtl *dbc
 				)
@@ -291,7 +291,7 @@ function test_if_serverpool_exists
 {
 	typeset -r serverPoolName=$1
 
-	info "Test si le pool de serveurs $serverPoolName exists :"
+	info "Server pool $serverPoolName exists :"
 	exec_cmd -ci "srvctl status srvpool -serverpool $serverPoolName"
 }
 
@@ -432,7 +432,7 @@ if [ $skip_db_create == no ]
 then
 	make_dbca_args
 
-	info "Execute : "
+	info "Run : "
 	info "dbca\\\\\n$fake_dbca_args"
 	confirm_or_exit "Continue"
 
@@ -478,7 +478,7 @@ fi
 if [ $cdb == yes ] && [ x"$pdbName" != x ]
 then
 	line_separator
-	info "Création du service pour le pdb $pdbName"
+	info "Create service for pdb $pdbName"
 	case $db_type in
 		RAC)
 			if [ $serverPoolName == "undef" ]
@@ -490,10 +490,10 @@ then
 					[ x"$inst_list" = x ] && inst_list=$inst_name || inst_list=${inst_list}",$inst_name"
 				done<<<"$(cat /etc/oratab | grep "^${prefixInstance}[1-9]:")"
 
-				info "Création du service pour un 'RAC Administrator Managed'"
+				info "Create service for RAC Administrator Managed"
 				exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
 			else
-				info "Création du service pour un 'RAC Policy Managed'"
+				info "Create service for RAC Policy Managed"
 				exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -serverpool $serverPoolName"
 			fi
 			exec_cmd srvctl start service -db $name -service pdb$pdbName
@@ -501,7 +501,7 @@ then
 			;;
 
 		RACONENODE)
-			info "Création du service pour un 'RAC One Node'"
+			info "Create service for RAC One Node"
 			exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
 			exec_cmd srvctl start service -db $name -service pdb$pdbName
 			LN
@@ -510,7 +510,7 @@ then
 		SINGLE)
 			if [ $usefs == no ]
 			then
-				info "Création du service pour une base 'SINGLE'"
+				info "Create service for SINGLE database."
 				exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
 				exec_cmd srvctl start service -db $name -service pdb$pdbName
 				LN
@@ -548,7 +548,7 @@ then
 	LN
 else
 	line_separator
-	info "Active le démarrage/arrêt automatique de la base."
+	info "Enable auto start for database"
 	exec_cmd "sed \"s/^\(${name:0:8}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
 	exec_cmd "cat /tmp/ot > /etc/oratab"
 	exec_cmd "rm /tmp/ot"
@@ -557,7 +557,7 @@ else
 	if [ $pdbName != undef ]
 	then
 		line_separator
-		warning "Pour que le pdb $pdbName soit ouvert automatiquement créer un service et le trigger qui va bien."
+		warning "pdb $pdbName not open on startup, do the task yourself."
 		line_separator
 		LN
 	fi

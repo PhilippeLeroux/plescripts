@@ -52,9 +52,9 @@ do
 	node_list[$i]=$( cat $cfg_path/node${inode} | cut -d':' -f2 )
 done
 
-warning "You need to enter ${count_nodes} times root password."
-info "Press a key to continue."
-read keyboard
+LN
+warning "The password for root will be asked ${count_nodes} times."
+confirm_or_exit -reply_list=CR -print="" "Press a key to continue."
 
 #	Fait la configuration ssh
 for il in $( seq 0 $(( $count_nodes - 1 )) )

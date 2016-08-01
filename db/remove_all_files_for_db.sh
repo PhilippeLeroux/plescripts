@@ -54,7 +54,7 @@ clean_oratab_cmd1="sed  \"/$upper_db[0-9].*/d\" /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
 
 line_separator
-info "Supprime tous les fichiers d'oracle sur le noeud $(hostname -s)"
+info "Remove all Oracle's files on node $(hostname -s)"
 exec_cmd -c "$oracle_rm_1"
 exec_cmd -c "$oracle_rm_2"
 LN
@@ -74,7 +74,7 @@ then
 		if [ $node_name != $(hostname -s) ]
 		then
 			line_separator
-			info "Supprime les fichiers oracle sur le noeud $node_name"
+			info "Remove all Oracle's files on node $node_name"
 			exec_cmd -c "ssh $node_name $oracle_rm_1"
 			exec_cmd -c "ssh $node_name $oracle_rm_2"
 			LN
@@ -87,6 +87,6 @@ then
 fi
 
 line_separator
-info "Supprime les datafiles de ASM"
+info "Remove database files from ASM"
 exec_cmd -c "su - grid -c \"asmcmd rm -rf DATA/$upper_db\""
 exec_cmd -c "su - grid -c \"asmcmd rm -rf FRA/$upper_db\""

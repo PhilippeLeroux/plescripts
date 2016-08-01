@@ -66,7 +66,7 @@ function execute_on_other_nodes
 typeset -r node_list=$(get_other_nodes)
 
 line_separator
-info "Suppression de la base :"
+info "Delete database :"
 LN
 
 [ x"$node_list" == x ] && sourcedb=$upper_db || sourcedb=$db
@@ -103,11 +103,11 @@ fi
 if $(test_if_cmd_exists olsnodes)
 then
 	line_separator
-	info "Purge de ASM :"
+	info "Clean up ASM :"
 	exec_cmd -c "sudo -u grid -i asmcmd rm -rf DATA/$upper_db"
 	exec_cmd -c "sudo -u grid -i asmcmd rm -rf FRA/$upper_db"
 	LN
 fi
 
-info "Suppression effectuée."
+info "${GREEN}Done.${NORM}"
 LN

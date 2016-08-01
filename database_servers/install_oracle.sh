@@ -102,7 +102,7 @@ function load_node_cfg # $1 node_file $2 idx
 function create_response_file
 {
 	line_separator
-	info "Création du fichier réponse pour l'installation d'oracle"
+	info "Create response file for the Oracle software."
 	exec_cmd cp -f template_oracle.rsp $rsp_file
 	LN
 
@@ -136,15 +136,15 @@ function create_response_file
 function copy_response_file
 {
 	line_separator
-	info "Copie du fichier réponse sur le noeud ${node_names[0]}:/home/oracle/"
+	info "Copy response file to ${node_names[0]}:/home/oracle/"
 	exec_cmd "scp $rsp_file $prop_file oracle@${node_names[0]}:/home/oracle/"
 	LN
 }
 
-function prepare_installation_directory
+function mount_install_directory
 {
 	line_separator
-	info "Montage du répertoire d'installation."
+	info "Mount install directory :"
 	exec_cmd -cont "ssh root@${node_names[0]} mount /mnt/oracle_install"
 	LN
 }
@@ -152,8 +152,8 @@ function prepare_installation_directory
 function start_oracle_installation
 {
 	line_separator
-	info "Démarre l'installation d'oracle, attente ~35mn"
-	info "Log disponible ici : /u01/app/oraInventory/logs"
+	info "Start Oracle installation (~35mn)"
+	info "Log here : /u01/app/oraInventory/logs"
 	exec_cmd -c "ssh oracle@${node_names[0]} \"LANG=C /mnt/oracle_install/database/runInstaller -silent -showProgress -waitforcompletion -responseFile /home/oracle/oracle_$db.rsp\""
 	LN
 }
@@ -176,7 +176,7 @@ function launch_memstat
 	for i in $( seq 0 $(( max_nodes - 1 )) )
 	do
 		exec_cmd $mode -c "ssh -n oracle@${node_names[$i]} \
-		 \"nohup ~/plescripts/memory/memstats.sh -title=install_oracle >/dev/null 2>&1 &\""
+		\"nohup ~/plescripts/memory/memstats.sh -title=install_oracle >/dev/null 2>&1 &\""
 	done
 }
 
@@ -223,7 +223,7 @@ if [ $action == install ]
 then
 	copy_response_file
 
-	prepare_installation_directory
+	mount_install_directory
 
 	start_oracle_installation
 
@@ -242,7 +242,7 @@ then
 	LN
 
 	line_separator
-	info "Création de la base de données :"
+	info "RDBMS can be created :"
 	info "$ ssh oracle@${node_names[0]}"
 	info "oracle@${node_names[0]}:NOSID:oracle> cd db"
 	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db"

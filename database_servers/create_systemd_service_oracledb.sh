@@ -34,7 +34,7 @@ typeset -r service_file=/usr/lib/systemd/system/oracledb.service
 
 if [ -f $service_file ]
 then
-	info "Le service oracledb existe."
+	info "oracledb's service exists."
 	exec_cmd "systemctl status oracledb.service -l"
 	exit 0
 fi
