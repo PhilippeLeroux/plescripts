@@ -129,14 +129,10 @@ Se postionner dans le répertoire ~/plescrits/database_servers
 
 	Les 2 DGs DATA et FRA sont créées, pour un cluster il y a en plus le DG CRS
 
-	__Note pour le RAC__ pour consommer le moins de ressources possible :
-	 - tfa est désintallé.
-	 - des services sont désactivés.
-	 - La memory_target d'ASM est diminuée.
-	 - la 'mgmt database' n'est pas installée.
-
-	Si vous disposez de bons CPUs et au moins 4Gb de RAM par VM alors utiliser
-	l'option -install_mgmtdb qui n'effectuera pas ces actions.
+	__Note__ pour consommer le minimum de ressources un certain nombre de hack
+	sont faites.
+	Si vous disposez de bons CPUs et d'au moins 4Gb de RAM par VM alors utiliser
+	l'option `-no_hacks` qui n'effectuera pas ces hacks.
 
 	**Bug RAC** : Plantage du second script root avec le code CLSRSC-507
 	- Appliquer le patch 18456643, plus d'explications [ici](https://community.oracle.com/message/13278037#13278037).
