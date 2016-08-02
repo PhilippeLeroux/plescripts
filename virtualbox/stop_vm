@@ -38,8 +38,11 @@ function virtualbox_stop
 	info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
 	[ $max_vms -eq 0 ] && exit 1
 
+	typeset -i count_errors=0
+
 	for ivm in $( seq 0 $(( max_vms - 1 )) )
 	do
+		line_separator
 		exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} acpipowerbutton"
 		if [ $? -ne 0 ]
 		then
@@ -47,15 +50,27 @@ function virtualbox_stop
 			LN
 			info "Poweroff : ${vm_list[$ivm]}"
 			exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} poweroff"
-			[ $? -ne 0 ] && error "Failed to poweroff ${vm_list[$ivm]}" && exit 1
+			if [ $? -ne 0 ]
+			then
+				error "Failed to poweroff ${vm_list[$ivm]}"
+				count_errors=count_errors+1
+			fi
 		fi
+		LN
 	done
+
+	if [ $count_errors -ne 0 ]
+	then
+		warning "$count_errors failed."
+		exit 1
+	else
+		exit 0
+	fi
 }
 
 case ${hostvm##*_} in
 	virtualbox)
 		virtualbox_stop
-		exit 0
 		;;
 
 	*)

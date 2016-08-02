@@ -43,7 +43,8 @@ do
 	if [ "$vm_name" == \"$infra_hostname\" ]
 	then
 		infra_running=yes
-	else
+	elif [ x"$vm_name" != x ]
+	then
 		vm_list[$vm_count]=$vm_name
 		vm_count=vm_count+1
 	fi
@@ -51,6 +52,7 @@ done<<<"$(VBoxManage list runningvms)"
 
 line_separator
 info "Save state for running VMs."
+info "    $vm_count VMs running : ${vm_list[@]}"
 for i in $( seq 0 $(( vm_count-1 )) )
 do
 	exec_cmd -c "VBoxManage controlvm ${vm_list[$i]}  savestate" &
@@ -58,21 +60,40 @@ do
 done
 LN
 
-info "Wait all VMs...."
-wait
+if [ $vm_count -ne 0 ]
+then
+	info "Wait all VMs...."
+	wait
+	LN
+fi
+
 [ $infra_running == yes ] && exec_cmd -c "VBoxManage controlvm $infra_hostname savestate" && LN
 
 line_separator
 exec_cmd "sudo systemctl stop vboxdrv"
-info -n "Wait : "; pause_in_secs 10; LN
+info -n "Wait : "; pause_in_secs 2; LN
 exec_cmd "sudo systemctl start vboxdrv"
-exec_cmd "~/plescripts/virtualbox/create_iface.sh -force_iface_name=vboxnet1"
-exec_cmd "sudo ifconfig"
+info -n "Wait : "; pause_in_secs 2; LN
 LN
 
 line_separator
-info "Start vms"
-[ $infra_running == yes ] && exec_cmd -c "VBoxManage startvm $infra_hostname --type headless"
+exec_cmd "~/plescripts/virtualbox/create_iface.sh -force_iface_name=vboxnet1"
+LN
+
+line_separator
+exec_cmd "sudo ifconfig"
+LN
+
+if [ $infra_running == yes ]
+then
+	line_separator
+	info "Start $infra_hostname"
+	exec_cmd -c "VBoxManage startvm $infra_hostname --type headless"
+	LN
+fi
+
+line_separator
+info "Start $vm_count VMs"
 for i in $( seq 0 $(( vm_count-1 )) )
 do
 	exec_cmd -c "VBoxManage startvm ${vm_list[$i]} --type headless"

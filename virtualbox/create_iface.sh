@@ -42,30 +42,50 @@ do
 	esac
 done
 
+#	return 0 $1 exists, else 1
+function test_if_iface_exists
+{
+	typeset -r if_name=$1
+	VBoxManage list -l hostonlyifs | grep $if_name >/dev/null 2>&1
+}
+
+#	Setup Iface $if_name
 function config_iface
 {
-	info "Setup Iface $iface_name"
-	exec_cmd -c "VBoxManage hostonlyif ipconfig $iface_name --ip ${infra_network}.1"
+	typeset -r if_name=$1
+	info "Setup Iface $if_name"
+	exec_cmd -c "VBoxManage hostonlyif ipconfig $if_name --ip ${infra_network}.1"
 }
+
+if [ $force_iface_name != undef ]
+then
+	test_if_iface_exists $force_iface_name
+	if [ $? -eq 0 ]
+	then
+		info "$force_iface_name exists."
+		exit 0
+	fi
+fi
 
 while [ 0 -eq 0 ]	#	For ever
 do
 	typeset iface_name=$(VBoxManage hostonlyif create | tail -1 | sed "s/.*'\(.*\)'.*$/\1/g")
-	[ $? -ne 0 ] && exit 1
+	[ $? -ne 0 ] && ( error "Return $?"; exit 1 )
 
 	if [ $force_iface_name == undef ]
-	then
-		config_iface
+	then	# Le nom de l'interface n'est pas important.
+		config_iface $iface_name
 		exit 0
-	else
+	else	# Le nom de l'interface est spécifié.
 		if [ $force_iface_name == $iface_name ]
-		then
-			config_iface
-			exit $?
-		else
-			typeset -i iface_no=${iface_name:${#iface_name}}
-			typeset -i force_iface_no=${force_iface_name:${#force_iface_name}}
-			[ $force_iface_no -ge $iface_no ] && exit 1
+		then	#	OK, $iface_name a été crées : configuration.
+			config_iface $iface_name
+			exec_cmd "exit $?"
+		else	#	KO, on boucle.
+			typeset -i iface_no=${iface_name:${#iface_name}-1}
+			typeset -i force_iface_no=${force_iface_name:${#force_iface_name}-1}
+			[ $iface_no -ge $force_iface_no ] && ( info "Ne devrait jamais arriver ici"; exit 1 )
+			info "Interface créée $iface_name, voulut $force_iface_name"
 		fi
 	fi
 done
