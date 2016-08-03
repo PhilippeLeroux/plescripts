@@ -88,7 +88,7 @@ case $type_shared_fs in
 		;;
 
 	nfs)
-		infra_ssh "mount ${infra_network}.1:/home/kangs/plescripts /mnt/plescripts -type nfs -o rw,$nfs_options"
+		infra_ssh "mount ${infra_network}.1:/home/kangs/plescripts /mnt/plescripts -t nfs -o rw,$nfs_options"
 		;;
 esac
 
