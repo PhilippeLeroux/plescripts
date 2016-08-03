@@ -37,7 +37,7 @@ exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_ip}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
 LN
 
-line_separtor
+line_separator
 exec_cmd "$vm_scripts_path/create_iface.sh"
 
 line_separator
@@ -60,7 +60,7 @@ LN
 line_separator
 info "Add Iface 1"
 exec_cmd VBoxManage modifyvm $master_name --nic1 hostonly
-exec_cmd VBoxManage modifyvm $master_name --hostonlyadapter1 vboxnet0
+exec_cmd VBoxManage modifyvm $master_name --hostonlyadapter1 vboxnet1
 exec_cmd VBoxManage modifyvm $master_name --nictype1 virtio
 LN
 
