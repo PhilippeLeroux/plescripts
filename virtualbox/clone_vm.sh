@@ -80,6 +80,7 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	# Présent ici car dans setup_first_vms/vbox_scripts/01_create_master_vm.sh
 	# le Guru apparaît toujours.
+	# Ne marche pas à tout les coups.
 	exec_cmd VBoxManage setextradata "$vm_name" GUI/GuruMeditationHandler PowerOff
 	LN
 done
