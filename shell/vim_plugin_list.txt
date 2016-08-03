@@ -38,3 +38,6 @@ https://github.com/suan/vim-instant-markdown.git
 
 # Grammaire
 //github.com/rhysd/vim-grammarous.git
+
+#	Man
+https://github.com/vim-utils/vim-man.git
