@@ -12,7 +12,7 @@ typeset -r str_usage=\
 	[-copy_iso]        : Les ISO Linux Oracle seront copiés avant la synchronisation.
 	[-only_nfs_update] : Met uniquement à jour l'export NFS.
 
-	Synchronisé le dépôt Oracle Linux.
+	Synchronise le dépôt Oracle Linux.
 "
 
 info "$ME $@"
