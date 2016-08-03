@@ -367,6 +367,8 @@ function ask_for
 	typeset third_reply
 	read yes_reply no_reply third_reply <<<"$reply_list"
 
+	[ "$yes_reply" == CR ] && print=""
+
 	typeset keyboard=nothing
 
 	while [ 0 -eq 0 ]	# forever
@@ -381,7 +383,6 @@ function ask_for
 
 		case "$keyboard" in
 			'')
-				info "CR"
 				[ "$yes_reply" == "CR" ] && return 0 || return 1
 				;;
 
@@ -1009,7 +1010,7 @@ function chrono_stop
 PAUSE=OFF
 function test_pause # $1 message
 {
-	if [ $PAUSE = ON ]
+	if [ $PAUSE == ON ]
 	then
 		[ $# -ne 0 ] && info "$@"
 		info "Press a key to continue" && read keyboard
