@@ -70,7 +70,7 @@ la base soit SINGLE ou bien RAC.
 
 		(Pour le moment le support de Windows est suspendu...)
 
-	* [Oracle Linux 7](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
+	* [Oracle Linux 7, uniquement l'iso V100082-01.iso.](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
 
 	* [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 
