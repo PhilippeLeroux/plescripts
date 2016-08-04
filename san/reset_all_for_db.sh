@@ -66,10 +66,10 @@ do
 done
 LN
 
-exec_cmd ~/plescripts/san/delete_backstore.sh -vg_name=asm01 -prefix=$db -all
+exec_cmd -c ~/plescripts/san/delete_backstore.sh -vg_name=asm01 -prefix=$db -all
 LN
 
-exec_cmd ~/plescripts/san/remove_lv.sh -vg_name=asm01 -prefix=$db -all
+exec_cmd -c ~/plescripts/san/remove_lv.sh -vg_name=asm01 -prefix=$db -all
 LN
 
 exec_cmd "~/plescripts/san/save_targetcli_config.sh -name=\"reset_all_$db\""
