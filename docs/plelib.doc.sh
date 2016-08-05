@@ -1,13 +1,13 @@
 ################################################################################
-Resume 2016/07/25 :
+Resume 2016/08/05 :
 ~~~~~~~~~~~~~~~~~~~
 
-# 43 publics functions
-# 10 privates functions
+# 45 publics functions
+# 11 privates functions
 # 1 undocumented functions
 
 ################################################################################
-43 publics functions :
+45 publics functions :
 ~~~~~~~~~~~~~~~~~~~~~~
 
 #*> Remove all visual makers from file $1
@@ -28,10 +28,10 @@ function error
 #*> Print warning message
 function warning
 
-#*> Write mark info
-#*> Usage :
-#*> mark_info; printf "Hellow %sn" name
-function mark_info
+#*> Affiche les informations de debug.
+#*> Actif uniquement si la variable DEBUG_FUNC=enable est définie.
+#*> Fonction sur le même principe que info.
+function debug
 
 #*>	Print normal message
 #*> Options
@@ -47,12 +47,14 @@ function line_separator
 function LN
 
 #*> -reply_list=str	liste des réponses séparées par un espace, par défaut "y n"
+#*> Pour CR passer CR puis -print=""
 #*> -print=str		les réponses à afficher, par défaut "y/n ?"
 #*> Les autres paramètres sont la questions.
 #*>	return :
 #*>		0	for first answer.
 #*>		1	for second answer.
 #*>		3	for third answer.
+#*> Example :
 function ask_for
 
 #*> Pour les paramètres voir ask_for
@@ -77,10 +79,19 @@ function fake_exec_cmd
 #*>		-f  EXEC_CMD_ACTION is ignored.
 #*>		-c  continue on error.
 #*>		-ci like -c but not print error message.
-#*>		-h  hide command except on error (never tested)
+#*>		-h  hide command except on error.
+#*>		-hf hide command even on error.
 #*>
 #*> Show execution time after PLE_SHOW_EXECUTION_TIME_AFTER seconds
 function exec_cmd
+
+#*> $1 parameter to add.
+function add_dynamic_cmd_param
+
+#*> run command '$@' with parameters define with add_dynamic_cmd_param
+#*> if first parameter is -confirm a prompt is printed to confirm or not execution.
+#*> For other parameters see exec_cmd
+function exec_dynamic_cmd
 
 #*> exit_if_file_not_exists <name> [message]
 #*> if file <name> not exists, script aborted.
@@ -191,7 +202,7 @@ function chrono_stop
 function compute
 
 #*> fmt_seconds <seconds>
-#*> <seconds> formated to the better format
+#*> <seconds> formate to the better format
 function fmt_seconds # $1 seconds
 
 #*> fmt_number <number>
@@ -224,7 +235,7 @@ function fmt_bytesU_2_better
 function test_if_cmd_exists
 
 #*> return 0 if rpm update available else return 1
-#*> $1 server name
+#*> check update on server $1 (optional)
 function test_if_rpm_update_available
 
 
@@ -236,7 +247,7 @@ function test_pause # $1 message
 
 
 ################################################################################
-10 privates functions :
+11 privates functions :
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 #*< Active les effets visuels couleurs et autres.
@@ -257,6 +268,12 @@ function ctrl_c
 #*<		ENABLE	: visual effects
 #*<		FILE	: write into $PLELIB_LOG_FILE without any effects and canal 1 with visual effects.
 function my_echo
+
+#*< Write mark info
+#*< Usage :
+#*< mark_info; printf "Hellow %sn" name
+#*< N'est plus utilisée : la supprimée.
+function mark_info
 
 #*< Extrait la commande de "$@"
 #*< Si la première commande est ssh alors recherche la commande exécutée par ssh

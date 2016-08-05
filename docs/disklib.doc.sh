@@ -1,5 +1,5 @@
 ################################################################################
-Resume 2016/07/25 :
+Resume 2016/08/05 :
 ~~~~~~~~~~~~~~~~~~~
 
 # 12 publics functions
@@ -27,7 +27,7 @@ function get_iscsi_disks
 
 #*> Met à zéro l'en-tête du disque $1
 #*> Si la taille $2 n'est pas précisée seront mis à zéro les
-#*> 10 000 000 premiers bytes.
+#*> 1024*1024*1024 premiers bytes.
 function clear_device
 
 #*> Ajoute une partition sur le disque $1

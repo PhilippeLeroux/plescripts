@@ -34,7 +34,6 @@ typeset		serverPoolName=undef
 typeset		policyManaged=no
 
 typeset		skip_db_create=no
-typeset		graph=no
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -65,8 +64,6 @@ typeset -r str_usage=\
 
 	[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
 	les scripts post installations.
-
-	[-graph] génération de logs sur l'évolution de la mémoire cf memplots.
 "
 
 info "$ME $@"
@@ -155,11 +152,6 @@ do
 			shift
 			;;
 
-		-graph)
-			graph=yes
-			shift
-			;;
-
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -207,82 +199,61 @@ function is_rac_or_single_server
 	[ x"$node_list" = x ] && node_list=undef
 }
 
-#	Ajoute le paramètre $1 à la liste de paramètres pour dbca
-#		2 variables sont utilisées
-#		- fake_dbca_args utilisée pour l'affichage : formatage visuel
-#		- dbca_args  qui contiendra les arguments pour dbca.
-function add_dbca_param
-{
-	if [ x"$fake_dbca_args" = x ]
-	then
-		fake_dbca_args=$(printf "    %-55s" "$1")
-		dbca_args="$1"
-	else
-		fake_dbca_args=$fake_dbca_args$(printf "\\\\\n    %-55s" "$1")
-		dbca_args="$dbca_args $1"
-	fi
-}
-
-#	Fabrique les arguments à passer à dbca en fonction des variables
-#	globales.
-#		2 variables sont utilisées
-#		- fake_dbca_args utilisée pour l'affichage : formatage visuel
-#		- dbca_args  qui contiendra les arguments pour dbca.
 function make_dbca_args
 {
-	add_dbca_param "-createDatabase -silent"
+	add_dynamic_cmd_param "-createDatabase -silent"
 
-	add_dbca_param "-databaseConfType $db_type"
-	[ $db_type == RACONENODE ] && add_dbca_param "    -RACOneNodeServiceName ron_$(to_lower $name)"
+	add_dynamic_cmd_param "-databaseConfType $db_type"
+	[ $db_type == RACONENODE ] && add_dynamic_cmd_param "    -RACOneNodeServiceName ron_$(to_lower $name)"
 
-	[ "$node_list" != undef ] && add_dbca_param "-nodelist $node_list"
+	[ "$node_list" != undef ] && add_dynamic_cmd_param "-nodelist $node_list"
 
 	if [ $serverPoolName != undef ]
 	then
-		add_dbca_param "-policyManaged"
+		add_dynamic_cmd_param "-policyManaged"
 		if [ $cdb == yes ]
 		then
 			test_if_serverpool_exists $serverPoolName
-			[ $? -ne 0 ] && add_dbca_param "    -createServerPool"
-			add_dbca_param "    -serverPoolName $serverPoolName"
+			[ $? -ne 0 ] && add_dynamic_cmd_param "    -createServerPool"
+			add_dynamic_cmd_param "    -serverPoolName $serverPoolName"
 		fi
 	fi
 
-	add_dbca_param "-gdbName $name"
-	add_dbca_param "-totalMemory $memory_mb"
-	add_dbca_param "-characterSet AL32UTF8"
+	add_dynamic_cmd_param "-gdbName $name"
+	add_dynamic_cmd_param "-totalMemory $memory_mb"
+	add_dynamic_cmd_param "-characterSet AL32UTF8"
 	if [ "$usefs" = "no" ]
 	then
-		add_dbca_param "-storageType ASM"
-		add_dbca_param "    -diskGroupName     $data"
-		add_dbca_param "    -recoveryGroupName $fra"
+		add_dynamic_cmd_param "-storageType ASM"
+		add_dynamic_cmd_param "    -diskGroupName     $data"
+		add_dynamic_cmd_param "    -recoveryGroupName $fra"
 	else
-		add_dbca_param "-datafileDestination     $data"
-		add_dbca_param "-recoveryAreaDestination $fra"
+		add_dynamic_cmd_param "-datafileDestination     $data"
+		add_dynamic_cmd_param "-recoveryAreaDestination $fra"
 	fi
-	add_dbca_param "-templateName $templateName"
+	add_dynamic_cmd_param "-templateName $templateName"
 	if [ "$cdb" = yes ]
 	then
-		add_dbca_param "-createAsContainerDatabase true"
+		add_dynamic_cmd_param "-createAsContainerDatabase true"
 		if [ "$pdbName" != undef ]
 		then
-			add_dbca_param "    -numberOfPDBs     $numberOfPDBs"
-			add_dbca_param "    -pdbName          $pdbName"
-			add_dbca_param "    -pdbAdminPassword $pdbAdminPassword"
+			add_dynamic_cmd_param "    -numberOfPDBs     $numberOfPDBs"
+			add_dynamic_cmd_param "    -pdbName          $pdbName"
+			add_dynamic_cmd_param "    -pdbAdminPassword $pdbAdminPassword"
 		fi
 	else
-		add_dbca_param "-createAsContainerDatabase false"
+		add_dynamic_cmd_param "-createAsContainerDatabase false"
 	fi
-	add_dbca_param "-sysPassword    $sysPassword"
-	add_dbca_param "-systemPassword $sysPassword"
-	add_dbca_param "-redoLogFileSize 512"
+	add_dynamic_cmd_param "-sysPassword    $sysPassword"
+	add_dynamic_cmd_param "-systemPassword $sysPassword"
+	add_dynamic_cmd_param "-redoLogFileSize 512"
 	case $lang in
 		french)
-			add_dbca_param "-initParams shared_pool_size=${min_shared_pool_size_mb}M,nls_language=FRENCH,NLS_TERRITORY=FRANCE,threaded_execution=true"
+			add_dynamic_cmd_param "-initParams shared_pool_size=${min_shared_pool_size_mb}M,nls_language=FRENCH,NLS_TERRITORY=FRANCE,threaded_execution=true"
 			;;
 
 		*)
-			add_dbca_param "-initParams shared_pool_size=${min_shared_pool_size_mb}M,threaded_execution=true"
+			add_dynamic_cmd_param "-initParams shared_pool_size=${min_shared_pool_size_mb}M,threaded_execution=true"
 	esac
 }
 
@@ -318,61 +289,6 @@ function remove_all_log_and_db_fs_files
 	LN
 }
 
-################################################################################
-# Fonctions techniques/utilitaire
-function launch_memstat
-{
-	exec_cmd -c -h "nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &"
-	if [ $node_list != undef ]
-	then
-		while read node_name
-		do
-			if [ $node_name != $(hostname -s) ]
-			then
-				exec_cmd -h -c "ssh -n ${node_name} \
-				\"nohup ~/plescripts/memory/memstats.sh -title=create_db >/dev/null 2>&1 &\""
-			fi
-		done<<<"$(olsnodes)"
-	fi
-}
-
-function stop_memstat
-{
-	if [ "$DEBUG_PLE" = yes ]
-	then
-		exec_cmd -c "~/plescripts/memory/memstats.sh -title=create_db -kill"
-	else
-		exec_cmd -c -h "~/plescripts/memory/memstats.sh -title=create_db -kill" >/dev/null 2>&1
-	fi
-
-	if [ $node_list != undef ]
-	then
-		while read node_name
-		do
-			if [ $node_name != $(hostname -s) ]
-			then
-				if [ "$DEBUG_PLE" = yes ]
-				then
-					exec_cmd -c "ssh ${node_name} \
-					\"~/plescripts/memory/memstats.sh -title=create_db -kill\""
-				else
-					exec_cmd -c -h "ssh ${node_name} \
-					\"~/plescripts/memory/memstats.sh -title=create_db -kill\"" >/dev/null 2>&1
-				fi
-			fi
-		done<<<"$(olsnodes)"
-	fi
-}
-
-function stop_all_background_processes
-{
-	[ "$DEBUG_PLE" = yes ] && line_separator && info "cleanup :"
-
-	[ $graph == yes ] && stop_memstat || true
-
-	[ "$DEBUG_PLE" = yes ] && LN
-}
-
 function on_ctrl_c
 {
 	LN
@@ -380,7 +296,6 @@ function on_ctrl_c
 	show_cursor
 	exit 1
 }
-################################################################################
 
 #	============================================================================
 #	MAIN
@@ -430,36 +345,20 @@ fi
 
 if [ $skip_db_create == no ]
 then
-	make_dbca_args
-
-	info "Run : "
-	info "dbca\\\\\n$fake_dbca_args"
-	confirm_or_exit "Continue"
-
-	trap stop_all_background_processes EXIT
-	trap on_ctrl_c INT
-
-	[ $graph == yes ] && launch_memstat
-
-	chrono_start # mesure le temps d'exécution de dbca.
-
 	remove_all_log_and_db_fs_files
 
-	typeset -i dbca_return=1
+	make_dbca_args
 
-	fake_exec_cmd "dbca\\\\\n$fake_dbca_args"
-	if [ $? -eq 0 ]
+	exec_dynamic_cmd -confirm -ci dbca
+	typeset -ri	dbca_return=$?
+	if [ $dbca_return -eq 0 ]
 	then
-		dbca $dbca_args
-		dbca_return=$?
+		info "dbca [$OK]"
+		LN
+	else
+		info "dbca [$KO] return $dbca_return"
+		exit 1
 	fi
-	LN
-
-	[ $dbca_return -eq 0 ] && dbca_status="[$OK]" || dbca_status="[$KO] return $dbca_return"
-	info "dbca $dbca_status ${BOLD}$(fmt_seconds $(chrono_stop -q))"
-	LN
-
-	[ $dbca_return -ne 0 ] && exit 1 || true
 fi	#	skip_db_create == no
 
 typeset prefixInstance=${name:0:8}
@@ -472,6 +371,7 @@ then
 	do
 		line_separator
 		exec_cmd "ssh -t oracle@${node} \". ./.profile; ~/plescripts/db/update_rac_oratab.sh -db=$lower_name -prefixInstance=$prefixInstance\""
+		LN
 	done
 fi
 
@@ -482,7 +382,7 @@ then
 	case $db_type in
 		RAC)
 			if [ $serverPoolName == "undef" ]
-			then	
+			then
 				# Lecture des noms de toutes les instances.
 				typeset inst_list
 				while IFS=':' read inst_name rem

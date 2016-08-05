@@ -273,12 +273,43 @@ function warning
 	my_echo "${LGREEN}${INVERT}" "<" " $@"
 }
 
-#*> Write mark info
-#*> Usage :
-#*> mark_info; printf "Hellow %s\n" name
+#*< Write mark info
+#*< Usage :
+#*< mark_info; printf "Hellow %s\n" name
+#*< N'est plus utilisée : la supprimée.
 function mark_info
 {
 	my_echo -n "${PURPLE}" "# "
+}
+
+#*> Affiche les informations de debug.
+#*> Actif uniquement si la variable DEBUG_FUNC=enable est définie.
+#*> Fonction sur le même principe que info.
+function debug
+{
+	[ "$DEBUG_FUNC" != enable ] && return 0
+
+	first_arg=""
+	symbol="dbg"
+	while [ $# -ne 0 ]
+	do
+		case "$1" in
+			"-n")
+				[ x"$first_arg" == x ] && first_arg="-n" || first_arg="$first_arg -n"
+				shift
+				;;
+
+			"-f")
+				symbol="no_symbol"
+				shift
+				;;
+
+			*)
+				break;
+		esac
+	done
+
+	my_echo $first_arg "${BLUE}" "$symbol" " $@"
 }
 
 #*>	Print normal message
@@ -519,7 +550,8 @@ function get_cmd_name
 #*>		-f  EXEC_CMD_ACTION is ignored.
 #*>		-c  continue on error.
 #*>		-ci like -c but not print error message.
-#*>		-h  hide command except on error (never tested)
+#*>		-h  hide command except on error.
+#*>		-hf hide command even on error.
 #*>
 #*> Show execution time after PLE_SHOW_EXECUTION_TIME_AFTER seconds
 function exec_cmd
@@ -558,11 +590,18 @@ function exec_cmd
 				hide_command=YES
 				;;
 
+			"-hf")
+				shift
+				hide_command=YES_EVEN_ON_ERROR
+				;;
+
 			*)
 				break
 				;;
 		esac
 	done
+
+	typeset -i	eval_return
 
 	typeset -r simplify_cmd=$(echo "$@" | tr -s [:space:])
 
@@ -572,11 +611,11 @@ function exec_cmd
 			;;
 
 		EXEC)
-			[ $force = YES ] && COL=$RED || COL=$YELLOW
+			[ $force == YES ] && COL=$RED || COL=$YELLOW
 			[ $hide_command == NO ] && my_echo "$COL" "$(date +"%Hh%M")> " "$simplify_cmd"
 
-			eval_start_at=$SECONDS
-			if [ x"$PLELIB_LOG_FILE" = x ]
+			typeset -ri eval_start_at=$SECONDS
+			if [ x"$PLELIB_LOG_FILE" == x ]
 			then
 				eval "$@"
 				eval_return=$?
@@ -585,12 +624,12 @@ function exec_cmd
 				eval_return=${PIPESTATUS[0]}
 
 				#	BUG workaround :
-				[ x"$eval_return" = x ] &&	eval_return=0
+				[ x"$eval_return" == x ] &&	eval_return=0
 			fi
 
 			if [ $hide_command == NO ]
 			then
-				eval_duration=$(( $SECONDS - $eval_start_at ))
+				typeset -ri eval_duration=$(( $SECONDS - $eval_start_at ))
 				if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 				then
 					my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$(get_cmd_name "$@") running time : $(fmt_seconds $eval_duration)"
@@ -602,16 +641,16 @@ function exec_cmd
 				[ $hide_command == YES ] && my_echo "$COL" "$(date +"%Hh%M")> " "$@"
 
 				typeset -r user_cmd=$(cut -d' ' -f1 <<< "$@")
-				if [ $continue_on_error = NO ]
+				if [ $continue_on_error == NO ]
 				then
 					error "$user_cmd return $eval_return"
 				else
-					[ $continue_on_error = YES ] && warning "$user_cmd return $eval_return"
+					[ $continue_on_error == YES ] && warning "$user_cmd return $eval_return"
 				fi
 
-				[ $force = YES ] && EXEC_CMD_ACTION=NOP
+				[ $force == YES ] && EXEC_CMD_ACTION=NOP
 
-				[ $continue_on_error = NO ] && exit 1
+				[ $continue_on_error == NO ] && exit 1
 			fi
 			;;
 
@@ -621,9 +660,88 @@ function exec_cmd
 			;;
 	esac
 
-	[ $force = YES ] && EXEC_CMD_ACTION=NOP
+	[ $force == YES ] && EXEC_CMD_ACTION=NOP
 
 	return $eval_return
+}
+
+typeset -a	ple_fake_param_cmd
+typeset -i	ple_param_max_len=0
+
+#*> $1 parameter to add.
+function add_dynamic_cmd_param
+{
+	typeset -r	param="$1"
+	typeset -ri	len=${#param}
+	ple_fake_param_cmd[${#ple_fake_param_cmd[@]}]="$param"
+
+	if [[ $len -gt $ple_param_max_len && $len -lt $(term_cols) ]]
+	then
+		ple_param_max_len=${#param}
+	fi
+}
+
+#*> run command '$@' with parameters define with add_dynamic_cmd_param
+#*> if first parameter is -confirm a prompt is printed to confirm or not execution.
+#*> For other parameters see exec_cmd
+function exec_dynamic_cmd
+{
+	typeset confirm=no
+	while [ 0 -eq 0 ]
+	do
+		case "$1" in
+			"-confirm")
+				confirm=yes
+				shift
+				;;
+
+			*)
+				break;
+				;;
+		esac
+	done
+
+	typeset -r cmd_name="$@"
+
+	ple_param_max_len=ple_param_max_len+2
+
+	#	4 correspond à la largeur de la tabulation ajoutée devant les paramètres,
+	#	le but étant d'aligner le \ derrière la commande aux \ derrière les paramètres.
+	#	Ex :
+	#	10h40> ma_commande  \
+	#              -x=42    \
+	#			   -t
+	typeset -ri l=ple_param_max_len+4
+	typeset		c=$(printf "%-${l}s" "${cmd_name##* }")
+	fake_exec_cmd "$(echo "$c\\\\")"
+
+	#	Affiche les paramètres de la commande :
+	for i in $( seq ${#ple_fake_param_cmd[@]} )
+	do
+		[ $i -gt 1 ] && echo "\\"
+		#	La largeur de l'horodatage 'HHhMM >' est de 7, la tabulation devant les
+		#	paramètres est de 4, donc insertion d'une tabulation de 11.
+		printf "%11s%-${ple_param_max_len}s" " " "${ple_fake_param_cmd[$i-1]}"
+	done
+	LN
+
+	[ $confirm == yes ] && confirm_or_exit "Continue" || true
+
+	#	Avec la paramètre -h exec_cmd n'affiche pas le temps d'exécution.
+	typeset -ri	exec_cmd_start_at=$SECONDS
+	exec_cmd -hf $cmd_name "${ple_fake_param_cmd[@]}"
+	typeset -ri exec_cmd_return=$?
+
+	typeset -ri exec_cmd_duration=$(( $SECONDS - $exec_cmd_start_at ))
+	if [ $exec_cmd_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
+	then
+		my_echo "${YELLOW}" "$(date +"%Hh%M")< " "${cmd_name##* } running time : $(fmt_seconds $exec_cmd_duration)"
+	fi
+
+	unset ple_fake_param_cmd
+	ple_param_max_len=0
+
+	return $exec_cmd_return
 }
 
 ################################################################################
@@ -1226,7 +1344,7 @@ function get_initiator_for
 }
 
 #*> return 0 if rpm update available else return 1
-#*> $1 server name
+#*> check update on server $1 (optional)
 function test_if_rpm_update_available
 {
 	case $# in
