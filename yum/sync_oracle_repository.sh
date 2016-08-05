@@ -142,13 +142,19 @@ function update_yum_config
 	info "Mise à jour de $yum_file"
 	exec_cmd "sed -i \"s!^baseurl.*!baseurl=file:///mnt$infra_olinux_repository_path!g\" $yum_file"
 	LN
-	exec_cmd cat $yum_file
-	LN
 }
 
-if [ $only_nfs_update != yes ]
+if [ $only_nfs_update == no ]
 then
-	[ "$copy_iso" == yes ] && copy_oracle_linux_iso
+	if [ $copy_iso == yes ]
+	then
+		copy_oracle_linux_iso
+	else
+		test_if_rpm_update_available
+		line_separator
+		exec_cmd yum -y update
+		LN
+	fi
 
 	line_separator
 	exec_cmd -c reposync	--newest-only --download_path=$infra_olinux_repository_path \
@@ -156,7 +162,7 @@ then
 
 	exec_cmd createrepo $infra_olinux_repository_path
 	LN
+else
+	nfs_export_repo
+	update_yum_config
 fi
-
-nfs_export_repo
-update_yum_config
