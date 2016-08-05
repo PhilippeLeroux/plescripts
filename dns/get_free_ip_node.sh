@@ -45,29 +45,49 @@ do
 	esac
 done
 
+#	Toutes les IPs en dessous de 10 sont réservées.
+typeset	-ri	min_ip_node=10
+
+
 typeset -i	prev_ip_node=0
 typeset	-i	ip_found=0
 
 while read ip_node rem
 do
-	if [ $ip_node -gt 9 ]
-	then
-		if [ $ip_node -gt $(( prev_ip_node + 2 )) ]
+	[ $ip_node -lt $min_ip_node ] && continue
+
+	debug "Last used ip_node == $ip_node, range == $range, prev_ip_node == $prev_ip_node"
+
+	if [ $prev_ip_node -eq 0 ]
+	then	# Pas d'IP inférieur utilisée.
+		debug -n "Test : ip_node - range -ge min_ip_node == $(( ip_node - range )) -ge $min_ip_node : "
+		if [ $(( ip_node - range )) -ge $min_ip_node ]
 		then
-			if [ $(( prev_ip_node + range )) -lt $ip_node ]
-			then
-				ip_found=$prev_ip_node+1
-				break
-			fi
+			debug -f "$OK step 1"
+			ip_found=$(( ip_node - 1 ))
+			break
+		else
+			debug -f "$KO"
+		fi
+	else	# Il faut que l'écart entre les IPs soit gt range
+		debug -n "Test : ip_node - prev_ip_node -gt range == $(( ip_node - prev_ip_node )) -gt $range : "
+		if [ $(( ip_node - prev_ip_node )) -gt $range ]
+		then
+			debug -f "$OK step 2"
+			ip_found=$(( prev_ip_node + 1 ))
+			break
+		else
+			debug -f "$KO"
 		fi
 	fi
 	prev_ip_node=ip_node
+	[ "$DEBUG_FUNC" == enable ] && LN
 done<<<"$(cat /var/named/reverse.orcl	|\
 				grep "^[0-9]"			|\
 				grep -v arpa			|\
 				sort -n)"
 
-[ $ip_found -eq 0  ] && ip_found=prev_ip_node+1
-[ $ip_found -lt 9  ] && ip_found=10
+[ $ip_found -eq 0 ] && ip_found=prev_ip_node+1
+#[ $ip_found -lt $min_ip_node ] && ip_found=$min_ip_node
 
 echo $ip_found
