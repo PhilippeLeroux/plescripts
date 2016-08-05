@@ -50,8 +50,6 @@ Création d'une base de donnée.
 	Pour une configuration de type RAC One Node ajouter le paramète -db_type=RACONENODE.
 	Le service associé sera ron_daisy (ron = **r**ac **o**ne **n**ode)
 
-	Pour visualiser le fichier 'alert.log' durant la création ajouter le paramètre -verbose
-
 	Si le paramètre -pdbName n'est pas précisé la pdb daisy01 sera créée ainsi que
 	son service pdbdaisy01.
 
