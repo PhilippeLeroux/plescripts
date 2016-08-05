@@ -450,9 +450,9 @@ then
 fi
 
 if [ $node -eq $max_nodes ]
-then	# C'est le dernier noeud
+then	# C'est le dernier nœud
 	if [ $max_nodes -ne 1 ]
-	then	# Plus de 1 noeud donc c'est un RAC.
+	then	# Plus de 1 nœud donc c'est un RAC.
 		exec_cmd "~/plescripts/database_servers/apply_ssh_prereq_on_all_nodes.sh -db=$db"
 		LN
 	fi

@@ -242,7 +242,8 @@ then
 	LN
 
 	line_separator
-	info "RDBMS can be created :"
+	info "Database can be created :"
+	LN
 	info "$ ssh oracle@${node_names[0]}"
 	info "oracle@${node_names[0]}:NOSID:oracle> cd db"
 	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db"

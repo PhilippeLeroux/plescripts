@@ -47,7 +47,7 @@ do
 	disk_name=$(echo $part_name | sed "s/^\(.*\)[0-9]\{1,\}$/\1/")
 
 	info "clear $oracle_disk_name :"
-	clear_device $disk_name 10000000
+	clear_device $part_name
 	LN
 done
 

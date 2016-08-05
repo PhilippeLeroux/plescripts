@@ -47,7 +47,7 @@ cd ~/plescripts/disk
 
 exec_cmd "./discovery_target.sh"
 
-exec_cmd "./create_partitions_on_new_disks.sh"
+exec_cmd "./create_partitions_on_new_disks.sh -clear_partitions"
 
 line_separator
 case $type_disk in

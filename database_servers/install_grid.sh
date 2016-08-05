@@ -389,11 +389,16 @@ function set_ASM_memory_target_low_and_restart_asm
 	line_separator
 	disclaimer
 	exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
-	#	-c temporaire pour debug
-	exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl stop asm -f\""
-	exec_cmd -c "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl start asm\""
+
+	if [ $max_nodes -gt 1 ]
+	then	#	RAC
+		exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop cluster -all\""
+		exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start cluster -all\""
+	else	#	SINGLE
+		exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl stop asm -f\""
+		exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl start asm\""
+	fi
 	LN
-	confirm_or_exit -reply_list=CR "Ctrl-C to abort"
 }
 
 function remove_tfa_on_all_nodes
@@ -500,10 +505,12 @@ then
 		runConfigToolAllCommands
 		LN
 
-		[ $do_hacks == yes ] && set_ASM_memory_target_low_and_restart_asm
-
-		#Pour être certain qu'ASM est démarré.
-		[ $max_nodes -eq 1 ] && (info -n "Wait : "; pause_in_secs 30; LN)
+		if [ $do_hacks == yes ]
+		then
+			set_ASM_memory_target_low_and_restart_asm
+			#Pour être certain qu'ASM est démarré.
+			[ $max_nodes -eq 1 ] && (info -n "Wait : "; pause_in_secs 30; LN)
+		fi
 	fi
 fi
 

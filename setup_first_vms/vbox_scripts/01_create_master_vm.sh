@@ -32,6 +32,8 @@ do
 	esac
 done
 
+typeset -r script_start_at=$SECONDS
+
 line_separator
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_ip}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
@@ -51,7 +53,7 @@ exec_cmd VBoxManage modifyvm $master_name --ostype Oracle_64
 exec_cmd VBoxManage modifyvm $master_name --acpi on
 exec_cmd VBoxManage modifyvm $master_name --ioapic on
 exec_cmd VBoxManage modifyvm $master_name --memory $vm_memory_mb_for_master
-exec_cmd VBoxManage modifyvm $master_name --vram 12
+exec_cmd VBoxManage modifyvm $master_name --vram 9
 exec_cmd VBoxManage modifyvm $master_name --cpus 4
 exec_cmd VBoxManage modifyvm $master_name --rtcuseutc on
 exec_cmd VBoxManage modifyvm $master_name --largepages on
@@ -91,3 +93,6 @@ LN
 line_separator
 info "Démarrage de la VM $master_name, l'installation va commencer..."
 exec_cmd VBoxManage startvm  $master_name
+LN
+
+info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"

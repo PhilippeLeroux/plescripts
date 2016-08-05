@@ -90,3 +90,7 @@ line_separator
 info "Remove database files from ASM"
 exec_cmd -c "su - grid -c \"asmcmd rm -rf DATA/$upper_db\""
 exec_cmd -c "su - grid -c \"asmcmd rm -rf FRA/$upper_db\""
+LN
+
+line_separator
+info "${GREEN}done.${NORM}"

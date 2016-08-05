@@ -42,8 +42,7 @@ done
 get_iscsi_disks |\
 while read disk_name disk_num
 do
-	info "Delete $disk_name"
-	clear_device $disk_name 10000000
+	clear_device $disk_name
 	LN
 done
 

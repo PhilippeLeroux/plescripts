@@ -34,10 +34,34 @@ done
 
 function infra_ssh
 {
-	exec_cmd "ssh root@${infra_network}.${master_ip_node} \"$@\""
+	typeset continue=no
+	while [ 0 -eq 0 ]	# forever
+	do
+		case "$1" in
+			"-c")
+				continue=yes
+				shift
+				;;
+
+			*)
+				break
+				;;
+		esac
+	done
+
+	exec_cmd -c "ssh -t root@${infra_network}.${master_ip_node} \"$@\""
+	typeset -ri ret=$?
+	if [ $ret -ne 0 ]
+	then
+		[ $continue == no ] && exit 1 || return $ret
+	else
+		return 0
+	fi
 }
 
-line_separtor
+typeset -r script_start_at=$SECONDS
+
+line_separator
 info "Ménage :"
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_network}.${master_ip_node}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=orclmaster
@@ -55,6 +79,7 @@ LN
 wait_server ${infra_network}.${master_ip_node}
 LN
 
+confirm_or_exit -reply_list=CR "Le mot de passe root sera demandé. Press enter to continue."
 exec_cmd ~/plescripts/shell/connections_ssh_with.sh -user=root -server=${master_ip}
 LN
 
@@ -77,8 +102,8 @@ then
 fi
 
 line_separator
-info "Préparation du répertoire plescripts."
-infra_ssh "mkdir /mnt/plescripts"
+info "Création du répertoire plescripts."
+infra_ssh -c "mkdir /mnt/plescripts"
 LN
 
 info "Montage provisoire de /mnt/plescripts"
@@ -103,4 +128,6 @@ exec_cmd "$vm_scripts_path/stop_vm $master_name"
 LN
 
 info "Le serveur $master_name est prêt."
+LN
 
+info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"

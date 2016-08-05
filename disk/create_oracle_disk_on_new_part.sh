@@ -65,6 +65,9 @@ done
 # Le près requis est donc que l'installation se fait sur un serveur neuf !
 function map_devices
 {
+	exec_cmd -c sync
+	LN
+
 	exec_cmd "oracleasm scandisks"
 	LN
 
@@ -88,8 +91,7 @@ function map_devices
 				oracle_label=$(printf "s1disk${db}%02d" $disk_num)
 				info "create $oracle_label on $part_name"
 				exec_cmd -c "oracleasm createdisk $oracle_label ${part_name}"
-				# BUG: $skip_errors = false !?
-				if [ $? -ne 0 ] && [ $skip_errors == yes ]
+				if [ $? -ne 0 ] && [ $skip_errors == no ]
 				then
 					error "abort !"
 					exit 1
@@ -99,7 +101,11 @@ function map_devices
 			fi
 		else
 			info "Partition $part_name not exists."
-			LN
+			if [ $skip_errors == no ]
+			then
+				error "abort !"
+				exit 1
+			fi
 		fi
 	done<<<"$(get_iscsi_disks)"
 

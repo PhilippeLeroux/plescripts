@@ -221,25 +221,7 @@ function normalyse_fs_disks
 line_separator
 if [ -d $cfg_path ]
 then
-	# A L'occasion utiliser la fonction ask_for.
-	info "$cfg_path exists, remove ? (yes/no)"
-	loop=yes
-	while [ $loop = yes ]
-	do
-		read keyboard
-		case "$keyboard" in
-			yes|y)
-				loop=no
-				;;
-			no|n)
-				exit 0
-				;;
-			*)
-				error "yes or no"
-				;;
-		esac
-	done
-
+	confirm_or_exit "$cfg_path exists, remove :"
 	exec_cmd rm -rf $cfg_path
 fi
 exec_cmd mkdir $cfg_path

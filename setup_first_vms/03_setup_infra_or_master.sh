@@ -49,15 +49,22 @@ case $role in
 [ -f ~/.bashrc_extensions ] && . ~/.bashrc_extensions || true
 if [ -t 0 ]
 then
-	count_lv_error=\$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$" | wc -l)
+    count_lv_error=$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$" | wc -l)
 
-	if [ \$count_lv_error -ne 0 ]
-	then
-		echo -e "\${RED}\$count_lv_error lvs errors : poweroff + start !\${NORM}"
-		systemctl status target -l
-	else
-		echo -e "\${GREEN}lvs OK\${NORM}"
-	fi
+    if [ $count_lv_error -ne 0 ]
+    then
+        echo -e "${RED}$count_lv_error lvs errors : poweroff + start!${NORM}"
+        systemctl status target -l
+        echo ">>>Try to start target<<<"
+        systemctl start target
+        if [ $? -ne 0 ]
+        then
+            echo "start failed again."
+        else
+            echo "C'est bon ??"
+        fi
+        systemctl status target -l
+    fi
 fi
 EOS
 		fi
@@ -129,11 +136,12 @@ case $role in
 		exec_cmd "systemctl stop firewalld"
 		LN
 
-		line_separtor
+		line_separator
 		info "Configuration du dépôt"
 		# TODO rendre configurable le nom du fichier !
 		exec_cmd "cp -fp ~/plescripts/yum/public-yum-ol7.repo /etc/yum.repos.d/public-yum-ol7.repo"
 		LN
+		exec_cmd "mkdir -p /mnt$infra_olinux_repository_path"
 		exec_cmd "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux_repository_path nfs ro,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
 		exec_cmd mount /mnt$infra_olinux_repository_path
 		LN
@@ -144,7 +152,7 @@ case $role in
 		case $type_shared_fs in
 			nfs)
 				line_separator
-				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rw,$nfs_options,comment=systemd.automount"
+				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
 				exec_cmd -c mount -a /mnt/plescripts
 				LN
 			;;
@@ -199,7 +207,7 @@ case $role in
 		line_separator
 		case $type_shared_fs in
 			nfs)
-				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /root/plescripts nfs rw,$nfs_options,async,comment=systemd.automount"
+				exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,async,comment=systemd.automount"
 				LN
 				;;
 

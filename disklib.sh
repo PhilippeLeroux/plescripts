@@ -39,17 +39,17 @@ function get_iscsi_disks
 
 #*> Met à zéro l'en-tête du disque $1
 #*> Si la taille $2 n'est pas précisée seront mis à zéro les
-#*> 10 000 000 premiers bytes.
+#*> 1024*1024*1024 premiers bytes.
 function clear_device
 {
-	typeset -r device=$1
+	typeset -r	device=$1
+	typeset	-i	size_bytes=$2
 
 	if [ ! -b $device ]
 	then
-		error " clear_device : $device not a block device"
+		error "clear_device : $device not a block device"
 	else
-		typeset size_bytes=$2
-		[ $# -eq 1 ] && size_bytes=10000000
+		[ $# -eq 1 ] && size_bytes=$(( 1024*1024*100 ))
 		info "clear device $device : $(fmt_bytesU_2_better $size_bytes)"
 		exec_cmd dd if=/dev/zero of=$device bs=$size_bytes count=1
 	fi

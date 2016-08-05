@@ -81,7 +81,7 @@ for i in $( seq 0 $(($count-1)) )
 do
 	lv_name=$(printf "lv%s%02d" $prefix $(($first_no+$i)))
 
-	clear_device /dev/$vg_name/$lv_name 100000000
+	clear_device /dev/$vg_name/$lv_name
 	LN
 
 	info "remove : $lv_name"

@@ -58,17 +58,20 @@ then
 		exec_cmd -c "~/plescripts/shell/delete_vm -db=$db"
 		LN
 	fi
-		
-	typeset -ri count_nodes=$(ls -1 $cfg_path/node* | wc -l)
 
-	line_separator
-	for inode in $( seq 1 $count_nodes )
-	do
-		node_name=$( cat $cfg_path/node$inode | cut -d':' -f2 )
-		info "Supprime $node_name du fichier .ssh/known_hosts"
-		remove_from_known_hosts $node_name
-		LN
-	done
+	if [ -f ~/.ssh/known_hosts ]
+	then
+		typeset -ri count_nodes=$(ls -1 $cfg_path/node* | wc -l)
+
+		line_separator
+		for inode in $( seq 1 $count_nodes )
+		do
+			node_name=$( cat $cfg_path/node$inode | cut -d':' -f2 )
+			info "Supprime $node_name du fichier .ssh/known_hosts"
+			remove_from_known_hosts $node_name
+			LN
+		done
+	fi
 
 	line_separator
 	info "Mise à jour du dns :"

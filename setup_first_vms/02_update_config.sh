@@ -19,7 +19,10 @@ mv new_inputrc /etc/inputrc
 LN
 
 line_separator
+info "Remove samba."
+exec_cmd yum -y erase samba-client.x86_64 samba-client-libs.x86_64 samba-common.noarch samba-common-libs.x86_64 samba-common-tools.x86_64 samba-libs.x86_64
+
+line_separator
 test_if_rpm_update_available
 [ $? -eq 0 ] && exec_cmd yum -y update || true
 LN
-
