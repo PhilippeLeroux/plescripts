@@ -79,6 +79,10 @@ exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
 exec_cmd -c "rm -rf /u01"
 LN
 
+info "Remove symlink"
+exec_cmd -c "rm ~/disk ~/yum"
+LN
+
 update_value IPADDR ${if_pub_network}.${master_ip_node}	$if_pub_file
 LN
 
@@ -97,7 +101,7 @@ LN
 exec_cmd "systemctl restart NetworkManager"
 LN
 
-if [ $EXEC_CMD_ACTION = NOP ]
+if [ $EXEC_CMD_ACTION == NOP ]
 then
 	info "Use -doit to execute."
 	LN
