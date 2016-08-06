@@ -1,5 +1,5 @@
 #!/bin/bash
-#	ts=4	sw=4
+# vim: ts=4:sw=4
 
 #	-f3-4 pour gérer le cas des RAC One Node ou Policy Managed.
 instance=$(ps -ef |  grep pmon | grep -vE "MGMTDB|ASM|grep" | cut -d_ -f3-4)

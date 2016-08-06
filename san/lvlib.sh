@@ -1,5 +1,5 @@
 
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 #/bin/bash
 
 #[ -z plelib_release ] && error "~/plescripts/plelib.sh doit être incluse" && exit 1

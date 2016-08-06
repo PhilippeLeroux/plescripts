@@ -1,7 +1,7 @@
 #/bin/bash
 
 
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 #   Exécuter ce scripts après qu'un des noeuds ait exécuté :
 #		oracleasm_discovery_first_node.sh

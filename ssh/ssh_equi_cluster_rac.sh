@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 #	Seul root peut exécuter ce script
 #	Permet d'établir les équivalences ssh nécessaires pour un cluster RAC.

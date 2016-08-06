@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 typeset -r ME=$0
 typeset -r str_usage=\

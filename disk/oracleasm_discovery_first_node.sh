@@ -1,6 +1,6 @@
 #/bin/bash
 
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 #	Une fois que les disques sont disponibles exécuter
 #	ce scripts sur un noeud du RAC

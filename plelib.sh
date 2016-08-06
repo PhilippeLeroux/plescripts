@@ -1,4 +1,4 @@
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 [ ! -z $plelib_banner ] && return 0
 

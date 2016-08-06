@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 #	Ne pas utiliser directement sert au script : ~/plescripts/clone_master/setup_master.sh
 #	TODO : déplacer ce script !!!!!

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 typeset -r hn=$(hostname -s)
 typeset -r votename=${hn:0:${#hn}-2}

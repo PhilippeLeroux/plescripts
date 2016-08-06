@@ -1,6 +1,6 @@
 #/bin/bash
 
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 #	Vérifie l'état des disques oracleasm
 

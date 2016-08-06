@@ -1,5 +1,5 @@
 
-#	ts=4	sw=4
+# vim: ts=4:sw=4
 
 typeset -r	sysctl_file=/etc/sysctl.conf
 typeset -r	proc_meminfo=/proc/meminfo

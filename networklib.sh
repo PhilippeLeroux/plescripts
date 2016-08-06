@@ -1,5 +1,4 @@
-
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 #*> Retourne le chemin contenant les fichiers de configuration des
 #*> interfaces réseaux.

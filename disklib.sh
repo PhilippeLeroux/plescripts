@@ -1,5 +1,4 @@
-
-#	ts=4 sw=4
+# vim: ts=4:sw=4
 
 #*> Retourne la taille du disque $1 en bytes.
 function disk_size_bytes
