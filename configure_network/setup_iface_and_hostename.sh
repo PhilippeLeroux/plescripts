@@ -103,20 +103,27 @@ LN
 
 line_separator
 info "Update /etc/hosts"
+exec_cmd "echo \"\" >> /etc/hosts"
+exec_cmd "echo \"#This node.\" >> /etc/hosts"
 exec_cmd "echo \"$ip_pub	$server_name\" >> /etc/hosts"
 [[ $db_type == rac* ]] && exec_cmd "echo \"$vip_ip	$vip_name\" >> /etc/hosts"
 exec_cmd "echo \"#$ip_priv	$ip_priv_name\" >> /etc/hosts"
 
-for nf in $cfg_path/node*
-do
-	if [ "$nf" != "$node_file" ]
-	then
-		IFS=':' read f1 server_nameo ip_pubo vip_nameo vip_ipo ip_priv_nameo ip_privo rem<<<"$(cat $nf)"
-		exec_cmd "echo \"$ip_pubo	$server_nameo\" >> /etc/hosts"
-		[[ $db_type == rac* ]] && exec_cmd "echo \"$vip_ipo	$vip_nameo\" >> /etc/hosts"
-		exec_cmd "echo \"#$ip_privo	$ip_priv_nameo\" >> /etc/hosts"
-	fi
-done
+if [[ $db_type == rac* ]]
+then
+	exec_cmd "echo \"\" >> /etc/hosts"
+	exec_cmd "echo \"#Other nodes :\" >> /etc/hosts"
+	for nf in $cfg_path/node*
+	do
+		if [ "$nf" != "$node_file" ]
+		then
+			IFS=':' read f1 server_nameo ip_pubo vip_nameo vip_ipo ip_priv_nameo ip_privo rem<<<"$(cat $nf)"
+			exec_cmd "echo \"$ip_pubo	$server_nameo\" >> /etc/hosts"
+			exec_cmd "echo \"$vip_ipo	$vip_nameo\" >> /etc/hosts"
+			exec_cmd "echo \"#$ip_privo	$ip_priv_nameo\" >> /etc/hosts"
+		fi
+	done
+fi
 LN
 
 if [ -f $scanvips_file ]
@@ -124,6 +131,8 @@ then
 	line_separator
 	IFS=':' read scan_name scan_vip1 scan_vip2 scan_vip3 <<<"$(cat $scanvips_file)"
 	info "Update scan /etc/hosts"
+	exec_cmd "echo \"\" >> /etc/hosts"
+	exec_cmd "echo \"#Scan Adress\" >> /etc/hosts"
 	exec_cmd "echo \"#$scan_name $scan_vip1\" >> /etc/hosts"
 	exec_cmd "echo \"#$scan_name $scan_vip2\" >> /etc/hosts"
 	exec_cmd "echo \"#$scan_name $scan_vip3\" >> /etc/hosts"

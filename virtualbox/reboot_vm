@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#	ts=4	sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+typeset -r str_usage=\
+"Usage : $ME <str>"
+
+info "$ME $@"
+
+[[ $# -eq 0 ]] && [[ -v ID_DB ]] && server=$ID_DB || server=$1
+
+if [ x"$server" == x ]
+then
+	error "$str_usage"
+	exit 1
+fi
+
+function virtualbox_reboot
+{
+	typeset -ri	stop_at=$SECONDS
+	exec_cmd "stop_vm $server"
+	info "Server stopping...."
+	while [ 0 -eq 0 ]
+	do
+		VBoxManage list runningvms | grep -q $server
+		[ $? -eq 1 ] && break
+	done
+	typeset -ri	duration=$(( SECONDS - stop_at ))
+	info "$(fmt_seconds $duration) to stop"
+	exec_cmd "start_vm $server"
+}
+
+case ${hostvm##*_} in
+	virtualbox)
+		virtualbox_reboot
+		exit $?
+		;;
+
+	*)
+		error "${hostvm##*_} not implemented."
+		exit 1
+		;;
+esac
+

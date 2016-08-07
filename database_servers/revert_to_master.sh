@@ -67,22 +67,35 @@ then
 	fi
 fi
 
+line_separator
 exec_cmd "~/plescripts/disk/logout_sessions.sh"
 LN
 
+line_separator
+indo "Cleaning /etc/hosts"
 exec_cmd "sed -i "/${infra_network}/d" /etc/hosts"
 exec_cmd "sed -i "/${if_priv_network}/d" /etc/hosts"
+exec_cmd "sed -i "/This/d" /etc/hosts"
+exec_cmd "sed -i "/Other/d" /etc/hosts"
+exec_cmd "sed -i "/Scan/d" /etc/hosts"
+exec_cmd "sed -i "/^$/d" /etc/hosts"
 LN
 
+line_separator
+info "Remove Oracle users."
 exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
 
+line_separator
 exec_cmd -c "rm -rf /u01"
 LN
 
+line_separator
 info "Remove symlink"
 exec_cmd -c "rm ~/disk ~/yum"
 LN
 
+line_separator
+info "Set master config"
 update_value IPADDR ${if_pub_network}.${master_ip_node}	$if_pub_file
 LN
 

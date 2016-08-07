@@ -165,22 +165,12 @@ function reboot_server
 {
 	typeset -r server=$1
 
-	line_separator
-	info "Reboot :"
-	exec_cmd "$vm_scripts_path/stop_vm $server"
-	info -n "Wait : "; pause_in_secs 20; LN
+	info "Reboot server $server..."
+	exec_cmd "$vm_scripts_path/reboot_vm $server"
 	LN
 
-	while [ 0 -eq 0 ]	# forever
-	do
-		exec_cmd -c "$vm_scripts_path/start_vm $server"
-		[ $? -eq 0 ] && break
-
-		LN
-		confirm_or_exit "Start failed, try again"
-	done
-
 	loop_wait_server $server
+	LN
 }
 
 function configure_ifaces_hostname_and_reboot

@@ -14,13 +14,14 @@ typeset -r str_usage=\
 	Seul root peut exécuter ce script et il doit être exécuté sur le serveur
 	concerné.
 
-	[-all]          : désinstalle tous les composants
-	[-databases]    : supprime les bases de données.
-	[[!] -oracle]   : désinstalle oracle.
-	[[!] -grid]     : désinstalle grid.
-	[[!] -disks]    : supprime les disques.
+	[-all]                  : désinstalle tous les composants
+	[-databases]            : supprime les bases de données.
+	[[!] -oracle]           : désinstalle oracle.
+	[[!] -grid]             : désinstalle grid.
+	[[!] -disks]            : supprime les disques.
+	[[!] -revert_to_master] : repasse sur la config du master.
 
-	-type=ASM       : type d'installation FS ou ASM
+	-type=ASM               : type d'installation FS ou ASM
 
 	Ajouter le flag '!' permet de ne pas effectuer une action avec le paramètre -all.
 "
@@ -29,7 +30,7 @@ info "$ME $@"
 
 typeset type=ASM
 typeset action_list
-typeset -r all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_disks"
+typeset -r all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_disks revert_to_master"
 
 typeset not_flag=no
 #	Utiliser lors de l'évaluation de paramètres.
@@ -37,7 +38,7 @@ typeset not_flag=no
 #	qui doit être passé en paramètre.
 function exit_if_yes
 {
-	if [ $1 = yes ]
+	if [ $1 == yes ]
 	then
 		error "! not supported with $2"
 		info "$str_usage"
@@ -79,7 +80,7 @@ do
 			;;
 
 		-oracle)
-			if [ $not_flag = yes ]
+			if [ $not_flag == yes ]
 			then
 				not_flag=no
 				action_list=$(sed "s/ remove_oracle_binary//"<<<"$action_list")
@@ -90,7 +91,7 @@ do
 			;;
 
 		-grid)
-			if [ $not_flag = yes ]
+			if [ $not_flag == yes ]
 			then
 				not_flag=no
 				action_list=$(sed "s/ remove_grid_binary//"<<<"$action_list")
@@ -101,12 +102,23 @@ do
 			;;
 
 		-disks)
-			if [ $not_flag = yes ]
+			if [ $not_flag == yes ]
 			then
 				not_flag=no
 				action_list=$(sed "s/ remove_disks//"<<<"$action_list")
 			else
 				action_list="$action_list remove_disks"
+			fi
+			shift
+			;;
+
+		-revert_to_master)
+			if [ $not_flag == yes ]
+			then
+				not_flag=no
+				action_list=$(sed "s/ revert_to_master//"<<<"$action_list")
+			else
+				action_list="$action_list revert_to_master"
 			fi
 			shift
 			;;
@@ -325,6 +337,10 @@ exec_cmd -f -c "umount /mnt/oracle_install"
 LN
 
 line_separator
-
-info "Run ./revert_to_master.sh -doit on each nodes"
+if grep -q rever_to_master <<< "$action_list"
+then
+	root_execute_on_other_nodes "plescripts/database_servers/revert_to_master.sh -doit; poweroff"
+	exec_cmd "./revert_to_master.sh -doit"
+	exec_cmd "poweroff"
+fi
 LN
