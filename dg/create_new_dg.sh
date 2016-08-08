@@ -19,6 +19,11 @@ typeset		mount_on_other_nodes=yes
 while [ $# -ne 0 ]
 do
 	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
 		-name=*)
 			name=${1##*=}
 			shift
@@ -49,7 +54,6 @@ exit_if_param_undef disks	"$str_usage"
 typeset -a size_list
 typeset -a disk_list
 
-kfod nohdr=true op=disks |\
 while read size disk_name
 do
 	i=${#size_list[@]}
@@ -57,7 +61,7 @@ do
 	size_gb=size_gb/1024
 	size_list[$i]=$size_gb
 	disk_list[$i]=$disk_name
-done
+done<<<"$(kfod nohdr=true op=disks)"
 
 if [ $disks -gt ${#disk_list[@]} ]
 then
@@ -89,7 +93,10 @@ cmd=$(printf "$(make_sql_cmd)\n")
 fake_exec_cmd sqlplus -s / as sysasm
 printf "$cmd\n"
 
-printf "set echo off\nset timin on\n$cmd\n" | sqlplus -s / as sysasm
+if [ $EXEC_CMD_ACTION == EXEC ]
+then
+	printf "set echo off\nset timin on\n$cmd\n" | sqlplus -s / as sysasm
+fi
 LN
 
 if [ $mount_on_other_nodes == yes ]

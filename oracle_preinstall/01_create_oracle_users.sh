@@ -12,6 +12,9 @@ typeset db_type=undef
 
 typeset -r str_usage="Usage $0 -release=aa.bb.cc.dd -db_type=[single|rac]"
 
+#	ksh ou bash, mais ksh c'est trop chiant.
+typeset -r the_shell=bash
+
 while [ $# -ne 0 ]
 do
 	case $1 in
@@ -112,6 +115,7 @@ info "remove $GRID_ROOT/"
 exec_cmd "rm -rf $GRID_ROOT/*"
 LN
 
+#	Charge la fonction make_vimrc_file
 . ~/plescripts/oracle_preinstall/make_vimrc_file
 
 #	Met à jour root également.
@@ -119,29 +123,40 @@ make_vimrc_file "/root/.vimrc"
 
 line_separator
 info "create users grid"
-exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper -s /bin/ksh -c \"Grid Infrastructure Owner\" grid
+exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper -s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
-exec_cmd cp template_kshrc /home/grid/.kshrc
-[ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/grid/.kshrc"
+if [ $the_shell == ksh ]
+then
+	exec_cmd cp template_kshrc /home/grid/.kshrc
+	[ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/grid/.kshrc"
+fi
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.grid | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/.profile"
+if [ $the_shell == bash ]
+then
+	exec_cmd "mv /home/grid/.profile /home/grid/.bash_profile"
+	# Permet aux autres scripts de continuer à fonctionner.
+	exec_cmd "ln -s /home/grid/.bash_profile /home/grid/.profile"
+fi
 make_vimrc_file "/home/grid/.vimrc"
-#exec_cmd "mkdir /home/grid/TOOLS"
-#exec_cmd "cp ./grid_TOOLS/* /home/grid/TOOLS/"
 exec_cmd "find /home/grid | xargs chown grid:oinstall"
 LN
 
 line_separator
 info "create user oracle"
-exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper -s /bin/ksh -c \"Oracle Software Owner\" oracle
+exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper -s /bin/${the_shell} -c \"Oracle Software Owner\" oracle
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/oracle/grid_env
-exec_cmd cp $profile_oracle /home/oracle/.profile
-exec_cmd cp template_kshrc /home/oracle/.kshrc
-[ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/oracle/.kshrc"
+if [ $the_shell == ksh ]
+then
+	exec_cmd cp $profile_oracle /home/oracle/.profile
+	exec_cmd cp template_kshrc /home/oracle/.kshrc
+	[ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/oracle/.kshrc"
+else
+	exec_cmd cp $profile_oracle /home/oracle/.bash_profile
+	# Permet aux autres scripts de continuer à fonctionner.
+	exec_cmd "ln -s /home/oracle/.bash_profile /home/oracle/.profile"
+fi
 make_vimrc_file "/home/oracle/.vimrc"
-#exec_cmd "mkdir /home/oracle/DB"
-#exec_cmd "cp DB/* /home/oracle/DB/"
 exec_cmd "find /home/oracle | xargs chown oracle:oinstall"
-#exec_cmd "find /home/oracle -name \"*.sh\" -o -name \"*.ksh\" -exec chmod u+x {} \;"
 LN
 
 line_separator
