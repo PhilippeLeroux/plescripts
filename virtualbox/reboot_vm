@@ -32,6 +32,7 @@ function virtualbox_reboot
 	done
 	typeset -ri	duration=$(( SECONDS - stop_at ))
 	info "$(fmt_seconds $duration) to stop"
+	info -n "Wait : "; pause_in_secs 2; LN
 	exec_cmd "start_vm $server"
 }
 
