@@ -104,6 +104,11 @@ function print_disks
 			LN
 		fi
 	done < $file
+
+	info "${BOLD}Note :${NORM}"
+	info "Le n° des disques est informatif, il se peut dans certains cas qu'ils"
+	info "soient différent comme par exemple lors de la création d'un LV sur un"
+	info "disque non destiné à Oracle."
 }
 
 for file in $(ls -rt $cfg_dir/node*)

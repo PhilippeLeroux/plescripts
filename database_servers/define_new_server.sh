@@ -13,12 +13,12 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-db=<identifiant>   identifiant de la base.
-	[-ip_node=<node>]   noeud IP, sinon prend la première IP disponible.
 	[-max_nodes=1]      nombre de noeuds pour un RAC.
 	[-size_dg_gb=24]    taille du DG ou du FS.
-	[-size_lun_gb=8]    taille des LUNs si utilisation de ASM.
+	[-size_lun_gb=8]    taille des LUNs si utilisation d'ASM.
 	[-no_dns_test]      ne pas tester si les IPs sont utilisées.
 	[-usefs]            ne pas utiliser ASM mais un FS.
+	[-ip_node=<node>]   noeud IP, sinon prend la première IP disponible.
 "
 info "$ME $@"
 
@@ -100,18 +100,19 @@ then
 	rm -f /tmp/vc
 	exit 1
 fi
+rm -f /tmp/vc
 
 typeset -c	cfg_path=~/plescripts/database_servers/$db
 
 function test_ip_node_used
 {
-	if [ $dns_test = yes ]
+	if [ $dns_test == yes ]
 	then
 		typeset -r ip_node=$1
 		dns_test_if_ip_exist $ip_node
 		if [ $? -ne 0 ]
 		then
-			error "IP $if_pub_network.$ip_node already registered to th DNS."
+			error "IP $if_pub_network.$ip_node in used."
 			exit 1
 		fi
 	fi
@@ -166,30 +167,8 @@ function normalyze_scan
 	echo "$buffer" > $cfg_path/scanvips
 }
 
-#	La fonction compute a évoluée. A l'occasion remplacer round_up par compute.
-function round_up
-{
-	trace=no
-	if [ "$1" = "trace" ]
-	then
-		shift
-		trace=yes
-		set -x
-	fi
-
-	val=$( echo "scale=5; $@" | bc -l )
-	ent=$( echo $val | cut -d'.' -f1 )
-	deci=$( echo $val | cut -d'.' -f2 )
-	if [ $deci -ne 0 ]
-	then
-		echo $(( $ent + 1 ))
-	else
-		echo $ent
-	fi
-
-	[ $trace = yes ] && set +x
-}
-
+#	Les n° de disques n'ont plus de sens, ils sont conservés car ils permettent
+#	de déterminer le nombre de disques nécessaire.
 function normalyse_asm_disks
 {
 	typeset -i i_lun=1
@@ -245,18 +224,18 @@ then
 	data_lun_count=$data_lun_count+1
 	size_dg_gb=$(($size_lun_gb * $data_lun_count))
 	LN
-	info "Adjust DGs's sizes to ${size_dg_gb}Gb."
+	info "Adjust DGs sizes to ${size_dg_gb}Gb."
 	LN
 fi
 
-if [ $usefs = no ]
+if [ $usefs == no ]
 then
 	normalyse_asm_disks
 else
 	normalyse_fs_disks
 fi
 
-~/plescripts/shell/show_infra -db=$db
+~/plescripts/shell/show_info_server -db=$db
 
 info -n "Run : ./clone_master.sh -db=$db"
 [ $db_type == rac ] && info -f " -node=1" || LN

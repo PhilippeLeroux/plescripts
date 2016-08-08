@@ -52,7 +52,7 @@
 
 	À utiliser sur un serveur : permet de voir les messages au démarrage du serveur.
 
-- show_infra -db=<str>
+- show_info_server -db=<str>
 
 	Affiche l'infrastructure correspondant à une base
 
