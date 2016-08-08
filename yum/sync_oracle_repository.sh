@@ -151,13 +151,16 @@ then
 		copy_oracle_linux_iso
 	else
 		test_if_rpm_update_available
+		[ $? -ne 0 ] && exit 0
+
 		line_separator
 		exec_cmd yum -y update
 		LN
 	fi
 
 	line_separator
-	exec_cmd -c reposync	--newest-only --download_path=$infra_olinux_repository_path \
+	exec_cmd -c reposync	--newest-only	\
+							--download_path=$infra_olinux_repository_path \
 							--repoid=ol7_latest
 
 	exec_cmd createrepo $infra_olinux_repository_path
