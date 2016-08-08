@@ -59,7 +59,7 @@ then
 	[ $? -ne 0 ] && nfs_errors=nfs_errors+1
 fi
 
-exec_cmd -c "sudo showmount -e | grep -q /home/$common_user_name/ISO/oracle_linux_7"
+exec_cmd -c "sudo showmount -e | grep -q $iso_olinux_path"
 [ $? -ne 0 ] && nfs_errors=nfs_errors+1
 LN
 if [ $nfs_errors -ne 0 ]
@@ -101,9 +101,12 @@ info "Ajoute $infra_hostname au groupe Infra"
 exec_cmd VBoxManage modifyvm "$infra_hostname" --groups "/Infra"
 LN
 
-line_separator
-exec_cmd VBoxManage sharedfolder add $master_name --name "plescripts" --hostpath "$HOME/plescripts --automount"
-LN
+if [ $type_shared_fs == vbox ]
+then
+	line_separator
+	exec_cmd VBoxManage sharedfolder add $master_name --name "plescripts" --hostpath "$HOME/plescripts --automount"
+	LN
+fi
 
 line_separator
 info "Démarre la VM $infra_hostname"
@@ -127,17 +130,13 @@ LN
 
 line_separator
 info "Redémarrage de la VM $infra_hostname"
-exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
-info -n "Temporisation : "; pause_in_secs 20; LN
-exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
+exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"
 LN
 wait_server $infra_ip
 if [ $? -ne 0 ]
 then	# Parfois un simple reboot suffit.
 	info "Redémarrage de la VM $infra_hostname"
-	exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
-	info -n "Temporisation : "; pause_in_secs 20; LN
-	exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
+	exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"
 	LN
 	wait_server $infra_ip
 	[ $? -ne 0 ] && exit 1
@@ -162,11 +161,12 @@ wait_server $infra_ip
 [ $? -ne 0 ] && exit 1
 
 line_separator
-run_ssh "mkdir /mnt/plescripts"
 
 case $type_shared_fs in
 	vbox)
+		run_ssh "mkdir /mnt/plescripts"
 		run_ssh "mount -t vboxsf plescripts /mnt/plescripts"
+		run_ssh "ln -s /mnt/plescripts ~/plescripts"
 		;;
 
 	nfs)
@@ -174,12 +174,8 @@ case $type_shared_fs in
 		run_ssh "mkdir plescripts"
 		run_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,$nfs_options"
 		run_ssh "mkdir -p ~/$oracle_install"
-		run_ssh "mkdir zips"
-		run_ssh "mount ${infra_network}.1:/$common_user_name/ISO/$oracle_install /root/zips -t nfs -o ro,$nfs_options"
 		;;
 esac
-
-run_ssh "ln -s /mnt/plescripts ~/plescripts"
 LN
 
 run_ssh "~/plescripts/setup_first_vms/02_update_config.sh"

@@ -53,46 +53,26 @@ else
 	info -f "[$OK]"
 fi
 
-case $type_shared_fs in
-	nfs)
-		info -n "Test l'existence de '$HOME/$oracle_install' "
-		if [ ! -d "$HOME/$oracle_install" ]
-		then
-			info -f "[$KO]"
-			error "	Ce répertoire doit contenir les zips d'Oracle et du Grid."
-			count_errors=count_errors+1
-		else
-			info -f "[$OK]"
-		fi
-		LN
-		;;
+info -n "Test l'existence de '$HOME/$oracle_install/database/runInstaller' "
+if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
+then
+	info -f "[$KO]"
+	error "	Ce répertoire doit contenir les fichiers dézipés d'Oracle."
+	count_errors=count_errors+1
+else
+	info -f "[$OK]"
+fi
 
-	vbox)
-		info -n "Test l'existence de '$HOME/$oracle_install/database/runInstaller' "
-		if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
-		then
-			info -f "[$KO]"
-			error "	Ce répertoire doit contenir les fichiers dézipés d'Oracle."
-			count_errors=count_errors+1
-		else
-			info -f "[$OK]"
-		fi
-		info -n "Test l'existence de '$HOME/$oracle_install/grid/runInstaller' "
-		if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
-		then
-			info -f "[$KO]"
-			error "	Ce répertoire doit contenir les fichiers dézipés du Grid."
-			count_errors=count_errors+1
-		else
-			info -f "[$OK]"
-		fi
-		LN
-		;;
-
-	*)
-		error "type_shared_fs = $type_shared_fs invalid."
-		exit 1
-esac
+info -n "Test l'existence de '$HOME/$oracle_install/grid/runInstaller' "
+if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
+then
+	info -f "[$KO]"
+	error "Ce répertoire doit contenir les fichiers dézipés du Grid."
+	count_errors=count_errors+1
+else
+	info -f "[$OK]"
+fi
+LN
 
 if [ $type_shared_fs == nfs ]
 then
@@ -106,18 +86,18 @@ then
 	else
 		info -f "[$OK]"
 	fi
-
-	info -n "	- $HOME/$oracle_install "
-	grep "$HOME/$oracle_install" /etc/exports >/dev/null 2>&1
-	if [ $? -ne 0 ]
-	then
-		count_errors=count_errors+1
-		info -f "[$KO]"
-	else
-		info -f "[$OK]"
-	fi
-	LN
 fi
+
+info -n "	- $HOME/$oracle_install "
+grep "$HOME/$oracle_install" /etc/exports >/dev/null 2>&1
+if [ $? -ne 0 ]
+then
+	count_errors=count_errors+1
+	info -f "[$KO]"
+else
+	info -f "[$OK]"
+fi
+LN
 
 line_separator
 info -n "Test l'existence de $full_linux_iso_name "
@@ -149,7 +129,7 @@ if $(test_if_cmd_exists llog)
 then
 	info -f "[$OK]"
 else
-	info -f "[${BLUE}optional${NORM}] mais simplifie la vie ;)"
+	info -f "[${BLUE}optional${NORM}] mais simplifie la vie."
 fi
 LN
 
@@ -224,4 +204,3 @@ else
 	info "Configuration conforme."
 	exit 0
 fi
-

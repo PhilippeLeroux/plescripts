@@ -40,7 +40,7 @@ exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
 LN
 
 line_separator
-exec_cmd "$vm_scripts_path/create_iface.sh"
+exec_cmd "$vm_scripts_path/create_iface.sh -force_iface_name=vboxnet1"
 
 line_separator
 info "Create VM $master_name"
