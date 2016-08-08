@@ -46,6 +46,9 @@ Se postionner dans le répertoire ~/plescrits/database_servers
 
 2.	Clonage des VMs
 
+	_Remarque :_  Le script `~/plescripts/shell/update_master.sh` met à jour les
+	RPMs du master ce qui fait gagner du temps en particulier pour les RACs.
+
 	Cloner un serveur standalone : `./clone_master.sh -db=daisy`
 
 	Cloner le nœud d'un RAC      : `./clone_master.sh -db=daisy -node=1`
