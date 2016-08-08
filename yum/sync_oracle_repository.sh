@@ -156,6 +156,10 @@ then
 		line_separator
 		exec_cmd yum -y update
 		LN
+		info "Notes :"
+		info " * update_master.sh met à jour la VM master $master_name"
+		info " * update_db_os.sh met à jour une VM de base de donnée."
+		LN
 	fi
 
 	line_separator
