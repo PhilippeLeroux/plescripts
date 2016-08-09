@@ -754,7 +754,7 @@ function exec_dynamic_cmd
 #*> Print [message] if specified.
 function exit_if_file_not_exists
 {
-	if [ ! -f $1 ]
+	if [ ! -f "$1" ]
 	then
 		error "File '$1' not exists."
 		shift
