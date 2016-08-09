@@ -18,7 +18,7 @@ typeset -r str_usage=\
 	[-start_server_only] le serveur est cloné mais n'est pas démarré, utile que pour le nœud 1.
 "
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset		db=undef
 typeset -i	node=-1

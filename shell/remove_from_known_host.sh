@@ -14,7 +14,7 @@ typeset -r str_usage=\
 	son adresse IP.
 "
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset host=undef
 

@@ -20,7 +20,7 @@ typeset -r str_usage=\
 	[-usefs]            ne pas utiliser ASM mais un FS.
 	[-ip_node=<node>]   noeud IP, sinon prend la première IP disponible.
 "
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset		db=undef
 typeset -i	ip_node=-1

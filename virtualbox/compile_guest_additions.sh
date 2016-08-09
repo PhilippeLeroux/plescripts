@@ -10,7 +10,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME -host=<str>"
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset	host=undef
 

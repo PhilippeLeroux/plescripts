@@ -10,7 +10,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME -i=<input file> -o=<output file>"
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset input=undef
 typeset output=undef

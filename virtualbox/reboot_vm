@@ -10,7 +10,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME <str>"
 
-info "$ME $@"
+info "Runninf : $ME $*"
 
 [[ $# -eq 0 ]] && [[ -v ID_DB ]] && server=$ID_DB || server=$1
 
@@ -24,7 +24,7 @@ function virtualbox_reboot
 {
 	typeset -ri	stop_at=$SECONDS
 	exec_cmd "stop_vm $server"
-	info "Server stopping...."
+	info "Server $server stopping...."
 	while [ 0 -eq 0 ]
 	do
 		VBoxManage list runningvms | grep -q $server

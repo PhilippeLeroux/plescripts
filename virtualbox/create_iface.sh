@@ -9,7 +9,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME [-force_iface_name=str]"
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset force_iface_name=undef
 

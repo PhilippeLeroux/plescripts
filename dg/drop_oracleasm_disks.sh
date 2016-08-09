@@ -17,7 +17,7 @@ Supprime des disques d'oracleasm et du SAN.
 	[-vg_name=asm01] : Nom du VG contenant les LUNs sur K2, par défaut asm01.
 "
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset		db=undef
 typeset	-i	nr_disk=-1

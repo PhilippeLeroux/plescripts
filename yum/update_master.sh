@@ -8,7 +8,7 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-info "$ME $@"
+info "Running : $ME $*"
 
 while [ $# -ne 0 ]
 do

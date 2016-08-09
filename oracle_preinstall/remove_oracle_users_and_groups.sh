@@ -11,7 +11,7 @@ typeset -r str_usage=\
 "Usage : $ME
 	Supprime les comptes oracle & grid ainsi que tous les groups"
 
-info "$ME $@"
+info "Running : $ME $*"
 
 while [ $# -ne 0 ]
 do

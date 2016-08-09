@@ -13,7 +13,7 @@ typeset -r str_usage=\
 	[-vg=<str>]     Nom du VG à créer, par exemple asm01.
 "
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset	device=undef
 typeset vg=undef

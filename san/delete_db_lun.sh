@@ -15,7 +15,7 @@ typeset -r str_usage=\
 	-vg_name=<str>
 "
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset 	db=undef
 typeset	-i	lun=-1

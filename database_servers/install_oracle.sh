@@ -15,7 +15,7 @@ typeset -r str_usage=\
 	-action=install  Si config l'installation n'est pas lancée.
 "
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset db=undef
 typeset action=install

@@ -10,7 +10,7 @@
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
 
-info "$ME $@"
+info "Running : $ME $*"
 typeset -r str_usage=\
 "Usage : $ME -type_disk=ASM|FS"
 

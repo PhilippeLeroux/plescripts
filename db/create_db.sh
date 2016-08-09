@@ -66,7 +66,7 @@ typeset -r str_usage=\
 	les scripts post installations.
 "
 
-info "$ME $@"
+info "Running : $ME $*"
 
 while [ $# -ne 0 ]
 do

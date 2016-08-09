@@ -10,7 +10,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Ne pas utiliser ce script directement."
 
-info "$ME $@"
+info "Running : $ME $*"
 
 while [ $# -ne 0 ]
 do

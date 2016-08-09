@@ -12,7 +12,7 @@ typeset -r str_usage=\
 	Statistiques sur la consommation mémoire.
 	Utiliser memplot.sh pour affichage graphique de la sortie."
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset -i	max_count=0
 typeset -i	pause_of_secs=2

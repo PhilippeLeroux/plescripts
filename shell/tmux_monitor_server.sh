@@ -14,7 +14,7 @@ Monitor un server Oracle standalone ou 2 nœuds d'un RAC via tmux.
 Le script est prévu pour être exécuté depuis le poste client.
 "
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset	db=undef
 typeset	node1=undef

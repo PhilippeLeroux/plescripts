@@ -12,7 +12,7 @@ typeset -r str_usage=\
 Ce script vérifie que l'OS host remplie les conditions nécessaires au bon
 fonctionnement de la démo."
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset db=undef
 
