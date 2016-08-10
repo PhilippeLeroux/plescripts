@@ -1,6 +1,5 @@
 #!/bin/bash
-
-#	ts=4	sw=4
+# vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
@@ -10,7 +9,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME ...."
 
-info "$ME $@"
+info "Running : $ME $*"
 
 typeset db=undef
 
@@ -43,4 +42,5 @@ do
 	esac
 done
 
+[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db	"$str_usage"
