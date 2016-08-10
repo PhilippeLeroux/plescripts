@@ -247,4 +247,10 @@ then
 	info "$ ssh oracle@${node_names[0]}"
 	info "oracle@${node_names[0]}:NOSID:oracle> cd db"
 	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db"
+	if [ $max_nodes -gt 1 ]
+	then
+		info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db [-db_type=RACONENODE]"
+	else
+		info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db"
+	fi
 fi
