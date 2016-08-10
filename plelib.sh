@@ -132,10 +132,12 @@ fi
 typeset -r OK="${GREEN}ok${NORM}"
 typeset -r KO="${RED}ko${NORM}"
 
-if [ "$PLELIB_OUTPUT" = "FILE" ] && [ ! -d $PLELOG_PATH ]
+#	Le répertoire doit être créée !
+if [ ! -d $PLELOG_PATH ]
 then
 	echo "mkdir $PLELOG_PATH"
-	mkdir $PLELOG_PATH >/dev/null 2>&1
+	mkdir $PLELOG_PATH
+	chown kangs:users $PLELOG_PATH
 	chmod ug=rwx,o=rx $PLELOG_PATH
 	[ $? -ne 0 ] && exit 1
 fi
@@ -557,7 +559,7 @@ function get_cmd_name
 #*> Show execution time after PLE_SHOW_EXECUTION_TIME_AFTER seconds
 function exec_cmd
 {
-	# Mémo : ne jamais utiliser $1 $2 ... mais uniquement $@
+	# Mémo : ne jamais utiliser $1 $2 ... mais uniquement $*
 	#	exec_cmd ls -rtl	est valable
 	#	exec_cmd "ls -rtl"	l'est aussi.
 	typeset force=NO
@@ -604,7 +606,7 @@ function exec_cmd
 
 	typeset -i	eval_return
 
-	typeset -r simplify_cmd=$(echo "$@" | tr -s [:space:])
+	typeset	-r	simplify_cmd=$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:])
 
 	case $EXEC_CMD_ACTION in
 		NOP)
@@ -618,10 +620,10 @@ function exec_cmd
 			typeset -ri eval_start_at=$SECONDS
 			if [ x"$PLELIB_LOG_FILE" == x ]
 			then
-				eval "$@"
+				eval "$*"
 				eval_return=$?
 			else
-				eval "$@" 2>&1 | tee -a $PLELIB_LOG_FILE
+				eval "$*" 2>&1 | tee -a $PLELIB_LOG_FILE
 				eval_return=${PIPESTATUS[0]}
 
 				#	BUG workaround :
@@ -630,7 +632,7 @@ function exec_cmd
 
 			if [ $hide_command == NO ]
 			then
-				typeset -ri eval_duration=$(( $SECONDS - $eval_start_at ))
+				typeset -ri eval_duration=$(( SECONDS - eval_start_at ))
 				if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 				then
 					my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$(get_cmd_name "$@") running time : $(fmt_seconds $eval_duration)"
