@@ -4,16 +4,15 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-		[-date=<YYYY-MM-DD>] not set search last date.
-		[-time=<HHhMM>]      not set search last time.
+		-title=<str>
+		[-date=<YYYY-MM-DD>] not set, search last date.
+		[-time=<HHhMM>]      not set, search last time.
 		[-server=<name>]     can be omitted with only one server.
-		[-title=<str>]
 		[-show]              show log files.
 
 Display files produced by memstats.sh with gnuplot"
@@ -90,11 +89,11 @@ function set_to_last_date
 
 function show_formatted_logs
 {
-	log_mem=${PLELOG_ROOT}/$date/*${server}${title}memstat.log
+	typeset log_mem=${PLELOG_ROOT}/$date/*${server}${title}memstat.log
 	for f in $log_mem
 	do
-		IFS='_' read log_time srvname title1 title2 rem<<<"${f##*/}"
-		msg=$(printf "title : %-15s at %s server %s" ${title1}_${title2} $log_time $srvname)
+		IFS='_' read log_time srvname title1 rem<<<"${f##*/}"
+		typeset msg=$(printf "$ME -title=%s -server=%s -time=%s" ${title1} $srvname $log_time)
 		info "$msg"
 	done
 	LN
@@ -102,19 +101,10 @@ function show_formatted_logs
 
 function make_log_names
 {
-	[ $date = undef ] && set_to_last_date
+	[ $date == undef ] && set_to_last_date
 
-	if [ $time = undef ]
+	if [ $time == undef ]
 	then
-		count_log_files=$(ls -rt ${PLELOG_ROOT}/$date/*${server}${title}shmstat.log | wc -l)
-		if [ $count_log_files -gt 1 ]
-		then
-			info "$count_log_files log files, you must specified more options."
-			show_formatted_logs
-			info "$str_usage"
-			exit 1
-		fi
-
 		last_log_file=$(ls -rt ${PLELOG_ROOT}/$date/*${server}${title}shmstat.log 2>/dev/null)
 		[ x"$last_log_file" = x ] && error "File not found in ${PLELOG_ROOT}/$date" && exit 1
 
@@ -127,14 +117,14 @@ function make_log_names
 		log_swap=$(ls -rt ${PLELOG_ROOT}/$date/${time}_${server}*swapstat.log)
 	fi
 
-	if [ $log_shm = undef ]
+	if [ $log_shm == undef ]
 	then
 		log_shm=${PLELOG_ROOT}/$date/${time}_${server}${title}shmstat.log
 		log_mem=${PLELOG_ROOT}/$date/${time}_${server}${title}memstat.log
 		log_swap=${PLELOG_ROOT}/$date/${time}_${server}${title}swapstat.log
 	fi
 
-	[ x"$server" = x ] && server=$(cut -d_ -f2 <<< $log_mem)
+	[ x"$server" == x ] && server=$(cut -d_ -f2 <<< $log_mem)
 
 	exit_if_file_not_exists $log_shm
 	exit_if_file_not_exists $log_mem
@@ -143,7 +133,7 @@ function make_log_names
 #	============================================================================
 #	MAIN
 #	============================================================================
-if [ $show = yes ]
+if [ $show == yes ]
 then
 	set_to_last_date
 	show_formatted_logs
@@ -167,31 +157,34 @@ typeset	-r	fmt_time="%M:%S"
 
 #	Lecture de l'heure de début des mesures
 typeset -r	start_time=$(sed -n "2p" $log_shm | cut -d' ' -f1)
+
 # Lecture de la seconde mesure (ligne 3 donc) pour déterminer le refresh rate.
 typeset -r	second_time=$(sed -n "3p" $log_shm | cut -d' ' -f1)
+
 # Fréquence de rafraîchissement :
 typeset		refresh_rate=$(compute "($(time_to_secs $second_time) - $(time_to_secs $start_time))*2")
-# tic du graphique
-typeset -r	tic=$(printf "00:01")
 
 info "Load file    $log_shm"
 info "Load file    $log_mem"
 info "Load file    $log_swap"
 info "Refresh rate $(fmt_seconds $refresh_rate)"
-info "tic          $tic ($fmt_time)"
 
 typeset plot_cmds=/tmp/memory.plot.$$
 #https://www2.uni-hamburg.de/Wiss/FB/15/Sustainability/schneider/gnuplot/colors.htm
 
+typeset graph_title=$title
+[ $graph_title == global_ ] && graph_title="Start at $time"
+
 cat << EOS > $plot_cmds
 set grid
 set datafile separator " "
-set title '${server%_} : ${title%_}'
+set term qt title '${server%_} : ${graph_title}' size 944,512
+set title '${server%_} : ${graph_title}'
 set format x '$fmt_time'
 set timefmt '$fmt_time'
 set xdata time
 set xlabel 'Time'
-set xtic '$tic'  rotate by 90
+set xtic rotate by -45
 set ylabel 'Mega bytes (Mb)'
 plot	\
 	"$log_mem" using 1:2 title 'Mem Total'  with ${with} lt rgb "red",		\
@@ -206,5 +199,5 @@ EOS
 
 #"$log_mem $log_shm"         using 1:(\$1+\$4) title 'RAM Used'	with ${with} lt rgb "yellow",	\
 rm -rf nohup.out >/dev/null 2>&1
-nohup gnuplot -persist $plot_cmds &
+gnuplot $plot_cmds
 info "My pid is $!"

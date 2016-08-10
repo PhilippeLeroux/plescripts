@@ -8,14 +8,14 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -title=<str> [-count=<#>] [-pause=2]
+"Usage : $ME -title=<str> [-count=<#>] [-pause=1]
 	Statistiques sur la consommation mémoire.
 	Utiliser memplot.sh pour affichage graphique de la sortie."
 
 info "Running : $ME $*"
 
 typeset -i	max_count=0
-typeset -i	pause_of_secs=2
+typeset -i	pause_of_secs=1
 typeset		action=normal
 typeset		title=undef
 
@@ -77,9 +77,9 @@ function write_stats
 {
 	if [ $pause_of_secs -lt 60 ]
 	then
-		timestamp=$(date +"%H:%M:%S")
+		typeset -r timestamp=$(date +"%H:%M:%S")
 	else
-		timestamp=$(date +"%H:%M")
+		typeset -r timestamp=$(date +"%H:%M")
 	fi
 
 	typeset -i iline=0
