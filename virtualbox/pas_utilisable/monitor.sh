@@ -65,7 +65,7 @@ typeset -r with=impulses
 cat << EOS > $network_script
 set grid
 set datafile separator " "
-set term wxt title 'srvdonald02 Network'
+set term qt title 'srvdonald02 Network'
 set title 'srvdonald02 Network'
 set xdata time
 set xlabel 'Time'
@@ -86,7 +86,7 @@ EOS
 cat << EOS > $cpu_script
 set grid
 set datafile separator " "
-set term wxt title 'Donald CPU'
+set term qt title 'Donald CPU'
 set title 'Donald CPU'
 set xdata time
 set xlabel 'Time'
@@ -107,7 +107,7 @@ EOS
 cat << EOS > $disk_script
 set grid
 set datafile separator " "
-set term wxt title 'srvdonald02 disk'
+set term qt title 'srvdonald02 disk'
 set title 'srvdonald02 disk'
 set xdata time
 set xlabel 'Time'
