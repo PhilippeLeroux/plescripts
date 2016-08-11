@@ -8,7 +8,12 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -title=<str> [-count=<#>] [-pause=1]
+"Usage : $ME
+	-title=<str>     titre du jeu de statistiques.
+	[-stop]          stop la capture des statistiques.
+	[-count=<#>]     nombre maximal de mesures à prendre, par défaut pas de limite.
+	[-pause=1]       pause en secondes entre 2 mesures.
+
 	Statistiques sur la consommation mémoire.
 	Utiliser memplot.sh pour affichage graphique de la sortie."
 
@@ -16,7 +21,7 @@ info "Running : $ME $*"
 
 typeset -i	max_count=0
 typeset -i	pause_of_secs=1
-typeset		action=normal
+typeset		action=start
 typeset		title=undef
 
 while [ $# -ne 0 ]
@@ -43,8 +48,8 @@ do
 			shift
 			;;
 
-		-kill)
-			action=kill
+		-stop)
+			action=stop
 			shift
 			;;
 
@@ -106,12 +111,12 @@ function write_stats
 	done<<<"$(df -m /dev/shm)"
 }
 
-function remove_fork_pid_file
+function remove_pid_file
 {
-	rm $fork_pid_file
+	rm $pid_file
 }
 
-function get_fork_pid_suffix
+function get_pid_file_suffix
 {
 	echo "$(hostname -s)_${title}running.pid"
 }
@@ -131,28 +136,33 @@ function main
 }
 
 case $action in
-	kill)
-		[ x"$title" = x ] && error "use -title with -kill" && exit 1
-		fork_pid_file=$(find /tmp/*_$(get_fork_pid_suffix) 2>/dev/null)
-		if [ $? -ne 0 ] || [ x"$fork_pid_file" = x ]
+	stop)
+		[ x"$title" == x ] && error "use -title with -stop" && exit 1
+		pid_file=$(find /var/run/*_$(get_pid_file_suffix) 2>/dev/null)
+		if [ $? -ne 0 ] || [ x"$pid_file" == x ]
 		then
 			error "no process found with title ${title%_}"
-			exit
+			exit 1
 		fi
 
-		pid_to_stop=$(cat $fork_pid_file)
-		info -n "Stop $0 $pid_to_stop : "
+		pid_to_stop=$(cat $pid_file)
+		info "Send signal SIGTERM to $pid_to_stop"
 		kill -15 $pid_to_stop >/dev/null 2>&1
-		[ $? -eq 0 ] && info -f "[$OK]" || info -f "[$KO]"
+		sleep 2	# Laisse le temps au script de se terminer.
+		if [ -f $pid_file ]
+		then
+			error "Failed to stop $pid_to_stop"
+			exit 1
+		else
+			info "$pid_to_stop stopped."
+			exit 0
+		fi
 		;;
 
-	normal)
-		if [ ! -t 1 ] && [ ! -t 2 ]
-		then	# Si 1 et 2 sont fermés suppose lancement en background
-			fork_pid_file=/tmp/$(date +"%Hh%M")_$(get_fork_pid_suffix)
-			echo "$$" > $fork_pid_file
-			trap remove_fork_pid_file EXIT
-		fi
+	start)
+		pid_file=/var/run/$(date +"%Hh%M")_$(get_pid_file_suffix)
+		echo "$$" > $pid_file
+		trap remove_pid_file EXIT
 		main
 		;;
 

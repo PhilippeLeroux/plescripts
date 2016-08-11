@@ -48,9 +48,9 @@ Wants=nfs
 After=nfs
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
+Type=simple
 ExecStart=/root/plescripts/stats/memstats.sh -title=global
+ExecStop=/root/plescripts/stats/memstats.sh -stop -title=global
 
 [Install]
 WantedBy=multi-user.target
