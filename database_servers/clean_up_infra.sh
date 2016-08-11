@@ -79,6 +79,11 @@ then
 	LN
 
 	line_separator
+	info "Mise à jour des clefs"
+	exec_cmd "ssh -t $dns_conn \"~/plescripts/dns/clean_up_know_host_with_dns.sh\""
+	LN
+
+	line_separator
 	info "Mise à jour du san :"
 	exec_cmd "ssh -t $san_conn \"~/plescripts/san/reset_all_for_db.sh -db=$db\""
 	LN
