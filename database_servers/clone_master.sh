@@ -250,6 +250,46 @@ if [ 0 -eq 1 ]; then # Désactivé, plus besoins de saisir le mot de passe.
 fi
 }
 
+#	Permet au compte root du serveur de se connecter sur le SAN sans mot de passe.
+#	N'utilise pas make_ssh_user_equivalence_with.sh car il nécessite la saisie du
+#	mots de passe root.
+function make_ssh_equi_with_san
+{
+	typeset -r san_public_key=$(get_public_key_for $san_hostname)
+	typeset -r san_public_key_escaped=$(escape_slash "$san_public_key")
+
+	#	-c nécessaire si ~/.ssh/known_hosts n'existe pas
+	#	Ajoute la clef public du serveur SAN dans le known_hosts du serveur.
+	exec_cmd -c "ssh -t root@$server_name \"sed -i '/${san_public_key_escaped}/d' ~/.ssh/known_hosts 1>/dev/null\""
+	exec_cmd "ssh -t root@$server_name \"echo \\\"$san_public_key\\\" >> ~/.ssh/known_hosts\""
+	LN
+
+	#	Création de la clef public pour le compte root.
+	exec_cmd "ssh -t root@$server_name \"[ ! -f ~/.ssh/id_rsa ] && ssh-keygen -t rsa -N \\\"\\\" -f ~/.ssh/id_rsa\" || true"
+	LN
+
+	typeset -r public_key_file=id_rsa_${server_name}.pub
+	#	Copie la clef de root du serveur en local.
+	exec_cmd "scp root@$server_name:/root/.ssh/id_rsa.pub /tmp/$public_key_file"
+	#	Copie le clef local vers le SAN.
+	exec_cmd "scp /tmp/$public_key_file root@$san_hostname:/root/.ssh/$public_key_file"
+	exec_cmd "rm /tmp/$public_key_file"
+	#	Comme ça pas besoin de mot de passe, la clef et sur le serveur SAN.
+	LN
+
+	#	Fais le ménage au cas ou ...
+	exec_cmd -c "ssh root@$san_hostname sed -i '/$server_name/d' /root/.ssh/authorized_keys"
+	LN
+
+	#	Ajoute la clef dans les autorisées.
+	exec_cmd "ssh root@$san_hostname \"cat /root/.ssh/$public_key_file >> /root/.ssh/authorized_keys\""
+	LN
+
+	#	La clef peut être supprimée du serveur.
+	exec_cmd "ssh root@$san_hostname rm /root/.ssh/$public_key_file"
+	LN
+}
+
 #	Configure le master cloné
 function configure_server
 {
@@ -279,10 +319,6 @@ function configure_server
 	[ $? -eq 0 ] && exec_cmd "ssh -t root@$master_name \"yum -y update\""
 	LN
 
-	#N'est plus utile, la clef est créée sur le master.
-	#line_separator
-	#exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -server=$master_name -user=root"
-
 	line_separator
 	register_server_2_dns
 
@@ -298,8 +334,7 @@ function configure_server
 	LN
 
 	line_separator
-	info "Equivalence entre $server_name et $san_hostname"
-	exec_cmd "ssh root@$server_name plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$san_hostname"
+	make_ssh_equi_with_san
 	LN
 }
 
