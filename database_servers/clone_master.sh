@@ -92,7 +92,7 @@ typeset -r vg_name=asm01
 #	Équivalence ssh entre le poste client et root@orclmaster
 function connection_ssh_with_root_on_orclmaster
 {
-	exec_cmd "~/plescripts/shell/connections_ssh_with.sh -server=$master_name -user=root"
+	exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -server=$master_name -user=root"
 }
 
 function register_server_2_dns
@@ -317,7 +317,7 @@ function configure_server
 
 	line_separator
 	info "Equivalence entre $server_name et $san_hostname"
-	exec_cmd "ssh root@$server_name plescripts/shell/connections_ssh_with.sh -user=root -server=$san_hostname"
+	exec_cmd "ssh root@$server_name plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$san_hostname"
 	LN
 }
 

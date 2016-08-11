@@ -80,7 +80,7 @@ wait_server ${infra_network}.${master_ip_node}
 LN
 
 confirm_or_exit -reply_list=CR "Le mot de passe root sera demandé. Press enter to continue."
-exec_cmd ~/plescripts/shell/connections_ssh_with.sh -user=root -server=${master_ip}
+exec_cmd ~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=${master_ip}
 LN
 
 if [ $type_shared_fs == vbox ]

@@ -2,7 +2,7 @@
 
 	permet de supprimer les caractères de controles dans les logs
 
-- connections_ssh_with.sh
+- make_ssh_user_equivalence_with.sh
 
 	Établie une connexion ssh sans mot de passe entre le poste client et un serveur.
 

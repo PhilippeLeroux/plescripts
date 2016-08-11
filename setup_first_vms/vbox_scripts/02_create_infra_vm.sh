@@ -145,7 +145,7 @@ LN
 
 line_separator
 info "Connexion ssh :"
-exec_cmd "~/plescripts/shell/connections_ssh_with.sh -user=root -server=$infra_ip"
+exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_ip"
 LN
 
 line_separator
@@ -207,5 +207,5 @@ LN
 
 exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
 wait_server $infra_hostname
-exec_cmd "~/plescripts/shell/connections_ssh_with.sh -user=root -server=$infra_hostname"
+exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_hostname"
 LN
