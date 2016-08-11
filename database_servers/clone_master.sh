@@ -89,12 +89,6 @@ typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | 
 
 typeset -r vg_name=asm01
 
-#	Équivalence ssh entre le poste client et root@orclmaster
-function connection_ssh_with_root_on_orclmaster
-{
-	exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -server=$master_name -user=root"
-}
-
 function register_server_2_dns
 {
 	info "Register server to DNS"
@@ -182,18 +176,6 @@ function configure_ifaces_hostname_and_reboot
 	reboot_server $server_name
 
 	test_pause "$server_name : Check network configuration."
-}
-
-#	Connexion ssh sans mot de passe entre le poste client et :
-#		root@$server_name
-#		grid@$server_name
-#		oracle@$server_name
-function connections_ssh_client_to_db_server
-{
-	exec_cmd "~/plescripts/ssh/db_connections_ssh_to_server.sh -remote_server=$server_name"
-	LN
-
-	test_pause "$server_name : Check connections."
 }
 
 #	Nomme l'initiator
@@ -299,7 +281,7 @@ function configure_server
 
 	#N'est plus utile, la clef est créée sur le master.
 	#line_separator
-	#connection_ssh_with_root_on_orclmaster
+	#exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -server=$master_name -user=root"
 
 	line_separator
 	register_server_2_dns
@@ -326,7 +308,7 @@ function configure_oracle_accounts
 {
 	run_oracle_preinstall
 
-	connections_ssh_client_to_db_server
+	exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$server_name"
 
 	exec_cmd "ssh -t root@$server_name plescripts/gadgets/install.sh"
 	LN

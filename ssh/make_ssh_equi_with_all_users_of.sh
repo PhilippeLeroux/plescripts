@@ -3,19 +3,14 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 EXEC_CMD_ACTION=EXEC
 
-function update_local_know_hosts_with
-{
-	typeset -r server_name=$1
-
-	remote_keyscan=$(ssh-keyscan -t ecdsa $server_name | tail -1)
-
-	exec_cmd -c "sed -i '#${remote_keyscan}#d' ~/.ssh/known_hosts 1>/dev/null"
-	exec_cmd "echo \"$remote_keyscan\" >> ~/.ssh/known_hosts"
-}
-
-function copy_rsa_pub_to_server
+#	La clef public de l'host est copiée sur le serveur $1 pour les comptes
+#		- root
+#		- grid
+#		- oracle
+function copy_public_key
 {
 	typeset -r server_name=$1
 
@@ -39,9 +34,6 @@ function copy_rsa_pub_to_server
 	exec_cmd ssh $user_name@$server_name "\"cat ~/.ssh/client_rsa.pub >> /home/grid/.ssh/authorized_keys\""
 	exec_cmd -c ssh $user_name@$server_name "chown -R grid:oinstall /home/grid/.ssh"
 	LN
-
-	info "Supprime la clef public"
-	exec_cmd ssh $user_name@$server_name "rm -f /home/$user_name/.ssh/client_rsa.pub"
 }
 
 #	============================================================
@@ -77,8 +69,8 @@ done
 
 exit_if_param_undef remote_server	"$str_usage"
 
-update_local_know_hosts_with	$remote_server
+add_2_know_hosts $remote_server
 LN
 
-copy_rsa_pub_to_server			$remote_server
+copy_public_key $remote_server
 LN
