@@ -196,42 +196,6 @@ function connections_ssh_client_to_db_server
 	test_pause "$server_name : Check connections."
 }
 
-#	Permet au compte root du serveur de se connecter sur le SAN sans mot de passe.
-function connections_ssh_db_server_to_san
-{
-	info "Add san server to file ~/.ssh/known_hosts"
-	typeset -r remote_keyscan=$(ssh-keyscan -t ecdsa $san_hostname | tail -1)
-	typeset -r rks_escaped=$(escape_slash "$remote_keyscan")
-
-	#	-c nécessaire si ~/.ssh/known_hosts n'existe pas
-	exec_cmd -c "ssh -t root@$server_name \"sed -i '/${rks_escaped}/d' ~/.ssh/known_hosts 1>/dev/null\""
-	exec_cmd "ssh -t root@$server_name \"echo \\\"$remote_keyscan\\\" >> ~/.ssh/known_hosts\""
-	LN
-
-	info "Create public key."
-	exec_cmd "ssh -t root@$server_name \"[ ! -f ~/.ssh/id_rsa ] && ssh-keygen -t rsa -N \\\"\\\" -f ~/.ssh/id_rsa\" || true"
-	LN
-
-	typeset -r public_key_file=id_rsa_${server_name}.pub
-	info "Copy public key from $server_name to $san_hostname"
-	exec_cmd "scp root@$server_name:/root/.ssh/id_rsa.pub /tmp/$public_key_file"
-	exec_cmd "scp /tmp/$public_key_file root@$san_hostname:/root/.ssh/$public_key_file"
-	exec_cmd "rm /tmp/$public_key_file"
-	LN
-
-	info "Remove public key $server_name from $san_hostname."
-	exec_cmd -c "ssh root@$san_hostname sed -i '/$server_name/d' /root/.ssh/authorized_keys"
-	LN
-
-	info "Add public key to ~/.ssh/authorized_keys"
-	exec_cmd "ssh root@$san_hostname \"cat /root/.ssh/$public_key_file >> /root/.ssh/authorized_keys\""
-	LN
-
-	info "Remove public key file for $server_name from $san_hostname"
-	exec_cmd "ssh root@$san_hostname rm /root/.ssh/$public_key_file"
-	LN
-}
-
 #	Nomme l'initiator
 function setup_iscsi_inititiator
 {
@@ -321,6 +285,11 @@ function configure_server
 	exec_cmd "$vm_scripts_path/start_vm $server_name"
 	wait_master
 
+	if [ $start_server_only == yes ]
+	then #	La VM se nomme $server_name mais son nom d'hôte est $master_name.
+		add_2_know_hosts $master_name
+	fi
+
 	#	La VM ayant été clonée elle a la configuration réseau du master.
 	#	Donc son nom est $master_name
 	line_separator
@@ -343,17 +312,12 @@ function configure_server
 
 	#	Maintenant le serveur a son nom définitif : $server_name.
 
-	line_separator
-	typeset -r local_host=$(hostname -s)
-	info "Add name '$server_name' to ~/.ssh/known_hosts de $local_host"
-	typeset -r remote_keyscan=$(ssh-keyscan -t ecdsa $server_name | tail -1)
-	typeset -r rks_escaped=$(escape_slash "$remote_keyscan")
-	exec_cmd -c "sed -i '/${rks_escaped}/d' ~/.ssh/known_hosts 1>/dev/null"
-	exec_cmd "echo \"$remote_keyscan\" >> ~/.ssh/known_hosts"
+	add_2_know_hosts $server_name
 	LN
 
 	line_separator
-	connections_ssh_db_server_to_san
+	info "Equivalence entre $server_name et $san_hostname"
+	exec_cmd "ssh root@$server_name plescripts/shell/connections_ssh_with.sh -user=root -server=$san_hostname"
 	LN
 }
 
@@ -429,6 +393,10 @@ fi
 
 info "Plymouth theme"
 exec_cmd -c "ssh -t root@$server_name plescripts/shell/set_plymouth_them"
+LN
+
+info "Active les statistiques"
+exec_cmd "ssh -t root@${server_name} plescripts/stats/create_systemd_service_stats.sh"
 LN
 
 reboot_server $server_name

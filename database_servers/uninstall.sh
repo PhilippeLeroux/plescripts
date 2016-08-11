@@ -303,7 +303,7 @@ function deinstall_grid
 #	MAIN
 #	============================================================================
 line_separator
-info "Remove component on : $current_node $node_list"
+info "Remove components on : $current_node $node_list"
 line_separator
 LN
 
@@ -336,9 +336,9 @@ fi
 exec_cmd -f -c "umount /mnt/oracle_install"
 LN
 
-line_separator
-if grep -q rever_to_master <<< "$action_list"
+if grep -q revert_to_master <<< "$action_list"
 then
+	line_separator
 	root_execute_on_other_nodes "plescripts/database_servers/revert_to_master.sh -doit; poweroff"
 	exec_cmd "./revert_to_master.sh -doit"
 	exec_cmd "poweroff"

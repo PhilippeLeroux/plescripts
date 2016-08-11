@@ -49,7 +49,10 @@ function get_ip_for_host
 	typeset -r output=$(nslookup $host)
 	if [ $? -eq 0 ]
 	then
-		echo $ouput | grep ^Address | tail -1 | cut -d' ' -f2
+		echo "$output" | grep -E ^Address | tail -1 | cut -d' ' -f2
+		return 0
+	else
+		return 1
 	fi
 }
 
@@ -71,3 +74,31 @@ function remove_from_known_hosts
 
 	exec_cmd sed -i '/^$/d' ~/.ssh/known_hosts
 }
+
+#	$1 server name.
+#	return public key
+function get_public_key_for
+{
+	typeset -r srv_name=$1
+	typeset -r server_ip=$(get_ip_for_host $srv_name)
+
+	ssh-keyscan -t ecdsa $srv_name | tail -1 | sed "s/$srv_name/$srv_name,$server_ip/"
+}
+
+function add_2_know_hosts
+{
+	typeset -r srv_name=$1
+
+	line_separator
+	info "Add to $HOME/.ssh/know_hosts server : $srv_name"
+	LN
+
+	exec_cmd -c "sed -i '/^$srv_name.*/d' ~/.ssh/known_hosts 1>/dev/null"
+	LN
+
+	typeset -r server_keyscan=$(get_public_key_for $srv_name)
+	#typeset -r server_keyscan=$(ssh-keyscan -t ecdsa $srv_name | tail -1 | sed "s/$srv_name/$srv_name,$server_ip/")
+	exec_cmd "echo \"$server_keyscan\" >> ~/.ssh/known_hosts"
+	LN
+}
+

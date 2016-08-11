@@ -5,6 +5,7 @@
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/networklib.sh
+. ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -338,32 +339,6 @@ function create_all_dgs
 	fi
 }
 
-function launch_memstat
-{
-	typeset mode="-h"
-	[ "$DEBUG_PLE" = yes ] && mode=""
-
-	for i in $( seq 0 $(( max_nodes - 1 )) )
-	do
-		exec_cmd $mode -c "ssh -n grid@${node_names[$i]} \
-		\"nohup ~/plescripts/memory/memstats.sh -title=install_grid >/dev/null 2>&1 &\""
-	done
-}
-
-function on_exit
-{
-	[ "$INSTALL_GRAPH" != YES ] && return 0
-
-	typeset mode="-h"
-	[ "$DEBUG_PLE" = yes ] && mode=""
-
-	for i in $( seq 0 $(( max_nodes - 1 )) )
-	do
-		exec_cmd $mode -c "ssh -t grid@${node_names[$i]} \
-		\"~/plescripts/memory/memstats.sh -kill -title=install_grid >/dev/null 2>&1\""
-	done
-}
-
 function disclaimer
 {
 	info "****************************************************"
@@ -410,8 +385,6 @@ function remove_tfa_on_all_nodes
 		exec_cmd $mode -c "ssh -n root@${node_names[$i]} . /root/.bash_profile \; tfactl uninstall"
 	done
 }
-
-trap on_exit EXIT
 
 #	======================================================================
 #	MAIN
@@ -463,7 +436,7 @@ fi
 
 ~/plescripts/shell/wait_server ${node_names[0]}
 
-[ "$INSTALL_GRAPH" == YES ] && launch_memstat
+stats_tt start grid_installation
 
 if [ $skip_grid_installation != yes ]
 then
@@ -515,6 +488,8 @@ then
 fi
 
 [ $skip_create_dg != yes ] && create_all_dgs || true
+
+stats_tt stop grid_installation
 
 info "Installation status :"
 exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; crsctl stat res -t\""

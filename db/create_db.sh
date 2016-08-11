@@ -5,6 +5,7 @@
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/memory/memorylib.sh
+. ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -343,6 +344,7 @@ then
 fi
 #===============================================================================
 
+stats_tt start create_$lower_name
 if [ $skip_db_create == no ]
 then
 	remove_all_log_and_db_fs_files
@@ -462,6 +464,8 @@ else
 		LN
 	fi
 fi
+
+stats_tt stop create_$lower_name
 
 info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
 LN

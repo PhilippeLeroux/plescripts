@@ -111,7 +111,19 @@ LN
 exec_cmd "rm -rf /tmp/*"
 LN
 
+line_separator
+info "Désactive le service PLE Statistics"
+exec_cmd -c "systemctl stop plestatistics"
+exec_cmd -c "systemctl disable plestatistics"
+exec_cmd -c "rm /usr/lib/systemd/system/plestatistics.service"
+LN
+
+line_separator
 exec_cmd "systemctl restart NetworkManager"
+LN
+
+line_separator
+info "Run ./clean_up_infra.sh -db=loulou from the host server before to start a new installation."
 LN
 
 if [ $EXEC_CMD_ACTION == NOP ]

@@ -5,6 +5,7 @@
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/networklib.sh
+. ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -168,34 +169,6 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	LN
 }
 
-function launch_memstat
-{
-	typeset mode="-h"
-	[ "$DEBUG_PLE" = yes ] && mode=""
-
-	for i in $( seq 0 $(( max_nodes - 1 )) )
-	do
-		exec_cmd $mode -c "ssh -n oracle@${node_names[$i]} \
-		\"nohup ~/plescripts/memory/memstats.sh -title=install_oracle >/dev/null 2>&1 &\""
-	done
-}
-
-function on_exit
-{
-	[ "$INSTALL_GRAPH" != YES ] && return 0
-
-	typeset mode="-h"
-	[ "$DEBUG_PLE" = yes ] && mode=""
-
-	for i in $( seq 0 $(( max_nodes - 1 )) )
-	do
-		exec_cmd $mode -c "ssh -t oracle@${node_names[$i]} \
-		\"~/plescripts/memory/memstats.sh -kill -title=install_oracle >/dev/null 2>&1\""
-	done
-}
-
-trap on_exit EXIT
-
 #	============================================================================
 #	MAIN
 #	============================================================================
@@ -215,42 +188,44 @@ then
 fi
 LN
 
-[ "$INSTALL_GRAPH" == YES ] && launch_memstat
-
 create_response_file
 
-if [ $action == install ]
+[ $action == config ] && exit 0	# Pas d'installation.
+
+~/plescripts/shell/wait_server ${node_names[0]}
+
+stats_tt start oracle_installation
+
+copy_response_file
+
+mount_install_directory
+
+start_oracle_installation
+
+typeset -i inode=0
+while [ $inode -lt $max_nodes ]
+do
+	run_post_install_root_scripts_on_node $inode
+	inode=inode+1
+	LN
+done
+
+typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
+[ "$type_disks" == FS ] && exec_cmd "ssh -t root@${node_names[0]} \"~/plescripts/database_servers/create_systemd_service_oracledb.sh\""
+
+stats_tt stop oracle_installation
+
+info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
+LN
+
+line_separator
+info "Database can be created :"
+LN
+info "$ ssh oracle@${node_names[0]}"
+info "oracle@${node_names[0]}:NOSID:oracle> cd db"
+if [ $max_nodes -gt 1 ]
 then
-	copy_response_file
-
-	mount_install_directory
-
-	start_oracle_installation
-
-	typeset -i inode=0
-	while [ $inode -lt $max_nodes ]
-	do
-		run_post_install_root_scripts_on_node $inode
-		inode=inode+1
-		LN
-	done
-
-	typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
-	[ "$type_disks" == FS ] && exec_cmd "ssh -t root@${node_names[0]} \"~/plescripts/database_servers/create_systemd_service_oracledb.sh\""
-
-	info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
-	LN
-
-	line_separator
-	info "Database can be created :"
-	LN
-	info "$ ssh oracle@${node_names[0]}"
-	info "oracle@${node_names[0]}:NOSID:oracle> cd db"
+	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db [-db_type=RACONENODE]"
+else
 	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db"
-	if [ $max_nodes -gt 1 ]
-	then
-		info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db [-db_type=RACONENODE]"
-	else
-		info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db"
-	fi
 fi
