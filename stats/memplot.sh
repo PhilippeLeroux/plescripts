@@ -13,6 +13,7 @@ typeset -r str_usage=\
 		[-date=<YYYY-MM-DD>] not set, search last date.
 		[-time=<HHhMM>]      not set, search last time.
 		[-server=<name>]     can be omitted with only one server.
+		[-start_at=HHhMM]    skip tt before HHhMM
 		[-show]              show log files.
 
 Display files produced by memstats.sh with gnuplot"
@@ -105,13 +106,16 @@ function make_log_names
 
 	if [ $time == undef ]
 	then
-		last_log_file=$(ls -rt ${PLELOG_ROOT}/$date/*${server}${title}shmstat.log 2>/dev/null)
+		debug "ls -rt ${PLELOG_ROOT}/$date/*${server}*${title}shmstat.log"
+		last_log_file=$(ls -rt ${PLELOG_ROOT}/$date/*${server}*${title}shmstat.log 2>/dev/null)
 		[ x"$last_log_file" = x ] && error "File not found in ${PLELOG_ROOT}/$date" && exit 1
 
-		time=${last_log_file##*/}
-		time=${time%%_*}
-		info "set time to $time"
+		IFS=_ read time server title rem<<<${last_log_file##*/}
+		info "set time to   $time"
+		info "set server to $server"
+		info "set title to  $title"
 		LN
+
 		log_shm=$(ls -rt ${PLELOG_ROOT}/$date/${time}_${server}*shmstat.log)
 		log_mem=$(ls -rt ${PLELOG_ROOT}/$date/${time}_${server}*memstat.log)
 		log_swap=$(ls -rt ${PLELOG_ROOT}/$date/${time}_${server}*swapstat.log)
@@ -172,10 +176,16 @@ info "Refresh rate $(fmt_seconds $refresh_rate)"
 typeset plot_cmds=/tmp/memory.plot.$$
 #https://www2.uni-hamburg.de/Wiss/FB/15/Sustainability/schneider/gnuplot/colors.htm
 
+typeset -i line_to_skip=1
+
+info "title = '$title'"
 typeset graph_title=$title
-[ $graph_title == global_ ] && graph_title="Start at $time"
+[ "${graph_title%_}" == "global" ] && graph_title="Start at $time"
+
+typeset -r stats_info=${PLELOG_ROOT}/$date/stats_info.txt
 
 cat << EOS > $plot_cmds
+set key autotitle columnhead
 set grid
 set datafile separator " "
 set term qt title '${server%_} : ${graph_title}' size 944,512
@@ -197,7 +207,7 @@ reread
 replot
 EOS
 
-#"$log_mem $log_shm"         using 1:(\$1+\$4) title 'RAM Used'	with ${with} lt rgb "yellow",	\
-rm -rf nohup.out >/dev/null 2>&1
 gnuplot $plot_cmds
-info "My pid is $!"
+#rm -rf nohup.out >/dev/null 2>&1
+#nohup gnuplot $plot_cmds &
+#info "My pid is $!"
