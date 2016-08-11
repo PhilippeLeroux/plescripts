@@ -69,10 +69,3 @@ LN
 info "Enable service"
 exec_cmd "systemctl enable $service_name"
 LN
-
-info "Start service"
-exec_cmd -c "systemctl start $service_name"
-
-info "Status"
-exec_cmd "systemctl status $service_name -l"
-LN
