@@ -307,13 +307,11 @@ function configure_server
 	exec_cmd "$vm_scripts_path/start_vm $server_name"
 	wait_master
 
-	if [ $start_server_only == yes ]
-	then #	La VM se nomme $server_name mais son nom d'hôte est $master_name.
-		add_2_know_hosts $master_name
-	fi
+	#	************************************************************************
+	#	La VM a été clonée mais sa configuration réseau correspond toujours à
+	#	celle du master, il faut donc régénérer la clef public.
+	add_2_know_hosts $master_name
 
-	#	La VM ayant été clonée elle a la configuration réseau du master.
-	#	Donc son nom est $master_name
 	line_separator
 	test_if_rpm_update_available $master_name
 	[ $? -eq 0 ] && exec_cmd "ssh -t root@$master_name \"yum -y update\""
@@ -328,8 +326,8 @@ function configure_server
 	line_separator
 	configure_ifaces_hostname_and_reboot
 
-	#	Maintenant le serveur a son nom définitif : $server_name.
-
+	#	************************************************************************
+	#	Le serveur a sa configuration réseau définitive : $server_name.
 	add_2_know_hosts $server_name
 	LN
 
