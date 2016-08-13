@@ -361,19 +361,25 @@ function stop_and_disable_unwanted_grid_ressources
 
 function set_ASM_memory_target_low_and_restart_asm
 {
-	line_separator
-	disclaimer
-	exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
+	if [ $hack_asm_memory != "0" ]
+	then
+		line_separator
+		disclaimer
+		exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
+		LN
 
-	if [ $max_nodes -gt 1 ]
-	then	#	RAC
-		exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop cluster -all\""
-		exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start cluster -all\""
-	else	#	SINGLE
-		exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl stop asm -f\""
-		exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl start asm\""
+		if [ $max_nodes -gt 1 ]
+		then	#	RAC
+			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop cluster -all\""
+			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start cluster -all\""
+		else	#	SINGLE
+			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl stop asm -f\""
+			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl start asm\""
+		fi
+		LN
+	else
+		info "do nothing : hack_asm_memory=0"
 	fi
-	LN
 }
 
 function remove_tfa_on_all_nodes
