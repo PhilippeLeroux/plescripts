@@ -12,17 +12,30 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 
 #	12c ajustement :
-#	Avec une shared_pool_size plus petite dbca risque de planter à 58%
-#	min_memory_mb est le minimum pour la valeur de min_shared_pool_size_mb choisie
-#	C'est probablement liée à la faible quantité de RAM.
-#	TODO Rendre optionnel le paramétrage de la shared_pool_size
-typeset -ri	min_memory_mb=444
-typeset -ri	min_shared_pool_size_mb=256
+#	Si la -totalMemory (correspond à memory_target) est trop bas (444Mb par exemple)
+#	alors le message d'erreur suivant risque d'apparaître :
+#	ORA-04031: unable to allocate 1015832 bytes of shared memory ("shared pool","unknown object","PDB Dynamic He","Alloc/Free SWRF Metric CHBs")
+#	Error while executing "/u01/app/oracle/12.1.0.2/dbhome_1/rdbms/admin/dbmssml.sql".   Refer to "/u01/app/oracle/cfgtoollogs/dbca/NEPTUNE/dbmssml0.log" for more details.   Error in Process: /u01/app/oracle/12.1.0.2/dbhome_1/perl/bin/perl
+#	DBCA_PROGRESS : DBCA Operation failed.
+#	Pour éviter ce message d'erreur utiliser le paramètre -min_shared_pool_size_mb=256
+#
+#	memoryPercentage=70 plante sur ORA-04031
+#	memoryPercentage=80 fait swapper grave !!!!!!!!! Jusqu'à + de 650Gb de swap.
+#	J'ai l'impression que /dev/shm n'est pas utilisé avec ce paramètre.
+#		sga_target=1804m
+#		pga_aggregate_target=601m
+#		Et le swap explose.
+#	Faire des testes avec une SINGLE, c'est trop long à faire sur un RAC
+#
+#	memory_mb == 640 --> dbca running time : 38mn27s
+#	memory_mb == 490 --> dbca running time : 28mn20s
+typeset	-ri	min_memory_mb=490
+typeset	-i	min_shared_pool_size_mb=-1
 
 typeset		name=undef
 #typeset		db=undef
 typeset		sysPassword=$oracle_password
-typeset -i	memory_mb=$min_memory_mb
+typeset -i	memory_mb=640
 typeset		data=DATA
 typeset		fra=FRA
 typeset		templateName=General_Purpose.dbc
@@ -42,6 +55,7 @@ typeset -r str_usage=\
 	[-lang=$lang]
 	[-sysPassword=$sysPassword]
 	[-memory_mb=$memory_mb]
+	[-min_shared_pool_size_mb=#] (5) 
 	[-cdb=$cdb]	(yes/no)	(1)
 	[-pdbName=<str>]	(2)
 	[-data=$data]
@@ -49,7 +63,7 @@ typeset -r str_usage=\
 	[-templateName=$templateName]
 	[-db_type=SINGLE|RAC|RACONENODE]	(3)
 	[-policyManaged]  : créer une base en 'Policy Managed'	(4)
-	[-serverPoolName=<str> : nom du pool à utiliser, s'il n'existe pas il sera créée.
+	[-serverPoolName=<str>] : nom du pool à utiliser, s'il n'existe pas il sera créée.
 
 	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == name || 01
 	    Le service de la pdb sera : pdb || name || 01
@@ -57,11 +71,18 @@ typeset -r str_usage=\
 	2 : Si -pdbName est précisé -cdb vaut automatiquement yes
 
 	3 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
-	    de noeuds, si 1 seul noeud c'est SINGLE sinon c'est RAC.
+	    de nœuds, si 1 seul nœud c'est SINGLE sinon c'est RAC.
 	    Donc pour créer un RAC One Node database il faut impérativement le préciser !
 
 	4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera crée
 	    si -serverPollName n'est pas précisé.
+
+	5 : Si -memory_mb est inférieur à 640 alors -min_shared_pool_size_mb vaudra 250 si
+	    aucune valeur ne lui a été affectée, par exemple :
+	        Si -memory_mb=$min_memory_mb et -min_shared_pool_size_mb=0 alors le
+	        paramètre oracle shared_pool_size ne sera pas initialisé.
+            Si -memory_mb=$min_memory_mb et -min_shared_pool_size_mb=100 alors le
+	        paramètre oracle shared_pool_size vaudra 100M
 
 	[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
 	les scripts post installations.
@@ -96,6 +117,11 @@ do
 
 		-memory_mb=*)
 			memory_mb=${1##*=}
+			shift
+			;;
+
+		-min_shared_pool_size_mb=*)
+			min_shared_pool_size_mb=${1##*=}
 			shift
 			;;
 
@@ -248,14 +274,19 @@ function make_dbca_args
 	add_dynamic_cmd_param "-sysPassword    $sysPassword"
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
 	add_dynamic_cmd_param "-redoLogFileSize 512"
+
+	typeset initParams="-initParams threaded_execution=true"
+	if [ $min_shared_pool_size_mb -gt 0 ]
+	then
+		initParams="$initParams,shared_pool_size=${min_shared_pool_size_mb}M"
+	fi
+
 	case $lang in
 		french)
-			add_dynamic_cmd_param "-initParams shared_pool_size=${min_shared_pool_size_mb}M,nls_language=FRENCH,NLS_TERRITORY=FRANCE,threaded_execution=true"
+			initParams="$initParams,nls_language=FRENCH,NLS_TERRITORY=FRANCE"
 			;;
-
-		*)
-			add_dynamic_cmd_param "-initParams shared_pool_size=${min_shared_pool_size_mb}M,threaded_execution=true"
 	esac
+	add_dynamic_cmd_param "$initParams"
 }
 
 #	Return 0 if server pool $1 exists, else 1
@@ -341,6 +372,11 @@ if [ $memory_mb -lt $min_memory_mb ]
 then
 	error "Minimum memory for Oracle Database 12c : ${min_memory_mb}Mb"
 	exit 1
+fi
+
+if [[ $memory_mb -lt 640 && $min_shared_pool_size_mb -eq -1 ]]
+then
+	min_shared_pool_size_mb=250
 fi
 #===============================================================================
 
