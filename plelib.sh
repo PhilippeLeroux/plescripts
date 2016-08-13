@@ -670,7 +670,9 @@ function exec_cmd
 
 typeset -a	ple_fake_param_cmd
 typeset -i	ple_param_max_len=0
-
+#	7	correspond à la largeur de l'horodatage devant les commandes exécutées, exemple : '10h44 >'
+#	4	les paramètres seront 'tabulés' de 4 espaces par rapport à la commande.
+typeset -ri	ple_param_margin=$((4+7))
 #*> $1 parameter to add.
 function add_dynamic_cmd_param
 {
@@ -678,9 +680,9 @@ function add_dynamic_cmd_param
 	typeset -ri	len=${#param}
 	ple_fake_param_cmd[${#ple_fake_param_cmd[@]}]="$param"
 
-	if [[ $len -gt $ple_param_max_len && $len -lt $(term_cols) ]]
+	if [[ $len -gt $ple_param_max_len && $(( len + ple_param_margin )) -lt $(term_cols) ]]
 	then
-		ple_param_max_len=${#param}
+		ple_param_max_len=$len
 	fi
 }
 
@@ -722,9 +724,7 @@ function exec_dynamic_cmd
 	for i in $( seq ${#ple_fake_param_cmd[@]} )
 	do
 		[ $i -gt 1 ] && echo "\\"
-		#	La largeur de l'horodatage 'HHhMM >' est de 7, la tabulation devant les
-		#	paramètres est de 4, donc insertion d'une tabulation de 11.
-		printf "%11s%-${ple_param_max_len}s" " " "${ple_fake_param_cmd[$i-1]}"
+		printf "%${ple_param_margin}s%-${ple_param_max_len}s" " " "${ple_fake_param_cmd[$i-1]}"
 	done
 	LN
 
@@ -735,7 +735,7 @@ function exec_dynamic_cmd
 	exec_cmd -hf $cmd_name "${ple_fake_param_cmd[@]}"
 	typeset -ri exec_cmd_return=$?
 
-	typeset -ri exec_cmd_duration=$(( $SECONDS - $exec_cmd_start_at ))
+	typeset -ri exec_cmd_duration=$(( SECONDS - exec_cmd_start_at ))
 	if [ $exec_cmd_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 	then
 		my_echo "${YELLOW}" "$(date +"%Hh%M")< " "${cmd_name##* } running time : $(fmt_seconds $exec_cmd_duration)"
