@@ -9,20 +9,22 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-		-title=<str>
+		[-node=<#>]
+		[-title=<str>]
 		[-date=<YYYY-MM-DD>] not set, search last date.
 		[-time=<HHhMM>]      not set, search last time.
 		[-server=<name>]     can be omitted with only one server.
 		[-start_at=HHhMM]    skip tt before HHhMM
-		[-show]              show log files.
+		[-show_log_only]     show log files.
 
 Display files produced by memstats.sh with gnuplot"
 
+typeset node=-1
 typeset date=undef
 typeset time=undef
 typeset server=""
 typeset title=""
-typeset show=no
+typeset show_log_only=no
 
 while [ $# -ne 0 ]
 do
@@ -30,6 +32,11 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
+			shift
+			;;
+
+		-node=*)
+			node=${1##*=}
 			shift
 			;;
 
@@ -53,8 +60,8 @@ do
 			shift
 			;;
 
-		-show)
-			show=yes
+		-show_log_only)
+			show_log_only=yes
 			shift
 			;;
 
@@ -102,6 +109,23 @@ function show_formatted_logs
 
 function make_log_names
 {
+	if [ $node -ne -1 ]
+	then
+		if [[ ! -v ID_DB ]]
+		then
+			error "set_db must be used with -node"
+			exit 1
+		fi
+
+		if [ x"$server" != x ]
+		then
+			error "-node & -server cannot be used together."
+			exit 1
+		fi
+
+		server=$(printf "srv%s%02d" $ID_DB $node)
+	fi
+
 	[ $date == undef ] && set_to_last_date
 
 	if [ $time == undef ]
@@ -137,7 +161,7 @@ function make_log_names
 #	============================================================================
 #	MAIN
 #	============================================================================
-if [ $show == yes ]
+if [ $show_log_only == yes ]
 then
 	set_to_last_date
 	show_formatted_logs
@@ -157,7 +181,7 @@ make_log_names
 # ok : points, histeps
 typeset -r with=histeps
 
-typeset	-r	fmt_time="%M:%S"
+typeset	-r	fmt_time="%H:%M:%S"
 
 #	Lecture de l'heure de début des mesures
 typeset -r	start_time=$(sed -n "2p" $log_shm | cut -d' ' -f1)
@@ -207,6 +231,10 @@ reread
 replot
 EOS
 
+cat $plot_cmds
+LN
+
+line_separator
 gnuplot $plot_cmds
 #rm -rf nohup.out >/dev/null 2>&1
 #nohup gnuplot $plot_cmds &
