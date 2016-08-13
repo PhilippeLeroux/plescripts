@@ -723,8 +723,8 @@ function exec_dynamic_cmd
 	#	Affiche les paramètres de la commande :
 	for i in $( seq ${#ple_fake_param_cmd[@]} )
 	do
-		[ $i -gt 1 ] && echo "\\"
-		printf "%${ple_param_margin}s%-${ple_param_max_len}s" " " "${ple_fake_param_cmd[$i-1]}"
+		[ $i -gt 1 ] && info -f "\\\\"
+		info -f -n "$(printf "%${ple_param_margin}s%-${ple_param_max_len}s" " " "${ple_fake_param_cmd[$i-1]}")"
 	done
 	LN
 
