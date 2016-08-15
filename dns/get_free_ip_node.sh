@@ -48,7 +48,6 @@ done
 #	Toutes les IPs en dessous de 10 sont réservées.
 typeset	-ri	min_ip_node=10
 
-
 typeset -i	prev_ip_node=0
 typeset	-i	ip_found=0
 
@@ -87,6 +86,12 @@ done<<<"$(cat /var/named/reverse.orcl	|\
 				grep -v arpa			|\
 				sort -n)"
 
+debug "ip_found     = $ip_found"
+debug "prev_ip_node = $prev_ip_node"
+if [[ $ip_found -eq 0 && $prev_ip_node -eq 0 ]]
+then # Pas d'IP utilisée à partir de 10
+	ip_found=10
+fi
 [ $ip_found -eq 0 ] && ip_found=prev_ip_node+1
 #[ $ip_found -lt $min_ip_node ] && ip_found=$min_ip_node
 
