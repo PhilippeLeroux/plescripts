@@ -47,6 +47,12 @@ function get_ip_for_host
 	typeset -r host=$1
 
 	typeset -r output=$(nslookup $host)
+
+	if grep -q "server can't find "<<<"$output"
+	then
+		return 1
+	fi
+
 	if [ $? -eq 0 ]
 	then
 		echo "$output" | grep -E ^Address | tail -1 | cut -d' ' -f2
