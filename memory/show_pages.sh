@@ -58,7 +58,7 @@ then
 		info "Allocated pages : $allocated_pages = $(fmt_bytesU_2_better -i $allocated_pages_size)"
 		LN
 
-		if [ $expected_pages -lt $allocated_pages ]
+		if [ $allocated_pages -lt $expected_pages ]
 		then
 			error "-------------------------"
 			error "Not enougth large pages !"
