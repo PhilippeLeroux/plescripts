@@ -35,7 +35,6 @@ done
 typeset -r script_start_at=$SECONDS
 
 line_separator
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_ip}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
 LN
 

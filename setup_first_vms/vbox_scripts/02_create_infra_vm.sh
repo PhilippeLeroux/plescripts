@@ -188,7 +188,7 @@ run_ssh "~/plescripts/dns/install/01_install_bind.sh"
 run_ssh "~/plescripts/dns/install/03_configure.sh"
 
 run_ssh "~/plescripts/dns/add_server_2_dns.sh -name=$client_hostname -ip_node=1"
-run_ssh "~/plescripts/dns/add_server_2_dns.sh -name=orclmaster -ip_node=$master_ip_node"
+run_ssh "~/plescripts/dns/add_server_2_dns.sh -name=$master_name -ip_node=$master_ip_node"
 run_ssh "~/plescripts/dns/show_dns.sh"
 
 line_separator

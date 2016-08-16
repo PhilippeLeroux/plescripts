@@ -63,8 +63,7 @@ typeset -r script_start_at=$SECONDS
 
 line_separator
 info "Ménage :"
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_network}.${master_ip_node}
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=orclmaster
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
 LN
 
 case $type_shared_fs in
