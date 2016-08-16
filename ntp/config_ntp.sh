@@ -56,7 +56,7 @@ then
 	exec_cmd "cp $chrony_conf ${chrony_conf}.backup"
 	exec_cmd "sed -i '/^server.*iburst$/d' $chrony_conf"
 	exec_cmd "sed -i '3i\server $time_server iburst' $chrony_conf"
-	exec_cmd "sed -i 's/.*allow .*/allow ${infra_network}.0\/$infra_mask/g' $chrony_conf"
+	exec_cmd "sed -i 's/.*allow .*/allow ${infra_network}.0\/$if_pub_prefix/g' $chrony_conf"
 	LN
 fi
 

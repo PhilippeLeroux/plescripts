@@ -6,6 +6,8 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
+info "Running : $ME $*"
+
 #Doit être exécuté sur le serveur d'infrastructure ou le master.
 
 line_separator

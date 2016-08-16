@@ -66,6 +66,9 @@ function get_ip_for_host
 function remove_from_known_hosts
 {
 	typeset -r host=$1
+
+	[ ! -f ~/.ssh/known_hosts ] && return 0
+
 	info "Remove $host from ~/.ssh/known_hosts"
 	exec_cmd "sed -i /^$host/d" ~/.ssh/known_hosts
 	LN

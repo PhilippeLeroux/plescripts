@@ -76,7 +76,7 @@ update_value IPADDR		$ip_pub 		$if_pub_file
 update_value DNS1		$dns_ip			$if_pub_file
 update_value USERCTL	yes				$if_pub_file
 update_value ONBOOT		yes 			$if_pub_file
-update_value PREFIX		24				$if_pub_file
+update_value PREFIX		$if_pub_prefix	$if_pub_file
 remove_value NETMASK					$if_pub_file
 if_hwaddr=$(get_if_hwaddr $if_pub_name)
 update_value HWADDR		$if_hwaddr		$if_pub_file
@@ -89,7 +89,7 @@ update_value BOOTPROTO	static			$if_priv_file
 update_value IPADDR		$ip_priv		$if_priv_file
 update_value USERCTL	yes				$if_priv_file
 update_value ONBOOT		yes 			$if_priv_file
-update_value PREFIX		24				$if_priv_file
+update_value PREFIX		$if_priv_prefix	$if_priv_file
 update_value MTU		9000			$if_priv_file
 remove_value NETMASK					$if_priv_file
 if_hwaddr=$(get_if_hwaddr $if_priv_name)

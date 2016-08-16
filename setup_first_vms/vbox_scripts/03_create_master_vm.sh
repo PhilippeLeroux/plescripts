@@ -8,6 +8,8 @@ EXEC_CMD_ACTION=EXEC
 typeset -r str_usage=\
 "Usage : $ME [-emul]"
 
+info "Running : $ME $*"
+
 while [ $# -ne 0 ]
 do
 	case $1 in

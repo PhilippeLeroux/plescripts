@@ -48,7 +48,7 @@ do
 	then
 		info -f " [$OK]"
 	else
-		info -f "${RED}remove${NORM}"
+		info -f "${RED}removed${NORM}"
 		exec_cmd -c "sed -i "/$host/d" $aut_file"
 		count_hosts_removed=count_hosts_removed+1
 	fi

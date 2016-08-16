@@ -9,6 +9,8 @@ EXEC_CMD_ACTION=EXEC
 typeset -r str_usage=\
 "Usage : $ME [-emul]"
 
+info "Running : $ME $*"
+
 while [ $# -ne 0 ]
 do
 	case $1 in
@@ -35,12 +37,11 @@ done
 
 function run_ssh
 {
-	exec_cmd "ssh root@$infra_ip \"$@\""
+	exec_cmd "ssh -t root@$infra_ip \"$@\""
 }
+
 line_separator
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_ip}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_ip}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_hostname}
 LN
 
@@ -48,20 +49,21 @@ LN
 #	Validation des exports NFS depuis le poste client.
 line_separator
 info "Validation exports NFS :"
-exec_cmd -c "sudo showmount -e"
+exec_cmd -c "sudo showmount -e localhost"
 typeset -i	nfs_errors=0
 if [ $type_shared_fs == nfs ]
 then
-	exec_cmd -c "sudo showmount -e | grep -q /home/$common_user_name/$oracle_install"
-	[ $? -ne 0 ] && nfs_errors=nfs_errors+1
+	exec_cmd -c "sudo showmount -e localhost | grep -q /home/$common_user_name/$oracle_install"
+	[ $? -ne 0 ] && nfs_errors=nfs_errors+1 || info "${GREEN}Passed.${NORM}"
 
-	exec_cmd -c "sudo showmount -e | grep -q /home/$common_user_name/plescripts"
-	[ $? -ne 0 ] && nfs_errors=nfs_errors+1
+	exec_cmd -c "sudo showmount -e localhost | grep -q /home/$common_user_name/plescripts"
+	[ $? -ne 0 ] && nfs_errors=nfs_errors+1 || info "${GREEN}Passed.${NORM}"
 fi
 
-exec_cmd -c "sudo showmount -e | grep -q $iso_olinux_path"
-[ $? -ne 0 ] && nfs_errors=nfs_errors+1
+exec_cmd -c "sudo showmount -e localhost | grep -q $iso_olinux_path"
+[ $? -ne 0 ] && nfs_errors=nfs_errors+1  || info "${GREEN}Passed.${NORM}"
 LN
+
 if [ $nfs_errors -ne 0 ]
 then
 	info "Les exports NFS attendus depuis $client_hostname ne sont pas présent."
@@ -115,16 +117,24 @@ LN
 wait_server $master_ip
 LN
 
-line_separator
-info "Copie la configuration des Ifaces sur $infra_hostname"
 typeset -r if_cfg_path=~/plescripts/setup_first_vms/ifcfg_infra_server
+line_separator
+info "Mise à jour de la configuration de l'Iface public : $if_pub_name"
 update_value IPADDR	$infra_ip							$if_cfg_path/ifcfg-$if_pub_name
+update_value PREFIX	$if_pub_prefix						$if_cfg_path/ifcfg-$if_pub_name
 update_value DNS1	$infra_ip							$if_cfg_path/ifcfg-$if_pub_name
 LN
+
+info "Mise à jour de la configuration de l'Iface privée : $if_priv_name"
 update_value IPADDR	${if_priv_network}.${infra_ip_node}	$if_cfg_path/ifcfg-$if_priv_name
+update_value PREFIX	$if_priv_prefix						$if_cfg_path/ifcfg-$if_priv_name
 LN
+
+info "Mise à jour de la configuration de l'Iface internet : $if_net_name"
 update_value DNS1	$infra_ip							$if_cfg_path/ifcfg-$if_net_name
 LN
+
+info "Copie la configuration des Ifaces sur $infra_hostname"
 exec_cmd "scp ~/plescripts/setup_first_vms/ifcfg_infra_server/* root@${master_ip}:/etc/sysconfig/network-scripts/"
 LN
 
@@ -132,6 +142,7 @@ line_separator
 info "Redémarrage de la VM $infra_hostname"
 exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"
 LN
+
 wait_server $infra_ip
 if [ $? -ne 0 ]
 then	# Parfois un simple reboot suffit.
@@ -148,9 +159,13 @@ info "Connexion ssh :"
 exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_ip"
 LN
 
-line_separator
-exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=${infra_ip}"
-LN
+case $type_shared_fs in
+	vbox)
+		line_separator
+		exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=${infra_ip}"
+		LN
+		;;
+esac
 
 info "Redémarrage de la VM $infra_hostname"
 exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
@@ -171,7 +186,8 @@ case $type_shared_fs in
 
 	nfs)
 		info "Création des points de montage NFS :"
-		run_ssh "mkdir plescripts"
+		run_ssh "mkdir /mnt/plescripts"
+		run_ssh "ln -s /mnt/plescripts ~/plescripts"
 		run_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,$nfs_options"
 		run_ssh "mkdir -p ~/$oracle_install"
 		;;
@@ -205,7 +221,12 @@ info "Ajuste la RAM"
 exec_cmd VBoxManage modifyvm $infra_hostname --memory $vm_memory_mb_for_infra
 LN
 
+line_separator
 exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
 wait_server $infra_hostname
 exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_hostname"
 LN
+
+line_separator
+info "Clonage du dépôt Oracle Linux"
+run_ssh "~/plescripts/yum/sync_oracle_repository.sh -copy_iso"

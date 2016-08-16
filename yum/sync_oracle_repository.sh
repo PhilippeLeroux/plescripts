@@ -123,7 +123,7 @@ function nfs_export_repo
 	exec_cmd -c "grep -q \"$infra_olinux_repository_path\" /etc/exports >/dev/null 2>&1"
 	if [ $? -ne 0 ]
 	then
-		exec_cmd "echo \"$infra_olinux_repository_path ${infra_network}.0/${infra_mask}(ro,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
+		exec_cmd "echo \"$infra_olinux_repository_path ${infra_network}.0/${if_pub_prefix}(ro,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
 		exec_cmd exportfs -ua
 		exec_cmd exportfs -a
 		LN
