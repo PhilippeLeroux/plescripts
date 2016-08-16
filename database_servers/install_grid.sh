@@ -284,9 +284,9 @@ function run_post_install_root_scripts_on_node	# $1 No node
 
 	line_separator
 	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
-	exec_cmd "ssh -t root@${node_names[$inode]} \"LANG=C /u01/app/oraInventory/orainstRoot.sh\""
+	exec_cmd "ssh -t root@${node_names[$inode]} \"/u01/app/oraInventory/orainstRoot.sh\""
 	LN
-	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C $ORACLE_HOME/root.sh\""
+	exec_cmd "ssh -t -t root@${node_names[$inode]} \"$ORACLE_HOME/root.sh\""
 }
 
 function runConfigToolAllCommands
@@ -444,7 +444,7 @@ fi
 
 stats_tt start grid_installation
 
-if [ $skip_grid_installation != yes ]
+if [ $skip_grid_installation == no ]
 then
 	copy_response_and_properties_files
 	LN
@@ -454,7 +454,7 @@ then
 	LN
 fi
 
-if [ $skip_root_scripts != yes ]
+if [ $skip_root_scripts == no ]
 then #	Il faut toujours commencer sur le noeud d'installation du grid.
 	typeset -i inode=0
 	while [ $inode -lt $max_nodes ]
@@ -493,7 +493,7 @@ then
 	fi
 fi
 
-[ $skip_create_dg != yes ] && create_all_dgs || true
+[ $skip_create_dg == no ] && create_all_dgs || true
 
 stats_tt stop grid_installation
 
