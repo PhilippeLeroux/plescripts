@@ -44,13 +44,14 @@ info "Create systemd service $service_name"
 cat <<EOS > $service_file
 [Unit]
 Description=PLE Statistics Service
-Wants=nfs
-After=nfs
+Wants=nfs.target
+After=nfs.target
 
 [Service]
 Type=simple
 ExecStart=/root/plescripts/stats/memstats.sh -title=global
 ExecStop=/root/plescripts/stats/memstats.sh -stop -title=global
+TimeoutStopSec=5
 
 [Install]
 WantedBy=multi-user.target
