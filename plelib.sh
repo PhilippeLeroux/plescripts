@@ -1248,15 +1248,15 @@ function to_mb
 	typeset -r	size_value=$(sed "s/.$//" <<< "$arg")
 
 	case $arg in
-		*G|*Gb|*GiB)
+		*g|*G|*Gb|*GiB)
 			compute -i "$size_value*1024"
 			;;
 
-		*M|*Mb|*MiB)
+		*m|*M|*Mb|*MiB)
 			echo $size_value
 			;;
 
-		*K|*Kb|*KiB)
+		*k|*K|*Kb|*KiB)
 			compute -i "$size_value/1024"
 			;;
 
@@ -1310,17 +1310,24 @@ function convert_2_bytes
 #*> 1024M == 1Gb
 function fmt_bytesU_2_better
 {
-	typeset -i bytes=$(convert_2_bytes $1)
+	typeset compute_arg="-l2"
+	if [ "$1" == "-i" ]
+	then
+		compute_arg="-i"
+		shift
+	fi
+
+	typeset -ri bytes=$(convert_2_bytes $1)
 
 	if [ $bytes -ge $(( 1024*1024*1024 )) ]
 	then	# Gb
-		echo "$(compute -l2 $bytes / 1024 / 1024 / 1024)Gb"
+		echo "$(compute $compute_arg $bytes / 1024 / 1024 / 1024)Gb"
 	elif [ $bytes -ge $(( 1024*1024 )) ]
 	then	# Mb
-		echo "$(compute -l2 $bytes / 1024 / 1024)Mb"
+		echo "$(compute $compute_arg $bytes / 1024 / 1024)Mb"
 	elif [ $bytes -ge 1024 ]
 	then	# Kb
-		echo "$(compute -l2 $bytes / 1024)Kb"
+		echo "$(compute $compute_arg $bytes / 1024)Kb"
 	else
 		echo "${bytes}b"
 	fi
