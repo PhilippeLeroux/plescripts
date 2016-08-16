@@ -22,7 +22,7 @@ La VM master sera clonée afin d'éviter d'installer l'OS à chaque fois.
 
 Création de nouveaux serveurs :
 ------------------------------
-Se postionner dans le répertoire ~/plescrits/database_servers
+Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 
 1.	Définir le serveur :
 
