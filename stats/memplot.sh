@@ -240,9 +240,6 @@ plot	\
 	"$log_swap" using 1:3 title 'Swap Used'	with ${with} lt rgb "blue"
 $cmds
 EOS
-#pause $refresh_rate
-#reread
-#replot
 
 line_separator
 cat $plot_cmds
