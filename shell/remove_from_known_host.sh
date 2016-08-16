@@ -50,3 +50,5 @@ done
 exit_if_param_undef host	"$str_usage"
 
 remove_from_known_hosts $host
+
+exit 0
