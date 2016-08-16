@@ -10,6 +10,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 		[-node=<#>]
+		[-no_loop]
 		[-title=<str>]
 		[-date=<YYYY-MM-DD>] not set, search last date.
 		[-time=<HHhMM>]      not set, search last time.
@@ -20,6 +21,7 @@ typeset -r str_usage=\
 Display files produced by memstats.sh with gnuplot"
 
 typeset node=-1
+typeset	loop=yes
 typeset date=undef
 typeset time=undef
 typeset server=""
@@ -37,6 +39,11 @@ do
 
 		-node=*)
 			node=${1##*=}
+			shift
+			;;
+
+		-no_loop=*)
+			loop=no
 			shift
 			;;
 
@@ -177,12 +184,6 @@ fi
 
 make_log_names
 
-# boxes lines linespoints points impulses histeps
-# ok : points, histeps
-typeset -r with=histeps
-
-typeset	-r	fmt_time="%H:%M:%S"
-
 #	Lecture de l'heure de début des mesures
 typeset -r	start_time=$(sed -n "2p" $log_shm | cut -d' ' -f1)
 
@@ -190,23 +191,32 @@ typeset -r	start_time=$(sed -n "2p" $log_shm | cut -d' ' -f1)
 typeset -r	second_time=$(sed -n "3p" $log_shm | cut -d' ' -f1)
 
 # Fréquence de rafraîchissement :
-typeset		refresh_rate=$(compute "($(time_to_secs $second_time) - $(time_to_secs $start_time))*2")
+debug "start_time  = $start_time"
+debug "second_time = $second_time"
+typeset		refresh_rate=$(compute \
+				 "($(time_to_secs $second_time) - $(time_to_secs $start_time))*2")
 
-info "Load file    $log_shm"
-info "Load file    $log_mem"
-info "Load file    $log_swap"
-info "Refresh rate $(fmt_seconds $refresh_rate)"
+# boxes lines linespoints points impulses histeps
+# ok : points, histeps, linespoints
+typeset -r with="linespoints pointinterval $(( (5*60) / refresh_rate ))"
+
+typeset	-r	fmt_time="%H:%M:%S"
 
 typeset plot_cmds=/tmp/memory.plot.$$
 #https://www2.uni-hamburg.de/Wiss/FB/15/Sustainability/schneider/gnuplot/colors.htm
 
 typeset -i line_to_skip=1
 
-info "title = '$title'"
 typeset graph_title=$title
-[ "${graph_title%_}" == "global" ] && graph_title="Start at $time"
+[ "${graph_title%_}" == "global" ] && graph_title="Start at $time (Points interval : 5mn)"
 
 typeset -r stats_info=${PLELOG_ROOT}/$date/stats_info.txt
+if [ $loop == yes ]
+then
+	cmds="$(printf "pause $refresh_rate\nreread\nreplot\n")"
+else
+	cmds="pause -1"
+fi
 
 cat << EOS > $plot_cmds
 set key autotitle columnhead
@@ -220,22 +230,38 @@ set xdata time
 set xlabel 'Time'
 set xtic rotate by -45
 set ylabel 'Mega bytes (Mb)'
+#set label "Create Database Started" at "12:33:23",1 rotate
+#set label "Create Database Finished" at "13:17:20",1 rotate
 plot	\
-	"$log_mem" using 1:2 title 'Mem Total'  with ${with} lt rgb "red",		\
+	"$log_mem" using 1:2 title 'Mem Max'	with lines lt rgb "red",		\
 	"$log_mem" using 1:3 title 'Mem Used'	with ${with} lt rgb "orange",	\
-	"$log_shm" using 1:2 title 'SHM Total'  with ${with} lt rgb "brown",	\
+	"$log_shm" using 1:2 title 'SHM Max'	with lines lt rgb "brown",	\
 	"$log_shm" using 1:3 title 'SHM Used'	with ${with} lt rgb "green",	\
 	"$log_swap" using 1:3 title 'Swap Used'	with ${with} lt rgb "blue"
-pause 60
-reread
-replot
+$cmds
 EOS
+#pause $refresh_rate
+#reread
+#replot
 
+line_separator
 cat $plot_cmds
 LN
 
 line_separator
+info "Refresh rate $(fmt_seconds $refresh_rate)"
+LN
+
+line_separator
+info "Load file    $log_shm"
+info "Load file    $log_mem"
+info "Load file    $log_swap"
+LN
+
+line_separator
 gnuplot $plot_cmds
+info "gnuplot return $?"
+exit 0
 #rm -rf nohup.out >/dev/null 2>&1
 #nohup gnuplot $plot_cmds &
 #info "My pid is $!"
