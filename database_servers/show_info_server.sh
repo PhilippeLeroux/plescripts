@@ -106,7 +106,8 @@ function print_disks
 	done < $file
 
 	info "${BOLD}Note :${NORM}"
-	info "\tLe n° des disques est informatif, il se peut dans certains cas qu'ils soient différent."
+	info "\tLe n° des disques est informatif, il se peut, dans certains cas,"
+	info "\tqu'ils soient différent."
 	info "\tPar exemple si un FS est créée sur une LUN avant les disques pour ASM."
 	LN
 	info "\tLes n° des disques correspondront au n° de leurs LUNs."
