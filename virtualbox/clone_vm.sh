@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -76,7 +75,12 @@ do
 	exec_cmd VBoxManage clonevm "$master_name" --name "$vm_name" --basefolder \"$vm_path\" --register
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
 	exec_cmd VBoxManage storageattach "$vm_name" --storagectl IDE  --port 1 --device 0 --type dvddrive --medium emptydrive
-	exec_cmd VBoxManage sharedfolder add $vm_name --name \"${oracle_release%.*.*}\" --hostpath \"$HOME/$oracle_install\" --automount
+
+	if [ $type_shared_fs == vbox ]
+	then
+		exec_cmd VBoxManage sharedfolder add $vm_name --name \"${oracle_release%.*.*}\" --hostpath \"$HOME/$oracle_install\" --automount
+	fi
+
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	# Présent ici car dans setup_first_vms/vbox_scripts/01_create_master_vm.sh
 	# le Guru apparaît toujours.
