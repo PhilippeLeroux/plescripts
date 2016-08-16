@@ -49,7 +49,8 @@ typeset -ri hpage_free=$(get_hugepages_free)
 typeset -ri hpage_free_mb=$(( $hpage_free * $hpage_size_mb ))
 
 typeset -r sga_mb=$(to_mb $sga)
-typeset -r sga_hpages=$(compute "($sga_mb / $hpage_size_mb) + 1")
+typeset -r reserved_pages=5
+typeset -r sga_hpages=$(compute "($sga_mb / $hpage_size_mb) + $reserved_pages")
 
 info "Hugepage size  : ${hpage_size_mb}Mb"
 info "Hugepage total : $hpage_total pages ${hpage_total_mb}Mb"
