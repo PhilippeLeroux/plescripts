@@ -425,13 +425,13 @@ fi
 
 stats_tt start create_$lower_name
 
-[ $skip_db_create == no ] && create_database
-
 typeset prefixInstance=${name:0:8}
+
+[ $skip_db_create == no ] && create_database
 
 if [ "${db_type:0:3}" == "RAC" ]
 then
-	[ $policyManaged == "yes" ] || [ $db_type == "RACONENODE" ] && prefixInstance=${prefixInstance}_
+	[[ $policyManaged == "yes" || $db_type == "RACONENODE" ]] && prefixInstance=${prefixInstance}_
 
 	for node in $( sed "s/,/ /g" <<<"$node_list" )
 	do
@@ -444,29 +444,24 @@ fi
 [ $cdb == yes ] && [ x"$pdbName" != x ] && create_services_for_pdb
 
 line_separator
-info "Enable archivelog :"
 export ORACLE_DB=${name}
-case $db_type in
-	RAC|RACONENODE)
-		ORACLE_SID=${prefixInstance}1
-		;;
-
-	SINGLE)
-		ORACLE_SID=${prefixInstance}
-		;;
-esac
+ORACLE_SID=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)
+info "Load env for $ORACLE_SID"
 ORAENV_ASK=NO . oraenv
+LN
 
 if [ $rdbms_alloc_hugepages -eq 261 ]
 then
 	line_separator
 	#	Sera pris en compte avec l'arrêt/démarrage effectué pour activer l'archivelog
-	info "alter systerm set sga_target=512 scope=spfile sid='*';"
-	sqlplus sys/Oracle12 as sysdba<<EOS
-	alter systerm set sga_target=512 scope=spfile sid='*';
-EOS
+	info "set sga_target=512M"
+	fake_exec_cmd sqlplus -s sys/$oracle_password as sysdba
+	printf "alter system set sga_target=512M scope=spfile sid='*';\n" |\
+		sqlplus  -s sys/$oracle_password as sysdba
 fi
 
+line_separator
+info "Enable archivelog :"
 info "Instance : $ORACLE_SID"
 exec_cmd "~/plescripts/db/enable_archive_log.sh"
 LN
