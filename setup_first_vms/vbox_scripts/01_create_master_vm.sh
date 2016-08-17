@@ -5,6 +5,9 @@ PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+
 typeset -r str_usage=\
 "Usage : $ME [-emul]"
 
@@ -37,7 +40,9 @@ done
 typeset -r script_start_at=$SECONDS
 
 line_separator
+info "Nettoyage du fichier know_host de $client_hostname :"
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
 LN
 
 line_separator

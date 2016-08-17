@@ -62,6 +62,17 @@ function get_ip_for_host
 	fi
 }
 
+function remove_ip_from_known_hosts
+{
+	typeset -r ip=$1
+
+	[ ! -f ~/.ssh/known_hosts ] && return 0
+
+	info "Remove $ip from ~/.ssh/known_hosts"
+	exec_cmd "sed -i /^$ip/d" ~/.ssh/known_hosts
+	LN
+}
+
 #*> Supprime du fichier ~/.ssh/know_host l'hôte $1
 function remove_from_known_hosts
 {
@@ -75,13 +86,9 @@ function remove_from_known_hosts
 
 	typeset -r ip=$(get_ip_for_host $host)
 	if [ x"$ip" != x ]
-	then
-		info "Remove $ip from ~/.ssh/known_hosts"
-		exec_cmd "sed -i /^$ip/d" ~/.ssh/known_hosts
-		LN
+	then # Normallement on ne doit plus trouver d'IP seul, mais au cas ou...
+		remove_ip_from_known_hosts $ip
 	fi
-
-	exec_cmd sed -i '/^$/d' ~/.ssh/known_hosts
 }
 
 #	$1 server name.

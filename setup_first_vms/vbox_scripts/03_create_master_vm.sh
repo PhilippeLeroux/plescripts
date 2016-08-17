@@ -5,6 +5,9 @@ PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+
 typeset -r str_usage=\
 "Usage : $ME [-emul]"
 
@@ -34,7 +37,7 @@ do
 	esac
 done
 
-function infra_ssh
+function master_ssh
 {
 	typeset continue=no
 	while [ 0 -eq 0 ]	# forever
@@ -51,7 +54,9 @@ function infra_ssh
 		esac
 	done
 
-	exec_cmd -c "ssh -t root@${infra_network}.${master_ip_node} \"$@\""
+	debug "ssh connection from $(hostname -s) to $master_ip"
+	[ "$DEBUG_MODE" == ENABLE ] && ED="export DEBUG_MODE=ENABLE;"
+	exec_cmd -c "ssh -t root@${master_ip} \"$ED$@\""
 	typeset -ri ret=$?
 	if [ $ret -ne 0 ]
 	then
@@ -66,6 +71,7 @@ typeset -r script_start_at=$SECONDS
 line_separator
 info "Ménage :"
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
 LN
 
 case $type_shared_fs in
@@ -80,21 +86,23 @@ LN
 wait_server ${infra_network}.${master_ip_node}
 LN
 
-confirm_or_exit -reply_list=CR "Le mot de passe root sera demandé. Press enter to continue."
-exec_cmd ~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=${master_ip}
+confirm_or_exit -reply_list=CR "root password will be asked. Press enter to continue."
+exec_cmd ~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=${master_name}
+LN
+
+line_separator
+info "Configuration du réseau."
+master_ssh "echo DNS1=$infra_ip >> $if_pub_file"
+master_ssh "echo GATEWAY=$infra_ip >> $if_pub_file"
+master_ssh "systemctl restart network"
 LN
 
 if [ $type_shared_fs == vbox ]
 then
 	line_separator
-	infra_ssh "echo DNS1=$infra_ip >> $if_pub_file"
-	infra_ssh "echo GATEWAY=$infra_ip >> $if_pub_file"
-	infra_ssh "systemctl restart network"
-	LN
-
-	line_separator
 	exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=${master_ip}"
 	LN
+
 	exec_cmd "$vm_scripts_path/stop_vm $master_name"
 	info -n "Temporisation : "; pause_in_secs 20; LN
 	exec_cmd "$vm_scripts_path/start_vm $master_name"
@@ -102,27 +110,9 @@ then
 	[ $? -ne 0 ] && exit 1
 fi
 
-line_separator
-info "Création du répertoire plescripts."
-infra_ssh -c "mkdir /mnt/plescripts"
-LN
-
-info "Montage provisoire de /mnt/plescripts"
-case $type_shared_fs in
-	vbox)
-		infra_ssh "mount -t vboxsf plescripts /mnt/plescripts"
-		;;
-
-	nfs)
-		infra_ssh "mount ${infra_network}.1:/home/kangs/plescripts /mnt/plescripts -t nfs -o rw,$nfs_options"
-		;;
-esac
-
-infra_ssh "ln -s /mnt/plescripts ./plescripts"
-LN
-
-infra_ssh "~/plescripts/setup_first_vms/02_update_config.sh"
-infra_ssh "~/plescripts/setup_first_vms/03_setup_infra_or_master.sh -role=master"
+exec_cmd "~/plescripts/setup_first_vms/01_prepare_master_vm.sh"
+master_ssh "~/plescripts/setup_first_vms/02_update_config.sh"
+master_ssh "~/plescripts/setup_first_vms/03_setup_master_vm.sh"
 LN
 
 exec_cmd "$vm_scripts_path/stop_vm $master_name"

@@ -6,6 +6,8 @@ PLELIB_OUTPUT=FILE
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
+typeset -r ME=$0
+
 typeset -r str_usage=\
 "Usage : $ME [-emul]"
 
@@ -35,14 +37,12 @@ do
 	esac
 done
 
-function run_ssh
-{
-	exec_cmd "ssh -t root@$infra_ip \"$@\""
-}
-
 line_separator
+info "Nettoyage du fichier know_host de $client_hostname :"
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_hostname}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${infra_ip}
 LN
 
 #===============================================================================
@@ -50,6 +50,8 @@ LN
 line_separator
 info "Validation exports NFS :"
 exec_cmd -c "sudo showmount -e localhost"
+LN
+
 typeset -i	nfs_errors=0
 if [ $type_shared_fs == nfs ]
 then
@@ -117,6 +119,13 @@ LN
 wait_server $master_ip
 LN
 
+#	La VM infra vient d'être clonée depuis le master, elle possède donc la
+#	configuration mimnimum du master : son nom et son adresse IP
+info "Equivalence ssh temporaire par rapport à l'IP du master."
+exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$master_ip"
+LN
+
+line_separator
 typeset -r if_cfg_path=~/plescripts/setup_first_vms/ifcfg_infra_server
 line_separator
 info "Mise à jour de la configuration de l'Iface public : $if_pub_name"
@@ -134,40 +143,20 @@ info "Mise à jour de la configuration de l'Iface internet : $if_net_name"
 update_value DNS1	$infra_ip							$if_cfg_path/ifcfg-$if_net_name
 LN
 
-info "Copie la configuration des Ifaces sur $infra_hostname"
+info "Copie la configuration des Ifaces sur $infra_hostname (utilise l'IP $master_ip)"
 exec_cmd "scp ~/plescripts/setup_first_vms/ifcfg_infra_server/* root@${master_ip}:/etc/sysconfig/network-scripts/"
-LN
-
-line_separator
-info "Redémarrage de la VM $infra_hostname"
-exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"
-LN
-
-wait_server $infra_ip
-if [ $? -ne 0 ]
-then	# Parfois un simple reboot suffit.
-	info "Redémarrage de la VM $infra_hostname"
-	exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"
-	LN
-	wait_server $infra_ip
-	[ $? -ne 0 ] && exit 1
-fi
-LN
-
-line_separator
-info "Connexion ssh :"
-exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_ip"
 LN
 
 case $type_shared_fs in
 	vbox)
 		line_separator
-		exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=${infra_ip}"
+		info "Compilation des 'Guest Additions'"
+		exec_cmd "ssh -t root@$master_ip \"$vm_scripts_path/compile_guest_additions.sh -host=${master_ip}\""
 		LN
 		;;
 esac
 
-info "Redémarrage de la VM $infra_hostname"
+info "Redémarrage de la VM $infra_hostname, la nouvelle configuration réseau sera effective."
 exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
 info -n "Temporisation : "; pause_in_secs 20; LN
 exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
@@ -176,43 +165,13 @@ wait_server $infra_ip
 [ $? -ne 0 ] && exit 1
 
 line_separator
-
-case $type_shared_fs in
-	vbox)
-		run_ssh "mkdir /mnt/plescripts"
-		run_ssh "mount -t vboxsf plescripts /mnt/plescripts"
-		run_ssh "ln -s /mnt/plescripts ~/plescripts"
-		;;
-
-	nfs)
-		info "Création des points de montage NFS :"
-		run_ssh "mkdir /mnt/plescripts"
-		run_ssh "ln -s /mnt/plescripts ~/plescripts"
-		run_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,$nfs_options"
-		run_ssh "mkdir -p ~/$oracle_install"
-		;;
-esac
-LN
-
-run_ssh "~/plescripts/setup_first_vms/02_update_config.sh"
-run_ssh "~/plescripts/setup_first_vms/03_setup_infra_or_master.sh -role=infra"
+exec_cmd "~/plescripts/setup_first_vms/01_prepare_infra_vm.sh"
+exec_cmd "ssh -t root@$infra_ip \"~/plescripts/setup_first_vms/02_update_config.sh\""
+exec_cmd "ssh -t root@$infra_ip \"~/plescripts/setup_first_vms/03_setup_infra_vm.sh\""
 LN
 
 line_separator
-info "Configure DNS"
-run_ssh "~/plescripts/dns/install/01_install_bind.sh"
-run_ssh "~/plescripts/dns/install/03_configure.sh"
-
-run_ssh "~/plescripts/dns/add_server_2_dns.sh -name=$client_hostname -ip_node=1"
-run_ssh "~/plescripts/dns/add_server_2_dns.sh -name=$master_name -ip_node=$master_ip_node"
-run_ssh "~/plescripts/dns/show_dns.sh"
-
-line_separator
-run_ssh "~/plescripts/shell/set_plymouth_them"
-LN
-
-line_separator
-info "Redémarrage de la VM $infra_hostname"
+info "Arrêt de la VM $infra_hostname pour ajuster la RAM"
 exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
 info -n "Temporisation : "; pause_in_secs 20; LN
 
@@ -222,11 +181,16 @@ exec_cmd VBoxManage modifyvm $infra_hostname --memory $vm_memory_mb_for_infra
 LN
 
 line_separator
+info "Démarre la VM."
 exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
 wait_server $infra_hostname
-exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_hostname"
+
+line_separator
+info "L'IP $master_ip n'est plus utile dans le known_host de $client_name"
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
 LN
 
 line_separator
-info "Clonage du dépôt Oracle Linux"
-run_ssh "~/plescripts/yum/sync_oracle_repository.sh -copy_iso"
+info "Équivalence ssh entre $client_hostname et $infra_hostname"
+exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_hostname"
+LN

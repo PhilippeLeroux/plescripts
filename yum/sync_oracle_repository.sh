@@ -169,7 +169,7 @@ then
 
 	exec_cmd createrepo $infra_olinux_repository_path
 	LN
-else
 	nfs_export_repo
+else
 	update_yum_config
 fi

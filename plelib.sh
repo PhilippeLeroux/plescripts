@@ -286,11 +286,11 @@ function mark_info
 }
 
 #*> Affiche les informations de debug.
-#*> Actif uniquement si la variable DEBUG_FUNC=enable est définie.
+#*> Actif uniquement si la variable DEBUG_MODE==ENABLE est définie.
 #*> Fonction sur le même principe que info.
 function debug
 {
-	[ "$DEBUG_FUNC" != enable ] && return 0
+	[ "$DEBUG_MODE" != ENABLE ] && return 0
 
 	first_arg=""
 	symbol="dbg"
@@ -312,7 +312,7 @@ function debug
 		esac
 	done
 
-	my_echo $first_arg "${BLUE}" "$symbol" " $@"
+	my_echo $first_arg "${BLUE}" "$symbol" " $*"
 }
 
 #*>	Print normal message
@@ -1376,3 +1376,5 @@ function test_if_rpm_update_available
 			;;
 	esac
 }
+
+debug "${RED}DEBUG MODE ENABLE${NORM}"
