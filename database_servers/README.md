@@ -123,32 +123,37 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	# Connected !
 	```
 
+	TODO : Ajouter un screen de la commande `oracleasm listdisks`
+
 3.	Installation du grid.
 
 	`./install_grid.sh -db=daisy`
 
-	Installe le grid en standalone ou cluster. Les scripts root sont exécutés
-	sur l'ensemble des nœuds.
+	Le grid est installé en standalone ou cluster en fonction de la configuration.
+	Les scripts root sont exécutés sur l'ensemble des nœuds.
 
 	Les 2 DGs DATA et FRA sont créées, pour un cluster il y a en plus le DG CRS
 
-	__Note__ pour consommer le minimum de ressources un certain nombre de hack
-	sont faites.
-	Si vous disposez de bons CPUs et d'au moins 4Gb de RAM par VM alors utiliser
-	l'option `-no_hacks` qui n'effectuera pas ces hacks.
+	__Note__ pour consommer le minimum de ressources un certain nombre de hacks
+	sont fait, voir le mémo [Configuration des huge pages](https://github.com/PhilippeLeroux/plescripts/wiki/00-configuration_des_hpages)
+    pour plus de détailles.
 
 	**Bug RAC** : Plantage du second script root avec le code CLSRSC-507
 	- Appliquer le patch 18456643, plus d'explications [ici](https://community.oracle.com/message/13278037#13278037).
 	Puis relancer le script `./install_grid.sh -db=daisy -skip_grid_installation -skip_root_scripts`
 
-	- Sans appliquer le patch 18456643 relancer `./install_grid.sh -db=daisy -skip_grid_installation`
-	1 ou 2 fois peut résoudre le problème.
+	- Sans appliquer le patch 18456643 : je ne suis pas certains d'être concerné par
+	le bug le plantage est trop peu fréquent.
+		- Relancer `./install_grid.sh -db=daisy -skip_grid_installation` 1 ou 2 fois peut résoudre le problème.
+
+		- Sinon se connecter sur le second nœud et exécuter le script, là il devrait
+		correctement s'exécuter. Relancer l'installation avec : `./install_grid.sh -db=daisy -skip_grid_installation -skip_root_scripts`
 
 4.	Installation d'Oracle
 
 	`./install_oracle.sh -db=daisy`
 
-	Installe oracle en standalone ou cluster. Les scripts root sont exécutés
+	Oracle est installé en standalone ou cluster. Les scripts root sont exécutés
 	sur l'ensemble des nœuds.
 
 5.	C'est terminé.
