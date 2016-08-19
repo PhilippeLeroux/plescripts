@@ -306,7 +306,7 @@ function check_rac_or_single
 	[ $db_type == undef ] && db_type=SINGLE
 
 	#	Note sur un single olsnodes existe mais ne retourne rien.
-	[ x"$node_list" = x ] && node_list=undef
+	[ x"$node_list" == x ] && node_list=undef
 }
 
 #	Si db_type == SINGLE test si utilisation d'ASM ou fs
@@ -450,7 +450,7 @@ info "Load env for $ORACLE_SID"
 ORAENV_ASK=NO . oraenv
 LN
 
-if [ $rdbms_alloc_hugepages -eq 261 ]
+if [[ $sga_target -eq 0 && $rdbms_alloc_hugepages -eq 261 ]]
 then
 	line_separator
 	#	Sera pris en compte avec l'arrêt/démarrage effectué pour activer l'archivelog

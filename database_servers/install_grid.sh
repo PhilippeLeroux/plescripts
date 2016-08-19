@@ -22,11 +22,8 @@ typeset -r str_usage=\
 	   -skip_configToolAllCommands
 	   -skip_create_dg
 
-	Bidouille pour desktop :
-	Pour pouvoir correctement installer une base Oracle (RAC en particulier)
-	certainnes bidouilles sont faites.
-	Avec de bon CPU et au moins 4Gb de RAM par VM utiliser -no_hacks pour
-	avoir une installation conforme aux préconisations d'Oracle.
+	Le paramètre -no_hacks permet d'installer le grid sans toutes mes bidouilles.
+	Voir sur le wiki le mémo 'Configuration des huge pages' avant de l'utiliser.
 
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
 "
@@ -286,9 +283,11 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
 	exec_cmd "ssh -t root@${node_names[$inode]} \"/u01/app/oraInventory/orainstRoot.sh\""
 	LN
-	exec_cmd "ssh -t -t root@${node_names[$inode]} \"$ORACLE_HOME/root.sh\""
+	exec_cmd "ssh -t -t root@${node_names[$inode]} \". ./.bash_profile;$ORACLE_HOME/root.sh\""
 }
 
+# Création de la base : -MGMTDB pour un RAC, je ne sais pas ce qu'il fait d'autre.
+# Est ce qu'il ne serait pas mieux d'exécuter le script puis ensuite détruire la base ?
 function runConfigToolAllCommands
 {
 	line_separator
@@ -471,11 +470,13 @@ then
 	then	#	RAC
 		if [ $do_hacks == yes ]
 		then
-			remove_tfa_on_all_nodes
-			LN
 			stop_and_disable_unwanted_grid_ressources
 			LN
+			remove_tfa_on_all_nodes
+			LN
 			set_ASM_memory_target_low_and_restart_asm
+			LN
+			info "La base -MGMTDB n'est pas créée."
 		else
 			runConfigToolAllCommands
 		fi
