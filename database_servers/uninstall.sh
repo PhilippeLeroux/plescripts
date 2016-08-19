@@ -21,7 +21,7 @@ typeset -r str_usage=\
 	[[!] -disks]            : supprime les disques.
 	[[!] -revert_to_master] : repasse sur la config du master.
 
-	-type=ASM               : type d'installation FS ou ASM
+	-type=ASM               : Si installation sur FS le préciser !
 
 	Ajouter le flag '!' permet de ne pas effectuer une action avec le paramètre -all.
 "

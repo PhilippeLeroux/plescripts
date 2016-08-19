@@ -9,7 +9,7 @@ Se connecter sur le serveur cible en root :
 
 - ./uninstallall.sh -all	supprime tous les composants.
 
-	Pour ne supprimer que 1 ou plusieurs composants spécifiques voir l'aide : `./uninstallall.sh -h`
+	Pour ne supprimer que certains composants voir l'aide : `./uninstallall.sh -h`
 
 - ./revert_to_master.sh -doit
 
@@ -21,9 +21,12 @@ Se connecter sur le serveur cible en root :
 
 	Détaille des actions effectuées par le script : `./revert_to_master.sh -h`
 
+	Le script est maintenant appelé par le script uninstall.sh qui l'exécutera sur
+	tous les nœuds.
+
 Depuis le poste client, supprimer toutes les traces d'un serveur :
 - cd ~/plescripts/database_servers
 
-- ./clean_up_infra.sh -db=<str>
+- ./clean_up_infra.sh -db=identifiant [-delete_vms]
 
 - Le DNS et le SAN sont mis à jours.
