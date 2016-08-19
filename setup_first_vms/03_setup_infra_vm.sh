@@ -20,7 +20,6 @@ then
 	error "hostname is $hn, want $infra_hostname"
 	exit 1
 fi
-unset hn
 
 line_separator
 info "Update OS"
@@ -49,6 +48,7 @@ exec_cmd "systemctl enable nfs-server"
 exec_cmd "systemctl start nfs-server"
 LN
 
+info "Ajoute nfs dans la zone 'trusted'"
 exec_cmd "firewall-cmd --add-service=nfs --permanent --zone=trusted"
 exec_cmd "firewall-cmd --reload"
 LN
