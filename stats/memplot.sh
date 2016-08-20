@@ -248,8 +248,10 @@ $labels
 plot	\
 	"$log_mem" using 1:2 title 'Mem Max'	with lines lt rgb "red",		\
 	"$log_mem" using 1:3 title 'Mem Used'	with ${with} lt rgb "orange",	\
+\
 	"$log_shm" using 1:2 title 'SHM Max'	with lines lt rgb "brown",	\
 	"$log_shm" using 1:3 title 'SHM Used'	with ${with} lt rgb "green",	\
+\
 	"$log_swap" using 1:3 title 'Swap Used'	with ${with} lt rgb "blue"
 $cmds
 EOS
