@@ -55,3 +55,4 @@ typeset -r targetcli_file=${targetcli_path}/$(date +"%Y%m%d_%Hh%Mmn%S")_${name}.
 info "Backup file : $targetcli_file"
 exec_cmd "targetcli / saveconfig $targetcli_file"
 exec_cmd "targetcli / saveconfig"
+exec_cmd "chown kangs:users $targetcli_file"
