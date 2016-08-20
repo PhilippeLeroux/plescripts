@@ -217,21 +217,6 @@ else
 	cmds="pause -1"
 fi
 
-typeset -r stats_markers=$PLELOG_PATH/stats_info.txt
-typeset labels
-if [ -f $stats_markers ]
-then
-	info "Fabrication des labels..."
-	typeset -i loop=0
-	typeset -i trans=1
-	while read action what tt
-	do
-		loop=loop+1
-		labels=$(printf "$labels\nset label \"$action $what\" at \"$tt\",$trans")
-		[ $(( loop % 2 )) -eq 0 ] && trans=$(( trans + 800 ))
-	done<$stats_markers
-fi
-
 cat << EOS > $plot_cmds
 set key autotitle columnhead
 set grid
@@ -244,14 +229,13 @@ set xdata time
 set xlabel 'Time'
 set xtic rotate by -45
 set ylabel 'Mega bytes (Mb)'
-$labels
+#set label "Create Database Started" at "12:33:23",1 rotate
+#set label "Create Database Finished" at "13:17:20",1 rotate
 plot	\
 	"$log_mem" using 1:2 title 'Mem Max'	with lines lt rgb "red",		\
 	"$log_mem" using 1:3 title 'Mem Used'	with ${with} lt rgb "orange",	\
-\
 	"$log_shm" using 1:2 title 'SHM Max'	with lines lt rgb "brown",	\
 	"$log_shm" using 1:3 title 'SHM Used'	with ${with} lt rgb "green",	\
-\
 	"$log_swap" using 1:3 title 'Swap Used'	with ${with} lt rgb "blue"
 $cmds
 EOS
@@ -274,3 +258,6 @@ line_separator
 gnuplot $plot_cmds
 info "gnuplot return $?"
 exit 0
+#rm -rf nohup.out >/dev/null 2>&1
+#nohup gnuplot $plot_cmds &
+#info "My pid is $!"

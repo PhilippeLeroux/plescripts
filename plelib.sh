@@ -1027,10 +1027,10 @@ function yn_to_bool
 #*> Return a buffer filled with no# characteres car
 function fill
 {
-	typeset -r	car="$1"
+	typeset -r	car="$(escape_slash $1)"
 	typeset -ri	nb=$2
 
-	printf '%*.*s' 0 $nb "$(printf '%0.1s' "$car"{1..480})"
+	printf '%*.*s' 0 $nb "$(printf '%0.1s' "$(escape_slash $car)"{1..480})"
 }
 
 ################################################################################
