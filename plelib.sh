@@ -1030,15 +1030,7 @@ function fill
 	typeset -r	car="$1"
 	typeset -ri	nb=$2
 
-	typeset buffer
-	typeset -i count=0
-	while [ $count -lt $nb ]
-	do
-		buffer=$buffer$car
-		count=count+1
-	done
-
-	echo $buffer
+	printf '%*.*s' 0 $nb "$(printf '%0.1s' "$car"{1..480})"
 }
 
 ################################################################################
