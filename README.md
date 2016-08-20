@@ -26,8 +26,8 @@ L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable.
 
 La création d'une nouvelle base SINGLE ou RAC se fait en 5 étapes :
 
-* Définition du nom de la base et du nombre de nœuds : les noms des serveurs et
-des disques sont déduits du nom de la base.
+* Définir l'identifiant de la base et du nombre de nœuds : les noms des serveurs et
+des disques sont déduits de l'identifiant.
 
 * Clonage du serveur de référence, actions effectuées :
 	* Cloner la VM master.
@@ -49,7 +49,7 @@ des nœuds d'un RAC.
 
 * Installation d'Oracle
 
-	Comme pour le GI un seul script prend en charge l'ensemble des opérations que
+	Comme pour le Grid un seul script prend en charge l'ensemble des opérations que
 la base soit SINGLE ou bien RAC.
 
 	Temps d'installation : ~20mn
