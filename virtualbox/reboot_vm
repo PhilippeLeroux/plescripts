@@ -22,17 +22,8 @@ fi
 
 function virtualbox_reboot
 {
-	typeset -ri	stop_at=$SECONDS
-	exec_cmd "stop_vm $server"
-	info "Server $server stopping...."
-	while [ 0 -eq 0 ]
-	do
-		VBoxManage list runningvms | grep -q $server
-		[ $? -eq 1 ] && break
-	done
-	typeset -ri	duration=$(( SECONDS - stop_at ))
-	info "$(fmt_seconds $duration) to stop"
-	info -n "Wait : "; pause_in_secs 2; LN
+	exec_cmd "stop_vm -server=$server -wait_os"
+	LN
 	exec_cmd "start_vm $server"
 }
 

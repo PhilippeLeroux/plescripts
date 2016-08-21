@@ -157,9 +157,7 @@ case $type_shared_fs in
 esac
 
 info "Redémarrage de la VM $infra_hostname, la nouvelle configuration réseau sera effective."
-exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
-info -n "Temporisation : "; pause_in_secs 20; LN
-exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
+exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"
 LN
 wait_server $infra_ip
 [ $? -ne 0 ] && exit 1
@@ -172,8 +170,8 @@ LN
 
 line_separator
 info "Arrêt de la VM $infra_hostname pour ajuster la RAM"
-exec_cmd "$vm_scripts_path/stop_vm $infra_hostname"
-info -n "Temporisation : "; pause_in_secs 20; LN
+exec_cmd "$vm_scripts_path/stop_vm -server=$infra_hostname -wait_os"
+LN
 
 line_separator
 info "Ajuste la RAM"

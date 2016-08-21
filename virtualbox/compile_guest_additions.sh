@@ -83,9 +83,6 @@ cd /media/cdrom && ./VBoxLinuxAdditions.run
 EOS
 [ $? -ne 0 ] && exit 1 || true
 LN
-exec_cmd "$vm_scripts_path/stop_vm $host"
-info -n "Wait : "; pause_in_secs 40; LN
-LN
-exec_cmd "$vm_scripts_path/start_vm $host"
+exec_cmd "$vm_scripts_path/stop_vm -server=$host -wait_os"
 ~/plescripts/shell/wait_server $host
 LN

@@ -8,22 +8,71 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME <str>"
+"Usage : $ME
+	-server=<nom de la VM> si omis essait la variable ID_DB
+	[-wait_os] : attend que l'OS soit stoppé avant de rendre la main.
+"
 
 info "$ME $@"
 
-[[ $# -eq 0 ]] && [[ -v ID_DB ]] && server=$ID_DB || server=$1
+typeset server=undef
+typeset	wait_os=no
 
-if [ x"$server" == x ]
-then
-	error "$str_usage"
-	exit 1
-fi
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			first_args=-emul
+			shift
+			;;
+
+		-server=*)
+			server=${1##*=}
+			shift
+			;;
+
+		-wait_os)
+			wait_os=yes
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
+
+[[ $server == undef ]] && [[ -v ID_DB ]] && server=$ID_DB
+exit_if_param_undef server	"$str_usage"
+
+function wait_os
+{
+	typeset -r os_name="$1"
+
+	info "Server $os_name stopping...."
+	while [ 0 -eq 0 ]
+	do
+		VBoxManage list runningvms | grep -q $os_name
+		[ $? -eq 1 ] && break
+	done
+}
+
 
 function virtualbox_stop
 {
 	typeset -a vm_list
 	typeset -i ivm=0
+
 	while read vm_name
 	do
 		if [ x"$vm_name" != x ]
@@ -37,6 +86,10 @@ function virtualbox_stop
 
 	info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
 	[ $max_vms -eq 0 ] && exit 1
+
+	# Mémorise les VMs qui sont stoppées par un acpipowerbutton
+	typeset -a vm_wait_os_list
+	typeset	-i ivm_2_wait=0
 
 	typeset -i count_errors=0
 
@@ -55,9 +108,26 @@ function virtualbox_stop
 				error "Failed to poweroff ${vm_list[$ivm]}"
 				count_errors=count_errors+1
 			fi
+		else
+			vm_wait_os_list[$ivm_2_wait]=${vm_list[$ivm]}
+			ivm_2_wait=ivm_2_wait+1
 		fi
 		LN
 	done
+
+	if [ $wait_os == yes ]
+	then
+		typeset -ri	stop_at=$SECONDS
+		line_separator
+		for os_2_wait in ${vm_wait_os_list[*]}
+		do
+			wait_os "$os_2_wait"
+			LN
+		done
+		typeset -ri	duration=$(( SECONDS - stop_at ))
+		info "Waiting : $(fmt_seconds $duration)."
+		info -n "Tempo : "; pause_in_secs 2; LN
+	fi
 
 	if [ $count_errors -ne 0 ]
 	then

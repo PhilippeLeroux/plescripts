@@ -103,9 +103,7 @@ then
 	exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=${master_ip}"
 	LN
 
-	exec_cmd "$vm_scripts_path/stop_vm $master_name"
-	info -n "Temporisation : "; pause_in_secs 20; LN
-	exec_cmd "$vm_scripts_path/start_vm $master_name"
+	exec_cmd "$vm_scripts_path/reboot_vm $master_name"
 	wait_server $master_name
 	[ $? -ne 0 ] && exit 1
 fi
