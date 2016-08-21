@@ -41,7 +41,7 @@ do
 			shift
 			;;
 
-		-no_loop=*)
+		-no_loop)
 			loop=no
 			shift
 			;;
