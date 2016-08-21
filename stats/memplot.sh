@@ -222,13 +222,19 @@ typeset labels
 if [ -f $stats_markers ]
 then
 	info "Fabrication des labels..."
-	typeset -i loop=0
-	typeset -i trans=1
+	typeset -i	loop=0
+	typeset -i	trans=400
+	typeset	-ri	offset_trans=200
 	while read action what tt
 	do
 		loop=loop+1
-		labels=$(printf "$labels\nset label \"$action $what\" at \"$tt\",$trans")
-		[ $(( loop % 2 )) -eq 0 ] && trans=$(( trans + 800 ))
+		case "$what" in
+			"grid_installation")	w="GI" ;;
+			"oracle_installation")	w="Orcl" ;;
+			"create_*")				w="${what##*_}" ;;
+		esac
+		labels=$(printf "$labels\nset label \"$action $w\" at \"$tt\",$trans")
+		[ $(( loop % 2 )) -eq 0 ] && trans=$(( trans + offset_trans ))
 	done<$stats_markers
 fi
 
