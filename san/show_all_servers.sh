@@ -38,11 +38,7 @@ targetcli ls iscsi							|\
 while read server_name
 do
 	info "$server_name"
-	read db inode<<<"$(echo $server_name | sed "s/...\(.*\)\(..\)/\1 \2/")"
-	initiator=$(get_initiator_for $db $inode)
-	exec_cmd -c targetcli ls /iscsi/$initiator/tpg1/acls/$initiator
-	[ $? -ne 0 ] && error "/iscsi/$initiator/tpg1/acls/$initiator not exits."
-	LN
+	exec_cmd "targetcli ls @$server_name"
 	LN
 done
 

@@ -51,12 +51,10 @@ else
 	info "RAC cluster $count_nodes nodes."
 fi
 
-info "LUNs for $db :"
-for inode in $( seq 1 $count_nodes )
+for node_file in $cfg_path/node*
 do
-	initiator=$(get_initiator_for $db $inode)
-	exec_cmd -c targetcli ls /iscsi/$initiator/tpg1/acls/$initiator
-	[ $? -ne 0 ] && error "/iscsi/$initiator/tpg1/acls/$initiator not exits."
+	server_name=$(cut -d: -f2<$node_file)
+	exec_cmd "targetcli ls @$server_name"
 	LN
 done
 
