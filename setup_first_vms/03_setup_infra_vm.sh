@@ -61,7 +61,7 @@ case $type_shared_fs in
 		;;
 
 	vbox)
-		exec_cmd "echo \"plescripts  /mnt/plescripts     vboxsf defaults,uid=kangs,gid=users,_netdev 0 0\" >> /etc/fstab"
+		exec_cmd "echo \"plescripts  /mnt/plescripts     vboxsf defaults,uid=$common_user_name,gid=users,_netdev 0 0\" >> /etc/fstab"
 		LN
 		;;
 esac
