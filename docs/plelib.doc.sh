@@ -1,5 +1,5 @@
 ################################################################################
-Resume 2016/08/05 :
+Resume 2016/08/21 :
 ~~~~~~~~~~~~~~~~~~~
 
 # 45 publics functions
@@ -29,7 +29,7 @@ function error
 function warning
 
 #*> Affiche les informations de debug.
-#*> Actif uniquement si la variable DEBUG_FUNC=enable est définie.
+#*> Actif uniquement si la variable DEBUG_MODE==ENABLE est définie.
 #*> Fonction sur le même principe que info.
 function debug
 
@@ -46,15 +46,21 @@ function line_separator
 #*> New line
 function LN
 
-#*> -reply_list=str	liste des réponses séparées par un espace, par défaut "y n"
-#*> Pour CR passer CR puis -print=""
-#*> -print=str		les réponses à afficher, par défaut "y/n ?"
-#*> Les autres paramètres sont la questions.
-#*>	return :
-#*>		0	for first answer.
-#*>		1	for second answer.
-#*>		3	for third answer.
-#*> Example :
+#*> Paramètres :
+#*>
+#*> -reply_list="y n" liste des réponses séparées par un espace, par défaut "y n"
+#*>    * Pour la touche 'return' utiliser -reply_list=CR
+#*>    * Maximum 3 réponses possibles.
+#*>
+#*> -print="y/n ?" les réponses à afficher, par défaut "y/n ?"
+#*>
+#*> Les autres paramètres forment la question.
+#*>
+#*>	Codes retours :
+#*>		0	pour la première réponse.
+#*>		1	pour la seconde réponse.
+#*>		3	pour la troisième réponse.
+#*>
 function ask_for
 
 #*> Pour les paramètres voir ask_for

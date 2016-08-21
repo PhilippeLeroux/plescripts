@@ -41,7 +41,6 @@ info "Select hypervisor :"
 info "	1 : vbox for linux"
 info "	2 : vbox for windows"
 info "	x : other"
-vm_p="$(VBoxManage list systemproperties | grep "Default machine folder:" | tr -s [:space:] | cut -d' ' -f4-)"
 while [ 0 -eq 0 ] # forever
 do
 	read -s -n 1 keyboard
@@ -75,7 +74,7 @@ LN
 
 #	$1 nom de la variable à renseigner
 #	$2 Message à afficher
-function ask_for
+function ask_for_variable
 {
 	typeset -r 	var_name=$1
 	typeset		var_value=$(eval echo \$$var_name)
@@ -97,9 +96,10 @@ function ask_for
 	eval "$var_name=$(echo -E '$var_value')"
 }
 
-ask_for vm_p "Localisation des VMs :"
+vm_p="$(VBoxManage list systemproperties | grep "Default machine folder:" | tr -s [:space:] | cut -d' ' -f4-)"
+ask_for_variable vm_p "Localisation des VMs :"
 
-ask_for full_linux_iso_n "Full path for Oracle Linux 7 ISO (...V100082-01.iso) :"
+ask_for_variable full_linux_iso_n "Full path for Oracle Linux 7 ISO (...V100082-01.iso) :"
 
 line_separator
 exec_cmd "sed -i 's/hostvm=.*$/hostvm=$hostvm_type/g' ~/plescripts/global.cfg"

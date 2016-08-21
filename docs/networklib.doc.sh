@@ -1,10 +1,10 @@
 ################################################################################
-Resume 2016/08/05 :
+Resume 2016/08/21 :
 ~~~~~~~~~~~~~~~~~~~
 
 # 5 publics functions
 # 1 privates functions
-# 0 undocumented functions
+# 3 undocumented functions
 
 ################################################################################
 5 publics functions :
@@ -28,8 +28,14 @@ function remove_from_known_hosts
 
 
 ################################################################################
-0 undocumented functions :
+3 undocumented functions :
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+function remove_ip_from_known_hosts
+
+function get_public_key_for
+
+function add_2_know_hosts
 
 
 ################################################################################

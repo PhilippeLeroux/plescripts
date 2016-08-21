@@ -143,8 +143,7 @@ then
 fi
 
 if [ ! -f $PLELIB_LOG_FILE ]
-then	# Obligatoire lors de l'utilisation répertoire partagé vboxf
-		# Avec NFS pas de problème (plus utilisé pour lenteur excessive)
+then
 	touch $PLELIB_LOG_FILE >/dev/null 2>&1
 	chmod ug=rw,o=r $PLELIB_LOG_FILE
 	[ $? -ne 0 ] && exit 1
@@ -359,15 +358,21 @@ function LN
 	my_echo "${NORM}" ""
 }
 
-#*> -reply_list=str	liste des réponses séparées par un espace, par défaut "y n"
-#*> Pour CR passer CR puis -print=""
-#*> -print=str		les réponses à afficher, par défaut "y/n ?"
-#*> Les autres paramètres sont la questions.
-#*>	return :
-#*>		0	for first answer.
-#*>		1	for second answer.
-#*>		3	for third answer.
-#*> Example :
+#*> Paramètres :
+#*>
+#*> -reply_list="y n" liste des réponses séparées par un espace, par défaut "y n"
+#*>    * Pour la touche 'return' utiliser -reply_list=CR
+#*>    * Maximum 3 réponses possibles.
+#*>
+#*> -print="y/n ?" les réponses à afficher, par défaut "y/n ?"
+#*>
+#*> Les autres paramètres forment la question.
+#*>
+#*>	Codes retours :
+#*>		0	pour la première réponse.
+#*>		1	pour la seconde réponse.
+#*>		3	pour la troisième réponse.
+#*>
 function ask_for
 {
 	typeset reply_list="y n"
@@ -441,7 +446,7 @@ function ask_for
 }
 
 #*> Pour les paramètres voir ask_for
-#*> Si l'utilisateur répond non le script est terminé par un exit 1
+#*> Si l'utilisateur répond non (la 2ième réponse) le script est terminé par un exit 1
 function confirm_or_exit
 {
 	ask_for "$@"
@@ -686,7 +691,7 @@ function add_dynamic_cmd_param
 	fi
 }
 
-#*> run command '$@' with parameters define with add_dynamic_cmd_param
+#*> run command '$@' with parameters define by add_dynamic_cmd_param
 #*> if first parameter is -confirm a prompt is printed to confirm or not execution.
 #*> For other parameters see exec_cmd
 function exec_dynamic_cmd
