@@ -4,7 +4,7 @@ sont très loin des exigences d'une entreprise.**
 
 --------------------------------------------------------------------------------
 
-# Objectifs :
+### Objectifs :
 
 Mettre en œuvre d'un réseau de VMs pour installer des bases Oracle de tout types
 en essayant d'être le plus indépendant possible du logiciel de virtualisation utilisé.
@@ -22,7 +22,7 @@ L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable.
 
 --------------------------------------------------------------------------------
 
-# Étapes pour la création d'une base :
+### Étapes pour la création d'une base :
 
 La création d'une nouvelle base SINGLE ou RAC se fait en 5 étapes :
 
@@ -59,7 +59,7 @@ la base soit SINGLE ou bien RAC.
 	Temps de création cdb + 1 pdb : ~35mn
 
 --------------------------------------------------------------------------------
-# Pré requis :
+### Pré requis :
 * Disposer d'une machine assez puissante pour un RAC il faut au minimum 8Gb de RAM.
 
 * Télécharger les logiciels suivants :
@@ -80,7 +80,7 @@ la base soit SINGLE ou bien RAC.
 
 --------------------------------------------------------------------------------
 
-# Création des VMs orclmaster et K2.
+### Création des VMs orclmaster et K2.
 2 VMs sont nécessaires pour commencer :
  - orclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
  - K2 qui est le serveur d'infrastructure et remplie de multiples fonctions :
@@ -92,7 +92,7 @@ la base soit SINGLE ou bien RAC.
 
  [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
 
-# Ajout de serveurs de base de données Oracle.
+### Ajout de serveurs de base de données Oracle.
 Les 2 VMs orclmaster et K2 doivent avoir été créées.
 
 [Création des serveurs Oracle](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
