@@ -4,11 +4,11 @@ sont très loin des exigences d'une entreprise.**
 
 --------------------------------------------------------------------------------
 
-# Objectifs :
+### Objectifs :
 
 Description de la configuration du poste client.
 
-# Description des scripts :
+### Description des scripts :
 
 * apply_myconfig.sh
 

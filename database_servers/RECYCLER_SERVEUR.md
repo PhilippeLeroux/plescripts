@@ -1,5 +1,4 @@
-Recycler un serveur :
----------------------
+### Recycler un serveur :
 
 _Cette documentation est juste un aide-mémoire._
 

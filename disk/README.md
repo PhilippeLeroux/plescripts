@@ -11,9 +11,9 @@ sur la façon de se servir des scripts :
 
 --------------------------------------------------------------------------------
 
-Description
-===========
-Répertoire plescripts/disk : permet de gérer les disques du serveur.
+### Description
+
+Permet de gérer les disques d'un serveur de base de données.
 
 1. Ajouter des disques dans oracleasm.
 

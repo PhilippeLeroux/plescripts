@@ -4,8 +4,7 @@ sont très loin des exigences d'une entreprise.**
 
 --------------------------------------------------------------------------------
 
-Gestion du DNS
-==============
+### Gestion du DNS
 
 Les scripts doivent être exécutés depuis le serveur K2 dans le répertoire ~/plescripts/dns
 et avec le compte root.

@@ -4,8 +4,7 @@ sont très loin des exigences d'une entreprise.**
 
 --------------------------------------------------------------------------------
 
-Création d'une base de donnée.
-==============================
+### Création d'une base de donnée.
 
 1. Se connecter sur le serveur : `ssh oracle@srvdaisy01`
 

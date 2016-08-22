@@ -1,4 +1,4 @@
-# Scripts permettant d'agir sur les DGs.
+### Scripts permettant d'agir sur les DGs.
 
 * create_new_dg.sh : création d'un nouveau DG.
 

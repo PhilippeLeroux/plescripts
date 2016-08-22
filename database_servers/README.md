@@ -4,8 +4,7 @@ sont très loin des exigences d'une entreprise.**
 
 --------------------------------------------------------------------------------
 
-Objectif des scripts
-====================
+### Objectif des scripts
 
 Le but de ces scripts et de créer une infrastructure complète avec un minimum
 d'interventions
@@ -20,8 +19,8 @@ La VM master sera clonée afin d'éviter d'installer l'OS à chaque fois.
 
 **Note** : Tous les scripts sont exécutés depuis le poste client.
 
-Création de nouveaux serveurs :
-------------------------------
+### Création de nouveaux serveurs :
+
 Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 
 1.	Définir le serveur :
