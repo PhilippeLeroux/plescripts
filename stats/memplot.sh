@@ -228,10 +228,12 @@ then
 	while read action what tt
 	do
 		loop=loop+1
+		w=unset
 		case "$what" in
-			"grid_installation")	w="GI" ;;
-			"oracle_installation")	w="Orcl" ;;
-			"create_*")				w="${what##*_}" ;;
+			grid_installation)		w="GI" ;;
+			oracle_installation)	w="Orcl" ;;
+			create_*)				w="${what##*_}" ;;
+			*)	error "'$what' unknow !!!"	;;
 		esac
 		labels=$(printf "$labels\nset label \"$action $w\" at \"$tt\",$trans")
 		[ $(( loop % 2 )) -eq 0 ] && trans=$(( trans + offset_trans ))
