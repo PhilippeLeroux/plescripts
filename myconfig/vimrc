@@ -1,0 +1,172 @@
+set ts=4
+set sw=4
+set listchars=tab:→\ ,eol:¬,trail:⋅,nbsp:⋅
+"set cc=81 wrap
+"set nu
+set vb t_vb=
+set noerrorbells
+
+if  ! has("compatible")
+"	A partir d'ici la configuration n'est pas compatible avec vi.
+
+if ! exists( "g:first_load" )
+	" Permet d'éviter certaines actions sur
+	" un rechargement du fichier
+	let g:first_load=1
+else
+	let g:first_load=0
+endif
+
+set modeline
+
+"	Pathogen
+let g:pathogen_disabled = []
+if has("gui_running")
+	call add(g:pathogen_disabled, 'vim-togglemouse')
+endif
+
+call pathogen#infect()
+call pathogen#helptags()
+
+if has("gui_running")
+	set columns=120
+	set lines=48
+	winpos 0 36
+endif
+
+" Pour mes fichiers template je désactive la syntaxe
+autocmd BufRead *.template,*.doc.sh set syn=off
+
+"	Activé pour le plugin markdown
+filetype plugin on
+
+" Change the mapleader from \ to ,
+let mapleader=","
+let maplocalleader="\\"
+
+"	Recharge automatiquement les fichiers modifiés.
+set autoread
+
+"   Ne charge pas le driver noshowmatch qui est trop lent.
+let loaded_matchparen = 1
+
+"Pour que airline soit visible tout le temps
+set laststatus=2
+
+"Search
+set hlsearch
+set incsearch
+
+" Don't redraw while executing macros (good performance config)
+set lazyredraw
+
+" For regular expressions turn magic on
+set magic
+
+"	============================================================================
+"	Syntastic : configuration conseillé
+"	============================================================================
+set statusline+=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+" Ne fonctionne pas avec Airline :(
+set statusline+=%{&spelllang}
+
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_wq = 1
+
+autocmd BufRead *.template,*.doc.sh let g:syntastic_check_on_open = 0
+
+"	============================================================================
+source $HOME/vimfunc/CheckFileType.vim
+autocmd! BufRead * call CheckFileType()
+
+"	============================================================================
+source $HOME/vimfunc/FrDictionnaire.vim
+nnoremap <F2> :call FrDictionnaire()<CR>
+
+"	============================================================================
+source $HOME/vimfunc/FrGrammaire.vim
+nnoremap <C-g> :call FrGrammaire()<CR>
+
+"	============================================================================
+source $HOME/vimfunc/folding.vim
+"	Permet de (un)folder la fonction courante avec la touche space.
+nnoremap <silent> <Space> @=(foldlevel('.')?'za':"\<Space>")<CR>
+vnoremap <Space> zf
+
+map <F3> :call ToggleAllFolders()<CR>
+autocmd BufRead * call EnableShellFoldBrace()
+
+"	============================================================================
+source $HOME/vimfunc/ToggleHOME2Plescripts.vim
+map <silent> <F4> :call ToggleHOME2Plescripts()<CR>
+
+"	============================================================================
+"	NERDTree
+"	============================================================================
+let NERDTreeIgnore=['\.swp$', '\~$']
+
+if has( "gui_running" )
+	" NERDTree ouvert automatiquement
+	autocmd VimEnter * NERDTree %:p:h
+else
+	" NERDTree ouvert si aucun fichier n'est passé en paramètre.
+	autocmd StdinReadPre * let s:std_in=1
+	autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree %:p:h | endif
+endif
+map <silent> <F5> :NERDTreeToggle<CR>
+
+"Si NERDTree est la dernière fenêtre ouverte alors quitter [G]vim
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+" Go to previous (last accessed) window.
+autocmd VimEnter * wincmd p
+
+"	============================================================================
+source $HOME/vimfunc/ToggleColorscheme.vim
+map <silent> <F6> :call ToggleColorscheme()<CR>
+
+"	============================================================================
+"	UndoTree
+"	============================================================================
+if has("persistent_undo")
+    set undodir=~/.vim/undodir/
+    set undofile
+endif
+let g:undotree_WindowLayout=3
+nnoremap <silent> <F7> :UndotreeToggle<CR>
+
+"	============================================================================
+"	clean_log
+"	============================================================================
+source $HOME/vimfunc/CleanLog.vim
+autocmd BufRead * call CleanLog()
+nnoremap <silent> <F8> :call CleanLog()<CR>
+
+"	============================================================================
+"	Tips
+"	============================================================================
+source $HOME/vimfunc/ToggleVimTips.vim
+nnoremap <silent> <F9> :call ToggleVimTips()<CR>
+
+"	============================================================================
+"	Recharger .vimrc
+"	============================================================================
+map <F10> :so $MYVIMRC<CR>
+
+"	============================================================================
+"	Permet de ce déplacer d'une modification à l'autre.
+"	============================================================================
+nnoremap <silent> <C-p> :GitGutterPrevHunk<CR>
+nnoremap <silent> <C-n> :GitGutterNextHunk<CR>
+
+"	============================================================================
+"	Fait un man du mot sous le curseur.
+"	============================================================================
+source $HOME/vimfunc/ManWordUnderTheCursor.vim
+nnoremap <silent> <C-M> :call ManWordUnderTheCursor()<CR>
+
+endif "!has("compatible")
+
