@@ -29,15 +29,13 @@ do
 	esac
 done
 
-if [ -v ORACLE_SID ]
-then
-	if [ "${ORACLE_SID:${#ORACLE_SID}-2:1}" == "_" ]
-	then # Policy Managed or One Node
-		typeset base=$(to_lower ${ORACLE_SID%_*})
-	else
-		typeset base=$(to_lower "${ORACLE_SID:0:${#ORACLE_SID}-1}")
-	fi
-	typeset -r alog="/u01/app/oracle/diag/rdbms/${base}*/$ORACLE_SID/trace/alert_$ORACLE_SID.log"
+typeset -i count_missing_hpages=0
+
+#	Incrémente la variable count_missing_hpages
+function read_hpages_from_alert_log
+{
+	typeset -r alog="$1"
+
 	if [ -f $alog ]
 	then
 		line_separator
@@ -65,15 +63,45 @@ then
 			warning "Use : su -c \"./adjust_hpages.sh -nr_hugepages=$expected_pages\""
 			warning "----------------------------------------------------"
 			LN
+			count_missing_hpages=count_missing_hpages+expected_pages
 		fi
 	else
 		warning "Fichier alertlog non trouvé :"
 		info "$alog"
 		LN
 	fi
-else
-	warning "ORACLE_SID undef : '$ORACLE_SID'"
-fi
+}
+
+#	Affiche le nombre de hpages souhaitées par l'instance.
+function print_hpages_instances
+{
+	if [ -v ORACLE_SID ]
+	then
+		if [ "${ORACLE_SID:${#ORACLE_SID}-2:1}" == "_" ]
+		then # Policy Managed or One Node
+			typeset base=$(to_lower ${ORACLE_SID%_*})
+		else
+			typeset base=$(to_lower "${ORACLE_SID:0:${#ORACLE_SID}-1}")
+		fi
+		typeset -r alog="/u01/app/oracle/diag/rdbms/${base}*/$ORACLE_SID/trace/alert_$ORACLE_SID.log"
+		read_hpages_from_alert_log $alog
+	else
+		warning "ORACLE_SID undef : '$ORACLE_SID'"
+	fi
+}
+
+#	Affiche le nombre de hpages souhaitées par -MGMTDB
+function print_hpages_mgmtdb
+{
+	if ps -ef | grep -q [p]mon_-MGMTDB
+	then
+		typeset -r alog="$GRID_BASE/diag/rdbms/_mgmtdb/-MGMTDB/trace/alert_-MGMTDB.log"
+		read_hpages_from_alert_log "$alog"
+	else
+		info "Pas d'instance -MGMTDB sur ce nœud."
+		LN
+	fi
+}
 
 typeset -ri hpage_size_mb=$(to_mb $(get_hugepages_size_kb)K)
 typeset -ri	hpage_total=$(get_hugepages_total)
@@ -87,6 +115,17 @@ read fs shm_size_mb shm_used_mb rem<<<"$(df -m /dev/shm | tail -1)"
 typeset -ri actual_hpages=$(sysctl -n vm.nr_hugepages)
 typeset -ri shm_hpage_mb=$(compute -i "$actual_hpages * $hpage_size_mb")
 typeset -i need_hpages_for_all=$(compute -i "$shm_size_mb / $hpage_size_mb")
+
+print_hpages_instances
+print_hpages_mgmtdb
+
+if [ $count_missing_hpages -ne 0 ]
+then
+	line_separator
+	warning "Set large pages :"
+	warning "Use : su -c \"./adjust_hpages.sh -nr_hugepages=$count_missing_hpages\""
+	LN
+fi
 
 line_separator
 info "Shm size          : $(fmt_number $shm_size_mb)Mb (max : $need_hpages_for_all Hpages)"
