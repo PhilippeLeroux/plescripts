@@ -615,7 +615,7 @@ function exec_cmd
 
 	case $EXEC_CMD_ACTION in
 		NOP)
-			my_echo "${YELLOW}" "nop > " "$simplify_cmd"
+			my_echo "${YELLOW}" " nop > " "$simplify_cmd"
 			;;
 
 		EXEC)
@@ -673,8 +673,8 @@ function exec_cmd
 	return $eval_return
 }
 
-typeset -a	ple_fake_param_cmd
-typeset -i	ple_param_max_len=0
+typeset -a	ple_dyn_param_cmd
+typeset -i	ple_dyn_param_max_len=0
 #	7	correspond à la largeur de l'horodatage devant les commandes exécutées, exemple : '10h44 >'
 #	4	les paramètres seront 'tabulés' de 4 espaces par rapport à la commande.
 typeset -ri	ple_param_margin=$((4+7))
@@ -683,11 +683,11 @@ function add_dynamic_cmd_param
 {
 	typeset -r	param="$1"
 	typeset -ri	len=${#param}
-	ple_fake_param_cmd[${#ple_fake_param_cmd[@]}]="$param"
+	ple_dyn_param_cmd[${#ple_dyn_param_cmd[@]}]="$param"
 
-	if [[ $len -gt $ple_param_max_len && $(( len + ple_param_margin )) -lt $(term_cols) ]]
+	if [[ $len -gt $ple_dyn_param_max_len && $(( len + ple_param_margin )) -lt $(term_cols) ]]
 	then
-		ple_param_max_len=$len
+		ple_dyn_param_max_len=$len
 	fi
 }
 
@@ -713,7 +713,7 @@ function exec_dynamic_cmd
 
 	typeset -r cmd_name="$@"
 
-	ple_param_max_len=ple_param_max_len+2
+	ple_dyn_param_max_len=ple_dyn_param_max_len+2
 
 	#	4 correspond à la largeur de la tabulation ajoutée devant les paramètres,
 	#	le but étant d'aligner le \ derrière la commande aux \ derrière les paramètres.
@@ -721,15 +721,15 @@ function exec_dynamic_cmd
 	#	10h40> ma_commande  \
 	#              -x=42    \
 	#			   -t
-	typeset -ri l=ple_param_max_len+4
+	typeset -ri l=ple_dyn_param_max_len+4
 	typeset		c=$(printf "%-${l}s" "${cmd_name##* }")
 	fake_exec_cmd "$(echo "$c\\\\")"
 
 	#	Affiche les paramètres de la commande :
-	for i in $( seq ${#ple_fake_param_cmd[@]} )
+	for i in $( seq ${#ple_dyn_param_cmd[@]} )
 	do
 		[ $i -gt 1 ] && info -f "\\\\"
-		info -f -n "$(printf "%${ple_param_margin}s%-${ple_param_max_len}s" " " "${ple_fake_param_cmd[$i-1]}")"
+		info -f -n "$(printf "%${ple_param_margin}s%-${ple_dyn_param_max_len}s" " " "${ple_dyn_param_cmd[$i-1]}")"
 	done
 	LN
 
@@ -737,7 +737,7 @@ function exec_dynamic_cmd
 
 	#	Avec la paramètre -h exec_cmd n'affiche pas le temps d'exécution.
 	typeset -ri	exec_cmd_start_at=$SECONDS
-	exec_cmd -hf $cmd_name "${ple_fake_param_cmd[@]}"
+	exec_cmd -hf $cmd_name "${ple_dyn_param_cmd[@]}"
 	typeset -ri exec_cmd_return=$?
 
 	typeset -ri exec_cmd_duration=$(( SECONDS - exec_cmd_start_at ))
@@ -746,8 +746,8 @@ function exec_dynamic_cmd
 		my_echo "${YELLOW}" "$(date +"%Hh%M")< " "${cmd_name##* } running time : $(fmt_seconds $exec_cmd_duration)"
 	fi
 
-	unset ple_fake_param_cmd
-	ple_param_max_len=0
+	unset ple_dyn_param_cmd
+	ple_dyn_param_max_len=0
 
 	return $exec_cmd_return
 }
