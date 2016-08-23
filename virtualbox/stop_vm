@@ -44,10 +44,16 @@ do
 			;;
 
 		*)
-			error "Arg '$1' invalid."
-			LN
-			info "$str_usage"
-			exit 1
+			if [ $server == undef ]
+			then
+				server=$1
+				shift
+			else
+				error "Arg '$1' invalid."
+				LN
+				info "$str_usage"
+				exit 1
+			fi
 			;;
 	esac
 done
