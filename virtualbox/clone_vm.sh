@@ -74,7 +74,6 @@ do
 	info "Clone $vm_name from $master_name"
 	exec_cmd VBoxManage clonevm "$master_name" --name "$vm_name" --basefolder \"$vm_path\" --register
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
-	exec_cmd VBoxManage storageattach "$vm_name" --storagectl IDE  --port 1 --device 0 --type dvddrive --medium emptydrive
 
 	if [ $type_shared_fs == vbox ]
 	then
@@ -84,7 +83,7 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	# Présent ici car dans setup_first_vms/vbox_scripts/01_create_master_vm.sh
 	# le Guru apparaît toujours.
-	# Ne marche pas à tout les coups.
+	# Même ici ne marche pas à tout les coups.
 	exec_cmd VBoxManage setextradata "$vm_name" GUI/GuruMeditationHandler PowerOff
 	LN
 done
