@@ -3,9 +3,6 @@ aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scr
 sont très loin des exigences d'une entreprise.**
 
 --------------------------------------------------------------------------------
-### Remarque
-[Oui je sais](http://www.oracle.com/technetwork/server-storage/vm/rac-092962.html)
- : et sinon le rapport ?
 
 ### Objectifs :
 
