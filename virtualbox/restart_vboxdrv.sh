@@ -35,6 +35,8 @@ do
 	esac
 done
 
+typeset		vbox_running=no	#	Converne VirtualBox
+
 typeset		infra_running=no
 typeset	-a	vm_list
 typeset	-i	vm_count=0
@@ -71,9 +73,29 @@ fi
 
 line_separator
 exec_cmd "sudo systemctl stop vboxdrv"
-info -n "Wait : "; pause_in_secs 2; LN
+LN
+pid_vboxmanager=$(ps -ef|grep [/]usr/lib/virtualbox/VirtualBox | tr -s [:space:] | cut -d' ' -f2)
+if [ x"$pid_vboxmanager" != x ]
+then
+	vbox_running=yes
+	info "Stop VirtualBox Manager : "
+	exec_cmd kill -1 $pid_vboxmanager
+	info -n "Tempo : "; pause_in_secs 2; LN
+	pid_vboxmanager=$(ps -ef|grep [/]usr/lib/virtualbox/VirtualBox | tr -s [:space:] | cut -d' ' -f2)
+	if [ x"$pid_vboxmanager" != x ]
+	then
+		exec_cmd kill -15 $pid_vboxmanager
+		info -n "Tempo : "; pause_in_secs 2; LN
+		pid_vboxmanager=$(ps -ef|grep [/]usr/lib/virtualbox/VirtualBox | tr -s [:space:] | cut -d' ' -f2)
+		if [ x"$pid_vboxmanager" != x ]
+		then
+			error "Cannot stop VirtualBox Manager."
+			exit 1
+		fi
+	fi
+fi
 exec_cmd "sudo systemctl start vboxdrv"
-info -n "Wait : "; pause_in_secs 2; LN
+info -n "Tempo : "; pause_in_secs 2; LN
 LN
 
 line_separator
@@ -99,3 +121,9 @@ do
 	exec_cmd -c "VBoxManage startvm ${vm_list[$i]} --type headless"
 done
 
+if [ $vbox_running == yes ]
+then
+	line_separator
+	info "Run VirtualBox manager."
+	nohup VirtualBox > /tmp/vv.nohup 2>&1 &
+fi

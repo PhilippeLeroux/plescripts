@@ -107,6 +107,8 @@ function virtualbox_stop
 		then
 			error "Failed to stop ${vm_list[$ivm]}"
 			LN
+
+			line_separator
 			info "Poweroff : ${vm_list[$ivm]}"
 			exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} poweroff"
 			if [ $? -ne 0 ]
@@ -140,6 +142,10 @@ function virtualbox_stop
 		warning "$count_errors failed."
 		exit 1
 	else
+		if [[ $wait_os == yes && $(VBoxManage list runningvms | wc -l) -eq 1 ]]
+		then # Ne fonctionnera qu'avec l'option -wait_os
+			exec_cmd "~/plescripts/virtualbox/restart_vboxdrv.sh"
+		fi
 		exit 0
 	fi
 }
