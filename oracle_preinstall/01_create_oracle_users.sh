@@ -119,7 +119,7 @@ LN
 . ~/plescripts/oracle_preinstall/make_vimrc_file
 
 #	Met à jour root également.
-make_vimrc_file "/root/.vimrc"
+make_vimrc_file "/root"
 
 line_separator
 info "create users grid"
@@ -137,7 +137,7 @@ then
 	# Permet aux autres scripts de continuer à fonctionner.
 	exec_cmd "ln -s /home/grid/.bash_profile /home/grid/.profile"
 fi
-make_vimrc_file "/home/grid/.vimrc"
+make_vimrc_file "/home/grid"
 exec_cmd "find /home/grid | xargs chown grid:oinstall"
 LN
 
@@ -155,7 +155,7 @@ else
 	# Permet aux autres scripts de continuer à fonctionner.
 	exec_cmd "ln -s /home/oracle/.bash_profile /home/oracle/.profile"
 fi
-make_vimrc_file "/home/oracle/.vimrc"
+make_vimrc_file "/home/oracle"
 exec_cmd "find /home/oracle | xargs chown oracle:oinstall"
 LN
 

@@ -13,12 +13,13 @@ info "Running : $ME $*"
 #Doit être exécuté sur le serveur d'infrastructure ou le master.
 
 line_separator
+info "Les logs de l'OS en US merci !"
 exec_cmd localectl set-locale LANG=en_US.UTF-8
 LN
 
 line_separator
 . ~/plescripts/oracle_preinstall/make_vimrc_file	# Charge la fonction make_vimrc_file
-make_vimrc_file "/root/.vimrc"
+make_vimrc_file "/root"
 
 line_separator
 cat ~/plescripts/setup_first_vms/for_inputrc /etc/inputrc > new_inputrc

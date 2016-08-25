@@ -1,10 +1,11 @@
 #!/bin/sh
 
-function make_vimrc_file # $1 full_path_vimrc
+#	$1 répertoire ou extraire la config vim
+function make_vimrc_file 
 {
-	typeset -r full_path_vimrc=$1
+	typeset -r in_path=$1
 
 	info "Copy vim config"
-	exec_cmd "cp ~/plescripts/myconfig/myvimrc $full_path_vimrc"
-	exec_cmd "cp ~/plescripts/myconfig/vimtips ${full_path_vimrc%/*}/.vimtips"
+	exec_cmd "cp ~/plescripts/myconfig/vimrc $in_path/.vimrc"
+	exec_cmd "gzip -dc ~/plescripts/myconfig/vimfunc.tar.gz | tar xf - -C $in_path"
 }
