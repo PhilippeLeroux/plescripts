@@ -46,31 +46,6 @@ if [ ! -f ~/.bashrc_extensions ]
 then
 	info "Mise en place du fichier ~/.bashrc_extensions"
 	infra_ssh "cp ~/plescripts/myconfig/bashrc_extensions ~/.bashrc_extensions"
-error "BUG ICI"
-if [ 0 -eq 1 ]; then
-	cat << EOS >> ~/.bashrc
-[ -f ~/.bashrc_extensions ] && . ~/.bashrc_extensions || true
-if [ -t 0 ]
-then
-    typeset -ri count_lv_error=$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$" | wc -l)
-
-    if [ \$count_lv_error -ne 0 ]
-    then
-        echo -e "${RED}$count_lv_error lvs errors : poweroff + start!${NORM}"
-        systemctl status target -l
-        echo ">>>Try to start target<<<"
-        systemctl start target
-        if [ $? -ne 0 ]
-        then
-            echo "start failed again."
-        else
-            echo "C'est bon ??"
-        fi
-        systemctl status target -l
-    fi
-fi
-EOS
-fi # [ 0 -eq 1 ]; then
 fi
 
 line_separator

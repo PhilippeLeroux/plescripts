@@ -38,5 +38,7 @@ do
 	esac
 done
 
+exec_cmd systemctl enable target
+exec_cmd -c systemctl start target
 set_targetcli_default_settings
 targetcli saveconfig
