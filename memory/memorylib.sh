@@ -34,3 +34,8 @@ function memory_total_kb
 {
 	grep "MemTotal:" $proc_meminfo | tr -s [:space:] | cut -d' ' -f2
 }
+
+function memory_free_kb
+{
+	grep "MemFree:" $proc_meminfo | tr -s [:space:] | cut -d' ' -f2
+}

@@ -50,10 +50,10 @@ function read_hpages_from_alert_log
 		typeset -ri	allocated_pages_size=allocated_pages*page_size_b
 
 		info "Read from $alog"
-		info "Page size       : $(fmt_bytesU_2_better -i $page_size_kb)"
-		info "Available pages : $available_pages = $(fmt_bytesU_2_better -i $available_pages_size)"
-		info "Expected pages  : $expected_pages = $(fmt_bytesU_2_better -i $expected_pages_size)"
-		info "Allocated pages : $allocated_pages = $(fmt_bytesU_2_better -i $allocated_pages_size)"
+		info "Page size              : $(fmt_bytesU_2_better -i $page_size_kb)"
+		info "Available pages        : $available_pages = $(fmt_bytesU_2_better -i $available_pages_size)"
+		info "Expected pages         : $expected_pages = $(fmt_bytesU_2_better -i $expected_pages_size)"
+		info "Allocated pages        : $allocated_pages = $(fmt_bytesU_2_better -i $allocated_pages_size)"
 		LN
 
 		if [ $allocated_pages -lt $expected_pages ]
@@ -103,15 +103,17 @@ function print_hpages_mgmtdb
 	fi
 }
 
+typeset	-i	total_memory_used_mb=0
+
 typeset -ri hpage_size_mb=$(to_mb $(get_hugepages_size_kb)K)
 typeset -ri	hpage_total=$(get_hugepages_total)
 typeset -ri	hpage_free=$(get_hugepages_free)
 typeset -ri hpage_used=$(( hpage_total - hpage_free ))
 
-typeset -i shm_size_mb=-1
+typeset -i shm_max_size_mb=-1
 typeset -i shm_used_mb=-1
 
-read fs shm_size_mb shm_used_mb rem<<<"$(df -m /dev/shm | tail -1)"
+read fs shm_max_size_mb shm_used_mb rem<<<"$(df -m /dev/shm | tail -1)"
 typeset -ri actual_hpages=$(sysctl -n vm.nr_hugepages)
 
 print_hpages_instances
@@ -126,13 +128,23 @@ then
 fi
 
 line_separator
-info "Hpage size        : $(fmt_number $hpage_size_mb)Mb"
-info "Hpage total       : $(fmt_number $hpage_total) = $(fmt_number $(( hpage_total * hpage_size_mb )))Mb"
-info "Hpage free        : $(fmt_number $hpage_free) = $(fmt_number $(( hpage_free * hpage_size_mb )))Mb"
-info "Hpage used        : $(fmt_number $hpage_used) = $(fmt_number $(( hpage_used * hpage_size_mb )))Mb"
+info "Hpage size             : $(fmt_number $hpage_size_mb)Mb"
+info "Hpage total            : $(fmt_number $hpage_total) = $(fmt_number $(( hpage_total * hpage_size_mb )))Mb"
+info "Hpage free             : $(fmt_number $hpage_free) = $(fmt_number $(( hpage_free * hpage_size_mb )))Mb"
+info "Hpage used             : $(fmt_number $hpage_used) = $(fmt_number $(( hpage_used * hpage_size_mb )))Mb"
 LN
+total_memory_used_mb=total_memory_used_mb+hpage_used
 
 line_separator
-info "Shm size          : $(fmt_number $shm_size_mb)Mb"
-info "Shm used          : $(fmt_number $shm_used_mb)Mb"
+info "Shm max size           : $(fmt_number $shm_max_size_mb)Mb"
+info "Shm used               : $(fmt_number $shm_used_mb)Mb"
+LN
+total_memory_used_mb=total_memory_used_mb+shm_used_mb
+
+line_separator
+max_memory_mb=$(compute -i "$(memory_total_kb) / 1024")
+free_memory_mb=$(compute -i "$(memory_free_kb) / 1024")
+info "Max memory             : $(fmt_number $max_memory_mb)Mb"
+info "Memory used by all SGA : $(fmt_number $total_memory_used_mb)Mb"
+info "Free memory            : $(fmt_number $free_memory_mb)Mb"
 LN

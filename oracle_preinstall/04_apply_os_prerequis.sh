@@ -141,8 +141,10 @@ line_separator
 hugepages_setting
 LN
 
-line_separator
-dev_shm_setting
-LN
-
+if [ $rdbms_alloc_hugepages -eq 0 ]
+then
+	line_separator
+	dev_shm_setting
+	LN
+fi
 exit

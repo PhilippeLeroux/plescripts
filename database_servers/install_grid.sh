@@ -358,8 +358,6 @@ function stop_and_disable_unwanted_grid_ressources
 {
 	line_separator
 	disclaimer
-	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; crsctl stop res ora.crf -init"
-	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; crsctl delete res ora.crf -init"
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl stop cvu"
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl disable cvu"
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl stop oc4j"

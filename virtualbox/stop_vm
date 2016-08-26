@@ -10,13 +10,15 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-server=<nom de la VM> si omis essait la variable ID_DB
-	[-wait_os] : attend que l'OS soit stoppé avant de rendre la main.
+	[-wait_os]     : attend que l'OS soit stoppé avant de rendre la main.
+	[-reboot_vbox] : reboot tous les composants de vbox.
 "
 
 info "$ME $@"
 
 typeset server=undef
 typeset	wait_os=no
+typeset reboot_vbox=no
 
 while [ $# -ne 0 ]
 do
@@ -34,6 +36,11 @@ do
 
 		-wait_os)
 			wait_os=yes
+			shift
+			;;
+
+		-reboot_vbox)
+			reboot_vbox=yes
 			shift
 			;;
 
@@ -142,13 +149,15 @@ function virtualbox_stop
 		warning "$count_errors failed."
 		exit 1
 	else
-		if [[ $wait_os == yes && $(VBoxManage list runningvms | wc -l) -eq 1 ]]
+		if [[ $reboot_vbox == yes && $(VBoxManage list runningvms | wc -l) -eq 1 ]]
 		then # Ne fonctionnera qu'avec l'option -wait_os
 			exec_cmd "~/plescripts/virtualbox/restart_vboxdrv.sh"
 		fi
 		exit 0
 	fi
 }
+
+[ $reboot_vbox == yes ] && wait_os=yes
 
 case ${hostvm##*_} in
 	virtualbox)

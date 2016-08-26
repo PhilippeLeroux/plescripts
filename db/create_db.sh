@@ -20,7 +20,7 @@ typeset -r ME=$0
 
 typeset		name=undef
 typeset		sysPassword=$oracle_password
-typeset	-i 	sga_target=0
+typeset	-i	totalMemory=640
 typeset		shared_pool_size=default
 typeset		data=DATA
 typeset		fra=FRA
@@ -40,8 +40,8 @@ typeset -r str_usage=\
 	-name=$name db name for single or db for RAC
 	[-lang=$lang]
 	[-sysPassword=$sysPassword]
-	[-sga_target=<#>] Unit Mb
-	[-shared_pool_size=<str>]	Préciser l'unité M !
+	[-totalMemory=$totalMemory] Unit Mb
+	[-shared_pool_size=<str>]	Préciser l'unité, par défaut 256M
 	[-cdb=$cdb]	(yes/no)	(1)
 	[-pdbName=<str>]	(2)
 	[-data=$data]
@@ -91,11 +91,6 @@ do
 
 		-sysPassword=*)
 			sysPassword=${1##*=}
-			shift
-			;;
-
-		-sga_target=*)
-			sga_target=${1##*=}
 			shift
 			;;
 
@@ -226,15 +221,20 @@ function make_dbca_args
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
 	add_dynamic_cmd_param "-redoLogFileSize 512"
 
-	typeset initParams="-initParams threaded_execution=true"
-	[ $sga_target -ne 0 ] && initParams="$initParams,sga_target=$sga_target"
-	[ $shared_pool_size != "default" ] && initParams="$initParams,shared_pool_size=$shared_pool_size"
+	add_dynamic_cmd_param "-totalMemory $totalMemory"
 
+	typeset initParams="-initParams threaded_execution=true"
 	case $lang in
 		french)
 			initParams="$initParams,nls_language=FRENCH,NLS_TERRITORY=FRANCE"
 			;;
 	esac
+	if [ $shared_pool_size == default ]
+	then
+		initParams="$initParams,shared_pool_size=256M"
+	else
+		[ $shared_pool_size != "0" ] && initParams="$initParams,shared_pool_size=$shared_pool_size"
+	fi
 	add_dynamic_cmd_param "$initParams"
 }
 
@@ -449,16 +449,6 @@ ORACLE_SID=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)
 info "Load env for $ORACLE_SID"
 ORAENV_ASK=NO . oraenv
 LN
-
-if [[ $sga_target -eq 0 && $rdbms_alloc_hugepages -eq 261 ]]
-then
-	line_separator
-	#	Sera pris en compte avec l'arrêt/démarrage effectué pour activer l'archivelog
-	info "set sga_target=512M"
-	fake_exec_cmd sqlplus -s sys/$oracle_password as sysdba
-	printf "alter system set sga_target=512M scope=spfile sid='*';\n" |\
-		sqlplus  -s sys/$oracle_password as sysdba
-fi
 
 line_separator
 info "Enable archivelog :"

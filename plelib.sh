@@ -417,6 +417,7 @@ function ask_for
 		#	Wait user.
 		typeset -i start_s=$SECONDS
 		read keyboard</dev/tty
+		info "$keyboard"	# Affiche la touche pressée.
 		typeset -i diff_s=$(( SECONDS - start_s ))
 		[ $diff_s -gt 60 ] && info "Idle time $(fmt_seconds $diff_s)"
 

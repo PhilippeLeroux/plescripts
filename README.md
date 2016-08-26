@@ -68,7 +68,8 @@ la base soit SINGLE ou bien RAC.
 
 		Uniquement pour windows, sous linux yum install [...] ou apt-get install [...]
 
-		(Pour le moment le support de Windows est suspendu...)
+		Pour le moment le support de Windows est suspendu, il reprendra quand Ubuntu on Windows
+		sera opérationnel et utilisable.
 
 	* [Oracle Linux 7, uniquement l'iso V100082-01.iso.](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
 

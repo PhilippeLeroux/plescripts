@@ -49,7 +49,7 @@ typeset -ri hpage_free=$(get_hugepages_free)
 typeset -ri hpage_free_mb=$(( $hpage_free * $hpage_size_mb ))
 
 typeset -r sga_mb=$(to_mb $sga)
-typeset -r reserved_pages=5
+typeset -r reserved_pages=1
 typeset -r sga_hpages=$(compute "($sga_mb / $hpage_size_mb) + $reserved_pages")
 
 info "Hugepage size  : ${hpage_size_mb}Mb"
@@ -57,6 +57,6 @@ info "Hugepage total : $hpage_total pages ${hpage_total_mb}Mb"
 info "Hugepage free  : $hpage_free pages ${hpage_free_mb}Mb"
 LN
 
-info "${sga_mb}Mb for SGA require $sga_hpages pages"
+info "${sga_mb}Mb for SGA require $sga_hpages pages (reserve $reserved_pages page)"
 [ $sga_hpages -gt $hpage_total ] && warning "Not enought pages !"
 LN
