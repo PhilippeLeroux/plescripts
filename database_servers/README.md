@@ -134,8 +134,7 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	Les 2 DGs DATA et FRA sont créées, pour un cluster il y a en plus le DG CRS
 
 	__Note__ pour consommer le minimum de ressources un certain nombre de hacks
-	sont fait, voir le mémo [Configuration des huge pages](https://github.com/PhilippeLeroux/plescripts/wiki/00-configuration_des_hpages)
-    pour plus de détailles.
+	sont fait, -no_hacks permet de ne pas les mettre en œuvre.
 
 	**Bug RAC** : Plantage du second script root avec le code CLSRSC-507
 	- Appliquer le patch 18456643, plus d'explications [ici](https://community.oracle.com/message/13278037#13278037).
