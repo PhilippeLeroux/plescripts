@@ -136,6 +136,7 @@ LN
 total_memory_used_mb=total_memory_used_mb+hpage_used
 
 line_separator
+info "/dev/shm :"
 info "Shm max size           : $(fmt_number $shm_max_size_mb)Mb"
 info "Shm used               : $(fmt_number $shm_used_mb)Mb"
 LN
@@ -145,6 +146,6 @@ line_separator
 max_memory_mb=$(compute -i "$(memory_total_kb) / 1024")
 free_memory_mb=$(compute -i "$(memory_free_kb) / 1024")
 info "Max memory             : $(fmt_number $max_memory_mb)Mb"
-info "Memory used by all SGA : $(fmt_number $total_memory_used_mb)Mb"
+info "Memory used by all SGA : $(fmt_number $total_memory_used_mb)Mb (/dev/shm)"
 info "Free memory            : $(fmt_number $free_memory_mb)Mb"
 LN

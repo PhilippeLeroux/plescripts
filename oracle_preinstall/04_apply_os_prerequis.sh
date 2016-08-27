@@ -133,12 +133,29 @@ function dev_shm_setting
 	esac
 }
 
+function from_redhat
+{
+	info "Redhat"
+cat <<EOC >>/etc/sysctl.conf
+	#	Redhat settings (Oracle perhaps)
+	vm.swappiness = 1
+	vm.dirty_background_ratio = 3
+	vm.dirty_ratio = 80
+	vm.dirty_expire_centisecs = 500
+	vm.dirty_writeback_centisecs = 100
+EOC
+}
+
 line_separator
 memory_setting
 LN
 
 line_separator
 hugepages_setting
+LN
+
+line_separator
+from_redhat
 LN
 
 if [ $rdbms_alloc_hugepages -eq 0 ]

@@ -94,6 +94,7 @@ then
 		fi
 	fi
 fi
+info -n "Tempo : "; pause_in_secs 8; LN
 exec_cmd "sudo systemctl start vboxdrv"
 info -n "Tempo : "; pause_in_secs 2; LN
 LN

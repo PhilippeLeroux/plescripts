@@ -138,14 +138,14 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 
 	**Bug RAC** : Plantage du second script root avec le code CLSRSC-507
 	- Appliquer le patch 18456643, plus d'explications [ici](https://community.oracle.com/message/13278037#13278037).
-	Puis relancer le script `./install_grid.sh -db=daisy -skip_grid_installation -skip_root_scripts`
+	Puis relancer le script `./install_grid.sh -db=daisy -skip_grid_install -skip_root_scripts`
 
 	- Sans appliquer le patch 18456643 : je ne suis pas certains d'être concerné par
 	le bug le plantage est trop peu fréquent.
-		- Relancer `./install_grid.sh -db=daisy -skip_grid_installation` 1 ou 2 fois peut résoudre le problème.
+		- Relancer `./install_grid.sh -db=daisy -skip_grid_install` 1 ou 2 fois peut résoudre le problème.
 
 		- Sinon se connecter sur le second nœud et exécuter le script, là il devrait
-		correctement s'exécuter. Relancer l'installation avec : `./install_grid.sh -db=daisy -skip_grid_installation -skip_root_scripts`
+		correctement s'exécuter. Relancer l'installation avec : `./install_grid.sh -db=daisy -skip_grid_install -skip_root_scripts`
 
 4.	Installation d'Oracle
 

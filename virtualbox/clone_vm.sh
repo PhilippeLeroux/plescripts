@@ -74,7 +74,7 @@ do
 	info "Clone $vm_name from $master_name"
 	exec_cmd VBoxManage clonevm "$master_name" --name "$vm_name" --basefolder \"$vm_path\" --register
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
-	exec_cmd VBoxManage modifyvm "$vm_name" --cpuhotplug on
+	exec_cmd VBoxManage modifyvm $vm_name --cpus 2
 
 	if [ $type_shared_fs == vbox ]
 	then

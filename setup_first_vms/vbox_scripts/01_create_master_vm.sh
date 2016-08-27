@@ -60,7 +60,7 @@ exec_cmd VBoxManage modifyvm $master_name --acpi on
 exec_cmd VBoxManage modifyvm $master_name --ioapic on
 exec_cmd VBoxManage modifyvm $master_name --memory $vm_memory_mb_for_master
 exec_cmd VBoxManage modifyvm $master_name --vram 9
-exec_cmd VBoxManage modifyvm $master_name --cpus 4
+exec_cmd VBoxManage modifyvm $master_name --cpus 2
 exec_cmd VBoxManage modifyvm $master_name --rtcuseutc on
 exec_cmd VBoxManage modifyvm $master_name --largepages on
 LN

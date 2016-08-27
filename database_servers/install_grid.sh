@@ -17,7 +17,7 @@ typeset -r str_usage=\
 	-rsp_file_only Uniquement créer le fichier réponse, pas d'installation.
 
 	Pour passer certaine phases de l'installation :
-	   -skip_grid_installation
+	   -skip_grid_install
 	   -skip_root_scripts
 	   -skip_configToolAllCommands
 	   -skip_create_dg
@@ -34,7 +34,7 @@ info "Running : $ME $*"
 typeset	db=undef
 typeset	rsp_file_only=no
 
-typeset	skip_grid_installation=no
+typeset	skip_grid_install=no
 typeset	skip_root_scripts=no
 typeset	skip_configToolAllCommands=no
 typeset	skip_create_dg=no
@@ -66,8 +66,8 @@ do
 			shift
 			;;
 
-		-skip_grid_installation)
-			skip_grid_installation=yes
+		-skip_grid_install)
+			skip_grid_install=yes
 			shift
 			;;
 
@@ -435,7 +435,7 @@ info "ORACLE_BASE = '$ORACLE_BASE'"
 
 [ x"$ORACLE_HOME" == x ] && error "Can't read ORACLE_HOME for user grid on ${node_names[0]}" && exit 1
 
-if [ $skip_grid_installation == no ]
+if [ $skip_grid_install == no ]
 then
 	create_response_file $cfg_path/disks
 	LN
@@ -449,7 +449,7 @@ fi
 
 stats_tt start grid_installation
 
-if [ $skip_grid_installation == no ]
+if [ $skip_grid_install == no ]
 then
 	copy_response_and_properties_files
 	LN
