@@ -71,8 +71,10 @@ elif [ $db == undef ]
 then
 	[[ -v ID_DB ]] && db=$ID_DB
 	exit_if_param_undef db "$str_usage"
-	server_name=$(printf "srv%s%02d" ${db} $nr_node)
 fi
+	
+[ $server_name == undef ] && server_name=$(printf "srv%s%02d" ${db} $nr_node)
+
 
 wait_server $server_name
 [ $? -ne 0 ] && exit 1
