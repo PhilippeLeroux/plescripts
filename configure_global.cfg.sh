@@ -114,5 +114,8 @@ LN
 exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"$vm_p\"~g' ~/plescripts/global.cfg"
 LN
 
-exec_cmd "sed -i 's~full_linux_iso_name=.*$~full_linux_iso_name=\"$full_linux_iso_n\"~g' ~/plescripts/global.cfg"
+iso_path=${full_linux_iso_n%/*}
+iso_name=${full_linux_iso_n##*/}
+exec_cmd "sed -i 's~iso_olinux_path=.*$~iso_olinux_path=\"$iso_path\"~g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's~full_linux_iso_name=.*$~full_linux_iso_name=\"\$iso_olinux_path/$iso_name\"~g' ~/plescripts/global.cfg"
 LN
