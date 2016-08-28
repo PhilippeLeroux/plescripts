@@ -25,10 +25,10 @@ LN
 typeset -a	ip_list
 
 line_separator
-info "Test $scan_name"
+info "Ping $scan_name"
 for i in $( seq 1 3 )
 do
-	info -n "Ping #${i} "
+	info -n "    ping #${i} "
 	ip_list[$((i-1))]=$(ping -c 1 $scan_name | head -2 | tail -1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/")
 	pause_in_secs 1; LN
 done
@@ -77,5 +77,5 @@ LN
 
 
 line_separator
-info "nslookup"
 exec_cmd nslookup $scan_name
+exec_cmd host $scan_name
