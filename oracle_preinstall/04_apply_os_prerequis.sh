@@ -158,10 +158,13 @@ line_separator
 from_redhat
 LN
 
+line_separator
+dev_shm_setting
+LN
+
 if [ $rdbms_alloc_hugepages -eq 0 ]
 then
-	line_separator
-	dev_shm_setting
-	LN
+	warning "Huge pages and /dev/shm configured..."
 fi
-exit
+
+exit 0
