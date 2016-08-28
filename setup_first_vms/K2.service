@@ -1,0 +1,13 @@
+[Unit]
+Description=Start K2 VM (VirtualBox)
+Wants=iscsi.service
+After=iscsi.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/su - kangs -c "/home/kangs/plescripts/shell/start_vm K2"
+ExecStop=/usr/bin/su - kangs -c "/home/kangs/plescripts/shell/stop_vm K2"
+
+[Install]
+WantedBy=multi-user.target

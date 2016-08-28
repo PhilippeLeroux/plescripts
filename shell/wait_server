@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# vim: ts=4:sw=4
+
+. ~/plescripts/plelib.sh
+
+typeset -r nc_installed=$(which nc)
+[ x"$nc_installed" = x ] && error "La commande nc n'est pas présente, installer le package netcat-openbsd ou nmap-ncat" && exit 1
+
+typeset -ri max_time=180	#seconds
+
+function ping_test
+{
+	typeset -r server_name=$1
+
+	typeset -i	count_pings=0
+
+	hide_cursor
+
+	info -n "Wait network interface up :  "
+	start=$SECONDS
+	duration=0
+	car="|"
+	while [ $duration -lt $max_time ]
+	do
+		printf "\b\b\b[$car]"
+		ping_status=$(ping -c 1 $server_name 2>/dev/null | head -2 | tail -1)
+		if [[ -z $ping_status ]] || [[ "$ping_status" = *Unreachable ]]
+		then
+			case $car in
+				"|")	car="/"
+					;;
+				"/")	car="-"
+					;;
+				"-")	car="\\"
+					;;
+				"\\")	car="|"
+					;;
+			esac
+			duration=$(( $SECONDS - $start ))
+		else
+			break
+		fi
+	done
+	printf "\b\b\b\b "
+
+	if [ $duration -ge $max_time ]
+	then
+		printf "[${RED}ko${NORM}] Waiting : %s\n" $(fmt_seconds $duration)
+		show_cursor
+		return 1
+	else
+		printf "[${GREEN}ok${NORM}] Waiting %s\n" $(fmt_seconds $duration)
+		return 0
+	fi
+}
+
+function wait_for
+{
+	typeset -r server_name=$1
+
+	info "Wait $server_name max time $(fmt_seconds $(( $max_time * 2 )) ) :"
+
+	ping_test $server_name
+	[ $? -ne 0 ] && return 1
+
+	start=$SECONDS
+	info -n "Wait sshd up : "
+	duration=0
+	while [ $duration -lt $max_time ]
+	do
+		nc $server_name 22 </dev/null >/dev/null 2>&1
+		if [ $? -ne 0 ]
+		then
+			pause_in_secs 5 "$suffix"
+			typeset -i l=$?
+			b=$(fill "\b" $l)
+			printf "$b"
+			suffix=" (Total : $(fmt_seconds $(( $SECONDS - $start ))))"
+			duration=$(( $SECONDS - $start ))
+		else
+			break
+		fi
+	done
+
+	show_cursor
+
+	if [ $duration -ge $max_time ]
+	then
+		printf "[${RED}ko${NORM}] Waiting %s${CEOL}\n" $(fmt_seconds $duration)
+		return 1
+	else
+		printf "[${GREEN}ok${NORM}] Waiting %s${CEOL}\n"  $(fmt_seconds $duration)
+		return 0
+	fi
+}
+
+
+if [ $# -eq 0 ]
+then
+	if [[ -v ID_DB ]]
+	then
+		typeset -i	exit_code=0
+		typeset -r	cfg_path=~/plescripts/database_servers/$ID_DB
+		exit_if_dir_not_exists $cfg_path
+		for f in $(ls $cfg_path/node*)
+		do
+			node_name=$(cat $f | cut -d':' -f2)
+			wait_for $node_name
+			[ $? -ne  0 ] && exit_code=1
+			LN
+		done
+		exit $exit_code
+	else
+		error "Missing server name"
+		exit 1
+	fi
+fi
+
+wait_for $1
+exit $?
+

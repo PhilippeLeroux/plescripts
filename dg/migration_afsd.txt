@@ -1,0 +1,33 @@
+https://docs.oracle.com/database/121/OSTMG/GUID-FEB09119-1CF1-40CC-87F1-9B2B945BF57D.htm#OSTMG95731
+
+ssh root@raczzz01
+[root@raczzz01 ~]# su - grid 
+Dernière connexion : jeudi  7 avril 2016 à 20:52:18 CEST sur pts/1
+raczzz01:+ASM1:grid> asmcmd dsget
+parameter:ORCL:*
+profile:ORCL:*
+raczzz01:+ASM1:grid> asmcmd dsset 'ORCL:*','AFD:*' 
+raczzz01:+ASM1:grid> 
+raczzz01:+ASM1:grid> olsnodes -a
+raczzz01        Hub
+raczzz02        Hub
+raczzz01:+ASM1:grid>       
+[root@raczzz01 ~]# ssh raczzz02
+Last login: Thu Apr  7 21:31:16 2016 from orclkangs.orcl
+[root@raczzz02 ~]# crsctl stop crs -f
+[ skipped ]
+[root@raczzz01 ~]# crsctl stop crs -f
+[ skipped ]
+[root@raczzz01 ~]# asmcmd afd_configure
+Connected to an idle instance.
+ASMCMD-9519: ASMLib is present with ASM disk string 'ORCL:*,AFD:*'; command requires default ASM disk string
+
+
+PERSO :
+root@raczzz01 ~]# acfsload start
+/u01/app/12.1.0.2/grid/bin/acfsload: ligne34: /lib/acfstoolsdriver.sh: Aucun fichier ou dossier de ce type
+
+[root@raczzz01 ~]# export ORACLE_HOME=$GRID_HOME
+[root@raczzz01 ~]# acfsload start
+ACFS-9459: ADVM/ACFS is not supported on this OS version: 'unknown'
+

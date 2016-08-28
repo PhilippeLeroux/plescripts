@@ -1,0 +1,24 @@
+# Fichier [g]vim de travaille
+*.swp
+*.log
+#Dolpin
+.Trash*
+#Logs
+logs/**
+#Fichier LibreOffice
+*.odp#
+#divers
+.directory
+#
+*.link
+#
+test/**
+###
+dns/install/etc
+dns/install/var
+dns/install/configure.log
+san/saveconfig-*
+san/targetcli_backup/**
+nohup.out
+afiedt.buf
+database_servers/**/

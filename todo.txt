@@ -1,0 +1,16 @@
+Créer une disque spécifique pour /u01
+	Ce sera moins problèmatique en cas de saturation des logs.
+
+	/		15G
+	/u01	30G
+	/dev/mapper/ol-root     / 
+
+A scripter :
+	Sur le serveur K2 forcer bind à utiliser IPV4 : permet de diminuer le nombre
+	de messages d'erreurs dans /var/log/messages liées à IPv6
+
+	/etc/sysconfig/named
+	Ajouter OPTIONS="-4"
+
+Mettre dans PATH : /u01/app/oracle/12.1.0.2/dbhome_1/OPatch
+

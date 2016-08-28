@@ -1,0 +1,43 @@
+#	Intégration de git dans vim
+//github.com/tpope/vim-fugitive.git
+
+#	Browser
+//github.com/scrooloose/nerdtree.git
+//github.com/Xuyuanp/nerdtree-git-plugin.git
+
+#	Plante
+# https://github.com/jistr/vim-nerdtree-tabs.git
+
+#	Suivie des modifs
+#https://github.com/mhinz/vim-signify.git
+https://github.com/airblade/vim-gitgutter.git
+
+# airline
+//github.com/vim-airline/vim-airline
+
+# Vérification de la syntaxe
+//github.com/scrooloose/syntastic.git
+
+#	Bien pour vim
+#	Ajouter : hi ColorColumn	guibg=darkgray ctermbg=8
+//github.com/endel/vim-github-colorscheme.git
+
+#	Bien pour Gvim
+https://github.com/lifepillar/vim-wwdc16-theme.git
+https://github.com/kocakosm/hilal.git
+https://github.com/xero/sourcerer.vim.git
+
+#	Util dans un terminal toggle la sourie entre le terminal et vim
+https://github.com/nvie/vim-togglemouse.git
+
+#	Montre les undo sous forme arborescente.
+//github.com/mbbill/undotree.git
+
+#	Markdown
+https://github.com/suan/vim-instant-markdown.git
+
+# Grammaire
+//github.com/rhysd/vim-grammarous.git
+
+#	Man
+https://github.com/vim-utils/vim-man.git

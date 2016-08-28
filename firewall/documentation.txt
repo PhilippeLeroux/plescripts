@@ -1,0 +1,16 @@
+Très bonne documentation ici :
+https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-using-firewalld-on-centos-7 
+
+Lister les zones disponibles :
+firewall-cmd --get-zones
+
+Config :
+eth0 :	ZONE=public
+eth1 & eth2 : ZONE=trusted
+
+[root@K2:network-scripts]$ firewall-cmd --get-active-zones
+public
+  interfaces: eth0
+trusted
+  interfaces: eth1 eth2
+

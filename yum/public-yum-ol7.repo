@@ -1,0 +1,13 @@
+[ol7_latest]
+name=Oracle Linux $releasever Latest ($basearch)
+baseurl=file:///mnt/repo/ol7/os/x86_64
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=1
+
+[ol7_web]
+name=Oracle Linux $releasever Latest ($basearch)
+baseurl=http://public-yum.oracle.com/repo/OracleLinux/OL7/latest/$basearch/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=1

@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# vim: ts=4:sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+typeset -r str_usage=\
+"Usage : $ME ...."
+
+info "Running : $ME $*"
+
+typeset db=undef
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			first_args=-emul
+			shift
+			;;
+
+		-db=*)
+			db=${1##*=}
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
+
+[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
+exit_if_param_undef db	"$str_usage"
+
+typeset -r	upper_db=$(to_upper $db)
+
+typeset -r	cfg_path=~/plescripts/database_servers/$db
+typeset -r	max_nodes=$(ls -1 $cfg_path/node* | wc -l)
+
+[ $max_nodes -gt 2 ] && error "Maximum RAC 2 nœuds" && exit 1
+
+typeset -r	db_type=$(cat $cfg_path/node1 | cut -d: -f1)
+typeset -r	server1=$(cat $cfg_path/node1 | cut -d: -f2)
+
+typeset 	inst1=$(ssh oracle@$server1 plescripts/db/get_active_instance.sh)
+
+if [ $max_nodes -eq 2 ]
+then	#	RAC 2 nœuds.
+	typeset -r	server2=$(cat $cfg_path/node2 | cut -d: -f2)
+	inst2=$(ssh oracle@$server2 plescripts/db/get_active_instance.sh)
+
+	typeset -r	session_name="ORCL Top $server1 / Bottom $server2"
+	exec_cmd -ci tmux kill-session -t \"$session_name\"
+
+
+	alert1=$(printf "/u01/app/oracle/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst1 $inst1)
+	alert2=$(printf "/u01/app/oracle/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst2 $inst2)
+
+	tmux new -s "$session_name"	"ssh oracle@${server1} tail -1000f $alert1"			\;\
+								split-window -v "ssh oracle@${server2} tail -1000f $alert2"			\;\
+								selectp -t 0
+else	#	Mono Instance.
+	if [ x"$inst1" == x ]
+	then #  L'instance est arrêtée Pour les SINGLE db pas de problème pour lire /etc/oratab...
+		inst1=$(ssh oracle@$server1 grep "^[A-Z].*" /etc/oratab | cut -d: -f1)
+	fi
+
+	typeset -r	session_name="ORCL Top $server1 / Bottom $server2"
+	exec_cmd -ci tmux kill-session -t \"$session_name\"
+
+
+	alert1=$(printf "/u01/app/oracle/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst1 $inst1)
+	ssh oracle@${server1} tail -1000f $alert1
+fi

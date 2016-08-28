@@ -1,0 +1,9 @@
+Bien au début pour comprendre.
+https://www.alionet.org/content.php?198-Systemd-comment-ca-marche-Partie-2
+
+Plus complet :
+https://wiki.archlinux.org/index.php/systemd
+
+Cool, voir le journal pour un service particulier :
+journalctl /usr/lib/systemd/systemd
+
