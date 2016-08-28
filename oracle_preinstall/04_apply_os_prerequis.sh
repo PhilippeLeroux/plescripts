@@ -137,12 +137,12 @@ function from_redhat
 {
 	info "Redhat"
 cat <<EOC >>/etc/sysctl.conf
-	#	Redhat settings (Oracle perhaps)
-	vm.swappiness = 1
-	vm.dirty_background_ratio = 3
-	vm.dirty_ratio = 80
-	vm.dirty_expire_centisecs = 500
-	vm.dirty_writeback_centisecs = 100
+#	Redhat settings (Oracle ?)
+vm.swappiness = 1
+vm.dirty_background_ratio = 3
+vm.dirty_ratio = 80
+vm.dirty_expire_centisecs = 500
+vm.dirty_writeback_centisecs = 100
 EOC
 }
 
