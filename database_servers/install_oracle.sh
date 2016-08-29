@@ -164,8 +164,15 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	typeset  -ri inode=$1
 	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
 
+	typeset -r script_root_sh="/u01/app/oracle/$oracle_release/dbhome_1/root.sh"
+	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
-	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C /u01/app/oracle/$oracle_release/dbhome_1/root.sh\" </dev/null"
+	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C $script_root_sh\" </dev/null"
+	LN
+
+	# Je viens de découvrir ça :
+	# 8.3.1 Creating a Backup of the root.sh Script
+	info "Backup the root.sh script to $backup_script_root_sh"
 	LN
 }
 
