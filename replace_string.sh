@@ -83,6 +83,11 @@ function replace
 	info "$count_modified_files files updated."
 }
 
+info "Replace :"
+info "   $str"
+info "   $by"
+LN
+
 if [ $readme_only = yes ]
 then
 	cmd_find="find $root_path/*"' -name readme.txt -or -name README.md'
