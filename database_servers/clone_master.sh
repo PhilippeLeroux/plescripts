@@ -391,7 +391,7 @@ function test_if_other_nodes_up
 #	============================================================================
 typeset -r script_start_at=$SECONDS
 
-[ $node -gt 1 ]			&& test_if_other_nodes_up || true
+[ $node -gt 1 ]	&& test_if_other_nodes_up
 
 configure_server
 
