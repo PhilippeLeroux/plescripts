@@ -50,7 +50,7 @@ function read_hpages_from_alert_log
 		typeset -ri	allocated_pages_size=allocated_pages*page_size_b
 
 		info "Read from $alog"
-		info "Page size              : $(fmt_bytesU_2_better -i $page_size_kb)"
+		info "HugePage size          : $(fmt_bytesU_2_better -i $page_size_kb)"
 		info "Available pages        : $available_pages = $(fmt_bytesU_2_better -i $available_pages_size)"
 		info "Expected pages         : $expected_pages = $(fmt_bytesU_2_better -i $expected_pages_size)"
 		info "Allocated pages        : $allocated_pages = $(fmt_bytesU_2_better -i $allocated_pages_size)"
@@ -86,7 +86,7 @@ function print_hpages_instances
 		typeset -r alog="/u01/app/oracle/diag/rdbms/${base}*/$ORACLE_SID/trace/alert_$ORACLE_SID.log"
 		read_hpages_from_alert_log $alog
 	else
-		warning "ORACLE_SID undef : '$ORACLE_SID'"
+		warning "ORACLE_SID undef"
 	fi
 }
 
@@ -96,6 +96,7 @@ function print_hpages_mgmtdb
 	if ps -ef | grep -q [p]mon_-MGMTDB
 	then
 		typeset -r alog="$GRID_BASE/diag/rdbms/_mgmtdb/-MGMTDB/trace/alert_-MGMTDB.log"
+		info "-MGMTDB HugePages :"
 		read_hpages_from_alert_log "$alog"
 	else
 		info "Pas d'instance -MGMTDB sur ce nœud."
