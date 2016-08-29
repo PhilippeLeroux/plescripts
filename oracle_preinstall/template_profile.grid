@@ -44,3 +44,7 @@ export PS1="${USER}@${HOSTNAME%%.*}:\${ORACLE_SID}:\${PWD##*/}> "
 export EDITOR=vi
 export TEMP=/tmp
 export TMPDIR=/tmp
+
+alias ll='ls -rtl'
+
+. rlwrap.alias
