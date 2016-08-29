@@ -20,4 +20,8 @@ line_separator
 info "git"
 exec_cmd yum -y install git
 LN
-# Pour el6 ajouter lsscsi
+
+line_separator
+info "git"
+exec_cmd yum -y install ~/plescripts/rpm/rlwrap-0.42-1.el7.x86_64.rpm
+LN

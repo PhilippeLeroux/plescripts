@@ -125,6 +125,7 @@ line_separator
 info "create users grid"
 exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper -s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
+exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/grid/rlwrap.alias
 
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.grid | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/profile.grid"
 if [ $the_shell == ksh ]
@@ -146,6 +147,7 @@ line_separator
 info "create user oracle"
 exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper -s /bin/${the_shell} -c \"Oracle Software Owner\" oracle
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/oracle/grid_env
+exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/oracle/rlwrap.alias
 
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.oracle | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/oracle/profile.oracle"
 if [ $the_shell == ksh ]
@@ -192,8 +194,10 @@ then
 		echo "    . /home/grid/grid_env"
 		echo "    export PATH=\$PATH:$GRID_HOME/bin"
 		echo "fi"
+		echo ". rlwrap.alias"
 	)	>> /root/.bash_profile
 	LN
+	exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /root/rlwrap.alias
 fi
 
 line_separator

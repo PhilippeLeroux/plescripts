@@ -1,0 +1,13 @@
+alias sqlplus='rlwrap sqlplus'
+alias sp='rlwrap sqlplus sys/Oracle12 as sysdba'
+case $USER in
+	oracle)
+		alias asmcmd='sudo -u grid -i rlwrap asmcmd'
+		alias sp='rlwrap sqlplus sys/Oracle12 as sysdba'
+		;;
+
+	grid)
+		alias asmcmd='rlwrap asmcmd'
+		alias sp='rlwrap sqlplus / as sysasm'
+		;;
+esac
