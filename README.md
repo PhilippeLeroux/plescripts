@@ -91,6 +91,8 @@ la base soit SINGLE ou bien RAC.
    - GATEWAY : Permet aux machines du réseau interne d'aller sur internet.
    - Dépôt   : Le dépôt Oracle Linux est cloné permettant la mise à jour des serveurs.
 
+ [Schéma réseau ascii art](https://github.com/PhilippeLeroux/plescripts/wiki/schema_reseau.txt)
+
  [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
 
 ### Ajout de serveurs de base de données Oracle.
