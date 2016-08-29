@@ -371,7 +371,7 @@ function create_services_for_pdb
 				exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
 			else
 				info "Create service for RAC Policy Managed"
-				exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -serverpool $serverPoolName"
+				exec_cmd "~/plescripts/db/create_service_for_policy_managed.sh -db=$name -pdbName=pdb$pdbName -prefixService=pdb${pdbName}01 -poolName=$serverPoolName"
 			fi
 			exec_cmd srvctl start service -db $name -service pdb$pdbName
 			LN
