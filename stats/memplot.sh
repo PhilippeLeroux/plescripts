@@ -5,6 +5,8 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
+. ~/plescripts/stats/statslib.sh
+
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
@@ -103,7 +105,7 @@ function set_to_last_date
 
 function show_formatted_logs
 {
-	typeset log_mem=${PLELOG_ROOT}/$date/*${server}${title}memstat.log
+	typeset log_mem=${PLESTATS_PATH}/$date/*${server}${title}memstat.log
 	for f in $log_mem
 	do
 		IFS='_' read log_time srvname title1 rem<<<"${f##*/}"
@@ -136,8 +138,8 @@ function make_log_names
 
 	if [ $time == undef ]
 	then
-		debug "ls -rt ${PLELOG_ROOT}/$date/*${server}*${title}shmstat.log"
-		last_log_file=$(ls -rt ${PLELOG_ROOT}/$date/*${server}*${title}shmstat.log 2>/dev/null)
+		debug "ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}shmstat.log"
+		last_log_file=$(ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}shmstat.log 2>/dev/null)
 		[ x"$last_log_file" = x ] && error "File not found in ${PLELOG_ROOT}/$date" && exit 1
 
 		IFS=_ read time server title rem<<<${last_log_file##*/}
@@ -146,16 +148,16 @@ function make_log_names
 		info "set title to  $title"
 		LN
 
-		log_shm=$(ls -rt ${PLELOG_ROOT}/$date/${time}_${server}*shmstat.log)
-		log_mem=$(ls -rt ${PLELOG_ROOT}/$date/${time}_${server}*memstat.log)
-		log_swap=$(ls -rt ${PLELOG_ROOT}/$date/${time}_${server}*swapstat.log)
+		log_shm=$(ls -rt ${PLELOG_ROOT}/$date/stats/${time}_${server}*shmstat.log)
+		log_mem=$(ls -rt ${PLELOG_ROOT}/$date/stats/${time}_${server}*memstat.log)
+		log_swap=$(ls -rt ${PLELOG_ROOT}/$date/stats/${time}_${server}*swapstat.log)
 	fi
 
 	if [ $log_shm == undef ]
 	then
-		log_shm=${PLELOG_ROOT}/$date/${time}_${server}${title}shmstat.log
-		log_mem=${PLELOG_ROOT}/$date/${time}_${server}${title}memstat.log
-		log_swap=${PLELOG_ROOT}/$date/${time}_${server}${title}swapstat.log
+		log_shm=${PLELOG_ROOT}/$date/stats/${time}_${server}${title}shmstat.log
+		log_mem=${PLELOG_ROOT}/$date/stats/${time}_${server}${title}memstat.log
+		log_swap=${PLELOG_ROOT}/$date/stats/${time}_${server}${title}swapstat.log
 	fi
 
 	[ x"$server" == x ] && server=$(cut -d_ -f2 <<< $log_mem)
@@ -209,7 +211,7 @@ typeset -i line_to_skip=1
 typeset graph_title=$title
 [ "${graph_title%_}" == "global" ] && graph_title="Start at $time (Points interval : 5mn)"
 
-typeset -r stats_info=${PLELOG_ROOT}/$date/stats_info.txt
+typeset -r stats_info=${PLELOG_ROOT}/$date/stats/stats_info.txt
 if [ $loop == yes ]
 then
 	cmds="$(printf "pause $refresh_rate\nreread\nreplot\n")"
@@ -217,7 +219,7 @@ else
 	cmds="pause -1"
 fi
 
-typeset -r stats_markers=$PLELOG_PATH/stats_info.txt
+typeset -r stats_markers=$PLESTATS_PATH/stats_info.txt
 typeset labels
 if [ -f $stats_markers ]
 then
@@ -281,6 +283,7 @@ LN
 line_separator
 gnuplot $plot_cmds
 info "gnuplot return $?"
+rm $plot_cmds
 exit 0
 #rm -rf nohup.out >/dev/null 2>&1
 #nohup gnuplot $plot_cmds &

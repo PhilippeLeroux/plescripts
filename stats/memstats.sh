@@ -6,6 +6,8 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
+. ~/plescripts/stats/statslib.sh
+
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
@@ -64,9 +66,9 @@ done
 
 exit_if_param_undef title "$str_usage"
 
-typeset -r mem_file=$PLELOG_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}memstat.log
-typeset -r swap_file=$PLELOG_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}swapstat.log
-typeset -r shm_file=$PLELOG_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}shmstat.log
+typeset -r mem_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}memstat.log
+typeset -r swap_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}swapstat.log
+typeset -r shm_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}shmstat.log
 
 function write_headers
 {

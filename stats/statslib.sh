@@ -1,5 +1,13 @@
 # vim: ts=4:sw=4
 
+typeset -r PLESTATS_PATH=$PLELOG_PATH/stats
+
+if [ ! -f $PLESTATS_PATH ]
+then
+	mkdir $PLESTATS_PATH >/dev/null 2>&1
+	chmod ug=rwx,o=rx $PLESTATS_PATH >/dev/null 2>&1
+fi
+
 #	Permet d'indiquer les heures d'arrêt/démarrage d'un composant.
 #	$1	start|stop
 #	$2	nom du composant.
@@ -13,11 +21,11 @@ function stats_tt
 
 	case $action in
 		start)
-			echo "start $id $(date +"%H:%M:%S")" >> $PLELOG_PATH/stats_info.txt
+			echo "start $id $(date +"%H:%M:%S")" >> $PLESTATS_PATH/stats_info.txt
 			;;
 
 		stop)
-			echo "stop $id $(date +"%H:%M:%S")" >> $PLELOG_PATH/stats_info.txt
+			echo "stop $id $(date +"%H:%M:%S")" >> $PLESTATS_PATH/stats_info.txt
 			;;
 
 		*)
