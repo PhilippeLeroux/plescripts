@@ -88,7 +88,7 @@ info "create all groups"
 #
 #OSDBA (for ASM)       asmdba
 #OSASM                 asmadmin    SYSASM            ASM management
-#OSOPER (for ASM)      asmoper     
+#OSOPER (for ASM)      asmoper
 #
 #OSBACKUPDBA           backupdba   SYSBACKUP         RMAN management
 #OSDGDBA               dgdba       SYSDG             Data Guard management
@@ -125,16 +125,17 @@ line_separator
 info "create users grid"
 exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper -s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
+
+exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.grid | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/profile.grid"
 if [ $the_shell == ksh ]
 then
+	exec_cmd "echo \" \" >> /home/grid/.profile"
+	exec_cmd "echo \". /home/grid/profile.grid\" >> /home/grid/.profile"
 	exec_cmd cp template_kshrc /home/grid/.kshrc
-	[ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/grid/.kshrc"
-fi
-exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.grid | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/.profile"
-if [ $the_shell == bash ]
-then
-	exec_cmd "mv /home/grid/.profile /home/grid/.bash_profile"
-	# Permet aux autres scripts de continuer à fonctionner.
+else
+	exec_cmd "echo \" \" >> /home/grid/.bash_profile"
+	exec_cmd "echo \". /home/grid/profile.grid\" >> /home/grid/.bash_profile"
+	# Permet aux scripts utilisant ssh de continuer à fonctionner.
 	exec_cmd "ln -s /home/grid/.bash_profile /home/grid/.profile"
 fi
 make_vimrc_file "/home/grid"
@@ -145,14 +146,17 @@ line_separator
 info "create user oracle"
 exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper -s /bin/${the_shell} -c \"Oracle Software Owner\" oracle
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/oracle/grid_env
+
+exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.oracle | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/oracle/profile.oracle"
 if [ $the_shell == ksh ]
 then
-	exec_cmd cp $profile_oracle /home/oracle/.profile
+	exec_cmd "echo \" \" >> /home/oracle/.profile"
+	exec_cmd "echo \". /home/oracle/profile.oracle\" >> /home/oracle/.profile"
 	exec_cmd cp template_kshrc /home/oracle/.kshrc
-	[ "$mode_vi" = "no" ] && exec_cmd "sed -i \"s/\<vi\>/emacs/g\" /home/oracle/.kshrc"
 else
-	exec_cmd cp $profile_oracle /home/oracle/.bash_profile
-	# Permet aux autres scripts de continuer à fonctionner.
+	exec_cmd "echo \" \" >> /home/oracle/.bash_profile"
+	exec_cmd "echo \". /home/oracle/profile.oracle\" >> /home/oracle/.bash_profile"
+	# Permet aux scripts utilisant ssh de continuer à fonctionner.
 	exec_cmd "ln -s /home/oracle/.bash_profile /home/oracle/.profile"
 fi
 make_vimrc_file "/home/oracle"
@@ -209,6 +213,7 @@ then
 	info "Config sudo for user oracle"
 	exec_cmd "cp /etc/sudoers /tmp/suoracle"
 	exec_cmd "echo \"oracle  ALL=(grid)  NOPASSWD:ALL\" >> /tmp/suoracle"
+	exec_cmd "echo \"grid  ALL=(oracle)  NOPASSWD:ALL\" >> /tmp/suoracle"
 	exec_cmd "visudo -c -f /tmp/suoracle"
 	exec_cmd "mv /tmp/suoracle /etc/sudoers"
 	LN

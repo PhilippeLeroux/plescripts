@@ -24,7 +24,6 @@ make_vimrc_file "/root"
 line_separator
 cat ~/plescripts/setup_first_vms/for_inputrc /etc/inputrc > new_inputrc
 mv new_inputrc /etc/inputrc
-[ "$mode_vi" = "no" ] && sed -i "s/set editing-mode vi/#set editing-mode vi/" /etc/inputrc
 LN
 
 line_separator
