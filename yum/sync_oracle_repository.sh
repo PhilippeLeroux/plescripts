@@ -157,8 +157,8 @@ then
 		exec_cmd yum -y update
 		LN
 		info "Notes :"
-		info " * update_master.sh met à jour la VM master $master_name, à exécuter depuis $client_hostname"
-		info " * update_db_os.sh met à jour une VM de base de données, à exécuter sur le serveur."
+		info " * yum/update_master.sh met à jour la VM master $master_name, à exécuter depuis $client_hostname"
+		info " * yum/update_db_os.sh met à jour une VM de base de données, à exécuter sur le serveur."
 		LN
 	fi
 
