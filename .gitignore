@@ -22,3 +22,5 @@ san/targetcli_backup/**
 nohup.out
 afiedt.buf
 database_servers/**/
+#sqlplus
+afiedt.buf
