@@ -35,8 +35,7 @@ exec_cmd "echo \"[ -f ~/.bashrc_extensions ] && . ~/.bashrc_extensions || true\"
 LN
 
 info "[G]vim configuration :"
-exec_cmd cp myvimrc ~/.vimrc
-exec_cmd cp vimtips ~/.vimtips
+exec_cmd "~/plescripts/myconfig/vim_config.sh -restore"
 LN
 
 info "tmux configuration :"

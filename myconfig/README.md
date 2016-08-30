@@ -1,9 +1,3 @@
-**Attention : Les scripts sont prévus pour fonctionner sur des VMs de démo, en
-aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scripts
-sont très loin des exigences d'une entreprise.**
-
---------------------------------------------------------------------------------
-
 ### Objectifs :
 
 Description de la configuration du poste client.
@@ -18,13 +12,9 @@ Description de la configuration du poste client.
 
   * mytmux.conf : copier en ~/.tmux.conf
 
-  * myvimrc : copier en ~/.vimrc
-
-  * vimtips : copier en ~/.vimtips
+  * application configuration vim
 
 * Ajouter dans PATH : ~/plescripts/shell puis exécuter vim_plugin -init
-
-	Tous les plugins vim seront installés.
 
 * suse_dir_colors fichier copier sur les comptes des serveurs Oracle.
 
@@ -33,4 +23,4 @@ Description de la configuration du poste client.
 * confiration_poste_client.odt : screenshot sur la configuration réseau sur opensuse.
 
 * Misc
-  * configurations.txt divers trucs.
+  configurations.txt divers trucs.
