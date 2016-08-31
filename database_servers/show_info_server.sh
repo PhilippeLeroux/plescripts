@@ -97,8 +97,7 @@ function print_disks
 			while [ $no_first_disk -lt $no_last_disk ]
 			do
 				disk_name=$(printf "S1DISK%s%02d" $upper_db $no_first_disk)
-				mark_info
-				printf "	%s %dGb\n" $disk_name $disk_size
+				info "$(printf "	%s %dGb\n" $disk_name $disk_size)"
 				no_first_disk=no_first_disk+1
 			done
 			LN

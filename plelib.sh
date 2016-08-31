@@ -275,15 +275,6 @@ function warning
 	my_echo "${LGREEN}${INVERT}" "<" " $@"
 }
 
-#*< Write mark info
-#*< Usage :
-#*< mark_info; printf "Hellow %s\n" name
-#*< N'est plus utilisée : la supprimée.
-function mark_info
-{
-	my_echo -n "${PURPLE}" "# "
-}
-
 #*> Affiche les informations de debug.
 #*> Actif uniquement si la variable DEBUG_MODE==ENABLE est définie.
 #*> Fonction sur le même principe que info.
@@ -967,67 +958,6 @@ function initcap
 	sed 's/\(.\)/\U\1/' <<< "$@"
 }
 
-#*> A supprimer ?
-#*>	$1 max len
-#*>	$2 string
-#*>
-#*>	Si la longueur de string est supérieur à max len alors
-#*>	string est raccourcie pour ne faire que max len caractères.
-#*>
-#*>	Par exemple
-#*>				XXXXXXXXXXXXXXXXXXX
-#*>	deviendra	XXX...XXX
-function shorten_string
-{
-	typeset -i	max_len=$1
-	typeset -r	string=$2
-	typeset -ri	string_len=${#string}
-
-	if [ $string_len -gt $max_len ]
-	then
-		max_len=max_len-3 #-3 pour les ...
-		typeset -ri	car_to_remove=$(compute -i "($string_len - $max_len)/2")
-		typeset -ri begin_len=$(compute -i "$string_len / 2 - $car_to_remove")
-		typeset -ri end_start=$(compute -i "$string_len - ( $string_len / 2 - $car_to_remove )" )
-		comp="${string:0:$begin_len}...${string:$end_start}"
-		echo "$comp"
-	else
-		echo $string
-	fi
-}
-
-#*> A supprimer ?
-#*> $1 gap		(si non précisé vaudra 0)
-#*> $2 string
-function string_fit_on_screen
-{
-	typeset -i	gap=1
-	typeset 	string="$1"
-	if [ $# -eq 2 ]
-	then
-		gap=$1
-		string="$2"
-	fi
-
-	typeset -i len=$(term_cols)
-	len=len-gap
-
-	shorten_string $len "$string"
-}
-
-#*> return string :
-#*>	  true	if $1 in( y, yes )
-#*>   false if $1 in( n, no )
-function yn_to_bool
-{
-	case $1 in
-		y|yes)	echo true
-				;;
-
-		n|no)	echo false
-				;;
-	esac
-}
 
 #*> fill <car> <no#>
 #*> Return a buffer filled with no# characteres car

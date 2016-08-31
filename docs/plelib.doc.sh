@@ -1,13 +1,13 @@
 ################################################################################
-Resume 2016/08/21 :
+Resume 2016/08/31 :
 ~~~~~~~~~~~~~~~~~~~
 
-# 45 publics functions
-# 11 privates functions
+# 42 publics functions
+# 10 privates functions
 # 1 undocumented functions
 
 ################################################################################
-45 publics functions :
+42 publics functions :
 ~~~~~~~~~~~~~~~~~~~~~~
 
 #*> Remove all visual makers from file $1
@@ -64,7 +64,7 @@ function LN
 function ask_for
 
 #*> Pour les paramètres voir ask_for
-#*> Si l'utilisateur répond non le script est terminé par un exit 1
+#*> Si l'utilisateur répond non (la 2ième réponse) le script est terminé par un exit 1
 function confirm_or_exit
 
 #*> Fake exec_cmd command
@@ -94,7 +94,7 @@ function exec_cmd
 #*> $1 parameter to add.
 function add_dynamic_cmd_param
 
-#*> run command '$@' with parameters define with add_dynamic_cmd_param
+#*> run command '$@' with parameters define by add_dynamic_cmd_param
 #*> if first parameter is -confirm a prompt is printed to confirm or not execution.
 #*> For other parameters see exec_cmd
 function exec_dynamic_cmd
@@ -158,28 +158,6 @@ function to_lower
 
 #*> Upper case the first caractere of $1
 function initcap
-
-#*> A supprimer ?
-#*>	$1 max len
-#*>	$2 string
-#*>
-#*>	Si la longueur de string est supérieur à max len alors
-#*>	string est raccourcie pour ne faire que max len caractères.
-#*>
-#*>	Par exemple
-#*>				XXXXXXXXXXXXXXXXXXX
-#*>	deviendra	XXX...XXX
-function shorten_string
-
-#*> A supprimer ?
-#*> $1 gap		(si non précisé vaudra 0)
-#*> $2 string
-function string_fit_on_screen
-
-#*> return string :
-#*>	  true	if $1 in( y, yes )
-#*>   false if $1 in( n, no )
-function yn_to_bool
 
 #*> fill <car> <no#>
 #*> Return a buffer filled with no# characteres car
@@ -253,7 +231,7 @@ function test_pause # $1 message
 
 
 ################################################################################
-11 privates functions :
+10 privates functions :
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 #*< Active les effets visuels couleurs et autres.
@@ -274,12 +252,6 @@ function ctrl_c
 #*<		ENABLE	: visual effects
 #*<		FILE	: write into $PLELIB_LOG_FILE without any effects and canal 1 with visual effects.
 function my_echo
-
-#*< Write mark info
-#*< Usage :
-#*< mark_info; printf "Hellow %sn" name
-#*< N'est plus utilisée : la supprimée.
-function mark_info
 
 #*< Extrait la commande de "$@"
 #*< Si la première commande est ssh alors recherche la commande exécutée par ssh

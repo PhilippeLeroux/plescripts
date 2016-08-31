@@ -270,14 +270,6 @@ function remove_all_log_and_db_fs_files
 	LN
 }
 
-function on_ctrl_c
-{
-	LN
-	info "${BLINK}ctrl-c from user.${NORM}"
-	show_cursor
-	exit 1
-}
-
 #	Test si l'installation est de type RAC ou SINGLE.
 #	Se base sur olsnodes.
 #	Initialise les variables :

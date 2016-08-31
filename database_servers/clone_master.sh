@@ -240,14 +240,6 @@ function wait_master
 	~/plescripts/shell/wait_server $master_name
 	[ $? -ne 0 ] && exit 1
 	LN
-
-if [ 0 -eq 1 ]; then # Désactivé, plus besoins de saisir le mot de passe.
-	chrono_start
-	info "You are ready : press a key."
-	read keyboard
-	LN
-	chrono_stop "Wait user : "
-fi
 }
 
 #	Permet au compte root du serveur de se connecter sur le SAN sans mot de passe.
