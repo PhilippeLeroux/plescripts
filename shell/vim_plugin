@@ -109,6 +109,18 @@ function install_plugin
 
 	exec_cmd "cd ~/.vim && git submodule add git:$url bundle/$name"
 	exec_cmd "cd ~/.vim && git submodule init && git submodule update"
+
+	# Particularité pour chaque plugin.
+	case "$name" in
+		"vim-grammarous")
+			if [ -d ~/LanguageTool-3.4 ]
+			then
+				exec_cmd "mkdir ~/.vim/bundle/vim-grammarous/misc"
+				exec_cmd "ln -s ~/LanguageTool-3.4 ~/.vim/bundle/vim-grammarous/misc/LanguageTool-3.4"
+				warning "~/LanguageTool-3.4 not exists."
+			fi
+			;;
+	esac
 }
 
 function uninstall_plugin

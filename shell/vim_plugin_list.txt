@@ -41,3 +41,7 @@ https://github.com/suan/vim-instant-markdown.git
 
 #	Man
 https://github.com/vim-utils/vim-man.git
+
+# vim-session
+//github.com/xolox/vim-session.git
+//github.com/xolox/vim-misc.git
