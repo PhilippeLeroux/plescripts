@@ -19,7 +19,7 @@ typeset -r str_usage=\
 		[-start_at=HHhMM]    skip tt before HHhMM
 		[-show_log_only]     show log files.
 
-Display files produced by memstats.sh with gnuplot"
+Display files produced by ifstats.sh with gnuplot"
 
 typeset node=-1
 typeset	loop=yes
@@ -91,9 +91,8 @@ function time_to_secs
 	compute "$hour*60*60 + $mn*60 + $s"
 }
 
-typeset log_shm=undef
-typeset log_mem=undef
-typeset log_swap=undef
+typeset -a log_if
+typeset -i if_num=0
 
 function set_to_last_date
 {
@@ -105,8 +104,8 @@ function set_to_last_date
 
 function show_formatted_logs
 {
-	typeset log_mem=${PLESTATS_PATH}/*${server}${title}memstat.log
-	for f in $log_mem
+	typeset log_if=${PLESTATS_PATH}/*${server}${title}eth*.log
+	for f in $log_if
 	do
 		IFS='_' read log_time srvname title1 rem<<<"${f##*/}"
 		typeset msg=$(printf "$ME -title=%s -server=%s -time=%s" ${title1} $srvname $log_time)
@@ -138,32 +137,25 @@ function make_log_names
 
 	if [ $time == undef ]
 	then
-		debug "ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}shmstat.log"
-		last_log_file=$(ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}shmstat.log 2>/dev/null)
-		[ x"$last_log_file" = x ] && error "File not found in ${PLELOG_ROOT}/$date" && exit 1
+		debug "ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}eth0.log"
+		log_if[0]=$(ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}eth0.log | tail -1 2>/dev/null)
+		[ x"${log_if[0]}" = x ] && error "File not found in ${PLELOG_ROOT}/$date/stats" && exit 1
 
-		IFS=_ read time server title rem<<<${last_log_file##*/}
+		log_if[1]=$(ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}eth1.log | tail -1 2>/dev/null)
+		[ x"${log_if[1]}" = x ] && error "File not found in ${PLELOG_ROOT}/$date/stats" && exit 1
+		
+		typeset l=${log_if[1]}
+		IFS=_ read time server title rem<<<${l##*/}
 		info "set time to   $time"
 		info "set server to $server"
 		info "set title to  $title"
 		LN
-
-		log_shm=$(ls -rt ${PLELOG_ROOT}/$date/stats/${time}_${server}*shmstat.log)
-		log_mem=$(ls -rt ${PLELOG_ROOT}/$date/stats/${time}_${server}*memstat.log)
-		log_swap=$(ls -rt ${PLELOG_ROOT}/$date/stats/${time}_${server}*swapstat.log)
-	fi
-
-	if [ $log_shm == undef ]
-	then
-		log_shm=${PLELOG_ROOT}/$date/stats/${time}_${server}${title}shmstat.log
-		log_mem=${PLELOG_ROOT}/$date/stats/${time}_${server}${title}memstat.log
-		log_swap=${PLELOG_ROOT}/$date/stats/${time}_${server}${title}swapstat.log
 	fi
 
 	[ x"$server" == x ] && server=$(cut -d_ -f2 <<< $log_mem)
 
-	exit_if_file_not_exists $log_shm
-	exit_if_file_not_exists $log_mem
+	exit_if_file_not_exists ${log_if[0]}
+	exit_if_file_not_exists ${log_if[1]}
 }
 
 #	============================================================================
@@ -186,10 +178,10 @@ fi
 make_log_names
 
 #	Lecture de l'heure de début des mesures
-typeset -r	start_time=$(sed -n "2p" $log_shm | cut -d' ' -f1)
+typeset -r	start_time=$(sed -n "2p" ${log_if[0]} | cut -d' ' -f1)
 
 # Lecture de la seconde mesure (ligne 3 donc) pour déterminer le refresh rate.
-typeset -r	second_time=$(sed -n "3p" $log_shm | cut -d' ' -f1)
+typeset -r	second_time=$(sed -n "3p" ${log_if[0]} | cut -d' ' -f1)
 
 # Fréquence de rafraîchissement :
 debug "start_time  = $start_time"
@@ -256,13 +248,11 @@ set xtic rotate by -45
 set ylabel 'Mega bytes (Mb)'
 $labels
 plot	\
-	"$log_mem"	using 1:2 title 'Mem Max'	with lines		lt rgb "red",	\
-	"$log_mem"	using 1:3 title 'Mem Used'	with ${with}	lt rgb "orange",\
+	"${log_if[1]}"	using 1:2 title 'Rx bytes eth0'	with ${with}	lt rgb "red",	\
+	"${log_if[1]}"	using 1:4 title 'Tx bytes eth0'	with ${with}	lt rgb "orange", \
 \
-	"$log_shm"	using 1:2 title 'SHM Max'	with lines		lt rgb "brown",	\
-	"$log_shm"	using 1:3 title 'SHM Used'	with ${with}	lt rgb "green",	\
-\
-	"$log_swap"	using 1:3 title 'Swap Used'	with ${with}	lt rgb "blue"
+	"${log_if[1]}"	using 1:2 title 'Rx bytes eth1'	with ${with}	lt rgb "brown",	\
+	"${log_if[1]}"	using 1:4 title 'Tx Bytes eth1'	with ${with}	lt rgb "green"
 $cmds
 EOS
 
@@ -275,9 +265,8 @@ info "Refresh rate $(fmt_seconds $refresh_rate)"
 LN
 
 line_separator
-info "Load file    $log_shm"
-info "Load file    $log_mem"
-info "Load file    $log_swap"
+info "Load file    ${log_if[0]}"
+info "Load file    ${log_if[1]}"
 LN
 
 line_separator

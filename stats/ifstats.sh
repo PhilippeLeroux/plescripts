@@ -16,8 +16,13 @@ typeset -r str_usage=\
 	[-count=<#>]     nombre maximal de mesures à prendre, par défaut pas de limite.
 	[-pause=1]       pause en secondes entre 2 mesures.
 
-	Statistiques sur la consommation mémoire.
-	Utiliser memplot.sh pour affichage graphique de la sortie."
+	Statistiques sur le début des cartes réseaux.
+	Utiliser ifplot.sh pour affichage graphique de la sortie.
+
+	BUG Pour le moment sélectionne les if eth0 et eth1, faire évoluer pour utiliser
+	if_pub_name et if_priv_name
+"
+
 
 info "Running : $ME $*"
 
@@ -66,18 +71,28 @@ done
 
 exit_if_param_undef title "$str_usage"
 
-typeset -r mem_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}memstat.log
-typeset -r swap_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}swapstat.log
-typeset -r shm_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}shmstat.log
+typeset	-r	if_prefix_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}
+
+typeset	-a prev_rx_b
+prev_rx_b[0]=-1
+prev_rx_b[1]=-1
+typeset	-a prev_rx_packets
+typeset	-a prev_tx_b
+typeset	-a prev_tx_packets
+
+function load_ifaces
+{
+	cat /proc/net/dev | grep eth[0-1] | cut -d: -f1 | tr -d ' ' | xargs
+}
 
 function write_headers
 {
-	echo "$(date +"%Y:%m:%d") total used free shared buffer cached" > $mem_file
-	echo "$(date +"%Y:%m:%d") total used free" > $swap_file
-	echo "$(date +"%Y:%m:%d") total used free Used%" > $shm_file
-
-	#	Obligatoire avec vboxsf
-	chmod ug=rw $mem_file $swap_file $shm_file
+	for iface in $(load_ifaces)
+	do
+		echo "$(date +"%Y:%m:%d") rx_b rx_packets tx_b tx_packets" > $if_prefix_file${iface}.log
+		chmod ug=rw $if_prefix_file${iface}.log
+		chgrp users $if_prefix_file${iface}.log
+	done
 }
 
 function write_stats
@@ -89,28 +104,19 @@ function write_stats
 		typeset -r timestamp=$(date +"%H:%M")
 	fi
 
-	typeset -i iline=0
-	while read label total used free shared buffer cached
+	typeset -i if_num=0
+	while read iface_name rx_b rx_packets f1 f2 f3 f4 f5 f6 tx_b tx_packets rem
 	do
-		iline=iline+1
-		case $iline in
-			2)	echo "$timestamp $total $used $free $shared $buffer $catched" >> $mem_file
-				;;
-
-			3)	echo "$timestamp $total $used $free $shared" >> $swap_file
-				;;
-		esac
-	done<<<"$(free -m)"
-
-	iline=0
-	while read fs total used available pct_use mount_point
-	do
-		iline=iline+1
-		case $iline in
-			2)	echo "$timestamp $total $used $available $pct_use" >> $shm_file
-				;;
-		esac
-	done<<<"$(df -m /dev/shm)"
+		if [ ${prev_rx_b[$if_num]} != "-1" ]
+		then	# After first line
+			echo "$timestamp $(( (rx_b - prev_rx_b[$if_num]) / 1024  / 1024 )) $(( rx_packets - prev_rx_packets[$if_num] )) $(( (tx_b - prev_tx_b[$if_num]) / 1024 / 1024 )) $(( tx_packets - prev_tx_packets[$if_num] ))" >> $if_prefix_file${iface_name%*:}.log
+		fi
+		prev_rx_b[$if_num]=$rx_b
+		prev_rx_packets[$if_num]=$rx_packets
+		prev_tx_b[$if_num]=$tx_b
+		prev_tx_packets[$if_num]=$tx_packets
+		if_num=if_num+1
+	done<<<"$(cat /proc/net/dev | grep -E "eth[0-1]" | tr -s [:space:])"
 }
 
 function remove_pid_file
@@ -120,7 +126,7 @@ function remove_pid_file
 
 function get_pid_file_suffix
 {
-	echo "$(hostname -s)_${title}running_mem.pid"
+	echo "$(hostname -s)_${title}running_net.pid"
 }
 
 function main
