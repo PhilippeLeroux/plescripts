@@ -24,9 +24,14 @@
 	(Confiance de 99.999999999999%)
 
 	3. Scripts à modifier
-		3.1 Le script `install_grid.sh` est à modifier.
+		3.1 Ajout les variables nécessaires pour if_rac* dans global.cfg
+
+		3.2 Le script `install_grid.sh` est à modifier.
 			Remplacer tous les if_priv_name par if_rac_name.
 
-		3.2 Les scripts de création de VMs
-			Ce sont peut-être eux les plus hard.
+		3.3 Les scripts de création de VMs
+			Ce sont peut-être eux les plus hards.
 			Demain je regarge en détails.
+
+## Après :
+	Mettre à jour le fichier schema_reseau.txt dans le wiki
