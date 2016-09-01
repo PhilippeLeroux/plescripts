@@ -81,6 +81,13 @@ case $type_shared_fs in
 		;;
 esac
 
+line_separator
+#	Peut importe le rôle de la VM - standalone ou noeud RAC - ajout d'une 3ieme NIC.
+info "Ajout d'une carte pour l'interco RAC"
+exec_cmd VBoxManage modifyvm $master_name --nic3 intnet
+exec_cmd VBoxManage modifyvm $master_name --nictype3 virtio
+LN
+
 exec_cmd "$vm_scripts_path/start_vm $master_name"
 LN
 wait_server ${infra_network}.${master_ip_node}

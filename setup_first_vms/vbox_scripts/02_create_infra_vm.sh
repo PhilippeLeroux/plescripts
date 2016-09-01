@@ -129,18 +129,18 @@ line_separator
 typeset -r if_cfg_path=~/plescripts/setup_first_vms/ifcfg_infra_server
 line_separator
 info "Mise à jour de la configuration de l'Iface public : $if_pub_name"
-update_value IPADDR	$infra_ip							$if_cfg_path/ifcfg-$if_pub_name
-update_value PREFIX	$if_pub_prefix						$if_cfg_path/ifcfg-$if_pub_name
-update_value DNS1	$infra_ip							$if_cfg_path/ifcfg-$if_pub_name
+update_value IPADDR	$infra_ip		$if_cfg_path/ifcfg-$if_pub_name
+update_value PREFIX	$if_pub_prefix	$if_cfg_path/ifcfg-$if_pub_name
+update_value DNS1	$infra_ip		$if_cfg_path/ifcfg-$if_pub_name
 LN
 
-info "Mise à jour de la configuration de l'Iface privée : $if_priv_name"
-update_value IPADDR	${if_priv_network}.${infra_ip_node}	$if_cfg_path/ifcfg-$if_priv_name
-update_value PREFIX	$if_priv_prefix						$if_cfg_path/ifcfg-$if_priv_name
+info "Mise à jour de la configuration de l'Iface iscsi : $if_iscsi_name"
+update_value IPADDR	${if_iscsi_network}.${infra_ip_node}	$if_cfg_path/ifcfg-$if_iscsi_name
+update_value PREFIX	$if_iscsi_prefix						$if_cfg_path/ifcfg-$if_iscsi_name
 LN
 
 info "Mise à jour de la configuration de l'Iface internet : $if_net_name"
-update_value DNS1	$infra_ip							$if_cfg_path/ifcfg-$if_net_name
+update_value DNS1	$infra_ip	$if_cfg_path/ifcfg-$if_net_name
 LN
 
 info "Copie la configuration des Ifaces sur $infra_hostname (utilise l'IP $master_ip)"

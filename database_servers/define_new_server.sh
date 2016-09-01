@@ -128,7 +128,7 @@ function normalyze_node
 	server_ip=$if_pub_network.$ip_node
 	test_ip_node_used $ip_node
 
-	server_private_ip=$if_priv_network.$ip_node
+	server_private_ip=$if_iscsi_network.$ip_node
 	ip_node=ip_node+1
 
 	if [ $db_type == rac ]

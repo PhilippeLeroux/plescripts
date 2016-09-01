@@ -52,17 +52,21 @@ function print_node # $1 node_file $2 idx
 	IFS=':' read db_type node_name node_ip node_vip_name node_vip node_priv_name node_priv_ip db_name inst_name< $file
 	case $db_type in
 		rac)
-			info "Node $(( $idx + 1 )) RAC : "
+			info "Node #$(( $idx + 1 )) RAC : "
 			;;
 
 		std)
-			info "Node $(( $idx + 1 )) standalone : "
+			info "Node #$(( $idx + 1 )) standalone : "
 			;;
 	esac
 
-	info "	Server name    : ${node_name}     : ${node_ip}"
-	[ $db_type == rac ] && info "	vip            : ${node_vip_name} : ${node_vip}"
-	info "	private ip     : ${node_priv_ip}	(san & rac interco)"
+	info "	Server name    : ${node_name}       : ${node_ip}"
+	if [ $db_type == rac ]
+	then
+		info "	vip            : ${node_vip_name}   : ${node_vip}"
+		info "	Interco RAC    : ${node_name}-rac   : ${if_rac_network}.${node_priv_ip##*.}"
+	fi
+	info "	Interco iSCSI  : ${node_name}-iscsi : ${node_priv_ip}"
 }
 
 function print_scan

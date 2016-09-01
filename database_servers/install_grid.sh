@@ -239,7 +239,7 @@ function create_response_file	# $1 fichier décrivant les disques
 		LN
 		update_value oracle.install.crs.config.clusterNodes		$clusterNodes			$rsp_file
 		LN
-		typeset nil=$if_pub_name:${if_pub_network}.0:1,$if_priv_name:${if_priv_network}.0:2
+		typeset nil=$if_pub_name:${if_pub_network}.0:1,$if_rac_name:${if_rac_network}.0:2
 		update_value oracle.install.crs.config.networkInterfaceList $nil				$rsp_file
 		LN
 		update_value oracle.install.crs.config.storageOption	LOCAL_ASM_STORAGE		$rsp_file

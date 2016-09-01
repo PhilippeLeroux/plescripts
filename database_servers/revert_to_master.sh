@@ -74,7 +74,7 @@ LN
 line_separator
 indo "Cleaning /etc/hosts"
 exec_cmd "sed -i "/${infra_network}/d" /etc/hosts"
-exec_cmd "sed -i "/${if_priv_network}/d" /etc/hosts"
+exec_cmd "sed -i "/${if_iscsi_network}/d" /etc/hosts"
 exec_cmd "sed -i "/This/d" /etc/hosts"
 exec_cmd "sed -i "/Other/d" /etc/hosts"
 exec_cmd "sed -i "/Scan/d" /etc/hosts"
