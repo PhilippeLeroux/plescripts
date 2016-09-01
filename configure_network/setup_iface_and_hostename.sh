@@ -105,43 +105,46 @@ update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_iscsi_fil
 update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_iscsi_file
 LN
 
-line_separator
-#>	HACK
-#	Le n° du nœud IP est identique sur les réseaux iscsi et RAC, le fichier de
-#	configuration ne contient pas l'information sur le réseau RAC mais il peut
-#	être facilement déduit :
-#		- global.cfg est inclus maintenant (depuis presque le début je crois)
-#		- je lie le n° du nœud IP ISCSI
-#	et je l'adresse IP de l'interco RAC.
-#<	HACK
-#	TODO : je crois qu'il va falloir que je m'occupe sérieusement de ces fichiers
-#	de configurations que ne servent pas à grand chose aujourd'hui et rendent
-#	difficile la compréhension du code.
-typeset -r ip_rac=${if_rac_network}.${ip_iscsi##*.}
-info "Configure interface $if_rac_name :"
-if [ ! -f $if_rac_file ]
-then	# Je pense que le fichier n'existera pas (création tardive de la NIC) donc
-		# par précotion je fais ce test et je copie if_iscsi_file si besoin.
-	exec_cmd "cp $if_iscsi_file $if_rac_file"
-	update_value NAME	$if_rac_name	$if_rac_file
-	update_value DEVICE	$if_rac_name	$if_rac_file
-fi
+if [[ $db_type == rac* ]]
+then
+	line_separator
+	#>	HACK
+	#	Le n° du nœud IP est identique sur les réseaux iscsi et RAC, le fichier de
+	#	configuration ne contient pas l'information sur le réseau RAC mais il peut
+	#	être facilement déduit :
+	#		- global.cfg est inclus maintenant (depuis presque le début je crois)
+	#		- je lie le n° du nœud IP ISCSI
+	#	et je l'adresse IP de l'interco RAC.
+	#<	HACK
+	#	TODO : je crois qu'il va falloir que je m'occupe sérieusement de ces fichiers
+	#	de configurations que ne servent pas à grand chose aujourd'hui et rendent
+	#	difficile la compréhension du code.
+	typeset -r ip_rac=${if_rac_network}.${ip_iscsi##*.}
+	info "Configure interface $if_rac_name :"
+	if [ ! -f $if_rac_file ]
+	then	# Je pense que le fichier n'existera pas (création tardive de la NIC) donc
+			# par précotion je fais ce test et je copie if_iscsi_file si besoin.
+		exec_cmd "cp $if_iscsi_file $if_rac_file"
+		update_value NAME	$if_rac_name	$if_rac_file
+		update_value DEVICE	$if_rac_name	$if_rac_file
+	fi
 
-update_value BOOTPROTO	static				$if_rac_file
-update_value IPADDR		$ip_rac				$if_rac_file
-update_value USERCTL	yes					$if_rac_file
-update_value ONBOOT		yes 				$if_rac_file
-update_value PREFIX		$if_rac_prefix		$if_rac_file
-update_value MTU		9000				$if_rac_file
-remove_value NETMASK						$if_rac_file
-if_hwaddr=$(get_if_hwaddr $if_rac_name)
-update_value HWADDR		$if_hwaddr			$if_rac_file
-update_value ZONE		trusted				$if_rac_file
-# Effectue la commande 2 fois car la première insert et ne met pas de double quote
-# alors que la seconde update et met les double quote.
-update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_rac_file
-update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_rac_file
-LN
+	update_value BOOTPROTO	static				$if_rac_file
+	update_value IPADDR		$ip_rac				$if_rac_file
+	update_value USERCTL	yes					$if_rac_file
+	update_value ONBOOT		yes 				$if_rac_file
+	update_value PREFIX		$if_rac_prefix		$if_rac_file
+	update_value MTU		9000				$if_rac_file
+	remove_value NETMASK						$if_rac_file
+	if_hwaddr=$(get_if_hwaddr $if_rac_name)
+	update_value HWADDR		$if_hwaddr			$if_rac_file
+	update_value ZONE		trusted				$if_rac_file
+	# Effectue la commande 2 fois car la première insert et ne met pas de double quote
+	# alors que la seconde update et met les double quote.
+	update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_rac_file
+	update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_rac_file
+	LN
+fi
 
 line_separator
 info "Update /etc/hosts"
