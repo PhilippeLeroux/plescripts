@@ -116,5 +116,5 @@ exec_cmd srvctl start service -service ${prefixService}_java  -db $db
 LN
 
 line_separator
-exec_cmd srvctl status service -db philae
+exec_cmd srvctl status service -db $db
 LN
