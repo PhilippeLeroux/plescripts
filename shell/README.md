@@ -10,15 +10,13 @@
 
 	génération d'un doc pour mes scripts 'lib'
 
-- grid_logs : uniquement pour RAC 2 nœuds
+- grid_logs : standalone ou RAC 2 nœuds
 
 	Effectue 2 connexions par serveurs
 	*	Les 2 terminaux du haut affichent l'alerte de l'agent.
 	*	Les 2 terminaux du bas affichent l'alerte ASM.
 
-- ip_www.sh
-
-	Retourn l'IP internet.
+	[screen]([[https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/grid_logs.png)
 
 - llog
 
@@ -37,32 +35,11 @@
 
 	Afficher les fichiers d'alerte d'une base en RAC.
 
-- rac_connections
-
-	À utiliser depuis le noeud d'un RAC, utilise tmux pour connecter sur le
-	même terminal les 2 noeuds du RAC
-
-- reboot_srv [db] ou base définie par set_db
-
-	Reboot un serveur ou les noeuds d'un cluster RAC
-
-- remove_from_known_host.sh -host=<str>
-
-- set_plymouth_them
-
-	À utiliser sur un serveur : permet de voir les messages au démarrage du serveur.
-
-- show_info_server -db=<str>
-
-	Affiche l'infrastructure correspondant à une base
+	[screen]([[https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/oracle_logs.png)
 
 - show_grid_status [db] ou base définie par set_db
 
 	Appel de crsclt stat res -t sur le premièr serveur.
-
-- shutdown_srv -db=<str> ou base définie par set_db
-
-	Stop le ou les serveurs d'une base.
 
 - start_vm [vm_name]
 
@@ -76,7 +53,7 @@
 
 	Lance vmstat et top dans 2 terminaux multiplexés, il y en a 4 pour un RAC 2 noeuds.
 
-- update_license_in_readme_files.sh
+	[screen]([[https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/tmux_monitor_server.png)
 
 - vim_plugin
 
@@ -86,14 +63,6 @@
 
 	Utilisé par vim_plugin.
 	Tous les plugins dans ce fichier seront (ré)installé par vim_plugin -init
-
-- wait_rac_nodes
-
-	Attend que tous les noeuds d'un RAC soient démarrés.
-
-- wait_server
-
-	Attend qu'un serveur soit démarré.
 
 - where_is_used
 
@@ -110,4 +79,3 @@
 	> oracle   : se connecte sur le premier serveur.
 	> oracle 2 : se connecte sur le second serveur.
 	```
-

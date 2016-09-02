@@ -50,7 +50,7 @@ do
 			hostvm_type=linux_virtualbox
 			client_h=$(hostname -s)
 			common_user_n=$USER
-			full_linux_iso_n="\$HOME/ISO/oracle_linux_7/V100082-01.iso"
+			full_linux_iso_n="$HOME/ISO/oracle_linux_7/V100082-01.iso"
 			break
 			;;
 

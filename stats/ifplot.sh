@@ -28,6 +28,7 @@ typeset time=undef
 typeset server=""
 typeset title=""
 typeset show_log_only=no
+typeset if_name=undef
 
 while [ $# -ne 0 ]
 do
@@ -40,6 +41,11 @@ do
 
 		-node=*)
 			node=${1##*=}
+			shift
+			;;
+
+		-if_name=*)
+			if_name=${1##*=}
 			shift
 			;;
 
@@ -82,6 +88,8 @@ do
 	esac
 done
 
+exit_if_param_undef if_name "-if_name obligatoire"
+
 # HH:MM:SS
 function time_to_secs
 {
@@ -91,8 +99,6 @@ function time_to_secs
 	compute "$hour*60*60 + $mn*60 + $s"
 }
 
-typeset -a log_if
-typeset -i if_num=0
 
 function set_to_last_date
 {
@@ -104,7 +110,7 @@ function set_to_last_date
 
 function show_formatted_logs
 {
-	typeset log_if=${PLESTATS_PATH}/*${server}${title}eth*.log
+	typeset log_if=${PLESTATS_PATH}/*${server}${title}${if_name}.log
 	for f in $log_if
 	do
 		IFS='_' read log_time srvname title1 rem<<<"${f##*/}"
@@ -137,15 +143,11 @@ function make_log_names
 
 	if [ $time == undef ]
 	then
-		debug "ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}eth0.log"
-		log_if[0]=$(ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}eth0.log | tail -1 2>/dev/null)
-		[ x"${log_if[0]}" = x ] && error "File not found in ${PLELOG_ROOT}/$date/stats" && exit 1
+		debug "ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}${if_name}.log"
+		log_if=$(ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}${if_name}.log | tail -1 2>/dev/null)
+		[ x"${log_if}" = x ] && error "File not found in ${PLELOG_ROOT}/$date/stats" && exit 1
 
-		log_if[1]=$(ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}eth1.log | tail -1 2>/dev/null)
-		[ x"${log_if[1]}" = x ] && error "File not found in ${PLELOG_ROOT}/$date/stats" && exit 1
-		
-		typeset l=${log_if[1]}
-		IFS=_ read time server title rem<<<${l##*/}
+		IFS=_ read time server title rem<<<${log_if##*/}
 		info "set time to   $time"
 		info "set server to $server"
 		info "set title to  $title"
@@ -154,8 +156,7 @@ function make_log_names
 
 	[ x"$server" == x ] && server=$(cut -d_ -f2 <<< $log_mem)
 
-	exit_if_file_not_exists ${log_if[0]}
-	exit_if_file_not_exists ${log_if[1]}
+	exit_if_file_not_exists ${log_if}
 }
 
 #	============================================================================
@@ -178,10 +179,10 @@ fi
 make_log_names
 
 #	Lecture de l'heure de début des mesures
-typeset -r	start_time=$(sed -n "2p" ${log_if[0]} | cut -d' ' -f1)
+typeset -r	start_time=$(sed -n "2p" ${log_if} | cut -d' ' -f1)
 
 # Lecture de la seconde mesure (ligne 3 donc) pour déterminer le refresh rate.
-typeset -r	second_time=$(sed -n "3p" ${log_if[0]} | cut -d' ' -f1)
+typeset -r	second_time=$(sed -n "3p" ${log_if} | cut -d' ' -f1)
 
 # Fréquence de rafraîchissement :
 debug "start_time  = $start_time"
@@ -201,7 +202,7 @@ typeset plot_cmds=/tmp/memory.plot.$$
 typeset -i line_to_skip=1
 
 typeset graph_title=$title
-[ "${graph_title%_}" == "global" ] && graph_title="Start at $time (Points interval : 5mn)"
+[ "${graph_title%_}" == "global" ] && graph_title="$if_name : start at $time (Points interval : 5mn)"
 
 typeset -r stats_info=${PLELOG_ROOT}/$date/stats/stats_info.txt
 if [ $loop == yes ]
@@ -245,14 +246,11 @@ set timefmt '$fmt_time'
 set xdata time
 set xlabel 'Time'
 set xtic rotate by -45
-set ylabel 'Mega bytes (Mb)'
+set ylabel 'bytes'
 $labels
 plot	\
-	"${log_if[1]}"	using 1:2 title 'Rx bytes eth0'	with ${with}	lt rgb "red",	\
-	"${log_if[1]}"	using 1:4 title 'Tx bytes eth0'	with ${with}	lt rgb "orange", \
-\
-	"${log_if[1]}"	using 1:2 title 'Rx bytes eth1'	with ${with}	lt rgb "brown",	\
-	"${log_if[1]}"	using 1:4 title 'Tx Bytes eth1'	with ${with}	lt rgb "green"
+	"${log_if}"	using 1:2 title 'Rx bytes'	with ${with}	lt rgb "red",	\
+	"${log_if}"	using 1:4 title 'Tx bytes'	with ${with}	lt rgb "orange"
 $cmds
 EOS
 
@@ -265,8 +263,7 @@ info "Refresh rate $(fmt_seconds $refresh_rate)"
 LN
 
 line_separator
-info "Load file    ${log_if[0]}"
-info "Load file    ${log_if[1]}"
+info "Load file    ${log_if}"
 LN
 
 line_separator

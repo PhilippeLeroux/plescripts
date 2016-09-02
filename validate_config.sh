@@ -113,8 +113,7 @@ LN
 
 line_separator
 info -n "Validation de resolv.conf "
-nslookup K2 >/dev/null 2>&1
-if [ $? -eq 0 ]
+if  grep -q ${infra_ip} /etc/resolv.conf &&  grep -q "search\s*$domain_name" /etc/resolv.conf
 then
 	info -f "[$OK]"
 else

@@ -52,22 +52,6 @@ update_value ZONE		trusted			$if_pub_file
 update_value GATEWAY 	$dns_ip			$if_pub_file
 LN
 
-#	TODO ca n'a rien à faire là ca doublonne avec configure_network/setup_iface_and_hostename.sh
-line_separator
-info "Mise à jour de l'Iface $if_iscsi_name"
-typeset -r ip_iscsi=${if_iscsi_network}.${master_ip_node}
-update_value BOOTPROTO	static				$if_iscsi_file
-update_value IPADDR		$ip_iscsi			$if_iscsi_file
-update_value USERCTL	no					$if_iscsi_file
-update_value ONBOOT		yes 				$if_iscsi_file
-update_value PREFIX		$if_iscsi_prefix	$if_iscsi_file
-update_value MTU		9000				$if_iscsi_file
-remove_value NETMASK						$if_iscsi_file
-remove_value HWADDR							$if_iscsi_file
-remove_value UUID							$if_iscsi_file
-update_value ZONE		trusted				$if_iscsi_file
-LN
-
 info "Prise en compte de la nouvelle configuration."
 exec_cmd systemctl restart network
 LN
@@ -105,12 +89,6 @@ esac
 exec_cmd ~/plescripts/ntp/config_ntp.sh -role=master
 
 exec_cmd ~/plescripts/gadgets/install.sh master
-
-line_separator
-info "Désactive le dépôt du net."
-typeset -ri last_line=$(wc -l /etc/yum.repos.d/public-yum-ol7.repo | cut -d' ' -f1)
-exec_cmd sed -i "${last_line}s/enabled=1/enabled=0/" /etc/yum.repos.d/public-yum-ol7.repo
-LN
 
 line_separator
 exec_cmd "~/plescripts/shell/set_plymouth_them"

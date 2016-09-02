@@ -15,30 +15,35 @@ sont très loin des exigences d'une entreprise.**
 
 3. Exécution du script create_db.sh :
 
-	```sh
-	oracle@srvdaisy01:DAISY1:db> ./create_db.sh -name=daisy
-	# ./create_db.sh -name=daisy
-	# Execute :
-	# dbca\
-		-createDatabase -silent                                \
-		-databaseConfType RAC                                  \
-		-nodelist srvdaisy01,srvdaisy02                        \
-		-gdbName DAISY                                         \
-		-totalMemory 444                                       \
-		-characterSet AL32UTF8                                 \
-		-storageType ASM                                       \
-			-diskGroupName     DATA                            \
-			-recoveryGroupName FRA                             \
-		-templateName General_Purpose.dbc                      \
-		-createAsContainerDatabase true                        \
-			-numberOfPDBs     1                                \
-			-pdbName          daisy01                          \
-			-pdbAdminPassword Oracle12                         \
-		-sysPassword    Oracle12                               \
-		-systemPassword Oracle12                               \
-		-redoLogFileSize 512                                   \
-		-initParams shared_pool_size=256M,nls_language=FRENCH,NLS_TERRITORY=FRANCE,threaded_execution=true
-	# Continue : Yes or No ?
+	```bash
+	oracle@srvdaisy01:NOSID:db> ./create_db.sh -name=daisy
+	# Running : ./create_db.sh -name=daisy
+	# ===============================================================================
+	# Remove all files on srvdaisy01
+	11h49> rm -rf /u01/app/oracle/cfgtoollogs/dbca/*
+	11h49> rm -rf /u01/app/oracle/diag/rdbms/daisy
+
+	11h49> dbca                                     \
+			   -createDatabase -silent              \
+			   -databaseConfType RAC                \
+			   -nodelist srvdaisy01,srvdaisy02      \
+			   -gdbName DAISY                       \
+			   -characterSet AL32UTF8               \
+			   -storageType ASM                     \
+				   -diskGroupName     DATA          \
+				   -recoveryGroupName FRA           \
+			   -templateName General_Purpose.dbc    \
+			   -createAsContainerDatabase true      \
+				   -numberOfPDBs     1              \
+				   -pdbName          daisy01        \
+				   -pdbAdminPassword Oracle12       \
+			   -sysPassword    Oracle12             \
+			   -systemPassword Oracle12             \
+			   -redoLogFileSize 512                 \
+			   -totalMemory 640                     \
+			   -initParams threaded_execution=true,nls_language=FRENCH,NLS_TERRITORY=FRANCE,shared_pool_size=256M
+	# Continue y/n ? y
+	# y
 	```
 	
 	Confirmer la création si les paramètres conviennent. Pour afficher la liste

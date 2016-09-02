@@ -10,7 +10,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	[-copy_iso]        : Les ISO Linux Oracle seront copiés avant la synchronisation.
-	[-only_nfs_update] : Met uniquement à jour l'export NFS.
+	[-only_nfs_update] : Met uniquement à jour l'export NFS, pas de synchronisation.
 
 	Synchronise le dépôt Oracle Linux.
 "
