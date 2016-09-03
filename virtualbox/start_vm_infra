@@ -1,0 +1,14 @@
+#!/bin/bash
+# vim: ts=4:sw=4
+
+#	Après démarrage de la VM test si target est correctement démarré.
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+info "$ME $@"
+
+exec_cmd "VBoxManage startvm ${infra_hostname} --type headless"
+exec_cmd "~/plescripts/shell/wait_server ${infra_hostname}"
+exec_cmd "ssh root@${infra_hostname} san/check_target.sh"

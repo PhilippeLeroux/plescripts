@@ -11,8 +11,9 @@ then
 	LN
 	exec_cmd -c systemctl status target -l
 	LN
-	info "Try to start target"
 	exec_cmd systemctl start target
 	LN
 	exec_cmd systemctl status target -l
+else
+	exit 0
 fi
