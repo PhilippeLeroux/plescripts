@@ -42,7 +42,7 @@ do
 			;;
 
 		-first_no=*)
-			first_no=${1##*=}
+			first_no=10#${1##*=}
 			shift
 			;;
 
@@ -85,3 +85,7 @@ do
 	exec_cmd targetcli $backstore_name
 	LN
 done
+
+warning "La configuration n'est pas sauvergardée."
+warning "Sauvegarde : targetcli / saveconfig"
+LN

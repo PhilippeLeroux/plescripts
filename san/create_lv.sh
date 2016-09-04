@@ -40,7 +40,7 @@ do
 			;;
 
 		-first_no=*)
-			first_no=${1##*=}
+			first_no=10#${1##*=}
 			shift
 			;;
 

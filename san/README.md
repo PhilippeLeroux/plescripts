@@ -66,7 +66,13 @@ Ne peut être utilisé hors du script clone_master.sh.
 
 --------------------------------------------------------------------------------
 
-__Utilisation des scripts génériques :__
+__Description des scripts__
+
+Les scripts ci dessous sont les scripts de bases, voir plutôt la documentation
+'fonctionnelle' et n'utiliser ces scripts que lors de problèmes.
+
+Avant d'utiliser un script utiliser le paramètre -h, la majorité des scripts doit
+être documentée.
 
 * create_initiator.sh : Création de l'initiator dans targetcli.
 
@@ -79,9 +85,9 @@ __Utilisation des scripts génériques :__
 
 Puis aller sur le client pour mapper les LUNs (cf répertoire disk)
 
---------------------------------------------------------------------------------
+* delete_db_lun.sh
 
-__Scripts divers :__
+	Permet de détruire 1 ou plusieurs LUNs correspondant à un identifiant de base (ex -prefix=daisy)
 
 * create_lv.sh
 	

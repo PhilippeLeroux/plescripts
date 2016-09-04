@@ -40,15 +40,16 @@ exit_if_param_undef disks	"$str_usage"
 typeset -a size_list
 typeset -a disk_list
 
-kfod nohdr=true op=disks |\
 while read size disk
 do
+	[ x"$disk" == x ] && continue
+
 	i=${#size_list[@]}
 	typeset -i size_gb=$size
 	size_gb=size_gb/1024
 	size_list[$i]=$size_gb
 	disk_list[$i]=$disk
-done
+done<<<"$(kfod nohdr=true op=disks)"
 
 if [ $disks -gt ${#disk_list[@]} ]
 then
@@ -56,6 +57,7 @@ then
 	error "Disponible ${#disk_list[@]} disks"
 	exit 1
 fi
+
 function make_sql_cmd
 {
 	for i in $(seq 1 $(( $disks - 1 )) )

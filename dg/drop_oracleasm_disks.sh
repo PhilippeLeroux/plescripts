@@ -39,7 +39,7 @@ do
 			;;
 
 		-nr_disk=*)
-			nr_disk=${1##*=}
+			nr_disk=10#${1##*=}
 			shift
 			;;
 
@@ -100,7 +100,7 @@ exec_cmd "~/plescripts/disk/remove_unused_partition.sh"
 LN
 
 line_separator
-exec_cmd ssh root@K2 "~/plescripts/san/delete_db_lun.sh -db=$db -lun=$nr_disk -count=$count -vg_name=$vg_name"
+exec_cmd ssh -t root@K2 "~/plescripts/san/delete_db_lun.sh -db=$db -lun=$nr_disk -count=$count -vg_name=$vg_name"
 LN
 
 line_separator
@@ -113,3 +113,5 @@ do
 	LN
 done
 
+exec_cmd "~/plescripts/san/save_targetcli_config.sh -name=delete_oracleasm_disks"
+LN

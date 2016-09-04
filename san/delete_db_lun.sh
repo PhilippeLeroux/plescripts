@@ -38,7 +38,7 @@ do
 			;;
 
 		-lun=*)
-			lun=${1##*=}
+			lun=10#${1##*=}
 			shift
 			;;
 
@@ -86,8 +86,8 @@ function remove_lun_for_server
 	typeset -r	luns_path=/iscsi/$iscsi_initiator_prefix$db:$node/tpg1/luns
 
 	info "delete lun $nr_lun"
-	exec_cmd "targetcli $acls_path delete $nr_lun"
-	exec_cmd "targetcli $luns_path delete $nr_lun"
+	exec_cmd "$(printf "targetcli %s delete %02d" $acls_path $nr_lun)"
+	exec_cmd "$(printf "targetcli %s delete %02d" $luns_path $nr_lun)"
 	LN
 }
 
@@ -105,7 +105,7 @@ line_separator
 info "Delete $count disks from backstore"
 for ilun in $( seq $lun $(( lun + count - 1 )) )
 do
-	exec_cmd targetcli /backstores/block delete ${vg_name}_lv${db}${ilun}
+	exec_cmd targetcli /backstores/block delete $(printf "%s_lv%s%02d" $vg_name ${db} $ilun)
 done
 LN
 
