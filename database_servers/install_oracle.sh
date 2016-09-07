@@ -230,11 +230,11 @@ info "Database can be created :"
 LN
 info "$ ssh oracle@${node_names[0]}"
 info "oracle@${node_names[0]}:NOSID:oracle> cd db"
-info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db"
+info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db"
 if [ $max_nodes -gt 1 ]
 then
 	info "or"
-	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db -policyManaged"
+	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -policyManaged"
 	info "or"
-	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -name=$db -db_type=RACONENODE"
+	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -db_type=RACONENODE"
 fi
