@@ -57,16 +57,8 @@ do
 	esac
 done
 
-[[ $server == undef ]] && [[ -v ID_DB ]] && server=$ID_DB
+[[ $server == undef && -v ID_DB ]] && server=$ID_DB
 exit_if_param_undef server	"$str_usage"
-
-[[ $# -eq 0 ]] && [[ -v ID_DB ]] && server=$ID_DB || server=$1
-
-if [ x"$server" == x ]
-then
-	error "$str_usage"
-	exit 1
-fi
 
 exit_if_param_invalid wait_os "yes no" "$str_usage"
 
