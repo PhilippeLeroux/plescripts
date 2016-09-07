@@ -18,7 +18,7 @@ typeset -r ME=$0
 #	Pour éviter ce message d'erreur utiliser le paramètre -shared_pool_size=256M
 #	Cf select name, round( bytes/1024/1024, 2) "Size Mb" from v$sgainfo order by 2 desc;
 
-typeset		name=undef
+typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=640
 typeset		shared_pool_size=default
@@ -37,7 +37,7 @@ typeset		skip_db_create=no
 
 typeset -r str_usage=\
 "Usage : $ME
-	-name=$name db name for single or db for RAC
+	-db=<str>
 	[-lang=$lang]
 	[-sysPassword=$sysPassword]
 	[-totalMemory=$totalMemory] Unit Mb
@@ -49,19 +49,22 @@ typeset -r str_usage=\
 	[-templateName=$templateName]
 	[-db_type=SINGLE|RAC|RACONENODE]	(3)
 	[-policyManaged]  : créer une base en 'Policy Managed'	(4)
-	[-serverPoolName=<str>] : nom du pool à utiliser, s'il n'existe pas il sera créée.
+	[-serverPoolName=<str>] : nom du pool à utiliser, s'il n'existe pas il sera créée. (5)
 
-	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == name || 01
-	    Le service de la pdb sera : pdb || name || 01
+	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == db || 01
+	    Le service de la pdb sera : pdb || db || 01
 
 	2 : Si -pdbName est précisé -cdb vaut automatiquement yes
 
 	3 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
 	    de nœuds, si 1 seul nœud c'est SINGLE sinon c'est RAC.
 	    Donc pour créer un RAC One Node database il faut impérativement le préciser !
+		Pour un One Node est ron_<nom_du_serveur ou est crée la base>
 
 	4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera crée
 	    si -serverPollName n'est pas précisé.
+
+	5 : Active le flag -policyManaged
 
 	[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
 	les scripts post installations.
@@ -77,10 +80,10 @@ do
 			shift
 			;;
 
-		-name=*)
-			name=$(to_upper ${1##*=})
-			lower_name=$(to_lower $name)
-			paramsql=param${name}.sql
+		-db=*)
+			db=$(to_upper ${1##*=})
+			lower_db=$(to_lower $db)
+			paramsql=param${db}.sql
 			shift
 			;;
 
@@ -178,7 +181,11 @@ function make_dbca_args
 	add_dynamic_cmd_param "-createDatabase -silent"
 
 	add_dynamic_cmd_param "-databaseConfType $db_type"
-	[ $db_type == RACONENODE ] && add_dynamic_cmd_param "    -RACOneNodeServiceName ron_$(to_lower $name)"
+	if [ $db_type == RACONENODE ]
+	then
+		typeset -r	ron_service="ron_$(hostname -s)"
+		add_dynamic_cmd_param "    -RACOneNodeServiceName $ron_service"
+	fi
 
 	[ "$node_list" != undef ] && add_dynamic_cmd_param "-nodelist $node_list"
 
@@ -193,7 +200,7 @@ function make_dbca_args
 		fi
 	fi
 
-	add_dynamic_cmd_param "-gdbName $name"
+	add_dynamic_cmd_param "-gdbName $db"
 	add_dynamic_cmd_param "-characterSet AL32UTF8"
 	if [ "$usefs" = "no" ]
 	then
@@ -255,18 +262,18 @@ function remove_all_log_and_db_fs_files
 	then
 		# Marche pas avec -i sed (oracle donc) n'a pas le droit de créer
 		# de fichier temporaire dans /etc
-		exec_cmd "sed '/^${name}.*/d' /etc/oratab > /tmp/oratab"
+		exec_cmd "sed '/^${db}.*/d' /etc/oratab > /tmp/oratab"
 		exec_cmd "cat /tmp/oratab > /etc/oratab"
 
-		exec_cmd rm -rf "$data/$name"
-		exec_cmd rm -rf "$fra/$name"
+		exec_cmd rm -rf "$data/$db"
+		exec_cmd rm -rf "$fra/$db"
 		[ ! -d $data ] && exec_cmd mkdir $data
 		[ ! -d $fra ] && exec_cmd mkdir $fra
 	fi
 
-	typeset -r dbca_log_path="$ORACLE_BASE/cfgtoollogs/dbca/*"
-	exec_cmd -c "rm -rf $dbca_log_path"
-	exec_cmd -c "rm -rf $ORACLE_BASE/diag/rdbms/$(to_lower $name)"
+	exec_cmd -c "rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*"
+	exec_cmd -c "rm -rf $ORACLE_BASE/diag/rdbms/$lower_db"
+	exec_cmd -c "rm -rf $ORACLE_BASE/admin/${db}"
 	LN
 }
 
@@ -360,29 +367,33 @@ function create_services_for_pdb
 				done<<<"$(cat /etc/oratab | grep "^${prefixInstance}[1-9]:")"
 
 				info "Create service for RAC Administrator Managed"
-				exec_cmd "srvctl add service -db $name -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
+				exec_cmd "srvctl add service -db $db -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
 				LN
-				exec_cmd srvctl start service -db $name -service pdb$pdbName
+				exec_cmd srvctl start service -db $db -service pdb$pdbName
 				LN
 			else
 				info "Create service for RAC Policy Managed"
-				exec_cmd "~/plescripts/db/create_service_for_policy_managed.sh -db=$name -pdbName=$pdbName -prefixService=pdb${pdbName} -poolName=$serverPoolName"
+				exec_cmd "~/plescripts/db/create_service_for_policy_managed.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName} -poolName=$serverPoolName"
 			fi
 			;;
 
 		RACONENODE)
 			info "Create service for RAC One Node"
-			exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
-			exec_cmd srvctl start service -db $name -service pdb$pdbName
+			exec_cmd srvctl add service -db $db -service pdb$pdbName -pdb $pdbName
+			exec_cmd srvctl start service -db $db -service pdb$pdbName
 			LN
+
+			#info "Force db $db to run on node $(hostname -s)"
+			#exec_cmd srvctl modify database -db $db -e $(hostname -s)
+			#LN
 			;;
 
 		SINGLE)
 			if [ $usefs == no ]
 			then
 				info "Create service for SINGLE database."
-				exec_cmd srvctl add service -db $name -service pdb$pdbName -pdb $pdbName
-				exec_cmd srvctl start service -db $name -service pdb$pdbName
+				exec_cmd srvctl add service -db $db -service pdb$pdbName -pdb $pdbName
+				exec_cmd srvctl start service -db $db -service pdb$pdbName
 				LN
 			else
 				warning "No services created for pdb, DIY"
@@ -399,12 +410,12 @@ typeset -r script_start_at=$SECONDS
 check_rac_or_single
 check_if_ASM_used
 
-exit_if_param_undef name "$str_usage"
+exit_if_param_undef db "$str_usage"
 
 #	-------------------------
 #	Ajustement des paramètres
 #	Détermine le nom de la PDB si non précisée.
-[ $cdb == yes ] && [ $pdbName == undef ] && pdbName=${lower_name}01
+[ $cdb == yes ] && [ $pdbName == undef ] && pdbName=${lower_db}01
 
 if [ $pdbName != undef ]
 then
@@ -414,11 +425,12 @@ fi
 
 #	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
 [ $policyManaged == "yes" ] && [ $serverPoolName == undef ] && serverPoolName=poolAllNodes
+[ $serverPoolName != undef ] && policyManaged=yes
 #	-------------------------
 
-stats_tt start create_$lower_name
+stats_tt start create_$lower_db
 
-typeset prefixInstance=${name:0:8}
+typeset prefixInstance=${db:0:8}
 
 [ $skip_db_create == no ] && create_database
 
@@ -429,7 +441,7 @@ then
 	for node in $( sed "s/,/ /g" <<<"$node_list" )
 	do
 		line_separator
-		exec_cmd "ssh -t oracle@${node} \". ./.profile; ~/plescripts/db/update_rac_oratab.sh -db=$lower_name -prefixInstance=$prefixInstance\""
+		exec_cmd "ssh -t oracle@${node} \". ./.profile; ~/plescripts/db/update_rac_oratab.sh -prefixInstance=$prefixInstance\""
 		LN
 	done
 fi
@@ -437,9 +449,16 @@ fi
 [ $cdb == yes ] && [ x"$pdbName" != x ] && create_services_for_pdb
 
 line_separator
-export ORACLE_DB=${name}
+export ORACLE_DB=${db}
+unset ORACLE_SID
+fake_exec_cmd 'ORACLE_SID=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)'
 ORACLE_SID=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)
 info "Load env for $ORACLE_SID"
+if [ x"$ORACLE_SID" == x ]
+then
+	error "ORACLE_SID not defined."
+	exit 1
+fi
 ORAENV_ASK=NO . oraenv
 LN
 
@@ -453,15 +472,15 @@ if [ $usefs == no ]
 then
 	line_separator
 	info "Database config :"
-	exec_cmd "srvctl config database -db $lower_name"
+	exec_cmd "srvctl config database -db $lower_db"
 	LN
 	line_separator
-	exec_cmd "crsctl stat res ora.$lower_name.db -t"
+	exec_cmd "crsctl stat res ora.$lower_db.db -t"
 	LN
 else
 	line_separator
 	info "Enable auto start for database"
-	exec_cmd "sed \"s/^\(${name:0:8}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
+	exec_cmd "sed \"s/^\(${db:0:8}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
 	exec_cmd "cat /tmp/ot > /etc/oratab"
 	exec_cmd "rm /tmp/ot"
 	LN
@@ -478,7 +497,7 @@ fi
 exec_cmd "~/plescripts/memory/show_pages.sh"
 LN
 
-stats_tt stop create_$lower_name
+stats_tt stop create_$lower_db
 
 info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
 LN

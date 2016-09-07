@@ -23,7 +23,7 @@ do
 			;;
 
 		-db=*)
-			db=${1##*=}
+			db=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -37,8 +37,6 @@ do
 done
 
 exit_if_param_undef db	"$str_usage"
-
-typeset -r upper_db=$(to_upper $db)
 
 #	Les 2 fonctions sont dupliquées de database_servers/uninstall.sh
 function get_other_nodes
@@ -69,12 +67,18 @@ line_separator
 info "Delete database :"
 LN
 
-[ x"$node_list" == x ] && sourcedb=$upper_db || sourcedb=$db
-exec_cmd "dbca -deleteDatabase -sourcedb ${sourcedb:0:8} -sysDBAUserName sys -sysDBAPassword $oracle_password -silent"
+add_dynamic_cmd_param "-deleteDatabase"
+add_dynamic_cmd_param "    -sourcedb       $db"
+add_dynamic_cmd_param "    -sysDBAUserName sys"
+add_dynamic_cmd_param "    -sysDBAPassword $oracle_password"
+add_dynamic_cmd_param "    -silent"
+exec_dynamic_cmd -confirm "dbca"
 LN
 
-typeset -r rm_1="rm -rf $ORACLE_BASE/cfgtoollogs/dbca/$upper_db"
-typeset -r rm_2="rm -rf $ORACLE_BASE/diag/rdbms/$db"
+typeset -r rm_1="rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*"
+typeset -r rm_2="rm -rf $ORACLE_BASE/diag/rdbms/$(to_lower $db)"
+typeset -r rm_3="rm -rf $ORACLE_BASE/admin/$db"
+typeset -r rm_4="rm -rf $ORACLE_HOME/dbs/*${db}*"
 
 line_separator
 info "Purge des répertoires :"
@@ -85,10 +89,16 @@ LN
 exec_cmd "$rm_2"
 execute_on_other_nodes "$rm_2"
 LN
+exec_cmd "$rm_3"
+execute_on_other_nodes "$rm_3"
+LN
+exec_cmd "$rm_4"
+execute_on_other_nodes "$rm_4"
+LN
 
 if [ x"$node_list" != x ]
 then	#	Sur les RACs les nom des instances ont été ajoutés.
-	typeset -r clean_oratab_cmd1="sed  '/${upper_db:0:8}_\{,1\}[0-9].*/d' /etc/oratab > /tmp/oracle_oratab"
+	typeset -r clean_oratab_cmd1="sed  '/${db:0:8}_\{,1\}[0-9].*/d' /etc/oratab > /tmp/oracle_oratab"
 	typeset -r clean_oratab_cmd2="cat /tmp/oracle_oratab > /etc/oratab && rm /tmp/oracle_oratab"
 
 	line_separator
@@ -104,8 +114,8 @@ if $(test_if_cmd_exists olsnodes)
 then
 	line_separator
 	info "Clean up ASM :"
-	exec_cmd -c "sudo -u grid -i asmcmd rm -rf DATA/$upper_db"
-	exec_cmd -c "sudo -u grid -i asmcmd rm -rf FRA/$upper_db"
+	exec_cmd -c "sudo -u grid -i asmcmd rm -rf DATA/$db"
+	exec_cmd -c "sudo -u grid -i asmcmd rm -rf FRA/$db"
 	LN
 fi
 

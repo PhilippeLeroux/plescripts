@@ -8,9 +8,8 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -db=<str> -prefixInstance=<str>"
+typeset -r str_usage="Usage : $ME -prefixInstance=<str>"
 
-typeset db=undef
 typeset prefixInstance=undef
 
 while [ $# -ne 0 ]
@@ -19,11 +18,6 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
-			shift
-			;;
-
-		-db=*)
-			db=${1##*=}
 			shift
 			;;
 
@@ -41,14 +35,12 @@ do
 	esac
 done
 
-exit_if_param_undef		db				"$str_usage"
 exit_if_param_undef		prefixInstance 	"$str_usage"
 
 typeset	-ri	max_nodes=$(olsnodes | wc -l)
-typeset -r	upper_db=$(to_upper $db)
 
 info "Update /etc/oratab on $(hostname -s)"
-info "All instance names are added, useful for Policy Managed and One Node RAC"
+info "Add all instances, useful for Policy Managed and RAC One Node"
 for inode in $( seq 1 $max_nodes )
 do
 	INSTANCE=$prefixInstance$inode

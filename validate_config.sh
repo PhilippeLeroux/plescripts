@@ -172,9 +172,7 @@ in_path -o tmux		"Install tmux"
 LN
 
 line_separator
-info "Positionne les acls sur ~/plescripts"
-# Pour supprimer les acls : setfacl -Rb ~/plescripts/
-exec_cmd -c setfacl -Rm d:g:users:rwx $HOME/plescripts
+exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
 LN
 
 line_separator

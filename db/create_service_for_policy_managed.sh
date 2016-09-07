@@ -82,14 +82,27 @@ line_separator
 info "create service ${prefixService}_oci on pdb $pdbName (db = $db) attached to pool $poolName"
 LN
 
+#	http://docs.oracle.com/database/121/RACAD/hafeats.htm#RACAD7026
+#	Creating Services for Application Continuity ssi -failovertype TRANSACTION
+#	-replay_init_time par défaut 300s
+#	-retention par défaut de 1j pour le 'commit outcome'
+#	-failoverretry par défaut 30
+#	-failoverdelay 10s entre chaque retry.
+#	-notification: FAN is highly recommended—set this value to TRUE to enable FAN for OCI and ODP.Net clients.
+#	
+#	Creating Services for Transaction Guard : To enable Transaction Guard, but not Application Continuity
+#	-commit_outcome TRUE
+#	To use Transaction Guard, a DBA must grant permission, as follows:
+#	GRANT EXECUTE ON DBMS_APP_CONT;
+
 add_dynamic_cmd_param "add service -service ${prefixService}_oci "
 add_dynamic_cmd_param "    -pdb $pdbName -db $db -serverpool $poolName"
-add_dynamic_cmd_param "    -cardinality uniform"
-add_dynamic_cmd_param "    -policy automatic"
-add_dynamic_cmd_param "    -failovertype session"
+add_dynamic_cmd_param "    -cardinality    uniform"
+add_dynamic_cmd_param "    -policy         automatic"
+add_dynamic_cmd_param "    -failovertype   session"
 add_dynamic_cmd_param "    -failovermethod basic"
-add_dynamic_cmd_param "    -clbgoal long"
-add_dynamic_cmd_param "    -rlbgoal throughput"
+add_dynamic_cmd_param "    -clbgoal        long"
+add_dynamic_cmd_param "    -rlbgoal        throughput"
 
 exec_dynamic_cmd srvctl
 LN
@@ -97,17 +110,18 @@ exec_cmd srvctl start service -service ${prefixService}_oci -db $db
 LN
 
 line_separator
+#	Services for Application Continuity (java)
 info "create service ${prefixService}_java on pdb $pdbName (db = $db) attached to pool $poolName"
 LN
 
 add_dynamic_cmd_param "add service -service ${prefixService}_java "
 add_dynamic_cmd_param "    -pdb $pdbName -db $db -serverpool $poolName"
-add_dynamic_cmd_param "    -cardinality uniform"
-add_dynamic_cmd_param "    -policy automatic"
-add_dynamic_cmd_param "    -failovertype transaction"
+add_dynamic_cmd_param "    -cardinality    uniform"
+add_dynamic_cmd_param "    -policy         automatic"
+add_dynamic_cmd_param "    -failovertype   transaction"
 add_dynamic_cmd_param "    -failovermethod basic"
-add_dynamic_cmd_param "    -clbgoal long"
-add_dynamic_cmd_param "    -rlbgoal throughput"
+add_dynamic_cmd_param "    -clbgoal        long"
+add_dynamic_cmd_param "    -rlbgoal        throughput"
 add_dynamic_cmd_param "    -commit_outcome true"
 
 exec_dynamic_cmd srvctl

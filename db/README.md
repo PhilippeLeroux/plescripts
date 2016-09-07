@@ -6,6 +6,10 @@ sont très loin des exigences d'une entreprise.**
 
 ### Création d'une base de donnée.
 
+Remarque : si le master et K2 viennent d'être créés il est préférable d'installer
+un serveur standalone ce qui permet de rapidement valider l'installation et la
+configuration du poste client/host et des VMs master et K2.
+
 1. Se connecter sur le serveur : `ssh oracle@srvdaisy01`
 
 	Les connexions root, oracle et grid ne nécessitent pas de mot de passe, les
@@ -16,8 +20,8 @@ sont très loin des exigences d'une entreprise.**
 3. Exécution du script create_db.sh :
 
 	```bash
-	oracle@srvdaisy01:NOSID:db> ./create_db.sh -name=daisy
-	# Running : ./create_db.sh -name=daisy
+	oracle@srvdaisy01:NOSID:db> ./create_db.sh -db=daisy
+	# Running : ./create_db.sh -db=daisy
 	# ===============================================================================
 	# Remove all files on srvdaisy01
 	11h49> rm -rf /u01/app/oracle/cfgtoollogs/dbca/*
@@ -52,14 +56,15 @@ sont très loin des exigences d'une entreprise.**
 	La configuration de la base SINGLE ou RAC sera détectée automatiquement. 
 	
 	Pour une configuration de type RAC One Node ajouter le paramète -db_type=RACONENODE.
-	Le service associé sera ron_daisy (ron = **r**ac **o**ne **n**ode)
+	
+	Le service associé sera ron_<nom_du_serveur ou est crée la base> (ron = **r**ac **o**ne **n**ode)
 
 	Si le paramètre -pdbName n'est pas précisé la pdb daisy01 sera créée ainsi que
 	son service pdbdaisy01.
 
 	La règle de nommage étant :
-	 * Nom de la pdb = name + 01
-	 * Nom du service = pdb + nom de la pdb
+	 * Nom de la pdb = nom du cdb || 01
+	 * Nom du service = pdb || nom de la pdb
 
 	Les bases sont créées avec l'option threaded_execution=true, pour se connecter
 	avec le compte sys il faut donc utiliser la syntaxe : `sqlplus sys/Oracle12 as sysbda`

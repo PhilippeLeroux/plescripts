@@ -5,7 +5,6 @@
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -23,7 +22,7 @@ do
 			;;
 
 		-db=*)
-			db=${1##*=}
+			db=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -40,18 +39,19 @@ exit_if_param_undef db	"$str_usage"
 
 [ "$USER" != "root" ] && error "Only root can execute this script" && exit 1
 
-typeset -r upper_db=$(to_upper $db)
+typeset -r lower_db=$(to_lower $db)
 
 ORACLE_BASE=/u01/app/oracle
 
 exec_cmd -c "srvctl stop database -db $db"
-exec_cmd -c "srvctl remove database -db $db<<<y"
+exec_cmd -c "srvctl remove database -db $lower_db<<<y"
 
-oracle_rm_1="su - oracle -c \"rm -rf $ORACLE_BASE/cfgtoollogs/dbca/$upper_db\""
-oracle_rm_2="su - oracle -c \"rm -rf $ORACLE_BASE/diag/rdbms/$db\""
-oracle_rm_3="su - oracle -c \"rm -rf \$ORACLE_HOME/dbs/*${upper_db}*\""
+oracle_rm_1="su - oracle -c \"rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*\""
+oracle_rm_2="su - oracle -c \"rm -rf $ORACLE_BASE/diag/rdbms/$lower_db\""
+oracle_rm_3="su - oracle -c \"rm -rf \$ORACLE_HOME/dbs/*${db}*\""
+oracle_rm_4="su - oracle -c \"rm -rf $ORACLE_BASE/admin/$db\""
 
-clean_oratab_cmd1="sed  '/$upper_db[_|0-9].*/d' /etc/oratab > /tmp/oratab"
+clean_oratab_cmd1="sed  '/$db[_|0-9].*/d' /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
 
 line_separator
@@ -59,6 +59,7 @@ info "Remove all Oracle's files on node $(hostname -s)"
 exec_cmd -c "$oracle_rm_1"
 exec_cmd -c "$oracle_rm_2"
 exec_cmd -c "$oracle_rm_3"
+exec_cmd -c "$oracle_rm_4"
 LN
 
 exec_cmd -c "$clean_oratab_cmd1"
@@ -73,7 +74,7 @@ then
 	oracle_rm_3=$(escape_2xquotes $oracle_rm_3)
 	for node_file in $cfg_path/node*
 	do
-		node_name=$(cat $node_file | cut -d':' -f2)
+		node_name=$(cat $node_file | cut -d: -f2)
 		if [ $node_name != $(hostname -s) ]
 		then
 			line_separator
@@ -81,6 +82,7 @@ then
 			exec_cmd -c "ssh $node_name $oracle_rm_1"
 			exec_cmd -c "ssh $node_name $oracle_rm_2"
 			exec_cmd -c "ssh $node_name $oracle_rm_3"
+			exec_cmd -c "ssh $node_name $oracle_rm_4"
 			LN
 
 			exec_cmd -c "ssh $node_name \"$clean_oratab_cmd1\""
@@ -92,8 +94,8 @@ fi
 
 line_separator
 info "Remove database files from ASM"
-exec_cmd -c "su - grid -c \"asmcmd rm -rf DATA/$upper_db\""
-exec_cmd -c "su - grid -c \"asmcmd rm -rf FRA/$upper_db\""
+exec_cmd -c "su - grid -c \"asmcmd rm -rf DATA/$db\""
+exec_cmd -c "su - grid -c \"asmcmd rm -rf FRA/$db\""
 LN
 
 line_separator

@@ -7,9 +7,58 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME <str>"
+"Usage : $ME <str>
+	[-server=<str>]	si non définie testera ID_DB (cf set_db)
+	[-wait_os=yes]  par défaut attend que l'OS de la VM ait démarré pour lancer la VM suivante.
+"
 
 info "$ME $@"
+
+typeset server=undef
+typeset	wait_os=yes
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			first_args=-emul
+			shift
+			;;
+
+		-server=*)
+			server=${1##*=}
+			shift
+			;;
+
+		-wait_os=*)
+			wait_os=${1##*/}
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			if [ $server == undef ]
+			then
+				server=$1
+				shift
+			else
+				error "Arg '$1' invalid."
+				LN
+				info "$str_usage"
+				exit 1
+			fi
+			;;
+	esac
+done
+
+[[ $server == undef ]] && [[ -v ID_DB ]] && server=$ID_DB
+exit_if_param_undef server	"$str_usage"
 
 [[ $# -eq 0 ]] && [[ -v ID_DB ]] && server=$ID_DB || server=$1
 
@@ -19,34 +68,33 @@ then
 	exit 1
 fi
 
+exit_if_param_invalid wait_os "yes no" "$str_usage"
+
 function virtualbox_start
 {
 	typeset -a vm_list
-	typeset -i ivm=0
+	typeset -i max_vms=0
 	while read vm_name
 	do
-		if [ x"$vm_name" != x ]
-		then
-			vm_list[$ivm]=$vm_name
-			ivm=ivm+1
-		fi
-	done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+		[ x"$vm_name" == x ] && continue
 
-	typeset -ri max_vms=${#vm_list[@]}
+		vm_list[$max_vms]=$vm_name
+		max_vms=max_vms+1
+	done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
 
 	info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
 	[ $max_vms -eq 0 ] && exit 1
 
 	typeset -i nr_vm_started=0
 	exec_cmd -c "VBoxManage startvm ${vm_list[0]} --type headless"
-	typeset -i vm_last_status=$?
+	typeset -i vm_last_status=$?	#	Mémorise le status de la dernière VM démarrée.
 	[ $vm_last_status -ne 0 ] && error "Failed to start ${vm_list[0]}" || nr_vm_started=1
 	LN
 
 	for i in $( seq 1 $(( max_vms - 1 )) )
 	do
-		# Attends que l'os soit démarrer pour éviter le GURU_MEDITATION.
-		[ $vm_last_status -eq 0 ] && wait_server ${vm_list[$((i-1))]}
+		# Attends que l'OS soit démarré pour éviter le GURU_MEDITATION.
+		[[ $wait_os == yes && $vm_last_status -eq 0 ]] && wait_server ${vm_list[$((i-1))]}
 
 		exec_cmd -c "VBoxManage startvm ${vm_list[$i]} --type headless"
 		vm_last_status=$?
@@ -73,4 +121,3 @@ case ${hostvm##*_} in
 		exit 1
 		;;
 esac
-

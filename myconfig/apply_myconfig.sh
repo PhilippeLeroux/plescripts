@@ -4,7 +4,6 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -28,25 +27,23 @@ do
 	esac
 done
 
+line_separator
 info "Apply bashrc extensions :"
 exec_cmd cp bashrc_extensions ~/.bashrc_extensions
 exec_cmd "sed -i \"/^.*bashrc_extensions.*$/d\" ~/.bashrc"
 exec_cmd "echo \"[ -f ~/.bashrc_extensions ] && . ~/.bashrc_extensions || true\" >> ~/.bashrc"
 LN
 
+line_separator
 info "[G]vim configuration :"
 exec_cmd "~/plescripts/myconfig/vim_config.sh -restore"
 LN
 
+line_separator
 info "tmux configuration :"
 exec_cmd cp mytmux.conf ~/.tmux.conf
 LN
 
-info "Positionne les acls sur ~/plescripts"
-# Pour supprimer les acls : setfacl -Rb ~/plescripts/
-exec_cmd -c setfacl -Rm d:g:users:rwx $HOME/plescripts
-if [ $? -ne 0 ]
-then
-	info "with root exec : setfacl -Rm d:g:users:rwx $HOME/plescripts"
-fi
+line_separator
+exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
 LN

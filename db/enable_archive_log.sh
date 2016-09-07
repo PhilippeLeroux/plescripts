@@ -6,6 +6,8 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
+info "Running : $ME $*"
+
 typeset -r	SQL_PROMPT="prompt SQL>"
 
 #	$@	liste des mots constituant l'instruction sql à exécuter.

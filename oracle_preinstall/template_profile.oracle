@@ -43,7 +43,7 @@ export EDITOR=vi
 
 #	-f3-4 pour gérer le cas des RAC one node ou services managed.
 instance=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)
-if [ x"$instance" != x ]
+if [[ x"$instance" != x && $(wc -l <<<"$instance") -eq 1 ]]
 then
     grep "$instance" /etc/oratab >/dev/null 2>&1
     if [ $? -eq 0 ]
