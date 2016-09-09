@@ -83,6 +83,6 @@ else	#	Mono Instance.
 	exec_cmd -ci tmux kill-session -t \"$session_name\"
 
 
-	alert1=$(printf "/u01/app/oracle/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst1 $inst1)
+	alert1=$(printf "/u01/app/oracle/diag/rdbms/%s/%s/trace/alert_%s.log" $(to_lower $inst1) $inst1 $inst1)
 	ssh oracle@${server1} tail -1000f $alert1
 fi

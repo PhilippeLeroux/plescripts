@@ -1070,7 +1070,7 @@ function test_pause # $1 message
 	if [ $PAUSE == ON ]
 	then
 		[ $# -ne 0 ] && info "$@"
-		info "Press a key to continue" && read keyboard
+		ask_for -reply_list=CR "Press enter to continue, Ctrl-C to abort."
 	fi
 }
 
