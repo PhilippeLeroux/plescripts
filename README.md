@@ -103,6 +103,9 @@ Les 2 VMs orclmaster et K2 doivent avoir été créées.
 La création des serveurs inclue l'installation du Grid Infrastructure et d'Oracle.
 Une fois cette étape terminée les bases peuvent être [créées](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
+La création de dataguard est prise en compte mais uniquement pour des bases SINGLE, je n'ai pas assez de ressources pour avoir 2 RACs
+ou 1 RAC et 1 SINGLE [voir ici, mais il reste un peu de boulot.](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/README.md)
+
 --------------------------------------------------------------------------------
 [Wiki](https://github.com/PhilippeLeroux/plescripts/wiki)
 
