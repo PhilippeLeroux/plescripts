@@ -12,6 +12,7 @@ typeset -r str_usage=\
 info "Running : $ME $*"
 
 typeset db=undef
+typeset server=undef
 
 while [ $# -ne 0 ]
 do
@@ -26,6 +27,12 @@ do
 			db=${1##*=}
 			shift
 			;;
+
+		-server=*)
+			server=${1##*=}
+			shift
+			;;
+
 
 		-h|-help|help)
 			info "$str_usage"
@@ -42,8 +49,9 @@ do
 	esac
 done
 
-[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
-exit_if_param_undef db	"$str_usage"
+[[ $db == undef && $server == undef && -v ID_DB ]] && db=$ID_DB
+[[ $db == undef && $server == undef ]] && error "-db and -server undef" && info "$str_usage" && exit 1
+[[ $db != undef && $server != undef ]] && error "-db and -server defined" && info "$str_usage" && exit 1
 
 function config_server
 {
@@ -51,26 +59,33 @@ function config_server
 
 	line_separator
 	exec_cmd "scp ~/plescripts/oracle_preinstall/rlwrap.alias root@$server_name:~/"
+	exec_cmd "ssh root@$server_name 'sed -i \"/.*rlwrap.alias/d\" .bash_profile'"
 	exec_cmd "ssh root@$server_name 'echo \". rlwrap.alias \" >> .bash_profile'"
 	LN
 
 	line_separator
 	exec_cmd "scp ~/plescripts/oracle_preinstall/rlwrap.alias oracle@$server_name:~/"
-	exec_cmd "ssh oracle@$server_name 'sed -i \"/Execute asmcmd/d\" profile.oracle'"
 	exec_cmd "ssh oracle@$server_name 'sed -i \"/alias asmcmd/d\" profile.oracle'"
+	exec_cmd "ssh oracle@$server_name 'sed -i \"/.*rlwrap.alias/d\" profile.oracle'"
 	exec_cmd "ssh oracle@$server_name 'echo \". rlwrap.alias\" >> profile.oracle'"
 	LN
 
 	line_separator
 	exec_cmd "scp ~/plescripts/oracle_preinstall/rlwrap.alias grid@$server_name:~/"
+	exec_cmd "ssh grid@$server_name 'sed -i \"/.*rlwrap.alias/d\" profile.grid'"
 	exec_cmd "ssh grid@$server_name 'echo ". rlwrap.alias " >> profile.grid'"
 	LN
 }
 
-typeset -r cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exists $cfg_path
-for node_file in $cfg_path/node*
-do
-	server_name=$(cat $node_file | cut -d: -f2)
-	config_server $server_name
-done
+if [ $server != undef ]
+then
+	config_server  $server
+else
+	typeset -r cfg_path=~/plescripts/database_servers/$db
+	exit_if_dir_not_exists $cfg_path
+	for node_file in $cfg_path/node*
+	do
+		server_name=$(cat $node_file | cut -d: -f2)
+		config_server $server_name
+	done
+fi

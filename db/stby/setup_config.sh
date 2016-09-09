@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 PAUSE=ON
@@ -13,19 +14,21 @@ typeset -r str_usage=\
 	-standby=name      Nom de la base standby (sera créée)
 	-standby_host=name Nom du serveur ou résidera la standby
 
-	-skip_setup_primary
-	-skip_configuration
-	-skip_duplicate
-"	 
+	-skip_duplicate               La base est dupliquée
+		-skip_dbs_config          La config des bases est faite.
+			-skip_setup_primary   La config de la primary est faite.
+	-skip_finalyze_standby_config La standby est finalisée.
+"
 
 info "Running : $ME $*"
 
 typeset primary=undef
 typeset standby=undef
 typeset standby_host=undef
-typeset skip_configuration=no
+typeset skip_dbs_config=no
 typeset skip_setup_primary=no
 typeset skip_duplicate=no
+typeset	skip_finalyze_standby_config=no
 
 while [ $# -ne 0 ]
 do
@@ -51,8 +54,8 @@ do
 			shift
 			;;
 
-		-skip_configuration)
-			skip_configuration=yes
+		-skip_dbs_config)
+			skip_dbs_config=yes
 			shift
 			;;
 
@@ -63,6 +66,11 @@ do
 
 		-skip_duplicate)
 			skip_duplicate=yes
+			shift
+			;;
+
+		-skip_finalyze_standby_config)
+			skip_finalyze_standby_config=yes
 			shift
 			;;
 
@@ -85,52 +93,11 @@ exit_if_param_undef primary			"$str_usage"
 exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
 
-typeset -r	SQL_PROMPT="prompt SQL>"
-
-#	$@ contient une commande à exécuter.
-#	La fonction n'exécute pas la commande elle :
-#		- affiche le prompt SQL> suivi de la commande.
-#		- affiche sur la seconde ligne la commande.
-#
-#	Le but étant de construire dans une fonction 'les_commandes' l'ensemble des
-#	commandes à exécuter à l'aide de to_exec.
-#	La fonction 'les_commandes' donnera la liste des commandes à la fonction run_sqlplus
-function to_exec
-{
-cat<<WT
-prompt
-$SQL_PROMPT $@;
-$@
-WT
-}
-
-#	Exécute les commandes "$@" avec sqlplus en sysdba
-function run_sqlplus
-{
-	fake_exec_cmd sqlplus -s sys/$oracle_password as sysdba
-	printf "set echo off\nset timin on\n$@\n" | sqlplus -s sys/$oracle_password as sysdba
-	LN
-}
-
 function run_sqlplus_on_standby
 {
 	fake_exec_cmd sqlplus -s sys/$oracle_password@${standby} as sysdba
 	printf "set echo off\nset timin on\n$@\n" | sqlplus -s sys/$oracle_password@${standby} as sysdba
 	LN
-}
-
-function result_of_query
-{
-	typeset -r	query="$1"
-	info "run $query"
-	printf "whenever sqlerror exit 1\nset term off echo off feed off heading off\n$query" | sqlplus -s sys/$oracle_password as sysdba
-}
-
-function exec_query
-{
-	typeset -r	query="$1"
-	info "run $query"
-	printf "whenever sqlerror exit 1\n$query" | sqlplus -s sys/$oracle_password as sysdba
 }
 
 function set_primary_cfg
@@ -166,7 +133,7 @@ function create_standby_redo_logs
 
 	for i in $( seq $nr )
 	do
-		to_exec "alter database add standby logfile size $redo_size_mb;"
+		to_exec "alter database add standby logfile thread 1 size $redo_size_mb;"
 	done
 }
 
@@ -328,8 +295,6 @@ function start_standby
 	exec_cmd -c "ssh $standby_host mkdir -p $ORACLE_BASE/admin/$standby/adump"
 	LN
 
-	test_pause
-
 	line_separator
 	info "Configure et démarre $standby sur $standby_host (configuration minimaliste.)"
 	ssh -t -t $standby_host<<EOS
@@ -375,7 +340,7 @@ EOR
 
 function duplicate
 {
-	if [ $skip_configuration == no ]
+	if [ $skip_dbs_config == no ]
 	then
 		if [ $skip_setup_primary == no ]
 		then
@@ -403,6 +368,12 @@ function duplicate
 
 	line_separator
 	run_duplicate
+
+	line_separator
+	info "Il faut redémarrer la base pour prendre en compte log_archive_dest_2 (bug ?)"
+	exec_cmd "srvctl stop database -db $primary"
+	exec_cmd "srvctl start database -db $primary"
+	LN
 }
 
 function cmd_setup_broker_for_database
@@ -419,8 +390,67 @@ function cmd_setup_broker_for_database
 	to_exec "alter system set dg_broker_start=true scope=both sid='*';"
 }
 
+function finalyze_standby_config
+{
+	line_separator
+	info "Enregistre la base dans le CRS."
+	exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl add database \
+		-db $standby \
+		-oraclehome $ORACLE_HOME \
+		-spfile $ORACLE_HOME/dbs/spfile${standby}.ora \
+		-role physical_standby \
+		-dbname $primary \
+		-diskgroup DATA,FRA \
+		-verbose\""
+	LN
+
+	info "Arrêt/démarrage pour que ohas prenne en compte la base"
+	run_sqlplus_on_standby "$(to_exec "shutdown immediate;")"
+	exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl start database -db $standby\""
+	LN
+
+	#alter database recover managed standby database cancel;
+	line_separator
+	info "Démarre la synchro."
+	#	alter database recover managed standby database using current logfile disconnect;
+	#	est deprecated. Voir alert.log après exécution.
+	run_sqlplus_on_standby "$(to_exec "alter database recover managed standby database disconnect;")"
+	LN
+}
+
+function configure_and_enable_broker
+{
+	line_separator
+	info "Configuration du broker sur les bases :"
+	info "  Sur la primaire $primary"
+	run_sqlplus "$(cmd_setup_broker_for_database $primary)"
+	LN
+	info "  Sur la standby $standby"
+	run_sqlplus_on_standby "$(cmd_setup_broker_for_database $standby)"
+	LN
+
+	line_separator
+	info "Activation du broker"
+	run_sqlplus "$(to_exec "alter system set log_Archive_dest_2='';")"
+	run_sqlplus_on_standby "$(to_exec "alter system set log_Archive_dest_2='';")"
+	LN
+
+	info -n "Temporisation : "; pause_in_secs 30; LN
+
+	dgmgrl<<EOS 
+	connect sys/$oracle_password
+	create configuration 'PRODCONF' as primary database is $primary connect identifier is $primary; 
+	add database $standby as connect identifier is $standby maintained as physical;
+	enable configuration;
+EOS
+	info "dgmgrl return code = $?"
+	LN
+}
+
 typeset	-r	primary_host=$(hostname -s)
 typeset	-r	tnsnames_file=$TNS_ADMIN/tnsnames.ora
+
+chrono_start
 
 info "Create dataguard :"
 info "	- from database $primary on $primary_host"
@@ -447,63 +477,12 @@ LN
 
 [ $skip_duplicate == no ] && duplicate
 
-line_separator
-info "Il faut redémarrer la base pour prendre en compte log_archive_dest_2 (bug ?)"
-exec_cmd "srvctl stop database -db $primary"
-exec_cmd "srvctl start database -db $primary"
-LN
+[ $skip_finalyze_standby_config == no ] && finalyze_standby_config
 
-info "Enregistre la base dans le CRS."
-exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl add database \
-	-db $standby \
-	-oraclehome $ORACLE_HOME \
-	-spfile $ORACLE_HOME/dbs/spfile${standby}.ora \
-	-role physical_standby \
-	-dbname $primary \
-	-diskgroup DATA,FRA \
-	-verbose\""
-LN
-
-info "Stop la base"
-run_sqlplus_on_standby "$(to_exec "shutdown immediate;")"
-LN
-
-info "Démarre la base"
-exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl start database -db $standby\""
-LN
-
-line_separator
-#alter database recover managed standby database cancel;
-info "Démarre la synchro."
-#	alter database recover managed standby database using current logfile disconnect;
-#	est deprecated. Voir alert.log après exécution.
-run_sqlplus_on_standby "$(to_exec "alter database recover managed standby database disconnect;")"
-LN
-
-line_separator
-info "Configuration du broker sur les bases :"
-info "  Sur la primaire $primary"
-run_sqlplus "$(cmd_setup_broker_for_database $primary)"
-LN
-info "  Sur la standby $standby"
-run_sqlplus_on_standby "$(cmd_setup_broker_for_database $standby)"
-LN
-
-info -n "Temporisation : "; pause_in_secs 10; LN
-
-line_separator
-info "Activation du broker"
-run_sqlplus "$(to_exec "alter system set log_Archive_dest_2='';")"
-run_sqlplus_on_standby "$(to_exec "alter system set log_Archive_dest_2='';")"
-LN
-dgmgrl<<EOS 
-connect sys/$oracle_password
-create configuration 'PRODCONF' as primary database is $primary connect identifier is $primary; 
-add database $standby as connect identifier is $standby maintained as physical;
-enable configuration;
-EOS
-LN
+configure_and_enable_broker
 
 line_separator
 info "Maintenant les services :("
 info "Plus tard..."
+
+chrono_stop $ME

@@ -1039,10 +1039,12 @@ function pause_in_secs
 	return ${#buffer}
 }
 
+ple_start=0
 #*> chrono_start
 #*> Démarre le chrono
 function chrono_start
 {
+	[ $ple_start -ne 0 ] && error "2x call : chrono_start" && exit 1
 	ple_start=$SECONDS
 }
 
@@ -1062,6 +1064,8 @@ function chrono_stop
 			info "$1 ${BOLD}$(fmt_seconds $(( SECONDS - ple_start )) )${NORM}"
 		fi
 	fi
+
+	ple_start=0
 }
 
 PAUSE=OFF

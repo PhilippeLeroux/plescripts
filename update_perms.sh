@@ -5,8 +5,7 @@
 EXEC_CMD_ACTION=EXEC
 
 info "owner & group"
-exec_cmd -c "sudo find ~/plescripts/ -type f | xargs chown ${common_user_name}:users"
-exec_cmd -c "sudo find ~/plescripts/ -type d | xargs chown ${common_user_name}:users"
+exec_cmd -c "sudo find ~/plescripts/ -type d -exec chown -R ${common_user_name}:users {} \;"
 LN
 
 info "Les répertoires"

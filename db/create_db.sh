@@ -405,7 +405,7 @@ function create_services_for_pdb
 #	============================================================================
 #	MAIN
 #	============================================================================
-typeset -r script_start_at=$SECONDS
+chrono_start
 
 check_rac_or_single
 check_if_ASM_used
@@ -499,5 +499,4 @@ LN
 
 stats_tt stop create_$lower_db
 
-info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
-LN
+chrono_stop $ME
