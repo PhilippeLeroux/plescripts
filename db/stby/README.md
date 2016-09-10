@@ -19,8 +19,9 @@
 
    `./create_dataguard.sh -primary=daisy -standby=donald -standby_host=srvdonald01`
 
-##	Prochaine étape 
- Mise en oeuvre des services pour effectuer les bascules.
+##	Prochaine étape : tester la bascule. 
+ Les services oci sont mis en oeuvres. Faire les services java.
+ Tester les bascules.
 
 ##	Prochaine étape après la prochaine étape.
  L'observeur : sur K2 ??
