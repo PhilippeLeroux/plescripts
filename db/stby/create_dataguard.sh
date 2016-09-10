@@ -1,6 +1,7 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
+PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
@@ -10,14 +11,29 @@ PAUSE=ON
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-primary=name      Nom de la base primaire (doit exister)
+	[-primary=name]    Nom de la base primaire, par défaut lie \$ORACLE_SID
 	-standby=name      Nom de la base standby (sera créée)
 	-standby_host=name Nom du serveur ou résidera la standby
 
-	-skip_duplicate               La base est dupliquée
-		-skip_dbs_config          La config des bases est faite.
-			-skip_setup_primary   La config de la primary est faite.
-	-skip_finalyze_standby_config La standby est finalisée.
+	Le script doit être exécuté sur la base primaire.
+	Pour reconstruire une base suite à un faileover utiliser -skip_setup_primary
+
+	Ordre des actions :
+		setup_primary : configuration de la base primaire.
+			-skip_setup_primary par exemple après un failover et qu'il faut
+			refaire une base.
+
+		setup_network : configuration des tns et listeners des 2 serveurs.
+			-skip_setup_network passe cette étape.
+
+		duplicate     : duplication de la base primaire.
+			-skip_duplicate passe cette étape.
+
+		finalyze_standby_config : finalise la configuration de la standby
+			-skip_finalyze_standby_config passe cette étape.
+
+		configure_and_enable_broker : configure et démarre le broker.
+			-skip_configure_and_enable_broker passe cette étape.
 "
 
 info "Running : $ME $*"
@@ -25,10 +41,12 @@ info "Running : $ME $*"
 typeset primary=undef
 typeset standby=undef
 typeset standby_host=undef
-typeset skip_dbs_config=no
+
 typeset skip_setup_primary=no
+typeset skip_setup_network=no
 typeset skip_duplicate=no
 typeset	skip_finalyze_standby_config=no
+typeset	skip_configure_and_enable_broker=no
 
 while [ $# -ne 0 ]
 do
@@ -54,13 +72,13 @@ do
 			shift
 			;;
 
-		-skip_dbs_config)
-			skip_dbs_config=yes
+		-skip_setup_primary)
+			skip_setup_primary=yes
 			shift
 			;;
 
-		-skip_setup_primary)
-			skip_setup_primary=yes
+		-skip_setup_network)
+			skip_setup_network=yes
 			shift
 			;;
 
@@ -71,6 +89,11 @@ do
 
 		-skip_finalyze_standby_config)
 			skip_finalyze_standby_config=yes
+			shift
+			;;
+
+		-skip_configure_and_enable_broker)
+			skip_configure_and_enable_broker=yes
 			shift
 			;;
 
@@ -89,6 +112,7 @@ do
 	esac
 done
 
+[ $primary == undef ] && primary=ORACLE_SID
 exit_if_param_undef primary			"$str_usage"
 exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
@@ -338,31 +362,31 @@ EOR
 	exec_cmd "rman target sys/$oracle_password@$primary auxiliary sys/$oracle_password@$standby @/tmp/duplicate.rman"
 }
 
+function setup_primary
+{
+	line_separator
+	info "Setup primary database $primary"
+	run_sqlplus "$(set_primary_cfg)"
+	LN
+
+	line_separator
+	add_standby_redolog
+}
+
+function setup_network
+{
+	line_separator
+	setup_tnsnames
+
+	line_separator
+	primary_listener_add_static_entry
+
+	line_separator
+	standby_listener_add_static_entry
+}
+
 function duplicate
 {
-	if [ $skip_dbs_config == no ]
-	then
-		if [ $skip_setup_primary == no ]
-		then
-			line_separator
-			info "Setup primary database $primary"
-			run_sqlplus "$(set_primary_cfg)"
-			LN
-
-			line_separator
-			add_standby_redolog
-		fi
-
-		line_separator
-		setup_tnsnames
-
-		line_separator
-		primary_listener_add_static_entry
-
-		line_separator
-		standby_listener_add_static_entry
-	fi
-
 	line_separator
 	start_standby
 
@@ -393,7 +417,7 @@ function cmd_setup_broker_for_database
 function finalyze_standby_config
 {
 	line_separator
-	info "Enregistre la base dans le CRS."
+	info "Enregistre la base dans le GI."
 	exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl add database \
 		-db $standby \
 		-oraclehome $ORACLE_HOME \
@@ -404,7 +428,7 @@ function finalyze_standby_config
 		-verbose\""
 	LN
 
-	info "Arrêt/démarrage pour que ohas prenne en compte la base"
+	info "Arrêt/démarrage pour que le GI prenne en compte la base"
 	run_sqlplus_on_standby "$(to_exec "shutdown immediate;")"
 	exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl start database -db $standby\""
 	LN
@@ -437,14 +461,44 @@ function configure_and_enable_broker
 
 	info -n "Temporisation : "; pause_in_secs 30; LN
 
-	dgmgrl<<EOS 
+	dgmgrl<<EOS
 	connect sys/$oracle_password
-	create configuration 'PRODCONF' as primary database is $primary connect identifier is $primary; 
+	create configuration 'PRODCONF' as primary database is $primary connect identifier is $primary;
 	add database $standby as connect identifier is $standby maintained as physical;
 	enable configuration;
 EOS
 	info "dgmgrl return code = $?"
 	LN
+}
+
+function create_stby_service
+{
+typeset -r query=\
+"select
+	c.name
+from
+	gv\$containers c
+	inner join gv\$instance i
+		on  c.inst_id = i.inst_id
+	where
+		i.instance_name = '$primary'
+	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' );
+"
+	line_separator
+	while read pdbName
+	do
+		[ x"$pdbName" == x ] && continue
+
+		info "Create stby service for pdb $pdbName on cdb $primary"
+		# Le service est démarré puis stopper car sinon on ne peut pas le démarrer sur la standby
+		exec_cmd "~/plescripts/db/create_service_for_admin_managed.sh -db=$primary -pdbName=$pdbName -prefixService=pdb${pdbName}_stby -role=physical_standby"
+		exec_cmd "srvctl stop service -service pdb${pdbName}_stby_oci -db $primary"
+		LN
+		info "Create services for pdb $pdbName on cdb $standby"
+		exec_cmd "ssh -t -t $standby_host '. .profile; ~/plescripts/db/create_service_for_admin_managed.sh -db=$standby -pdbName=$pdbName -prefixService=pdb${pdbName}_stby -role=physical_standby'"
+		exec_cmd "ssh -t -t $standby_host '. .profile; ~/plescripts/db/create_service_for_admin_managed.sh -db=$standby -pdbName=$pdbName -prefixService=pdb${pdbName} -role=primary -start=no'"
+		LN
+	done<<<"$(result_of_query "$query")"
 }
 
 typeset	-r	primary_host=$(hostname -s)
@@ -475,14 +529,16 @@ ORACLE_SID=$primary
 ORAENV_ASK=NO . oraenv
 LN
 
+[ $skip_setup_primary == no ] && setup_primary
+
+[ $skip_setup_network == no ] && setup_network
+
 [ $skip_duplicate == no ] && duplicate
 
 [ $skip_finalyze_standby_config == no ] && finalyze_standby_config
 
-configure_and_enable_broker
+[ $skip_configure_and_enable_broker == no ] && configure_and_enable_broker
 
-line_separator
-info "Maintenant les services :("
-info "Plus tard..."
+create_stby_service
 
 chrono_stop $ME

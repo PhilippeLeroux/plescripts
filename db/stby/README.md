@@ -17,7 +17,7 @@
 
  - Exécuter le script :
 
-   `./setup_config.sh -primary=daisy -standby=donald -standby_host=srvdonald01`
+   `./create_dataguard.sh -primary=daisy -standby=donald -standby_host=srvdonald01`
 
 ##	Prochaine étape 
  Mise en oeuvre des services pour effectuer les bascules.

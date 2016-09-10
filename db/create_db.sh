@@ -174,6 +174,8 @@ done
 
 typeset		usefs=no
 
+typeset -r redoLogFileSizeMb=128
+
 #	============================================================================
 
 function make_dbca_args
@@ -226,7 +228,7 @@ function make_dbca_args
 	fi
 	add_dynamic_cmd_param "-sysPassword    $sysPassword"
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
-	add_dynamic_cmd_param "-redoLogFileSize 512"
+	add_dynamic_cmd_param "-redoLogFileSize $redoLogFileSizeMb"
 
 	add_dynamic_cmd_param "-totalMemory $totalMemory"
 
@@ -392,8 +394,7 @@ function create_services_for_pdb
 			if [ $usefs == no ]
 			then
 				info "Create service for SINGLE database."
-				exec_cmd srvctl add service -db $db -service pdb$pdbName -pdb $pdbName
-				exec_cmd srvctl start service -db $db -service pdb$pdbName
+				exec_cmd "~/plescripts/db/create_service_for_admin_managed.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName}"
 				LN
 			else
 				warning "No services created for pdb, DIY"

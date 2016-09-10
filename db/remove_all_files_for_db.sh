@@ -8,7 +8,7 @@ PLELIB_OUTPUT=FILE
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME ...."
+typeset -r str_usage="Usage : $ME -db=name"
 
 typeset db=undef
 
@@ -46,10 +46,10 @@ ORACLE_BASE=/u01/app/oracle
 exec_cmd -c "srvctl stop database -db $db"
 exec_cmd -c "srvctl remove database -db $lower_db<<<y"
 
-oracle_rm_1="su - oracle -c \"rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*\""
-oracle_rm_2="su - oracle -c \"rm -rf $ORACLE_BASE/diag/rdbms/$lower_db\""
-oracle_rm_3="su - oracle -c \"rm -rf $ORACLE_HOME/dbs/*${db}*\""
-oracle_rm_4="su - oracle -c \"rm -rf $ORACLE_BASE/admin/$db\""
+oracle_rm_1="su - oracle -c 'rm -rf \$ORACLE_BASE/cfgtoollogs/dbca/${db}*'"
+oracle_rm_2="su - oracle -c 'rm -rf \$ORACLE_BASE/diag/rdbms/$lower_db'"
+oracle_rm_3="su - oracle -c 'rm -rf \$ORACLE_HOME/dbs/*${db}*'"
+oracle_rm_4="su - oracle -c 'rm -rf \$ORACLE_BASE/admin/$db'"
 
 clean_oratab_cmd1="sed  '/$db[_|0-9].*/d' /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
@@ -66,6 +66,7 @@ exec_cmd -c "$clean_oratab_cmd1"
 exec_cmd -c "$clean_oratab_cmd2"
 LN
 
+#	ATTENTION PAS TESTE DEPUIS CHANGEMENT DES VARIABLES oracle_rm_X
 typeset -r cfg_path=~/plescripts/database_servers/${db}
 if [ -d $cfg_path ]
 then
