@@ -1,5 +1,6 @@
 # Fichier [g]vim de travaille
 *.swp
+*.sw*
 *.log
 #Dolpin
 .Trash*

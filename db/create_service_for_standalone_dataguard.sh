@@ -13,6 +13,8 @@ typeset -r str_usage=\
 	-prefixService=str
 	[-role=primary]    (primary, physical_standby, logical_standby, snapshot_standby)
 	[-start=yes]
+
+RAC non pris en compte.
 "
 
 info "Running : $ME $*"
@@ -96,14 +98,17 @@ LN
 #	To use Transaction Guard, a DBA must grant permission, as follows:
 #	GRANT EXECUTE ON DBMS_APP_CONT;
 
-add_dynamic_cmd_param "add service -service ${prefixService}_oci "
+add_dynamic_cmd_param "add service -service ${prefixService}_oci"
 add_dynamic_cmd_param "    -pdb $pdbName -db $db"
-[ $role != undef ] && add_dynamic_cmd_param "    -role           $role"
-add_dynamic_cmd_param "    -policy         automatic"
-add_dynamic_cmd_param "    -failovertype   session"
-add_dynamic_cmd_param "    -failovermethod basic"
-add_dynamic_cmd_param "    -clbgoal        long"
-add_dynamic_cmd_param "    -rlbgoal        throughput"
+if [ $role != undef ]
+then
+	add_dynamic_cmd_param "    -role           $role"
+	add_dynamic_cmd_param "    -policy         automatic"
+	add_dynamic_cmd_param "    -failovertype   session"
+	add_dynamic_cmd_param "    -failovermethod basic"
+	add_dynamic_cmd_param "    -clbgoal        long"
+	add_dynamic_cmd_param "    -rlbgoal        throughput"
+fi
 
 exec_dynamic_cmd srvctl
 LN
@@ -114,26 +119,33 @@ then
 	LN
 fi
 
-exit
 line_separator
 #	Services for Application Continuity (java)
-info "create service ${prefixService}_java on pdb $pdbName (db = $db) attached to pool $poolName"
+info "create service ${prefixService}_java on pdb $pdbName (db = $db)"
 LN
 
-add_dynamic_cmd_param "add service -service ${prefixService}_java "
-add_dynamic_cmd_param "    -pdb $pdbName -db $db -serverpool $poolName"
-add_dynamic_cmd_param "    -cardinality    uniform"
-add_dynamic_cmd_param "    -policy         automatic"
-add_dynamic_cmd_param "    -failovertype   transaction"
-add_dynamic_cmd_param "    -failovermethod basic"
-add_dynamic_cmd_param "    -clbgoal        long"
-add_dynamic_cmd_param "    -rlbgoal        throughput"
-add_dynamic_cmd_param "    -commit_outcome true"
+add_dynamic_cmd_param "add service -service ${prefixService}_java"
+add_dynamic_cmd_param "    -pdb $pdbName -db $db"
+if [ $role != undef ]
+then
+	add_dynamic_cmd_param "    -role           $role"
+	add_dynamic_cmd_param "    -policy         automatic"
+#	add_dynamic_cmd_param "    -failovertype   transaction"
+	add_dynamic_cmd_param "    -failovertype   session"
+	add_dynamic_cmd_param "    -failovermethod basic"
+	add_dynamic_cmd_param "    -clbgoal        long"
+	add_dynamic_cmd_param "    -rlbgoal        throughput"
+#	add_dynamic_cmd_param "    -commit_outcome true"
+fi
 
 exec_dynamic_cmd srvctl
 LN
-exec_cmd srvctl start service -service ${prefixService}_java  -db $db
-LN
+
+if [ $start == yes ]
+then
+	exec_cmd srvctl start service -service ${prefixService}_java  -db $db
+	LN
+fi
 
 line_separator
 exec_cmd srvctl status service -db $db

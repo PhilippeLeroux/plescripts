@@ -394,7 +394,7 @@ function create_services_for_pdb
 			if [ $usefs == no ]
 			then
 				info "Create service for SINGLE database."
-				exec_cmd "~/plescripts/db/create_service_for_admin_managed.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName}"
+				exec_cmd "~/plescripts/db/create_service_for_standalone_dataguard.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName}"
 				LN
 			else
 				warning "No services created for pdb, DIY"

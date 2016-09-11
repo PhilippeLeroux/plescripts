@@ -6,7 +6,7 @@ PLELIB_OUTPUT=FILE
 . ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
-PAUSE=ON
+#PAUSE=ON
 
 typeset -r ME=$0
 typeset -r str_usage=\
@@ -124,7 +124,7 @@ function run_sqlplus_on_standby
 	LN
 }
 
-function set_primary_cfg
+function get_primary_cfg
 {
 	to_exec "alter system set standby_file_management='AUTO' scope=both sid='*';"
 
@@ -136,13 +136,16 @@ function set_primary_cfg
 
 	to_exec "alter system set log_archive_dest_2='service=$standby async valid_for=(online_logfiles,primary_role) db_unique_name=$standby' scope=both sid='*';"
 
+	# Nécessaire si on détruit et refait la dataguard.
+	to_exec "alter system set log_archive_dest_state_2='enable' scope=both sid='*';"
+
 	echo prompt
 	echo prompt --	Paramètres nécessitant un arrêt/démarrage :
 	to_exec "alter system set remote_login_passwordfile='EXCLUSIVE' scope=spfile sid='*';"
 
-	to_exec "alter system set db_file_name_convert='+DATA/$standby/','+DATA/$primary/','+FRA/$standby/','+FRA/$primary/' scope=spfile sid='*';"
+	#to_exec "alter system set db_file_name_convert='+DATA/$standby/','+DATA/$primary/','+FRA/$standby/','+FRA/$primary/' scope=spfile sid='*';"
 
-	to_exec "alter system set log_file_name_convert='+DATA/$standby/','+DATA/$primary/','+FRA/$standby/','+FRA/$primary/' scope=spfile sid='*';"
+	#to_exec "alter system set log_file_name_convert='+DATA/$standby/','+DATA/$primary/','+FRA/$standby/','+FRA/$primary/' scope=spfile sid='*';"
 
 	to_exec "alter database force logging;"
 
@@ -345,15 +348,17 @@ function run_duplicate
 		spfile
 			parameter_value_convert '$primary','$standby'
 			set db_unique_name='$standby'
+			set db_create_file_dest='+DATA'
+			set db_recovery_file_dest='+FRA'
 			set control_files='+DATA','+FRA'
 			set cluster_database='false'
-			set db_file_name_convert='+DATA/$standby/','+DATA/$primary/','+FRA/$standby/','+FRA/$primary/'
-			set log_file_name_convert='+DATA/$standby/','+DATA/$primary/','+FRA/$standby/','+FRA/$primary/'
 			set fal_server='$primary'
 			set standby_file_management='AUTO'
 			set log_archive_config='dg_config=($primary,$standby)'
 			set log_archive_dest_1='location=USE_DB_RECOVERY_FILE_DEST valid_for=(all_logfiles,all_roles) db_unique_name=$standby'
+			set log_archive_dest_state_1='enable'
 			set log_Archive_dest_2='service=$primary async noaffirm reopen=15 valid_for=(all_logfiles,primary_role) db_unique_name=$primary'
+			set log_archive_dest_state_2='enable'
 			nofilenamecheck
 		 ;
 	}
@@ -366,7 +371,7 @@ function setup_primary
 {
 	line_separator
 	info "Setup primary database $primary"
-	run_sqlplus "$(set_primary_cfg)"
+	run_sqlplus "$(get_primary_cfg)"
 	LN
 
 	line_separator
@@ -393,10 +398,12 @@ function duplicate
 	line_separator
 	run_duplicate
 
+if [ 0 -eq 1 ]; then
 	line_separator
 	info "Il faut redémarrer la base pour prendre en compte log_archive_dest_2 (bug ?)"
 	exec_cmd "srvctl stop database -db $primary"
 	exec_cmd "srvctl start database -db $primary"
+fi
 	LN
 }
 
@@ -417,6 +424,19 @@ function cmd_setup_broker_for_database
 function finalyze_standby_config
 {
 	line_separator
+	info "Démarre la synchro."
+	#	alter database recover managed standby database using current logfile disconnect;
+	#	est deprecated. Voir alert.log après exécution.
+	run_sqlplus_on_standby "$(to_exec "alter database recover managed standby database disconnect;")"
+	LN
+
+#	run_sqlplus "alter system switch logfile;\nalter system switch logfile;\nalter system switch logfile;"
+#	LN
+
+#	test_pause "Vérifier la synchro !"
+#info -n "Temporisation "; pause_in_secs 10; LN
+
+	line_separator
 	info "Enregistre la base dans le GI."
 	exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl add database \
 		-db $standby \
@@ -431,14 +451,6 @@ function finalyze_standby_config
 	info "Arrêt/démarrage pour que le GI prenne en compte la base"
 	run_sqlplus_on_standby "$(to_exec "shutdown immediate;")"
 	exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl start database -db $standby\""
-	LN
-
-	#alter database recover managed standby database cancel;
-	line_separator
-	info "Démarre la synchro."
-	#	alter database recover managed standby database using current logfile disconnect;
-	#	est deprecated. Voir alert.log après exécution.
-	run_sqlplus_on_standby "$(to_exec "alter database recover managed standby database disconnect;")"
 	LN
 }
 
@@ -471,6 +483,12 @@ EOS
 	LN
 }
 
+function drop_all_services
+{
+	line_separator
+	exec_cmd ~/plescripts/db/drop_all_services.sh -db=$primary
+}
+
 function create_stby_service
 {
 typeset -r query=\
@@ -484,19 +502,41 @@ from
 		i.instance_name = '$primary'
 	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' );
 "
+	#	Les services existant ne somt pas valables pour un dataguard.
+	drop_all_services
+
 	line_separator
 	while read pdbName
 	do
 		[ x"$pdbName" == x ] && continue
 
 		info "Create stby service for pdb $pdbName on cdb $primary"
-		# Le service est démarré puis stopper car sinon on ne peut pas le démarrer sur la standby
-		exec_cmd "~/plescripts/db/create_service_for_admin_managed.sh -db=$primary -pdbName=$pdbName -prefixService=pdb${pdbName}_stby -role=physical_standby"
+		exec_cmd "~/plescripts/db/create_service_for_standalone_dataguard.sh \
+				-db=$primary -pdbName=$pdbName \
+				-prefixService=pdb${pdbName} -role=primary"
+
+		info "Les services pour le role standby sur démarrés pour contourner un bug."
+		exec_cmd "~/plescripts/db/create_service_for_standalone_dataguard.sh \
+				-db=$primary -pdbName=$pdbName \
+				 -prefixService=pdb${pdbName}_stby -role=physical_standby"
+
+		info "Mainenant ils sont stoppés, toujours pour l'histoire du bug."
 		exec_cmd "srvctl stop service -service pdb${pdbName}_stby_oci -db $primary"
+		exec_cmd "srvctl stop service -service pdb${pdbName}_stby_java -db $primary"
 		LN
+
 		info "Create services for pdb $pdbName on cdb $standby"
-		exec_cmd "ssh -t -t $standby_host '. .profile; ~/plescripts/db/create_service_for_admin_managed.sh -db=$standby -pdbName=$pdbName -prefixService=pdb${pdbName}_stby -role=physical_standby'"
-		exec_cmd "ssh -t -t $standby_host '. .profile; ~/plescripts/db/create_service_for_admin_managed.sh -db=$standby -pdbName=$pdbName -prefixService=pdb${pdbName} -role=primary -start=no'"
+		info "BUG : il faut démarrer/arrêter les service standby et la primaire"
+		info "      sinon le démarrage des services standby échoue."
+		exec_cmd "ssh -t -t $standby_host '. .profile; \
+				~/plescripts/db/create_service_for_standalone_dataguard.sh \
+				-db=$standby -pdbName=$pdbName \
+				-prefixService=pdb${pdbName}_stby -role=physical_standby'"
+
+		exec_cmd "ssh -t -t $standby_host '. .profile; \
+				~/plescripts/db/create_service_for_standalone_dataguard.sh \
+				-db=$standby -pdbName=$pdbName \
+				-prefixService=pdb${pdbName} -role=primary -start=no'"
 		LN
 	done<<<"$(result_of_query "$query")"
 }
@@ -533,7 +573,7 @@ LN
 
 [ $skip_setup_network == no ] && setup_network
 
-[ $skip_duplicate == no ] && duplicate
+[ $skip_duplicate == no ] && duplicate && test_pause "duplicate terminé."
 
 [ $skip_finalyze_standby_config == no ] && finalyze_standby_config
 
