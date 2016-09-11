@@ -1,5 +1,6 @@
 set ts=4
 set sw=4
+set softtabstop=4	" aka sts ne fonctionne pas avec vi
 set listchars=tab:→\ ,eol:¬,trail:⋅,nbsp:⋅
 "set cc=81 wrap
 "set nu
@@ -28,14 +29,21 @@ endif
 call pathogen#infect()
 call pathogen#helptags()
 
-if has("gui_running")
-	set columns=120
-	set lines=48
-	winpos 0 36
+if g:first_load == 1
+	if has("gui_running")
+		set columns=120
+		set lines=48
+		winpos 0 36
+	endif
 endif
 
-" Pour mes fichiers template je désactive la syntaxe
-autocmd BufRead *.template,*.doc.sh set syn=off
+"	Pour vim-markdown
+let g:vim_markdown_folding_disabled = 1
+let g:vim_markdown_toc_autofit = 1
+set conceallevel=2
+
+" Pour mes fichiers template et .md je désactive la syntaxe
+autocmd BufRead *.template,*.doc.sh,*.md set syn=off
 
 "	Activé pour le plugin markdown
 filetype plugin on
@@ -80,8 +88,8 @@ let g:syntastic_check_on_wq = 1
 autocmd BufRead *.template,*.doc.sh let g:syntastic_check_on_open = 0
 
 "	============================================================================
-source $HOME/vimfunc/CheckFileType.vim
-autocmd! BufRead * call CheckFileType()
+source $HOME/vimfunc/ApplyConfigOnFileType.vim
+autocmd! BufRead * call ApplyConfigOnFileType()
 
 "	============================================================================
 source $HOME/vimfunc/FrDictionnaire.vim
@@ -131,10 +139,6 @@ map <silent> <F6> :call ToggleColorscheme()<CR>
 "	============================================================================
 "	UndoTree
 "	============================================================================
-if has("persistent_undo")
-    set undodir=~/.vim/undodir/
-    set undofile
-endif
 let g:undotree_WindowLayout=3
 nnoremap <silent> <F7> :UndotreeToggle<CR>
 
@@ -168,5 +172,22 @@ nnoremap <silent> <C-n> :GitGutterNextHunk<CR>
 source $HOME/vimfunc/ManWordUnderTheCursor.vim
 nnoremap <silent> <C-M> :call ManWordUnderTheCursor()<CR>
 
+function! TocMarkdown()
+	if expand('%:t:r')
+		call system('gh-md-toc ' . shellescape(bufname("%")) . " >/tmp/toc.md")
+		set previewheight=15
+		pedit! /tmp/toc.md
+	endif
+endfunction
+nnoremap <silent> <C-t> :call TocMarkdown()<CR>
+
+"	============================================================================
+source $HOME/vimfunc/ManWordUnderTheCursor.vim
+nnoremap <silent> <C-m> :call ManWordUnderTheCursor()<CR>
+
+"	============================================================================
+"	xolox/vim-session
+"let g:session_autoload='yes'
+"let g:session_autosave='yes'
 endif "!has("compatible")
 
