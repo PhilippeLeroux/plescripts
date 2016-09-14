@@ -62,6 +62,7 @@ function get_ip_for_host
 	fi
 }
 
+#*> Supprime l'ip $1 du fichier ~/.ssh/know_hosts
 function remove_ip_from_known_hosts
 {
 	typeset -r ip=$1
@@ -91,8 +92,8 @@ function remove_from_known_hosts
 	fi
 }
 
-#	$1 server name.
-#	return public key
+#*>	$1 server name.
+#*>	return public key for server $1
 function get_public_key_for
 {
 	typeset -r srv_name=$1
@@ -101,6 +102,7 @@ function get_public_key_for
 	ssh-keyscan -t ecdsa $srv_name | tail -1 | sed "s/$srv_name/$srv_name,$server_ip/"
 }
 
+#*> Ajoute le serveur $1 au fichier ~/.ssh/known_hosts
 function add_2_know_hosts
 {
 	typeset -r srv_name=$1
@@ -113,8 +115,6 @@ function add_2_know_hosts
 	LN
 
 	typeset -r server_keyscan=$(get_public_key_for $srv_name)
-	#typeset -r server_keyscan=$(ssh-keyscan -t ecdsa $srv_name | tail -1 | sed "s/$srv_name/$srv_name,$server_ip/")
 	exec_cmd "echo \"$server_keyscan\" >> ~/.ssh/known_hosts"
 	LN
 }
-

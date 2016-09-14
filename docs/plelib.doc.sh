@@ -1,13 +1,13 @@
 ################################################################################
-Resume 2016/08/31 :
+Resume 2016/09/14 :
 ~~~~~~~~~~~~~~~~~~~
 
-# 42 publics functions
-# 10 privates functions
-# 1 undocumented functions
+# 43 publics functions
+# 11 privates functions
+# 0 undocumented functions
 
 ################################################################################
-42 publics functions :
+43 publics functions :
 ~~~~~~~~~~~~~~~~~~~~~~
 
 #*> Remove all visual makers from file $1
@@ -163,6 +163,11 @@ function initcap
 #*> Return a buffer filled with no# characteres car
 function fill
 
+#*>	Temporisation pendant $1 secondes
+#*>	$1 temps en secondes
+#*>	$2 msg par défaut le message est "Temporisation"
+function timing
+
 #*> pause_in_secs <seconds>
 #*> Fait une pause de <seconds> secondes.
 #*> Le décompte du temps écoulé sera affiché à la position courante du curseur.
@@ -224,14 +229,12 @@ function test_if_rpm_update_available
 
 
 ################################################################################
-1 undocumented functions :
+0 undocumented functions :
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-function test_pause # $1 message
 
 
 ################################################################################
-10 privates functions :
+11 privates functions :
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 #*< Active les effets visuels couleurs et autres.
@@ -272,6 +275,11 @@ function change_value
 function add_value
 
 #*<	Format ^var\s*=\s*value
+#*< Sert pour le debuggage.
+#*< Si des paramètres sont passés il sont affiché comme un message.
+#*< Pour que la fonction soit active il faut positionner la variable PAUSE à ON
+function test_pause # $1 message
+
 #*< get_initiator_for <db> <#node>
 #*< return initiator name for <db> and node <#node>
 function get_initiator_for

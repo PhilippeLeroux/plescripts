@@ -981,8 +981,9 @@ function fill
 #	Fonctions pratiques sur le temps.
 ################################################################################
 
-#	$1 temps en secondes
-#	$2 msg
+#*>	Temporisation pendant $1 secondes
+#*>	$1 temps en secondes
+#*>	$2 msg par défaut le message est "Temporisation"
 function timing
 {
 	typeset -ri secs=$1
@@ -1078,7 +1079,10 @@ function chrono_stop
 	ple_start=0
 }
 
-PAUSE=OFF
+PAUSE=OFF 
+#*< Sert pour le debuggage.
+#*< Si des paramètres sont passés il sont affiché comme un message.
+#*< Pour que la fonction soit active il faut positionner la variable PAUSE à ON
 function test_pause # $1 message
 {
 	if [ $PAUSE == ON ]
