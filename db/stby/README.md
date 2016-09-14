@@ -113,8 +113,8 @@
 
  * Les swhitchover ont été testés et fonctionnent.
 
-## Test du faileover
-  [Description des étapes](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/faileover.md)
- 
+## Faileover
+ [Effectuer un faileover](https://github.com/PhilippeLeroux/plescripts/wiki/faileover)
+
 ##	Prochaine étape.
  L'observeur : sur K2 ??
