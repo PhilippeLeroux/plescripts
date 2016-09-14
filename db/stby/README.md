@@ -19,7 +19,7 @@
    `./00_setup_equivalence.sh -server1=srvmars01 -server2=srvvenus01 -user1=oracle`
 
 ## Etat des lieux :
- - Initiallement la base est créées comme une SINGLE, les services sur la PDB mars01 est minimum :
+ - Initiallement la base est créées comme une SINGLE, les services sur la PDB mars01 sont minimaux :
 	```
 	oracle@srvmars01:MARS:oracle> srvctl config database -db mars
 	Database unique name: MARS
@@ -100,18 +100,18 @@
 
  * Duplication.
 
-   Le script de duplication est simple car les bases sont en 'Oracle Managed File' et
-   sur ASM. Pas besoin de [db|log]_convert.
+   Le script de duplication est simple car les bases sont en 'Oracle Managed File'.
+   Pas besoin de [db|log]_convert & co.
 
  * Services.
 
    Il y a 4 services par instance. Il y a 1 service pour les connexions OCI et 1
-   service pour les connexions JAVA. Les 2 autres son leur correspondance pour la
+   service pour les connexions JAVA. Les 2 autres ont leurs correspondances pour la
    standby (accès en lecture seul).
 
    _Note :_ ils n'ont pas été testés.
 
- * Les swhitchover ont été testés et fonctionnent.
+ * Le swhitchover est opérationnel.
 
 ## Faileover
  [Effectuer un faileover](https://github.com/PhilippeLeroux/plescripts/wiki/faileover)
