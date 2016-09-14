@@ -11,14 +11,14 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-primary=name]    Nom de la base primaire, par défaut lie \$ORACLE_SID
-	-standby=name      Nom de la base standby (sera créée)
-	-standby_host=name Nom du serveur ou résidera la standby
+	-standby=name       Nom de la base standby (sera créée)
+	-standby_host=name  Nom du serveur ou résidera la standby
+	[-skip_primary_cfg] A utiliser lors de la recréation d'une standby après failover.
 
-	Le script doit être exécuté sur la base primaire.
-	Pour reconstruire une base suite à un faileover utiliser -skip_setup_primary
+	Le script doit être exécuté sur la base primaire et l'envirronement de la base
+	primaire chargé.
 
-	Ordre des actions :
+	Flags de debug :
 		setup_primary : configuration de la base primaire.
 			-skip_setup_primary par exemple après un failover et qu'il faut
 			refaire une base.
@@ -38,9 +38,9 @@ typeset -r str_usage=\
 
 info "Running : $ME $*"
 
-typeset primary=undef
 typeset standby=undef
 typeset standby_host=undef
+typeset skip_primary_cfg=no
 
 typeset skip_setup_primary=no
 typeset skip_setup_network=no
@@ -57,11 +57,6 @@ do
 			shift
 			;;
 
-		-primary=*)
-			primary=$(to_upper ${1##*=})
-			shift
-			;;
-
 		-standby=*)
 			standby=$(to_upper ${1##*=})
 			shift
@@ -69,6 +64,11 @@ do
 
 		-standby_host=*)
 			standby_host=${1##*=}
+			shift
+			;;
+
+		-skip_primary_cfg)
+			skip_primary_cfg=yes
 			shift
 			;;
 
@@ -112,18 +112,46 @@ do
 	esac
 done
 
-[ $primary == undef ] && primary=ORACLE_SID
-exit_if_param_undef primary			"$str_usage"
+typeset -r primary=$ORACLE_SID
+if [[ x"$primary" == x || "$primary" == NOSID ]]
+then
+	error "ORACLE_SID not defined."
+	LN
+
+	info "$str_usage"
+	exit 1
+fi
+
 exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
 
-function run_sqlplus_on_standby
+#	Exécute la commande "$@" avec sqlplus sur la standby
+function sqlplus_cmd_on_standby
 {
 	fake_exec_cmd sqlplus -s sys/$oracle_password@${standby} as sysdba
-	printf "set echo off\nset timin on\n$@\n" | sqlplus -s sys/$oracle_password@${standby} as sysdba
+	printf "${SPOOL}set echo off\nset timin on\n$@\n" |\
+		 sqlplus -s sys/$oracle_password@${standby} as sysdba
 	LN
 }
 
+#	Lie et affiche la valeur du paramètre remote_login_passwordfile
+function read_remote_login_passwordfile
+{
+typeset -r query=\
+"select
+    value
+from
+    v\$parameter
+where
+    name = 'remote_login_passwordfile'
+;"
+
+	sqlplus_exec_query "$query" | tail -1
+}
+
+#	Fabrique l'ensemble des commandes permettant de configurer la base primaire.
+#	Toutes les commandes sont fabriquées avec la fonction to_exec.
+#	Passer la sortie de cette fonction en paramètre de la fonction sqlplus_cmd
 function get_primary_cfg
 {
 	to_exec "alter system set standby_file_management='AUTO' scope=both sid='*';"
@@ -132,27 +160,32 @@ function get_primary_cfg
 
 	to_exec "alter system set fal_server='$standby' scope=both sid='*';"
 
-	to_exec "alter system set log_archive_dest_1='location=use_db_recovery_file_dest valid_for=(all_logfiles,all_roles) db_unique_name=$primary' scope=both sid='*';"
-
+	# Nécessaire tant que le broker n'est pas activé.
 	to_exec "alter system set log_archive_dest_2='service=$standby async valid_for=(online_logfiles,primary_role) db_unique_name=$standby' scope=both sid='*';"
 
 	# Nécessaire si on détruit et refait la dataguard.
 	to_exec "alter system set log_archive_dest_state_2='enable' scope=both sid='*';"
 
-	echo prompt
-	echo prompt --	Paramètres nécessitant un arrêt/démarrage :
-	to_exec "alter system set remote_login_passwordfile='EXCLUSIVE' scope=spfile sid='*';"
+	if [ $skip_primary_cfg == no ]
+	then
+		to_exec "alter database force logging;"
 
-	#to_exec "alter system set db_file_name_convert='+DATA/$standby/','+DATA/$primary/','+FRA/$standby/','+FRA/$primary/' scope=spfile sid='*';"
+		if [ "$(read_remote_login_passwordfile)" != "EXCLUSIVE" ]
+		then
+			echo prompt
+			echo prompt --	Paramètres nécessitant un arrêt/démarrage :
+			to_exec "alter system set remote_login_passwordfile='EXCLUSIVE' scope=spfile sid='*';"
 
-	#to_exec "alter system set log_file_name_convert='+DATA/$standby/','+DATA/$primary/','+FRA/$standby/','+FRA/$primary/' scope=spfile sid='*';"
-
-	to_exec "alter database force logging;"
-
-	to_exec "shutdown immediate"
-	to_exec "startup"
+			to_exec "shutdown immediate"
+			to_exec "startup"
+		fi
+	fi
 }
 
+#	Fabrique les commandes permettant de créer les SRLs
+#	$1	nombre de SRLs à créer.
+#	$2	taille des SRLs
+#	Passer la sortie de cette fonction en paramètre de la fonction sqlplus_cmd
 function create_standby_redo_logs
 {
 	typeset -ri nr=$1
@@ -164,10 +197,9 @@ function create_standby_redo_logs
 	done
 }
 
-#	$1	nom du servue
-#	$2	nom de l'hôte
-#
-#	Créé un alias ayant pour nom $2
+#	Affiche sur la sortie standard la configuration de l'alias TNS.
+#	$1	service_name qui sera aussi le nom de l'alias.
+#	$2	nom du serveur
 function get_alias_for
 {
 	typeset	-r	service_name=$1
@@ -188,16 +220,10 @@ $service_name =
 EOA
 }
 
-function get_alias_for_primary
-{
-	get_alias_for $primary $primary_host
-}
-
-function get_alias_for_standby
-{
-	get_alias_for $standby $standby_host
-}
-
+#	Affiche sur la sortie standard la configuration d'un listener statique.
+#	$1	GLOBAL_DBNAME
+#	$2	SID_NAME
+#	$3	ORACLE_HOME
 function get_primary_sid_list_listener_for
 {
 	typeset	-r	g_dbname=$1
@@ -213,12 +239,14 @@ SID_LIST_LISTENER =
 			(GLOBAL_DBNAME = $g_dbname)
 			(ORACLE_HOME = $orcl_home)
 			(SID_NAME = $sid_name)
+			(ENVS="TNS_ADMIN=$orcl_home/network/admin")
 		)
   )
 #	End bibi
 EOL
 }
 
+#	Ajoute une entrée statique au listener de la primaire.
 function primary_listener_add_static_entry
 {
 	typeset -r primary_sid_list=$(get_primary_sid_list_listener_for $primary $primary "$ORACLE_HOME")
@@ -246,6 +274,7 @@ EOS
 	LN
 }
 
+#	Ajoute une entrée statique au listener de la secondaire.
 function standby_listener_add_static_entry
 {
 	typeset -r standby_sid_list=$(get_primary_sid_list_listener_for $standby $standby "$ORACLE_HOME")
@@ -273,23 +302,27 @@ EOS
 	LN
 }
 
+#	Création des SRLs sur la base primaire.
 function add_standby_redolog
 {
 	info "Add stdby redo log"
 	typeset		redo_size_mb=undef
 	typeset	-i	nr_redo=-1
-	read redo_size_mb nr_redo <<<"$(result_of_query "select distinct round(bytes/1024/1024)||'M', count(*) from v\$log group by bytes;" | tail -1)"
+	read redo_size_mb nr_redo <<<"$(sqlplus_exec_query "select distinct round(bytes/1024/1024)||'M', count(*) from v\$log group by bytes;" | tail -1)"
 	info "La base possède $nr_redo redos de $redo_size_mb"
 
 	typeset -ri nr_stdby_redo=nr_redo+1
-	info " --> Ajout de $nr_stdby_redo standby redos de $redo_size_mb (Nombre à vérifier je ne suis pas certain...)"
-	run_sqlplus "$(create_standby_redo_logs $nr_stdby_redo $redo_size_mb)"
+	info " --> Ajout de $nr_stdby_redo standby redos de $redo_size_mb"
+	sqlplus_cmd "$(create_standby_redo_logs $nr_stdby_redo $redo_size_mb)"
 	LN
 
-	exec_query "set lines 130 pages 45\ncol member for a45\nselect * from v\$logfile order by type, group#;"
+	sqlplus_print_query "set lines 130 pages 45\ncol member for a45\nselect * from v\$logfile order by type, group#;"
 	LN
 }
 
+#	Configure les fichiers tnsnames sur le serveur primaire et secondaire.
+#	1	Sur le serveur primaire si le fichier existe, il est supprimé.
+#	2	Sur le serveur secondaire le fichier est écrasé par celui du primaire.
 function setup_tnsnames
 {
 	exec_cmd "rm -f $tnsnames_file"
@@ -297,10 +330,10 @@ function setup_tnsnames
 	then
 		info "Create file $tnsnames_file"
 		info "Add alias $primary"
-		get_alias_for_primary > $tnsnames_file
+		get_alias_for $primary $primary_host > $tnsnames_file
 		echo " " >> $tnsnames_file
 		info "Add alias $standby"
-		get_alias_for_standby >> $tnsnames_file
+		get_alias_for $standby $standby_host >> $tnsnames_file
 		LN
 		info "Copy tnsname.ora from $primary_host to $standby_host"
 		exec_cmd "scp $tnsnames_file $standby_host:$tnsnames_file"
@@ -311,6 +344,11 @@ function setup_tnsnames
 	fi
 }
 
+#	Démarre une base standby minimum.
+#	Actions :
+#		- copie du fichier 'password' de la primaire vers la standby
+#		- création du répertoire adump sur le serveur de la standby
+#		- puis démarre la standby uniquement avec le paramètre db_name
 function start_standby
 {
 	info "Copie du fichier password."
@@ -318,66 +356,90 @@ function start_standby
 	LN
 
 	line_separator
-	info "Création du répertoire $ORACLE_BASE/$standby/adump sur $standy_host"
+	info "Création du répertoire $ORACLE_BASE/$standby/adump sur $standby_host"
 	exec_cmd -c "ssh $standby_host mkdir -p $ORACLE_BASE/admin/$standby/adump"
 	LN
 
 	line_separator
 	info "Configure et démarre $standby sur $standby_host (configuration minimaliste.)"
-	ssh -t -t $standby_host<<EOS
-	rm -f $ORACLE_HOME/dbs/sp*${standby}* $ORACLE_HOME/dbs/init*${standby}*
-	echo "db_name='$standby'" > $ORACLE_HOME/dbs/init${standby}.ora
-	export ORACLE_SID=$standby
-	\sqlplus sys/Oracle12 as sysdba<<XXX
-	startup nomount
-	XXX
-	exit
+ssh -t -t $standby_host<<EOS | tee -a $PLELIB_LOG_FILE
+rm -f $ORACLE_HOME/dbs/sp*${standby}* $ORACLE_HOME/dbs/init*${standby}*
+echo
+echo "db_name='$standby'" > $ORACLE_HOME/dbs/init${standby}.ora
+echo
+export ORACLE_SID=$standby
+echo
+\sqlplus -s sys/Oracle12 as sysdba<<XXX
+startup nomount
+XXX
+echo
+exit
 EOS
+LN
 }
 
+#	Lance la duplication de la base avec RMAN
 function run_duplicate
 {
 	info "Lance la duplication..."
-	cat<<EOR >/tmp/duplicate.rman
-	run {
-		allocate channel prmy1 type disk;
-		allocate channel prmy2 type disk;
-		allocate auxiliary channel stby1 type disk;
-		allocate auxiliary channel stby2 type disk;
-		duplicate target database for standby from active database
-		spfile
-			parameter_value_convert '$primary','$standby'
-			set db_unique_name='$standby'
-			set db_create_file_dest='+DATA'
-			set db_recovery_file_dest='+FRA'
-			set control_files='+DATA','+FRA'
-			set cluster_database='false'
-			set fal_server='$primary'
-			set standby_file_management='AUTO'
-			set log_archive_config='dg_config=($primary,$standby)'
-			set log_archive_dest_1='location=USE_DB_RECOVERY_FILE_DEST valid_for=(all_logfiles,all_roles) db_unique_name=$standby'
-			set log_archive_dest_state_1='enable'
-			set log_Archive_dest_2='service=$primary async noaffirm reopen=15 valid_for=(all_logfiles,primary_role) db_unique_name=$primary'
-			set log_archive_dest_state_2='enable'
-			nofilenamecheck
-		 ;
-	}
+cat<<EOR >/tmp/duplicate.rman
+run {
+	allocate channel prmy1 type disk;
+	allocate channel prmy2 type disk;
+	allocate auxiliary channel stby1 type disk;
+	allocate auxiliary channel stby2 type disk;
+	duplicate target database for standby from active database
+	spfile
+		parameter_value_convert '$primary','$standby'
+		set db_unique_name='$standby'
+		set db_create_file_dest='+DATA'
+		set db_recovery_file_dest='+FRA'
+		set control_files='+DATA','+FRA'
+		set cluster_database='false'
+		set fal_server='$primary'
+		set log_Archive_dest_2=''
+		nofilenamecheck
+	 ;
+}
 EOR
-
 	exec_cmd "rman target sys/$oracle_password@$primary auxiliary sys/$oracle_password@$standby @/tmp/duplicate.rman"
 }
 
+#	Efface la configuration du broker.
+function remove_broker_cfg
+{
+	line_separator
+	info "Efface la configuration du broker."
+dgmgrl -silent -echo<<EOS
+connect sys/$oracle_password
+disable configuration;
+remove configuration;
+EOS
+LN
+LN
+}
+
+#	Applique l'ensemble des paramètres nécessaires pour une base primaire et pour
+#	le duplicate RMAN.
 function setup_primary
 {
 	line_separator
 	info "Setup primary database $primary"
-	run_sqlplus "$(get_primary_cfg)"
+	sqlplus_cmd "$(get_primary_cfg)"
 	LN
 
-	line_separator
-	add_standby_redolog
+	if [ $skip_primary_cfg == no ]
+	then
+		line_separator
+		add_standby_redolog
+	else
+		remove_broker_cfg $APPEND_TO_LOG
+		LN
+	fi
 }
 
+#	Effectue la configuration réseau sur les 2 serveurs.
+#	Configuration des fichiers tnsnames.ora et listener.ora
 function setup_network
 {
 	line_separator
@@ -390,30 +452,36 @@ function setup_network
 	standby_listener_add_static_entry
 }
 
+#	Effectue la duplication de la base.
+#	Actions :
+#		- démarre une standby minimum
+#		- affiche des informations sur les 2 bases.
+#		- lance la duplication via RMAN.
 function duplicate
 {
 	line_separator
 	start_standby
 
 	line_separator
-	run_duplicate
-
-if [ 0 -eq 1 ]; then
-	line_separator
-	info "Il faut redémarrer la base pour prendre en compte log_archive_dest_2 (bug ?)"
-	exec_cmd "srvctl stop database -db $primary"
-	exec_cmd "srvctl start database -db $primary"
-fi
+	info "Info :"
+	exec_cmd "tnsping $primary | tail -3"
 	LN
+	exec_cmd "tnsping $standby | tail -3"
+	LN
+	echo "exit" > /tmp/exit.rman
+	exec_cmd "rman target sys/$oracle_password@$primary auxiliary sys/$oracle_password@$standby @/tmp/exit.rman"
+	LN
+
+	line_separator
+	run_duplicate
 }
 
+#	Configure le broker pour la base $1
 function cmd_setup_broker_for_database
 {
 	typeset -r db=$1
 
 	to_exec "alter system set dg_broker_start=false scope=both sid='*';"
-	to_exec "alter system reset dg_broker_config_file1 scope=spfile sid='*';"
-	to_exec "alter system reset dg_broker_config_file2 scope=spfile sid='*';"
 
 	to_exec "alter system set dg_broker_config_file1 = '+DATA/$db/dr1db_$db.dat' scope=both sid='*';"
 	to_exec "alter system set dg_broker_config_file2 = '+DATA/$db/dr2db_$db.dat' scope=both sid='*';"
@@ -421,20 +489,25 @@ function cmd_setup_broker_for_database
 	to_exec "alter system set dg_broker_start=true scope=both sid='*';"
 }
 
+#	Après que la duplication ait été faite finalise la configuration.
+#	Actions :
+#		- backup de l'alertlog de la standby (pour ne plus avoir 50K de messages d'erreurs)
+#		- démarre la synchro
+#		- enregistre la standby dans le GI.
 function finalyze_standby_config
 {
 	line_separator
-	info "Démarre la synchro."
-	#	alter database recover managed standby database using current logfile disconnect;
-	#	est deprecated. Voir alert.log après exécution.
-	run_sqlplus_on_standby "$(to_exec "alter database recover managed standby database disconnect;")"
+	info "Backup le journal d'alerte de la standby."
+	typeset -r alert_log="$ORACLE_BASE/diag/rdbms/$(to_lower $standby)/$standby/trace/alert_${standby}.log"
+	exec_cmd "ssh oracle@$standby_host '. .profile; mv $alert_log ${alert_log}.after_duplicate'"
 	LN
 
-#	run_sqlplus "alter system switch logfile;\nalter system switch logfile;\nalter system switch logfile;"
-#	LN
-
-#	test_pause "Vérifier la synchro !"
-#info -n "Temporisation "; pause_in_secs 10; LN
+	line_separator
+	info "Démarre la synchro car la base sera stoppée/démarrée."
+	#	recover managed standby database using current logfile disconnect;
+	#	est deprecated. Voir alert.log après exécution.
+	sqlplus_cmd_on_standby "$(to_exec "recover managed standby database disconnect;")"
+	LN
 
 	line_separator
 	info "Enregistre la base dans le GI."
@@ -449,47 +522,70 @@ function finalyze_standby_config
 	LN
 
 	info "Arrêt/démarrage pour que le GI prenne en compte la base"
-	run_sqlplus_on_standby "$(to_exec "shutdown immediate;")"
+	sqlplus_cmd_on_standby "$(to_exec "shutdown immediate;")"
 	exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl start database -db $standby\""
+	LN
+
+	line_separator
+	info "Démarre la synchro par précaution"
+	sqlplus_cmd_on_standby "$(to_exec "recover managed standby database disconnect;")"
 	LN
 }
 
+#	Création de la configuration du dataguard et démarrage du broker.
+function create_dataguard_cfg
+{
+	line_separator
+	info "Configuration du dataguard."
+	sqlplus_cmd "$(to_exec "alter system set log_Archive_dest_2='';")"
+	LN
+
+	timing 20
+
+dgmgrl -silent -echo sys/$oracle_password<<EOS
+create configuration 'PRODCONF' as primary database is $primary connect identifier is $primary;
+add database $standby as connect identifier is $standby maintained as physical;
+enable configuration;
+EOS
+LN
+}
+
+#	Configure et démarre le broker dataguard.
+#	Actions :
+#		- Configuration des 2 bases
+#		- Configuration de la dataguard et démarrage du broker.
 function configure_and_enable_broker
 {
 	line_separator
 	info "Configuration du broker sur les bases :"
-	info "  Sur la primaire $primary"
-	run_sqlplus "$(cmd_setup_broker_for_database $primary)"
-	LN
+	if [ $skip_primary_cfg == no ]
+	then
+		info "  Sur la primaire $primary"
+		sqlplus_cmd "$(cmd_setup_broker_for_database $primary)"
+		LN
+	fi
+
 	info "  Sur la standby $standby"
-	run_sqlplus_on_standby "$(cmd_setup_broker_for_database $standby)"
+	sqlplus_cmd_on_standby "$(cmd_setup_broker_for_database $standby)"
 	LN
 
-	line_separator
-	info "Activation du broker"
-	run_sqlplus "$(to_exec "alter system set log_Archive_dest_2='';")"
-	run_sqlplus_on_standby "$(to_exec "alter system set log_Archive_dest_2='';")"
-	LN
-
-	info -n "Temporisation : "; pause_in_secs 30; LN
-
-	dgmgrl<<EOS
-	connect sys/$oracle_password
-	create configuration 'PRODCONF' as primary database is $primary connect identifier is $primary;
-	add database $standby as connect identifier is $standby maintained as physical;
-	enable configuration;
-EOS
-	info "dgmgrl return code = $?"
+	create_dataguard_cfg $APPEND_TO_LOG
 	LN
 }
 
-function drop_all_services
+#	Supprime tous les services de la primaire.
+function drop_all_services_on_primary
 {
 	line_separator
 	exec_cmd ~/plescripts/db/drop_all_services.sh -db=$primary
 }
 
-function create_stby_service
+#	Création des services :
+#		-	2 services (oci et java) avec le role primary sur les 2 bases.
+#		-	2 services (oci et java) avec le role standby sur les 2 bases.
+#	Les services sont créés à partir du nom du PDB
+#	TODO : tester avec plusieurs PDBs.
+function create_dataguard_services
 {
 typeset -r query=\
 "select
@@ -502,43 +598,48 @@ from
 		i.instance_name = '$primary'
 	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' );
 "
-	#	Les services existant ne somt pas valables pour un dataguard.
-	drop_all_services
 
 	line_separator
 	while read pdbName
 	do
 		[ x"$pdbName" == x ] && continue
 
-		info "Create stby service for pdb $pdbName on cdb $primary"
-		exec_cmd "~/plescripts/db/create_service_for_standalone_dataguard.sh \
-				-db=$primary -pdbName=$pdbName \
-				-prefixService=pdb${pdbName} -role=primary"
+		if [ $skip_primary_cfg == no ]
+		then
+			#	Les services existant ne sont pas valables pour un dataguard.
+			drop_all_services_on_primary
 
-		info "Les services pour le role standby sur démarrés pour contourner un bug."
-		exec_cmd "~/plescripts/db/create_service_for_standalone_dataguard.sh \
-				-db=$primary -pdbName=$pdbName \
-				 -prefixService=pdb${pdbName}_stby -role=physical_standby"
+			info "Create stby service for pdb $pdbName on cdb $primary"
+			exec_cmd "~/plescripts/db/create_service_for_standalone_dataguard.sh \
+					-db=$primary -pdbName=$pdbName \
+					-prefixService=pdb${pdbName} -role=primary"
+			LN
 
-		info "Mainenant ils sont stoppés, toujours pour l'histoire du bug."
-		exec_cmd "srvctl stop service -service pdb${pdbName}_stby_oci -db $primary"
-		exec_cmd "srvctl stop service -service pdb${pdbName}_stby_java -db $primary"
-		LN
+			exec_cmd "~/plescripts/db/create_service_for_standalone_dataguard.sh \
+					-db=$primary -pdbName=$pdbName \
+					 -prefixService=pdb${pdbName}_stby -role=physical_standby"
+			LN
+
+			info "BUG : il faut démarrer/arrêter les service standby et la primaire"
+			info "      sinon le démarrage des services standby échoue sur la standby."
+			exec_cmd "srvctl stop service -service pdb${pdbName}_stby_oci -db $primary"
+			exec_cmd "srvctl stop service -service pdb${pdbName}_stby_java -db $primary"
+			LN
+		fi
 
 		info "Create services for pdb $pdbName on cdb $standby"
-		info "BUG : il faut démarrer/arrêter les service standby et la primaire"
-		info "      sinon le démarrage des services standby échoue."
-		exec_cmd "ssh -t -t $standby_host '. .profile; \
-				~/plescripts/db/create_service_for_standalone_dataguard.sh \
-				-db=$standby -pdbName=$pdbName \
-				-prefixService=pdb${pdbName}_stby -role=physical_standby'"
-
 		exec_cmd "ssh -t -t $standby_host '. .profile; \
 				~/plescripts/db/create_service_for_standalone_dataguard.sh \
 				-db=$standby -pdbName=$pdbName \
 				-prefixService=pdb${pdbName} -role=primary -start=no'"
 		LN
-	done<<<"$(result_of_query "$query")"
+
+		exec_cmd "ssh -t -t $standby_host '. .profile; \
+				~/plescripts/db/create_service_for_standalone_dataguard.sh \
+				-db=$standby -pdbName=$pdbName \
+				-prefixService=pdb${pdbName}_stby -role=physical_standby'"
+		LN
+	done<<<"$(sqlplus_exec_query "$query")"
 }
 
 typeset	-r	primary_host=$(hostname -s)
@@ -563,12 +664,6 @@ else
 	exit 1
 fi
 
-line_separator
-info "Load env for $primary"
-ORACLE_SID=$primary
-ORAENV_ASK=NO . oraenv
-LN
-
 [ $skip_setup_primary == no ] && setup_primary
 
 [ $skip_setup_network == no ] && setup_network
@@ -579,6 +674,9 @@ LN
 
 [ $skip_configure_and_enable_broker == no ] && configure_and_enable_broker
 
-create_stby_service
+create_dataguard_services
+
+line_separator
+exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
 
 chrono_stop $ME

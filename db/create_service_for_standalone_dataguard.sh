@@ -146,7 +146,3 @@ then
 	exec_cmd srvctl start service -service ${prefixService}_java  -db $db
 	LN
 fi
-
-line_separator
-exec_cmd srvctl status service -db $db
-LN
