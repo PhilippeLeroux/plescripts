@@ -1,6 +1,7 @@
 ## Exemple avec 2 serveurs srvmars01 et srvvenus01
 
 * Serveur srvvenus01 :
+
 	```
 	oracle@srvvenus01:VENUS:oracle> crsctl stat res -t
 	--------------------------------------------------------------------------------
