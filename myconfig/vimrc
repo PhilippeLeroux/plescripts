@@ -24,6 +24,10 @@ set modeline
 let g:pathogen_disabled = []
 if has("gui_running")
 	call add(g:pathogen_disabled, 'vim-togglemouse')
+else
+	"	Par défaut c'est le terminal qui à la sourie.
+	"	togglemouse map la touche F12 pour switcher entre le terminal et vim.
+	let &mouse=""
 endif
 
 call pathogen#infect()
