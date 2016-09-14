@@ -410,7 +410,7 @@ function remove_broker_cfg
 {
 	line_separator
 	info "Efface la configuration du broker."
-dgmgrl -silent -echo<<EOS
+dgmgrl -silent -echo<<EOS | tee -a $PLELIB_LOG_FILE
 connect sys/$oracle_password
 disable configuration;
 remove configuration;
@@ -433,7 +433,7 @@ function setup_primary
 		line_separator
 		add_standby_redolog
 	else
-		remove_broker_cfg $APPEND_TO_LOG
+		remove_broker_cfg
 		LN
 	fi
 }
@@ -542,7 +542,7 @@ function create_dataguard_cfg
 
 	timing 20
 
-dgmgrl -silent -echo sys/$oracle_password<<EOS
+dgmgrl -silent -echo sys/$oracle_password<<EOS | tee -a $PLELIB_LOG_FILE
 create configuration 'PRODCONF' as primary database is $primary connect identifier is $primary;
 add database $standby as connect identifier is $standby maintained as physical;
 enable configuration;
@@ -569,7 +569,7 @@ function configure_and_enable_broker
 	sqlplus_cmd_on_standby "$(cmd_setup_broker_for_database $standby)"
 	LN
 
-	create_dataguard_cfg $APPEND_TO_LOG
+	create_dataguard_cfg
 	LN
 }
 

@@ -149,13 +149,6 @@ then
 	[ $? -ne 0 ] && exit 1
 fi
 
-if [ $PLELIB_OUTPUT == FILE ]
-then
-	typeset -r APPEND_TO_LOG=" | tee -a $PLELIB_LOG_FILE"
-else
-	typeset -r APPEND_TO_LOG=""
-fi
-
 #	============================================================================
 
 if [ ! -z PLE_SHOW_EXECUTION_TIME_AFTER ]
