@@ -72,16 +72,34 @@ do
 	typeset	vm_name=$(cat $node_file | cut -d: -f2)
 
 	info "Clone $vm_name from $master_name"
-	exec_cmd VBoxManage clonevm "$master_name" --name "$vm_name" --basefolder \"$vm_path\" --register
+	exec_cmd VBoxManage clonevm "$master_name"		\
+						--name "$vm_name"			\
+						--basefolder \"$vm_path\"	\
+						--register
+	LN
+
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
 	exec_cmd VBoxManage modifyvm $vm_name --cpus 2
+	LN
+	
 
 	if [ $type_shared_fs == vbox ]
 	then
-		exec_cmd VBoxManage sharedfolder add $vm_name --name \"${oracle_release%.*.*}\" --hostpath \"$HOME/$oracle_install\" --automount
+		exec_cmd VBoxManage sharedfolder add $vm_name							\
+										--name \"${oracle_release%.*.*}\"		\
+										--hostpath \"$HOME/$oracle_install\"	\
+										--automount
+		LN
 	fi
 
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
+	LN
+
+	exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name" \
+											-disk_name=disk_u01	\
+											-disk_mb=$((32*1024))
+	LN
+
 	# Présent ici car dans setup_first_vms/vbox_scripts/01_create_master_vm.sh
 	# le Guru apparaît toujours.
 	# Même ici ne marche pas à tout les coups.

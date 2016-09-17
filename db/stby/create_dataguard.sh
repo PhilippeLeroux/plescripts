@@ -509,6 +509,8 @@ function finalyze_standby_config
 	sqlplus_cmd_on_standby "$(to_exec "recover managed standby database disconnect;")"
 	LN
 
+	timing 15 "Waiting recover..."
+
 	line_separator
 	info "Enregistre la base dans le GI."
 	exec_cmd "ssh -t oracle@$standby_host \". .profile; srvctl add database \
@@ -527,7 +529,7 @@ function finalyze_standby_config
 	LN
 
 	line_separator
-	info "Démarre la synchro par précaution"
+	info "Démarre la synchro."
 	sqlplus_cmd_on_standby "$(to_exec "recover managed standby database disconnect;")"
 	LN
 }
@@ -547,7 +549,9 @@ create configuration 'PRODCONF' as primary database is $primary connect identifi
 add database $standby as connect identifier is $standby maintained as physical;
 enable configuration;
 EOS
-LN
+	LN
+
+	timing 15 "Waiting recover..."
 }
 
 #	Configure et démarre le broker dataguard.
@@ -576,7 +580,6 @@ function configure_and_enable_broker
 #	Supprime tous les services de la primaire.
 function drop_all_services_on_primary
 {
-	line_separator
 	exec_cmd ~/plescripts/db/drop_all_services.sh -db=$primary
 }
 
@@ -620,8 +623,8 @@ from
 					 -prefixService=pdb${pdbName}_stby -role=physical_standby"
 			LN
 
-			info "BUG : il faut démarrer/arrêter les service standby et la primaire"
-			info "      sinon le démarrage des services standby échoue sur la standby."
+			info "Il faut démarrer/arrêter les services standby et primaire"
+			info "sinon le démarrage des services standby échoue sur la standby."
 			exec_cmd "srvctl stop service -service pdb${pdbName}_stby_oci -db $primary"
 			exec_cmd "srvctl stop service -service pdb${pdbName}_stby_java -db $primary"
 			LN

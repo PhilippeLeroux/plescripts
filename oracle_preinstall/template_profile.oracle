@@ -38,7 +38,10 @@ export CLASSPATH
 export TEMP=/tmp
 export TMPDIR=/tmp
 
-export PS1="${USER}@${HOSTNAME%%.*}:\${ORACLE_SID}:\${PWD##*/}> "
+# KSH
+# export PS1="${USER}@${HOSTNAME%%.*}:\${ORACLE_SID}:\${PWD##*/}> "
+# BASH :
+export PS1="${USER}@${HOSTNAME%%.*}:\${ORACLE_SID}:\W> "
 export EDITOR=vi
 
 #	-f3-4 pour gérer le cas des RAC one node ou services managed.

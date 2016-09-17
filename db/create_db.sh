@@ -20,7 +20,8 @@ typeset -r ME=$0
 
 typeset		db=undef
 typeset		sysPassword=$oracle_password
-typeset	-i	totalMemory=640
+typeset	-i	totalMemory=$(to_mb $shm_for_db)
+[ $totalMemory -eq 0 ] && totalMemory=640
 typeset		shared_pool_size=default
 typeset		data=DATA
 typeset		fra=FRA
@@ -77,6 +78,11 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-totalMemory=*)
+			totalMemory=${1##*=}
 			shift
 			;;
 
@@ -231,8 +237,13 @@ function make_dbca_args
 	add_dynamic_cmd_param "-redoLogFileSize $redoLogFileSizeMb"
 
 	add_dynamic_cmd_param "-totalMemory $totalMemory"
+	if [[ "$shm_for_db" != "0" && $totalMemory -gt $(to_mb $shm_for_db) ]]
+	then
+		warning "totalMemoy (${totalMemory}M) > shm_for_db ($shm_for_db)"
+	fi
 
-	typeset initParams="-initParams threaded_execution=true"
+	#	Ne jamais positionner pga_aggregate_limit en production.
+	typeset initParams="-initParams threaded_execution=true,pga_aggregate_limit=1256M"
 	case $lang in
 		french)
 			initParams="$initParams,nls_language=FRENCH,NLS_TERRITORY=FRANCE"
@@ -413,7 +424,7 @@ check_if_ASM_used
 
 exit_if_param_undef db "$str_usage"
 
-#	-------------------------
+#	----------------------------------------------------------------------------
 #	Ajustement des paramètres
 #	Détermine le nom de la PDB si non précisée.
 [ $cdb == yes ] && [ $pdbName == undef ] && pdbName=${lower_db}01
@@ -427,7 +438,7 @@ fi
 #	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
 [ $policyManaged == "yes" ] && [ $serverPoolName == undef ] && serverPoolName=poolAllNodes
 [ $serverPoolName != undef ] && policyManaged=yes
-#	-------------------------
+#	----------------------------------------------------------------------------
 
 stats_tt start create_$lower_db
 
@@ -497,6 +508,14 @@ fi
 
 exec_cmd "~/plescripts/memory/show_pages.sh"
 LN
+
+grep -qE ".*shm.*size.*" /etc/fstab 
+if [ $? -eq 1 ]
+then
+	info "with root user execute :"
+	info "~/plescripts/memory/adjust_shm_size.sh -sga=${totalMemory}M"
+	LN
+fi
 
 stats_tt stop create_$lower_db
 

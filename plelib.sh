@@ -1192,10 +1192,10 @@ function fmt_kb2mb
 	echo "$(fmt_number $mb)Mb"
 }
 
-#*> to_mb <size><unit>
-#*> Convert size in Mb
-#*>		Last digits of size is the unit
-#*>		Unit : G, Gb, M, Mb, Kb or K
+#*> to_mb string_size
+#*> Convert string_size in Mb
+#*>		Last digits is the unit : G, Gb, M, Mb, Kb or K
+#*>		no digit for byte.
 function to_mb
 {
 	typeset -r	arg=$1

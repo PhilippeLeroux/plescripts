@@ -310,6 +310,10 @@ function configure_server
 	LN
 
 	line_separator
+	exec_cmd "ssh -t root@$master_name \"~/plescripts/database_servers/create_mount_point_u01.sh -device=/dev/sdb\""
+	LN
+
+	line_separator
 	register_server_2_dns
 
 	line_separator

@@ -40,7 +40,11 @@ export CLASSPATH
 #export ORACLE_PATH=/u01/app/oracle/common/oracle/sql
 #export SQLPATH=/u01/app/common/oracle/sql
 
-export PS1="${USER}@${HOSTNAME%%.*}:\${ORACLE_SID}:\${PWD##*/}> "
+# KSH
+# export PS1="${USER}@${HOSTNAME%%.*}:\${ORACLE_SID}:\${PWD##*/}> "
+# BASH :
+export PS1="${USER}@${HOSTNAME%%.*}:\${ORACLE_SID}:\W> "
+
 export EDITOR=vi
 export TEMP=/tmp
 export TMPDIR=/tmp

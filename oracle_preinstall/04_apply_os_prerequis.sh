@@ -133,17 +133,9 @@ function dev_shm_setting
 	esac
 }
 
-function from_redhat
+function create_tuned_profile
 {
-	info "Redhat"
-cat <<EOC >>/etc/sysctl.conf
-#	Redhat settings (Oracle ?)
-vm.swappiness = 1
-vm.dirty_background_ratio = 3
-vm.dirty_ratio = 80
-vm.dirty_expire_centisecs = 500
-vm.dirty_writeback_centisecs = 100
-EOC
+	exec_cmd "~/plescripts/oracle_preinstall/create_tuned_profile.sh"
 }
 
 line_separator
@@ -155,7 +147,7 @@ hugepages_setting
 LN
 
 line_separator
-from_redhat
+create_tuned_profile
 LN
 
 line_separator

@@ -364,6 +364,14 @@ function stop_and_disable_unwanted_grid_ressources
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl disable oc4j"
 }
 
+function adjust_shm_size
+{
+	for node in ${node_names[*]}
+	do
+		exec_cmd "ssh -t root@${node} \". .bash_profile; ~/plescripts/memory/adjust_shm_size.sh\""
+	done
+}
+
 function set_ASM_memory_target_low_and_restart_asm
 {
 	if [ $hack_asm_memory != "0" ]
@@ -376,9 +384,15 @@ function set_ASM_memory_target_low_and_restart_asm
 		if [ $max_nodes -gt 1 ]
 		then	#	RAC
 			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop cluster -all\""
+
+			[ $shm_for_db != "0" ] && adjust_shm_size
+
 			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start cluster -all\""
 		else	#	SINGLE
 			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl stop asm -f\""
+
+			[ $shm_for_db != "0" ] && adjust_shm_size
+
 			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl start asm\""
 		fi
 		LN
