@@ -1051,18 +1051,18 @@ function pause_in_secs
 }
 
 ple_start=0
-#*> chrono_start
-#*> Démarre le chrono
-function chrono_start
+#*> script_start
+#*> A appelé en début de script.
+function script_start
 {
-	[ $ple_start -ne 0 ] && error "2x call : chrono_start" && exit 1
+	[ $ple_start -ne 0 ] && error "2x call : script_start" && exit 1
 	ple_start=$SECONDS
 }
 
-#*> chrono_stop [message]
-#*> Affiche le temps écoulé depuis le dernier appel à chrono_start
-#*> Si le premier paramètre est -q alors retourne le temps écoulé.
-function chrono_stop
+#*> script_stop [message]
+#*> Affiche le temps écoulé depuis le dernier appel à script_start
+#*> Doit être appelé en fin de script
+function script_stop
 {
 	if [ $# -eq 0 ]
 	then

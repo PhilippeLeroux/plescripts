@@ -648,7 +648,7 @@ from
 typeset	-r	primary_host=$(hostname -s)
 typeset	-r	tnsnames_file=$TNS_ADMIN/tnsnames.ora
 
-chrono_start
+script_start
 
 info "Create dataguard :"
 info "	- from database $primary on $primary_host"
@@ -682,4 +682,4 @@ create_dataguard_services
 line_separator
 exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
 
-chrono_stop $ME
+script_stop $ME

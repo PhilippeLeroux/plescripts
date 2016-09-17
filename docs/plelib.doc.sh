@@ -1,5 +1,5 @@
 ################################################################################
-Resume 2016/09/14 :
+Resume 2016/09/17 :
 ~~~~~~~~~~~~~~~~~~~
 
 # 43 publics functions
@@ -175,14 +175,14 @@ function timing
 #*> d'effacer l'affichage.
 function pause_in_secs
 
-#*> chrono_start
-#*> Démarre le chrono
-function chrono_start
+#*> script_start
+#*> A appelé en début de script.
+function script_start
 
-#*> chrono_stop [message]
-#*> Affiche le temps écoulé depuis le dernier appel à chrono_start
-#*> Si le premier paramètre est -q alors retourne le temps écoulé.
-function chrono_stop
+#*> script_stop [message]
+#*> Affiche le temps écoulé depuis le dernier appel à script_start
+#*> Doit être appelé en fin de script
+function script_stop
 
 #*> Eval an arithmetic expression
 #*> Flags
@@ -203,10 +203,10 @@ function fmt_number
 #*>	convert <size> in Kb to Mb and format.
 function fmt_kb2mb
 
-#*> to_mb <size><unit>
-#*> Convert size in Mb
-#*>		Last digits of size is the unit
-#*>		Unit : G, Gb, M, Mb, Kb or K
+#*> to_mb string_size
+#*> Convert string_size in Mb
+#*>		Last digits is the unit : G, Gb, M, Mb, Kb or K
+#*>		no digit for byte.
 function to_mb
 
 #*> Convert value $1 to bytes

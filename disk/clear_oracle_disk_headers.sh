@@ -38,7 +38,7 @@ do
 	esac
 done
 
-chrono_start
+script_start
 
 oracleasm listdisks |\
 while read oracle_disk_name
@@ -57,7 +57,7 @@ LN
 exec_cmd oracleasm listdisks
 LN
 
-chrono_stop "Script time :"
+script_stop "Script time :"
 
 [ $EXEC_CMD_ACTION = NOP ] && info "$str_usage"
 

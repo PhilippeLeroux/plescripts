@@ -417,7 +417,7 @@ function create_services_for_pdb
 #	============================================================================
 #	MAIN
 #	============================================================================
-chrono_start
+script_start
 
 check_rac_or_single
 check_if_ASM_used
@@ -519,4 +519,4 @@ fi
 
 stats_tt stop create_$lower_db
 
-chrono_stop $ME
+script_stop $ME
