@@ -510,7 +510,7 @@ then
 		then
 			set_ASM_memory_target_low_and_restart_asm
 			#Pour être certain qu'ASM est démarré.
-			[ $max_nodes -eq 1 ] && (info -n "Wait : "; pause_in_secs 30; LN)
+			[ $max_nodes -eq 1 ] && timing 30
 		fi
 	fi
 fi

@@ -30,7 +30,7 @@ for i in $( seq 1 3 )
 do
 	info -n "    ping #${i} "
 	ip_list[$((i-1))]=$(ping -c 1 $scan_name | head -2 | tail -1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/")
-	pause_in_secs 1; LN
+	timing 1
 done
 
 # $1 indice de l'IP dans ip_list

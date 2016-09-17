@@ -70,8 +70,7 @@ function create_partitions
 	exec_cmd -f iscsiadm -m node --rescan
 	LN
 
-	info -n "Wait : "; pause_in_secs 5; LN
-	LN
+	timing 5
 
 	info "Search disks without partition :"
 

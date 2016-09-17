@@ -69,7 +69,7 @@ exec_cmd -c kill -9 $(ps -ef| grep [${db:0:1}]${db:1} | tr -s [:space:] | cut -d
 if [ $? -eq 0 ]
 then	# Si le kill est effectif on aura un problème avec ASM il faut lui laisser
 		# le temps de prendre en compte le kill.
-	info -n "ASM Temporisation "; pause_in_secs 5; LN
+	timing 5 "ASM Temporisation"
 fi
 
 line_separator

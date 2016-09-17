@@ -140,7 +140,7 @@ function virtualbox_stop
 		done
 		typeset -ri	duration=$(( SECONDS - stop_at ))
 		info "Waiting : $(fmt_seconds $duration)."
-		info -n "Tempo : "; pause_in_secs 2; LN
+		timing 2
 	fi
 
 	if [ $count_errors -ne 0 ]

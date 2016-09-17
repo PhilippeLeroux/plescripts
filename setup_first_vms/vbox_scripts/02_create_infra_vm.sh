@@ -76,7 +76,7 @@ fi
 line_separator
 info "Arrêt de la VM $master_name"
 exec_cmd -c VBoxManage controlvm $master_name acpipowerbutton
-[ $? -eq 0 ] && ( info -n "Attend l'arrêt complet : "; pause_in_secs 20; LN )
+[ $? -eq 0 ] && timing 20 "Attend l'arrêt complet"
 
 line_separator
 info "Clonage de la VM master."
