@@ -6,7 +6,7 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r plugin_list=~/plescripts/shell/vim_plugin_list.txt
+typeset -r plugin_list=~/plescripts/myconfig/vim_plugin_list.txt
 
 typeset -r ME=$0
 typeset -r str_usage=\

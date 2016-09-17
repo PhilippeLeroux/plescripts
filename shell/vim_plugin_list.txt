@@ -1,1 +1,0 @@
-../myconfig/vim_plugin_list.txt
