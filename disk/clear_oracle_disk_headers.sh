@@ -57,7 +57,7 @@ LN
 exec_cmd oracleasm listdisks
 LN
 
-script_stop "Script time :"
+script_stop $ME
 
 [ $EXEC_CMD_ACTION = NOP ] && info "$str_usage"
 
