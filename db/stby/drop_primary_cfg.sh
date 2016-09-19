@@ -78,6 +78,8 @@ function drop_primary_cfg
 
 	to_exec "alter system set dg_broker_start=false scope=both sid='*';"
 
+	to_exec "alter database no force logging;"
+
 	to_exec "shutdown immediate"
 	to_exec "startup"
 }
