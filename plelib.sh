@@ -983,11 +983,11 @@ function fill
 
 #*>	Temporisation pendant $1 secondes
 #*>	$1 temps en secondes
-#*>	$2 msg par défaut le message est "Temporisation"
+#*>	$2 msg par défaut le message est "Be patient..."
 function timing
 {
 	typeset -ri secs=$1
-	[ $# -eq 1 ] && typeset msg="Temporisation" || typeset msg="$2"
+	[ $# -eq 1 ] && typeset msg="Be patient..." || typeset msg="$2"
 		
 	info -n "$msg : "; pause_in_secs $secs; LN; LN
 }
@@ -1012,7 +1012,7 @@ function pause_in_secs
 
 			while [ $secs -ne $max_secs ]
 			do
-				buffer=$(printf "${secs}s/${max_secs}s")
+				buffer=$(printf "${secs}/${max_secs}s")
 				[ $# -eq 2 ] && buffer="$buffer$suffix"
 
 				printf "$backspaces$buffer$CEOL"
@@ -1060,23 +1060,12 @@ function script_start
 }
 
 #*> script_stop [message]
+#*> $1 correspond à message
 #*> Affiche le temps écoulé depuis le dernier appel à script_start
 #*> Doit être appelé en fin de script
 function script_stop
 {
-	if [ $# -eq 0 ]
-	then
-		info "$(fmt_seconds $(( SECONDS - ple_start )) )"
-	else
-		if [ "$1" = "-q" ]
-		then
-			echo $(( SECONDS - ple_start ))
-		else
-			info "$1 ${BOLD}$(fmt_seconds $(( SECONDS - ple_start )) )${NORM}"
-		fi
-	fi
-
-	ple_start=0
+	info "script $1 running time : ${BOLD}$(fmt_seconds $(( SECONDS - ple_start )) )${NORM}"
 }
 
 PAUSE=OFF 
