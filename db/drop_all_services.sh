@@ -10,6 +10,8 @@ typeset -r str_usage=\
 
 info "Running : $ME $*"
 
+typeset	db=undef
+
 while [ $# -ne 0 ]
 do
 	case $1 in
