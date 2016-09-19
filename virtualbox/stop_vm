@@ -139,7 +139,7 @@ function virtualbox_stop
 			LN
 		done
 		typeset -ri	duration=$(( SECONDS - stop_at ))
-		info "Waiting : $(fmt_seconds $duration)."
+		info "Total wait : $(fmt_seconds $duration)."
 		timing 2
 	fi
 
