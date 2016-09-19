@@ -43,7 +43,7 @@ typeset -r lower_db=$(to_lower $db)
 
 line_separator
 #	Supprime la base du GI :
-exec_cmd -c "srvctl stop database -db $db"
+exec_cmd -c "srvctl stop database -db $db -stopoption ABORT -force"
 exec_cmd -c "srvctl remove database -db $lower_db<<<y"
 LN
 
