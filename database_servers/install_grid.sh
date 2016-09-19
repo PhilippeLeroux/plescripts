@@ -291,7 +291,18 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
 	exec_cmd "ssh -t root@${node_names[$inode]} \"/u01/app/oraInventory/orainstRoot.sh\""
 	LN
-	exec_cmd "ssh -t -t root@${node_names[$inode]} \". ./.bash_profile;$ORACLE_HOME/root.sh\""
+	exec_cmd -c "ssh -t -t root@${node_names[$inode]} \"$ORACLE_HOME/root.sh\""
+	if [ $? -ne 0 ]
+	then
+		error "Arrive de temps en temps workaround :"
+		info "Depuis le poste $client_hostname :"
+		info "	ssh root@${node_names[$inode]}"
+		info "	$ORACLE_HOME/root.sh"
+		LN
+		info "Relancer le script :"
+		info "./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
+		exit 1
+	fi
 }
 
 # Création de la base : -MGMTDB pour un RAC, je ne sais pas ce qu'il fait d'autre.
@@ -480,6 +491,7 @@ then #	Il faut toujours commencer sur le noeud d'installation du grid.
 	do
 		run_post_install_root_scripts_on_node $inode
 		LN
+		[ $inode -eq 0 ] && timing 30
 		inode=inode+1
 	done
 fi
