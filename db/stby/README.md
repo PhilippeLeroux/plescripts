@@ -7,6 +7,9 @@
 
 ##	Pré requis.
  - [Créer 2 serveurs, ex : srvmars01 & srvvenus01.](https://github.com/PhilippeLeroux/plescripts/tree/master/database_servers/README.md)
+
+   **Important** : Ne pas exécuter le second ./define_new_server.sh tant que le premier ./clone_master.sh n'est pas finie.
+
  - [Créer une base sur le serveur mars.](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
  
 ## Etablir les équivalences ssh entre les 2 serveurs pour le compte Oracle.
