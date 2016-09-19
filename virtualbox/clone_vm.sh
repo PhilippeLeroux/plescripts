@@ -95,8 +95,8 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	LN
 
-	exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name" \
-											-disk_name=disk_u01	\
+	exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name"			\
+											-disk_name=${vm_name}_u01	\
 											-disk_mb=$((32*1024))
 	LN
 
