@@ -91,7 +91,3 @@ done
 
 exec_cmd ~/plescripts/san/catch_vg_links.sh -vg_name=$vg_name
 LN
-
-warning "La configuration n'est pas sauvergardée."
-warning "Sauvegarde : targetcli / saveconfig"
-LN
