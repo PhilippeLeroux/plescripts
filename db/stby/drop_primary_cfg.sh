@@ -52,7 +52,7 @@ done
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef pdbName	"$str_usage"
 
-function drop_primary_cfg
+function sqlcmd_drop_primary_cfg
 {
 	to_exec "alter system reset standby_file_management scope=spfile sid='*';"
 
@@ -63,6 +63,8 @@ function drop_primary_cfg
 	to_exec "alter system reset log_archive_dest_1 scope=spfile sid='*';"
 
 	to_exec "alter system reset log_archive_dest_2 scope=spfile sid='*';"
+
+	to_exec "alter system reset log_archive_dest_state_2 scope=spfile sid='*';"
 
 	to_exec "alter system reset remote_login_passwordfile scope=spfile sid='*';"
 
@@ -76,7 +78,7 @@ function drop_primary_cfg
 
 	to_exec "alter system reset dg_broker_config_file2 scope=spfile sid='*';"
 
-	to_exec "alter system set dg_broker_start=false scope=both sid='*';"
+	to_exec "alter system reset dg_broker_start scope=spfile sid='*';"
 
 	to_exec "alter database no force logging;"
 
@@ -117,5 +119,5 @@ exec_cmd -c "~/plescripts/db/create_service_for_standalone_dataguard.sh -db=$db 
 LN
 
 line_separator
-sqlplus_cmd "$(drop_primary_cfg)"
+sqlplus_cmd "$(sqlcmd_drop_primary_cfg)"
 LN

@@ -19,18 +19,18 @@ typeset -r str_usage=\
 	primaire chargé.
 
 	Flags de debug :
+		setup_network : configuration des tns et listeners des 2 serveurs.
+			-skip_setup_network passe cette étape.
+
 		setup_primary : configuration de la base primaire.
 			-skip_setup_primary par exemple après un failover et qu'il faut
 			refaire une base.
 
-		setup_network : configuration des tns et listeners des 2 serveurs.
-			-skip_setup_network passe cette étape.
-
 		duplicate     : duplication de la base primaire.
 			-skip_duplicate passe cette étape.
 
-		finalyze_standby_config : finalise la configuration de la standby
-			-skip_finalyze_standby_config passe cette étape.
+		register_standby_to_GI : finalise la configuration de la standby
+			-skip_register_standby_to_GI passe cette étape.
 
 		configure_and_enable_broker : configure et démarre le broker.
 			-skip_configure_and_enable_broker passe cette étape.
@@ -45,7 +45,7 @@ typeset skip_primary_cfg=no
 typeset skip_setup_primary=no
 typeset skip_setup_network=no
 typeset skip_duplicate=no
-typeset	skip_finalyze_standby_config=no
+typeset	skip_register_standby_to_GI=no
 typeset	skip_configure_and_enable_broker=no
 
 while [ $# -ne 0 ]
@@ -87,8 +87,8 @@ do
 			shift
 			;;
 
-		-skip_finalyze_standby_config)
-			skip_finalyze_standby_config=yes
+		-skip_register_standby_to_GI)
+			skip_register_standby_to_GI=yes
 			shift
 			;;
 
@@ -149,39 +149,6 @@ where
 	sqlplus_exec_query "$query" | tail -1
 }
 
-#	Fabrique l'ensemble des commandes permettant de configurer la base primaire.
-#	Toutes les commandes sont fabriquées avec la fonction to_exec.
-#	Passer la sortie de cette fonction en paramètre de la fonction sqlplus_cmd
-function sqlcmd_primary_cfg
-{
-	to_exec "alter system set standby_file_management='AUTO' scope=both sid='*';"
-
-	to_exec "alter system set log_archive_config='dg_config=($primary,$standby)' scope=both sid='*';"
-
-	to_exec "alter system set fal_server='$standby' scope=both sid='*';"
-
-	# Nécessaire tant que le broker n'est pas activé.
-	to_exec "alter system set log_archive_dest_2='service=$standby async valid_for=(online_logfiles,primary_role) db_unique_name=$standby' scope=both sid='*';"
-
-	# Nécessaire si on détruit et refait la dataguard.
-	to_exec "alter system set log_archive_dest_state_2='enable' scope=both sid='*';"
-
-	if [ $skip_primary_cfg == no ]
-	then
-		to_exec "alter database force logging;"
-
-		if [ "$(read_remote_login_passwordfile)" != "EXCLUSIVE" ]
-		then
-			echo prompt
-			echo prompt --	Paramètres nécessitant un arrêt/démarrage :
-			to_exec "alter system set remote_login_passwordfile='EXCLUSIVE' scope=spfile sid='*';"
-
-			to_exec "shutdown immediate"
-			to_exec "startup"
-		fi
-	fi
-}
-
 #	Fabrique les commandes permettant de créer les SRLs
 #	$1	nombre de SRLs à créer.
 #	$2	taille des SRLs
@@ -233,15 +200,22 @@ function get_primary_sid_list_listener_for
 cat<<EOL
 
 #	Added by bibi
-SID_LIST_LISTENER =
-	(SID_LIST =
-		(SID_DESC =
-			(GLOBAL_DBNAME = $g_dbname)
-			(ORACLE_HOME = $orcl_home)
-			(SID_NAME = $sid_name)
+#	L'entrée *_DGMGRL peut être évitée mais il faut modifier les propriètés du dgmgrl
+SID_LIST_LISTENER=
+	(SID_LIST=
+		(SID_DESC=
+			(SID_NAME=$sid_name)
+			(GLOBAL_DBNAME=${g_dbname}_DGMGRL)
+			(ORACLE_HOME=$orcl_home)
 			(ENVS="TNS_ADMIN=$orcl_home/network/admin")
 		)
-  )
+		(SID_DESC=
+			(SID_NAME=$sid_name)
+			(GLOBAL_DBNAME=${g_dbname})
+			(ORACLE_HOME=$orcl_home)
+			(ENVS="TNS_ADMIN=$orcl_home/network/admin")
+		)
+	)
 #	End bibi
 EOL
 }
@@ -410,6 +384,38 @@ EOR
 	exec_cmd "rman target sys/$oracle_password@$primary auxiliary sys/$oracle_password@$standby @/tmp/duplicate.rman"
 }
 
+#	Fabrique les commandes permettant :
+#		- de configurer un dataguard
+#		- faire le duplicate
+#	Toutes les commandes sont fabriquées avec la fonction to_exec.
+#	Passer la sortie de cette fonction en paramètre de la fonction sqlplus_cmd
+function sqlcmd_primary_cfg
+{
+	to_exec "alter system set standby_file_management='AUTO' scope=both sid='*';"
+
+	to_exec "alter system set log_archive_config='dg_config=($primary,$standby)' scope=both sid='*';"
+
+	to_exec "alter system set fal_server='$standby' scope=both sid='*';"
+
+	# Nécessaire si on détruit et refait la dataguard.
+	to_exec "alter system set log_archive_dest_state_2='enable' scope=both sid='*';"
+
+	if [ $skip_primary_cfg == no ]
+	then
+		to_exec "alter database force logging;"
+
+		if [ "$(read_remote_login_passwordfile)" != "EXCLUSIVE" ]
+		then
+			echo prompt
+			echo prompt --	Paramètres nécessitant un arrêt/démarrage :
+			to_exec "alter system set remote_login_passwordfile='EXCLUSIVE' scope=spfile sid='*';"
+
+			to_exec "shutdown immediate"
+			to_exec "startup"
+		fi
+	fi
+}
+
 #	Efface la configuration du broker.
 function remove_broker_cfg
 {
@@ -438,7 +444,7 @@ function setup_primary
 	fi
 
 	line_separator
-	info "Setup primary database $primary"
+	info "Setup primary database $primary for duplicate & dataguard."
 	sqlplus_cmd "$(sqlcmd_primary_cfg)"
 	LN
 }
@@ -483,20 +489,16 @@ function sqlcmd_setup_broker_for_database
 {
 	typeset -r db=$1
 
-	to_exec "alter system set dg_broker_start=false scope=both sid='*';"
-
 	to_exec "alter system set dg_broker_config_file1 = '+DATA/$db/dr1db_$db.dat' scope=both sid='*';"
-	to_exec "alter system set dg_broker_config_file2 = '+DATA/$db/dr2db_$db.dat' scope=both sid='*';"
+	to_exec "alter system set dg_broker_config_file2 = '+FRA/$db/dr2db_$db.dat' scope=both sid='*';"
 
 	to_exec "alter system set dg_broker_start=true scope=both sid='*';"
 }
 
-function sqlcmd_mount_and_start_recover
+function sqlcmd_mount_db_and_start_recover
 {
 	to_exec "shutdown immediate;"
 	to_exec "startup mount;"
-	#	recover managed standby database using current logfile disconnect;
-	#	est deprecated. Voir alert.log après exécution.
 	to_exec "recover managed standby database disconnect;"
 }
 
@@ -505,7 +507,7 @@ function sqlcmd_mount_and_start_recover
 #		- backup de l'alertlog de la standby (pour ne plus avoir 50K de messages d'erreurs)
 #		- démarre la synchro
 #		- enregistre la standby dans le GI.
-function finalyze_standby_config
+function register_standby_to_GI
 {
 	line_separator
 	info "Backup le journal d'alerte de la standby."
@@ -526,7 +528,7 @@ function finalyze_standby_config
 	LN
 
 	info "Arrêt/démarrage pour que le GI prenne en compte la base"
-	sqlplus_cmd_on_standby "$(sqlcmd_mount_and_start_recover)"
+	sqlplus_cmd_on_standby "$(sqlcmd_mount_db_and_start_recover)"
 	timing 10 "Wait recover"
 }
 
@@ -535,7 +537,7 @@ function create_dataguard_cfg
 {
 	line_separator
 	info "Configuration du dataguard."
-	sqlplus_cmd "$(to_exec "alter system set log_Archive_dest_2='';")"
+	sqlplus_cmd "$(to_exec "alter system set log_Archive_dest_2='' scope=both sid='*';")"
 	LN
 
 	timing 30
@@ -557,19 +559,34 @@ EOS
 function configure_and_enable_broker
 {
 	line_separator
-	info "Configuration du broker sur les bases :"
 	if [ $skip_primary_cfg == no ]
 	then
-		info "  Sur la primaire $primary"
+		info "Configure broker on primary $primary"
 		sqlplus_cmd "$(sqlcmd_setup_broker_for_database $primary)"
 		LN
 	fi
 
-	info "  Sur la standby $standby"
+	info "Configure broker on standby $standby"
 	sqlplus_cmd_on_standby "$(sqlcmd_setup_broker_for_database $standby)"
+	info "Open read only $standby for Real Time Query"
+	sqlplus_cmd_on_standby "$(to_exec "alter database open read only;")"
 	LN
 
 	create_dataguard_cfg
+	LN
+
+	line_separator
+	if [ $skip_primary_cfg == no ]
+	then
+		info "Workaround bug : drc${primary}.log show errors with broker files."
+		sqlplus_cmd "$(to_exec "alter system set dg_broker_start=false sid='*';")"
+		sqlplus_cmd "$(sqlcmd_setup_broker_for_database $primary)"
+		LN
+	fi
+
+	info "Workaround bug : drc${standby}.log show errors with broker files."
+	sqlplus_cmd_on_standby "$(to_exec "alter system set dg_broker_start=false sid='*';")"
+	sqlplus_cmd_on_standby "$(sqlcmd_setup_broker_for_database $standby)"
 	LN
 }
 
@@ -616,22 +633,9 @@ from
 
 			exec_cmd "~/plescripts/db/create_service_for_standalone_dataguard.sh \
 					-db=$primary -pdbName=$pdbName \
-					 -prefixService=pdb${pdbName}_stby -role=physical_standby"
-			LN
-
-			info "Il faut démarrer/arrêter les services standby et primaire"
-			info "sinon le démarrage des services standby échoue sur la standby."
-			exec_cmd "srvctl stop service -service pdb${pdbName}_stby_oci -db $primary"
-			exec_cmd "srvctl stop service -service pdb${pdbName}_stby_java -db $primary"
+					-prefixService=pdb${pdbName}_stby -role=physical_standby"
 			LN
 		fi
-
-		info "Open read only $standby"
-		sqlplus_cmd_on_standby "$(to_exec "alter database open read only;")"
-		LN
-		exec_cmd "ssh -t -t $standby_host '. .profile;srvctl stop database -db $standby'"
-		exec_cmd "ssh -t -t $standby_host '. .profile;srvctl start database -db $standby'"
-		LN
 
 		info "Create services for pdb $pdbName on cdb $standby"
 		exec_cmd "ssh -t -t $standby_host '. .profile; \
@@ -643,7 +647,12 @@ from
 		exec_cmd "ssh -t -t $standby_host '. .profile; \
 				~/plescripts/db/create_service_for_standalone_dataguard.sh \
 				-db=$standby -pdbName=$pdbName \
-				-prefixService=pdb${pdbName}_stby -role=physical_standby'"
+				-prefixService=pdb${pdbName}_stby -role=physical_standby -start=no'"
+		LN
+
+		info "Stop stby services on primary $primary :"
+		exec_cmd "srvctl stop service -db $primary -service pdb${pdbName}_stby_oci"
+		exec_cmd "srvctl stop service -db $primary -service pdb${pdbName}_stby_java"
 		LN
 	done<<<"$(sqlplus_exec_query "$query")"
 }
@@ -661,37 +670,27 @@ LN
 exec_cmd -c "~/plescripts/shell/test_ssh_equi.sh -user=oracle -server=$standby_host"
 if [ $? -ne 0 ]
 then
+	line_separator
 	info "Exécuter depuis $client_hostname dans ~/plescripts/db/stby le script :"
 	info "./00_setup_equivalence.sh -user1=oracle -server1=$primary_host -server2=$standby_host"
 	exit 1
 fi
 LN
 
-line_separator
-info -n "Try to join $standby_host : "
-ping -c 1 $standby_host >/dev/null 2>&1
-if [ $? -eq 0 ]
-then
-	info -f "[$OK]"
-	LN
-else
-	info -f "[$KO]"
-	exit 1
-fi
+[ $skip_setup_network == no ] && setup_network
 
 [ $skip_setup_primary == no ] && setup_primary
 
-[ $skip_setup_network == no ] && setup_network
+[ $skip_duplicate == no ] && duplicate
 
-[ $skip_duplicate == no ] && duplicate && test_pause "duplicate terminé."
-
-[ $skip_finalyze_standby_config == no ] && finalyze_standby_config
-
-[ $skip_configure_and_enable_broker == no ] && configure_and_enable_broker
+[ $skip_register_standby_to_GI == no ] && register_standby_to_GI
 
 create_dataguard_services
 
+[ $skip_configure_and_enable_broker == no ] && configure_and_enable_broker
+
 line_separator
+timing 10 "Synchro broker"
 exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
 
 script_stop $ME
