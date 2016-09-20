@@ -1059,7 +1059,7 @@ function script_start
 	ple_start=$SECONDS
 }
 
-#*> script_stop [message]
+#*> script_stop <nom du script>
 #*> $1 correspond à message
 #*> Affiche le temps écoulé depuis le dernier appel à script_start
 #*> Doit être appelé en fin de script

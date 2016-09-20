@@ -1,5 +1,5 @@
 ################################################################################
-Resume 2016/09/17 :
+Resume 2016/09/20 :
 ~~~~~~~~~~~~~~~~~~~
 
 # 43 publics functions
@@ -165,7 +165,7 @@ function fill
 
 #*>	Temporisation pendant $1 secondes
 #*>	$1 temps en secondes
-#*>	$2 msg par défaut le message est "Temporisation"
+#*>	$2 msg par défaut le message est "Be patient..."
 function timing
 
 #*> pause_in_secs <seconds>
@@ -179,7 +179,8 @@ function pause_in_secs
 #*> A appelé en début de script.
 function script_start
 
-#*> script_stop [message]
+#*> script_stop <nom du script>
+#*> $1 correspond à message
 #*> Affiche le temps écoulé depuis le dernier appel à script_start
 #*> Doit être appelé en fin de script
 function script_stop
