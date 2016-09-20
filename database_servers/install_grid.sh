@@ -425,7 +425,7 @@ function remove_tfa_on_all_nodes
 #	======================================================================
 #	MAIN
 #	======================================================================
-typeset -r script_start_at=$SECONDS
+script_start
 
 line_separator
 for file in $cfg_path/node*
@@ -535,7 +535,7 @@ info "Installation status :"
 exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; crsctl stat res -t\""
 LN
 
-info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
+script_stop $ME
 LN
 
 info "The Oracle software can be installed."

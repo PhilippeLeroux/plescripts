@@ -179,7 +179,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 #	============================================================================
 #	MAIN
 #	============================================================================
-typeset -r script_start_at=$SECONDS
+script_start
 
 line_separator
 for file in $dir_files/node*
@@ -222,7 +222,7 @@ typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | 
 
 stats_tt stop oracle_installation
 
-info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
+script_stop $ME
 LN
 
 line_separator
