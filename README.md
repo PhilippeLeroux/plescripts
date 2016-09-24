@@ -33,7 +33,7 @@ des disques sont déduits de l'identifiant.
 	* Cloner la VM master.
 	* Créer les disques sur le SAN : utilisation du protocole iscsi.
 	* Enregistrer le serveur dans le DNS : utilisation de bind9.
-	* Attacher les disques du SAN sur le ou les serveurs : utilisation d'oracleasm.
+	* Attacher les disques du SAN/VBox sur le ou les serveurs : utilisation d'oracleasm.
 
 	Toutes ces actions sont effectuées par un seul script.
 
@@ -86,7 +86,7 @@ la base soit SINGLE ou bien RAC.
  - orclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
  - K2 qui est le serveur d'infrastructure et remplie de multiples fonctions :
    - DNS     : Gestion du DNS.
-   - SAN     : Gestion des disques des bases de données.
+   - SAN     : Gestion des disques des bases de données (optionnel par défaut VBox)
    - NTP     : Pour la synchronisation des serveurs de base de données.
    - GATEWAY : Permet aux machines du réseau interne d'aller sur internet.
    - Dépôt   : Le dépôt Oracle Linux est cloné permettant la mise à jour des serveurs.
