@@ -5,7 +5,7 @@ d'interventions
 
 Toutes les actions nécessaires sur K2 sont scriptées et transparentes :
 - Le DNS est mis à jour.
-- Le SAN est mis à jour.
+- Le SAN est mis à jour, si nécessaire.
 - Les horloges des serveurs synchronisées sur la même source.
 - Les disques sont attachés via oracleasm.
 
@@ -22,6 +22,9 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	Création d'un serveur standalone : `./define_new_server.sh -db=daisy`
 
 	Création d'un RAC 2 nœuds : `./define_new_server.sh -db=daisy -max_nodes=2`
+
+	**Note** Par défaut les disques sont créés sur VBox, pour créer les disques
+	sur le SAN utiliser l'option `-luns_hosted_by=san`
 
 	Un nouveau répertoire nommé daisy est créée contenant les fichiers décrivant
 	le paramétrage du ou des serveurs.
@@ -129,17 +132,6 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 
 	__Note__ pour consommer le minimum de ressources un certain nombre de hacks
 	sont fait, -no_hacks permet de ne pas les mettre en œuvre.
-
-	**Bug RAC** : Plantage du second script root avec le code CLSRSC-507
-	- Appliquer le patch 18456643, plus d'explications [ici](https://community.oracle.com/message/13278037#13278037).
-	Puis relancer le script `./install_grid.sh -db=daisy -skip_grid_install -skip_root_scripts`
-
-	- Sans appliquer le patch 18456643 : je ne suis pas certains d'être concerné par
-	le bug le plantage est trop peu fréquent.
-		- Relancer `./install_grid.sh -db=daisy -skip_grid_install` 1 ou 2 fois peut résoudre le problème.
-
-		- Sinon se connecter sur le second nœud et exécuter le script, là il devrait
-		correctement s'exécuter. Relancer l'installation avec : `./install_grid.sh -db=daisy -skip_grid_install -skip_root_scripts`
 
 4.	Installation d'Oracle
 
