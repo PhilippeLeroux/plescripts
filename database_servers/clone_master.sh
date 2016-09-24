@@ -3,6 +3,7 @@
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -65,23 +66,12 @@ done
 
 exit_if_param_undef db 		"$str_usage"
 
-typeset -r cfg_path=~/plescripts/database_servers/$db
-if [ ! -d $cfg_path ]
-then
-	error "$cfg_path not exits !"
-	info "First run ~/plescripts/database_servers/define_new_server.sh"
-	exit 1
-fi
-
-typeset -ri max_nodes=$(ls -1 $cfg_path/node*|wc -l)
-[ $node = -1 ] && [ $max_nodes -eq 1 ] && node=1
-
+typeset -ri max_nodes=$(cfg_max_nodes $db)
+[ $node -eq -1 ] && [ $max_nodes -eq 1 ] && node=1
 exit_if_param_undef node	"$str_usage"
 
-typeset -r cfg_file=$cfg_path/node$node
-exit_if_file_not_exists $cfg_file "$str_usage"
-
-typeset -r server_name=$(cat $cfg_file | cut -d: -f2)
+cfg_load_node_info $db $node
+typeset -r server_name=$cfg_server_name
 
 typeset -r disk_type=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
 
@@ -418,7 +408,7 @@ copy_color_file
 
 mount_oracle_install
 
-case $disks_hosted_by in
+case $cfg_luns_hosted_by in
 	san)
 		if [ $node -eq 1 ]
 		then
@@ -443,7 +433,7 @@ case $disks_hosted_by in
 	;;
 
 	*)
-		error "global.cfg : disks_hosted_by = '$disks_hosted_by' invalid."
+		error "cfg_luns_hosted_by = '$cfg_luns_hosted_by' invalid."
 		exit 1
 esac
 

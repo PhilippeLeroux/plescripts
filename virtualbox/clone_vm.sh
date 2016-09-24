@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -51,13 +52,11 @@ done
 exit_if_param_undef db				"$str_usage"
 exit_if_param_undef vm_memory_mb	"$str_usage"
 
-typeset -r	cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exists $cfg_path "$str_usage"
+typeset -ri max_nodes=$(cfg_max_nodes $db)
+#	ici le n° du noeud n'est pas important et il y a tjr un noeud 1.
+cfg_load_node_info $db 1
 
-typeset -ri	max_nodes=$(ls -1 $cfg_path/node*|wc -l)
-
-typeset	-r	db_type=$(cat $cfg_path/node1 | cut -d: -f1)
-case $db_type in
+case $cfg_db_type in
 	std)
 		typeset	-r	group_name="/Standalone $(initcap $db)"
 		;;
@@ -67,9 +66,11 @@ case $db_type in
 		;;
 esac
 
-for node_file in $cfg_path/node*
+#for node_file in $cfg_path/node*
+for nr_node in $( seq $max_nodes )
 do
-	typeset	vm_name=$(cat $node_file | cut -d: -f2)
+	cfg_load_node_info $db $nr_node
+	typeset	vm_name=$cfg_server_name
 
 	info "Clone $vm_name from $master_name"
 	exec_cmd VBoxManage clonevm "$master_name"		\
@@ -108,6 +109,6 @@ do
 	LN
 done
 
-[ $disks_hosted_by == san ] && exit 0
+[ $cfg_luns_hosted_by == san ] && exit 0
 
 exec_cmd "~/plescripts/virtualbox/create_oracle_disks.sh -db=$db"

@@ -104,8 +104,10 @@ if [ $role != undef ]
 then
 	add_dynamic_cmd_param "    -role           $role"
 	add_dynamic_cmd_param "    -policy         automatic"
-	add_dynamic_cmd_param "    -failovertype   session"
+	add_dynamic_cmd_param "    -failovertype   select"
 	add_dynamic_cmd_param "    -failovermethod basic"
+	add_dynamic_cmd_param "    -failoverretry  3"
+	add_dynamic_cmd_param "    -failoverdelay  60"
 	add_dynamic_cmd_param "    -clbgoal        long"
 	add_dynamic_cmd_param "    -rlbgoal        throughput"
 fi
@@ -130,12 +132,12 @@ if [ $role != undef ]
 then
 	add_dynamic_cmd_param "    -role           $role"
 	add_dynamic_cmd_param "    -policy         automatic"
-#	add_dynamic_cmd_param "    -failovertype   transaction"
-	add_dynamic_cmd_param "    -failovertype   session"
+	add_dynamic_cmd_param "    -failovertype   select"
 	add_dynamic_cmd_param "    -failovermethod basic"
+	add_dynamic_cmd_param "    -failoverretry  3"
+	add_dynamic_cmd_param "    -failoverdelay  60"
 	add_dynamic_cmd_param "    -clbgoal        long"
 	add_dynamic_cmd_param "    -rlbgoal        throughput"
-#	add_dynamic_cmd_param "    -commit_outcome true"
 fi
 
 exec_dynamic_cmd srvctl

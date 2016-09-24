@@ -31,3 +31,7 @@ function crs_mon # $1 wait in second
 	done
 }
 
+function dg
+{
+	~/plescripts/shell/dg "$@"
+}

@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -12,13 +11,14 @@ typeset -r ME=$0
 
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<identifiant>   identifiant de la base.
-	[-max_nodes=1]      nombre de noeuds pour un RAC.
-	[-size_dg_gb=24]    taille du DG ou du FS.
-	[-size_lun_gb=8]    taille des LUNs si utilisation d'ASM.
-	[-no_dns_test]      ne pas tester si les IPs sont utilisées.
-	[-usefs]            ne pas utiliser ASM mais un FS.
-	[-ip_node=<node>]   noeud IP, sinon prend la première IP disponible.
+	-db=<identifiant>     identifiant de la base.
+	[-luns_hosted_by=$disks_hosted_by] san|vbox
+	[-max_nodes=1]        nombre de noeuds pour un RAC.
+	[-size_dg_gb=24]      taille du DG ou du FS.
+	[-size_lun_gb=8]      taille des LUNs si utilisation d'ASM.
+	[-no_dns_test]        ne pas tester si les IPs sont utilisées.
+	[-usefs]              ne pas utiliser ASM mais un FS.
+	[-ip_node=<node>]     noeud IP, sinon prend la première IP disponible.
 "
 info "Running : $ME $*"
 
@@ -29,6 +29,7 @@ typeset -i	size_dg_gb=24
 typeset -i	size_lun_gb=8
 typeset		dns_test=yes
 typeset 	usefs=no
+typeset		luns_hosted_by=san
 
 #	rac si max_nodes vaut plus de 1
 typeset		db_type=std
@@ -38,6 +39,11 @@ do
 	case $1 in
 		-size_lun_gb=*)
 			size_lun_gb=${1##*=}
+			shift
+			;;
+
+		-luns_hosted_by=*)
+			luns_hosted_by=${1##*=}
 			shift
 			;;
 
@@ -140,16 +146,7 @@ function normalyze_node
 	fi
 	ip_node=ip_node+1
 
-	db_name="DB$(to_upper $db)"
-	if [ $db_type == rac ]
-	then
-		instance_name=$(printf "%s%02d" $db_name $num_node)
-	else
-		db_name=${db_name}01
-		instance_name=$db_name
-	fi
-
-	echo "${db_type}:${server_name}:${server_ip}:${server_name}-vip:${server_vip}:${server_name}-priv:${server_private_ip}:$db_name:${instance_name}" > $cfg_path/node${num_node}
+	echo "${db_type}:${server_name}:${server_ip}:${server_name}-vip:${server_vip}:${server_name}-priv:${server_private_ip}:${luns_hosted_by}" > $cfg_path/node${num_node}
 }
 
 function normalyze_scan
