@@ -1,5 +1,5 @@
 ################################################################################
-Resume 2016/09/20 :
+Resume 2016/09/24 :
 ~~~~~~~~~~~~~~~~~~~
 
 # 12 publics functions
@@ -9,6 +9,9 @@ Resume 2016/09/20 :
 ################################################################################
 12 publics functions :
 ~~~~~~~~~~~~~~~~~~~~~~
+
+#*>	return disks without partitions.
+function get_unused_disks
 
 #*> Retourne la taille du disque $1 en bytes.
 function disk_size_bytes
@@ -21,9 +24,6 @@ function get_uuid_disk
 
 #*>	Retourne le type du disque $1 ou unused si le disque n'est pas utilisé.
 function disk_type
-
-#*> Retourne le nom de tous les disques iscsi.
-function get_iscsi_disks
 
 #*> Met à zéro l'en-tête du disque $1
 #*> Si la taille $2 n'est pas précisée seront mis à zéro les

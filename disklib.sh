@@ -1,5 +1,14 @@
 # vim: ts=4:sw=4
 
+#*>	return disks without partitions.
+function get_unused_disks
+{
+	while read device
+	do
+		[ ! -b ${device}1 ] && echo $device
+	done<<<"$(find /dev -regex "/dev/sd.")" | sort
+}
+
 #*> Retourne la taille du disque $1 en bytes.
 function disk_size_bytes
 {
@@ -25,15 +34,6 @@ function disk_type
 	# utilise read sinon il y a un espace en fin de ligne, je ne comprends pas
 	read t<<<"$(blkid $1 | sed 's/.*TYPE=\"\(.*\)\"/\1/')"
 	[ x"$t" = x ] && echo "unused" || echo $t
-}
-
-#*> Retourne le nom de tous les disques iscsi.
-function get_iscsi_disks
-{
-	while read id type f1 f2 f3 disk
-	do
-		echo $disk $(echo ${id:1:${#id}-2} | cut -d':' -f4)
-	done<<<"$(lsscsi | grep IBLOCK)"
 }
 
 #*> Met à zéro l'en-tête du disque $1

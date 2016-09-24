@@ -63,7 +63,7 @@ do
 		if [ $(( ip_node - range )) -ge $min_ip_node ]
 		then
 			debug -f "$OK step 1"
-			ip_found=$(( ip_node - 1 ))
+			ip_found=$(( ip_node - range ))
 			break
 		else
 			debug -f "$KO"

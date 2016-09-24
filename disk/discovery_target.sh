@@ -28,7 +28,7 @@ info "Connect to $initiator_name"
 exec_cmd iscsiadm -m node -T $initiator_name --portal $san_ip_priv -l
 LN
 
-info "Pour visualiser les nouveaux disques : ls /dev/disk/by-path/${disk_prefix}*"
+info "New disks : ls /dev/disk/by-path/${disk_prefix}*"
 LN
 
 #Devrait appeler setting_iscsi_chap_auth.sh, mais l'authentification ne marche pas.

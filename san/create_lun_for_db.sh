@@ -112,3 +112,4 @@ exec_cmd "targetcli /iscsi/$initiator_name/tpg1/acls/$initiator_name bookmarks a
 LN
 
 exec_cmd ./save_targetcli_config.sh -name="after_create_luns_for_$db"
+LN

@@ -7,6 +7,6 @@ EXEC_CMD_ACTION=EXEC
 
 oracleasm listdisks | while read disk_name
 do
-	info "Rend le disque $disk_name à l'OS"
+	info "Release disk $disk_name"
 	exec_cmd oracleasm deletedisk $disk_name
 done

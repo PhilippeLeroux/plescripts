@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -65,7 +64,9 @@ LN
 typeset -r profile_oracle=/tmp/profile_oracle
 
 info "Create oracle profile."
-exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ~/plescripts/oracle_preinstall/template_profile.oracle | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > $profile_oracle"
+exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" \
+			~/plescripts/oracle_preinstall/template_profile.oracle |\
+			 sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > $profile_oracle"
 LN
 
 . $profile_oracle
@@ -123,11 +124,16 @@ make_vimrc_file "/root"
 
 line_separator
 info "create users grid"
-exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper -s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
+exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper \
+			 -s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
+
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
 exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/grid/rlwrap.alias
 
-exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.grid | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/profile.grid"
+exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\"	\
+			./template_profile.grid |					\
+			sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/profile.grid"
+
 if [ $the_shell == ksh ]
 then
 	exec_cmd "echo \" \" >> /home/grid/.profile"
@@ -145,11 +151,16 @@ LN
 
 line_separator
 info "create user oracle"
-exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper -s /bin/${the_shell} -c \"Oracle Software Owner\" oracle
+exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper	\
+			-s /bin/${the_shell} -c \"Oracle Software Owner\" oracle
+
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/oracle/grid_env
 exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/oracle/rlwrap.alias
 
-exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" ./template_profile.oracle | sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/oracle/profile.oracle"
+exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\"	\
+			./template_profile.oracle |					\
+			sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/oracle/profile.oracle"
+
 if [ $the_shell == ksh ]
 then
 	exec_cmd "echo \" \" >> /home/oracle/.profile"

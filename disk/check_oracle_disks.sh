@@ -30,7 +30,7 @@ do
 
 		device_name=$(get_os_disk_used_by_oracleasm $disk_name)
 
-		info "Le disque correspondant est :"
+		info "OS disk :"
 		exec_cmd -f -cont "ls -l $device_name"
 	fi
 	LN

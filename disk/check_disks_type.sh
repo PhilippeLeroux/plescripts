@@ -31,14 +31,15 @@ do
 	esac
 done
 
-get_iscsi_disks |\
+find /dev -regex "/dev/sd." | sort |\
 while read disk idisk
 do
 	type="$(disk_type $disk)"
-	info -n "disk $disk "
+	typeset -i size_b=$(disk_size_bytes $disk)
+	info -n "disk $disk $(fmt_bytesU_2_better $size_b) "
 	if [ "$type" = "unused" ]
 	then
-		echo "non utilisé."
+		echo "Unused."
 	else
 		echo -n "type $type"
 		typeset -i nb_part=$(count_partition_for $disk)
@@ -49,7 +50,14 @@ do
 			do
 				part_name=${disk}$ipart
 				part_type="$(disk_type $part_name)"
-				info "	-$part_name type $part_type"
+				info -n "	-$part_name type $part_type"
+				if [ "$part_type" == oracleasm ]
+				then
+					desc=$(oracleasm querydisk $part_name)
+					info -f " : ${desc##* }"
+				else
+					LN
+				fi
 			done
 		else
 			LN

@@ -10,12 +10,14 @@ typeset -r str_usage=\
 "Usage : $ME
 	[-db=<str>]         Détruit la ou les VMs correspondant à la base.
 	[-server=<pattern>] Détruit les VMs correspondants au pattern.
+	[-y]
 "
 
 info "$ME $@"
 
 typeset	db=undef
 typeset	server=undef
+typeset	confirm=yes
 
 while [ $# -ne 0 ]
 do
@@ -32,6 +34,11 @@ do
 
 		-server=*)
 			server=${1##*=}
+			shift
+			;;
+
+		-y)
+			confirm=no
 			shift
 			;;
 
@@ -73,7 +80,7 @@ function virtualbox_delete
 	info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
 	[ $max_vms -eq 0 ] && exit 1
 
-	confirm_or_exit "Delete them ?"
+	[ $confirm == yes ] && confirm_or_exit "Delete them ?"
 
 	info "Stop all VMs..."
 	for ivm in $( seq 0 $(( max_vms - 1 )) )

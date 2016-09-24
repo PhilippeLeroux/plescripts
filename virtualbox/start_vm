@@ -16,6 +16,7 @@ info "$ME $@"
 
 typeset server=undef
 typeset	wait_os=yes
+typeset check_db=yes
 
 while [ $# -ne 0 ]
 do
@@ -33,6 +34,11 @@ do
 
 		-wait_os=*)
 			wait_os=${1##*/}
+			shift
+			;;
+
+		-no_check_db)
+			check_db=no
 			shift
 			;;
 
@@ -61,6 +67,20 @@ done
 exit_if_param_undef server	"$str_usage"
 
 exit_if_param_invalid wait_os "yes no" "$str_usage"
+
+# $1 vm_name
+function start_db 
+{
+	typeset -r vm_name=$1
+
+	sleep 180
+	db_name=$(ssh oracle@$vm_name ". .profile >/dev/null;\
+						srvctl status database -thisversion" | head -1 | cut -d\  -f4)
+
+	ssh oracle@$vm_name ". .profile >/dev/null;\
+								srvctl start database -db $db_name"
+}
+
 
 function virtualbox_start
 {
@@ -96,6 +116,23 @@ function virtualbox_start
 
 	if [ $nr_vm_started -eq $max_vms ]
 	then
+		if [ $check_db == yes ]
+		then
+			#===================================================================
+			#	Stop la base présente sur le serveur.
+			typeset	-r	first_vm=${vm_list[0]}
+			debug "first_vm = $first_vm"
+			if [ ${first_vm:0:3} == "srv" ]
+			then
+				id=$(echo $first_vm | sed "s/srv\(.*\)0./\1/")
+				debug "id = $id"
+				if [ -d ~/plescripts/database_servers/$id ]
+				then
+					start_db ${vm_list[0]} &
+				fi
+			fi
+		fi
+
 		return 0	# Toutes les VMs ont démarrés.
 	else
 		return 1	# Au moins une VM n'a pas démarré.

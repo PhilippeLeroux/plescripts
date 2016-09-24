@@ -21,9 +21,9 @@ fi
 
 function virtualbox_reboot
 {
-	exec_cmd "stop_vm -server=$server -wait_os"
+	exec_cmd "stop_vm -server=$server -no_check_db -wait_os"
 	LN
-	exec_cmd "start_vm $server"
+	exec_cmd "start_vm -no_check_db $server"
 }
 
 case ${hostvm##*_} in

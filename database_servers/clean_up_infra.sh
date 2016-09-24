@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 PLELIB_OUTPUT=FILE
@@ -9,12 +8,12 @@ PLELIB_OUTPUT=FILE
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -db=<str> [-delete_vms]"
+typeset -r str_usage="Usage : $ME -db=<str> -delete_vms=yes"
 
 info "Running : $ME $*"
 
 typeset	db=undef
-typeset	delete_vms=no
+typeset	delete_vms=yes
 
 while [ $# -ne 0 ]
 do
@@ -30,8 +29,8 @@ do
 			shift
 			;;
 
-		-delete_vms)
-			delete_vms=yes
+		-delete_vms=*)
+			delete_vms=${1##*=}
 			shift
 			;;
 
@@ -55,7 +54,7 @@ then
 	if [ $delete_vms == yes ]
 	then
 		line_separator
-		exec_cmd -c "~/plescripts/shell/delete_vm -db=$db"
+		exec_cmd -c "~/plescripts/shell/delete_vm -db=$db -y"
 		LN
 	fi
 
@@ -75,17 +74,17 @@ then
 
 	line_separator
 	info "Mise à jour du dns :"
-	exec_cmd "ssh -t $dns_conn \"~/plescripts/dns/remove_db_from_dns.sh -db=$db\""
+	exec_cmd "ssh -t $dns_conn plescripts/dns/remove_db_from_dns.sh -db=$db"
 	LN
 
 	line_separator
 	info "Mise à jour des clefs"
-	exec_cmd "ssh -t $dns_conn \"~/plescripts/dns/clean_up_ssh_authorized_keys.sh\""
+	exec_cmd "ssh -t $dns_conn plescripts/dns/clean_up_ssh_authorized_keys.sh"
 	LN
 
 	line_separator
 	info "Mise à jour du san :"
-	exec_cmd "ssh -t $san_conn \"~/plescripts/san/reset_all_for_db.sh -db=$db\""
+	exec_cmd "ssh -t $san_conn plescripts/san/reset_all_for_db.sh -db=$db"
 	LN
 
 	line_separator

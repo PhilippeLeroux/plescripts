@@ -1,13 +1,11 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/networklib.sh
-EXEC_CMD_ACTION=EXEC
-
 . ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
@@ -85,7 +83,7 @@ exit_if_file_not_exists $cfg_file "$str_usage"
 
 typeset -r server_name=$(cat $cfg_file | cut -d: -f2)
 
-typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
+typeset -r disk_type=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
 
 typeset -r vg_name=asm01
 
@@ -104,7 +102,7 @@ function run_oracle_preinstall
 	typeset db_type=rac
 	if [ $max_nodes -eq 1 ]
 	then
-		[ $type_disks == FS ] && db_type=single_fs || db_type=single
+		[ $disk_type == FS ] && db_type=single_fs || db_type=single
 	fi
 
 	exec_cmd "ssh -t root@$server_name plescripts/oracle_preinstall/run_all.sh $db_type"
@@ -112,8 +110,8 @@ function run_oracle_preinstall
 
 	line_separator
 	info "Create link for root user."
-	exec_cmd "ssh -t root@$server_name 'ln -s ~/plescripts/disk ~/disk'"
-	exec_cmd "ssh -t root@$server_name 'ln -s ~/plescripts/yum ~/yum'"
+	exec_cmd "ssh -t root@$server_name 'ln -s plescripts/disk ~/disk'"
+	exec_cmd "ssh -t root@$server_name 'ln -s plescripts/yum ~/yum'"
 	LN
 
 	info "Create link for grid user."
@@ -187,23 +185,9 @@ function setup_iscsi_inititiator
 	LN
 }
 
-#	Sur le premier noeud les disques doivent être crées puis exportés.
-function configure_disks_node1
+#	Monte le répertoire d'installation sur /mnt/oracle_install
+function mount_oracle_install
 {
-	line_separator
-	info "Setup SAN"
-	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -create_lv -vg_name=$vg_name -db=${db} -node=$node"
-	LN
-
-	test_pause "Check if the disks are created on the SAN"
-
-	line_separator
-	info "Register iscsi and create oracle disks..."
-	typeset TD=ASM
-	[ $type_disks == FS ] && TD=FS
-	exec_cmd "ssh -t root@${server_name} plescripts/disk/oracleasm_discovery_first_node.sh -type_disk=$TD"
-	LN
-
 	line_separator
 	info "Mount point for Oracle installation"
 	case $type_shared_fs in
@@ -223,14 +207,47 @@ function configure_disks_node1
 	LN
 }
 
+#	Création du point de montage /u01/app/oracle/oradata
+#		* Recherche un disque disponible
+#		* Création du vg vgoradata et du lv lvoradate
+#		* Pour création d'un FS du type rdbms_fs_type (cf global.cfg)
+function create_rdbms_fs
+{
+	exec_cmd ssh -t root@${server_name} plescripts/disk/create_fs.sh		\
+										-type_fs=$rdbms_fs_type				\
+										-suffix_vglv=oradata				\
+										-mount_point=/u01/app/oracle/oradata
+	exec_cmd ssh -t root@${server_name} chown -R oracle:oinstall /u01/app/oracle
+	LN
+}
+
+#	Sur le premier noeud les disques doivent être crées puis exportés.
+function configure_disks_node1
+{
+	line_separator
+	info "Setup SAN"
+	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -create_lv -vg_name=$vg_name -db=${db} -node=$node"
+	LN
+
+	exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
+	if [ $disk_type != FS ]
+	then
+		exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
+	else
+		create_rdbms_fs
+	fi
+}
+
 #	Dans le cas d'un RAC les autres noeuds vont se connecter au portail et
 #	appeler oracleasm pour accéder aux disques.
 function configure_disks_other_node_than_1
 {
 	line_separator
-	info "Node $node disks on SAN exists"
+	info "Setup SAN"
 	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -vg_name=$vg_name -db=${db} -node=$node"
-	exec_cmd "ssh -t root@${server_name} plescripts/disk/oracleasm_discovery_other_nodes.sh"
+
+	exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
+	exec_cmd "ssh -t root@${server_name} oracleasm scandisks"
 	LN
 }
 
@@ -296,7 +313,7 @@ function configure_server
 		exec_cmd "$vm_scripts_path/clone_vm.sh -db=$db -vm_memory_mb=$vm_memory"
 	fi
 
-	exec_cmd "$vm_scripts_path/start_vm $server_name"
+	exec_cmd "$vm_scripts_path/start_vm -no_check_db $server_name"
 	wait_master
 
 	#	************************************************************************
@@ -310,7 +327,11 @@ function configure_server
 	LN
 
 	line_separator
-	exec_cmd "ssh -t root@$master_name \"~/plescripts/database_servers/create_mount_point_u01.sh -device=/dev/sdb\""
+	info "Create mount point /u01"
+	exec_cmd ssh -t root@$master_name plescripts/disk/create_fs.sh	\
+											-mount_point=/u01		\
+											-suffix_vglv=orcl		\
+											-type_fs=xfs
 	LN
 
 	line_separator
@@ -385,7 +406,7 @@ function test_if_other_nodes_up
 #	============================================================================
 #	MAIN
 #	============================================================================
-typeset -r script_start_at=$SECONDS
+script_start
 
 [ $node -gt 1 ]	&& test_if_other_nodes_up
 
@@ -395,18 +416,42 @@ configure_oracle_accounts
 
 copy_color_file
 
-if [ $node -eq 1 ]
-then
-	configure_disks_node1
-else
-	configure_disks_other_node_than_1
-fi
+mount_oracle_install
 
-info "Plymouth theme"
+case $disks_hosted_by in
+	san)
+		if [ $node -eq 1 ]
+		then
+			configure_disks_node1
+		else
+			configure_disks_other_node_than_1
+		fi
+	;;
+
+	vbox)
+		if [ $node -eq 1 ]
+		then
+			if [ $disk_type != FS ]
+			then
+				exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
+			else
+				create_rdbms_fs
+			fi
+		else
+			exec_cmd "ssh -t root@${server_name} oracleasm scandisks"
+		fi
+	;;
+
+	*)
+		error "global.cfg : disks_hosted_by = '$disks_hosted_by' invalid."
+		exit 1
+esac
+
+info "Plymouth theme."
 exec_cmd -c "ssh -t root@$server_name plescripts/shell/set_plymouth_them"
 LN
 
-info "Active les statistiques"
+info "Enable stats."
 exec_cmd "ssh -t root@${server_name} plescripts/stats/create_systemd_service_stats.sh"
 LN
 
@@ -426,7 +471,7 @@ then	# C'est le dernier nœud
 		LN
 	fi
 
-	if [ $type_disks == FS ]
+	if [ $disk_type == FS ]
 	then
 		info "The Oracle RDBMS software can be installed."
 		info "./install_oracle.sh -db=$db"
@@ -442,5 +487,4 @@ then	# Ce n'est pas le dernier noeud et il y a plus de 1 noeud.
 	LN
 fi
 
-info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
-LN
+script_stop $ME

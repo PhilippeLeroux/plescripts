@@ -92,6 +92,7 @@ do
 		LN
 	fi
 
+	info "Create disk ${vm_name}_u01 for mount point /u01"
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	LN
 
@@ -106,3 +107,7 @@ do
 	exec_cmd VBoxManage setextradata "$vm_name" GUI/GuruMeditationHandler PowerOff
 	LN
 done
+
+[ $disks_hosted_by == san ] && exit 0
+
+exec_cmd "~/plescripts/virtualbox/create_oracle_disks.sh -db=$db"

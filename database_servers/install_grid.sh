@@ -291,18 +291,28 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
 	exec_cmd "ssh -t root@${node_names[$inode]} \"/u01/app/oraInventory/orainstRoot.sh\""
 	LN
-	exec_cmd -c "ssh -t -t root@${node_names[$inode]} \"$ORACLE_HOME/root.sh\""
-	if [ $? -ne 0 ]
-	then
-		error "Arrive de temps en temps workaround :"
-		info "Depuis le poste $client_hostname :"
-		info "	ssh root@${node_names[$inode]}"
-		info "	$ORACLE_HOME/root.sh"
-		LN
-		info "Relancer le script :"
-		info "./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
-		exit 1
-	fi
+
+	typeset -i max_tests=2
+	while [ 0 -eq 0 ]
+	do
+		exec_cmd -c "ssh -t -t root@${node_names[$inode]} \"$ORACLE_HOME/root.sh\""
+		[ $? -eq 0 ] && break
+
+		max_tests=max_tests-1
+		if [ $max_tests -eq 0 ]
+		then
+			error "Arrive de temps en temps workaround :"
+			info "Depuis le poste $client_hostname :"
+			info "	ssh root@${node_names[$inode]}"
+			info "	$ORACLE_HOME/root.sh"
+			LN
+			info "Relancer le script :"
+			info "./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
+			exit 1
+		else
+			info "Nouvelle tentative."
+		fi
+	done
 }
 
 # Création de la base : -MGMTDB pour un RAC, je ne sais pas ce qu'il fait d'autre.

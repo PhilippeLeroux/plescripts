@@ -207,7 +207,7 @@ exec_cmd mkdir $cfg_path
 LN
 
 typeset -i ip_range=1
-[ $max_nodes -gt 1 ] && ip_range=max_nodes*2
+[ $max_nodes -gt 1 ] && ip_range=max_nodes*2+3	# +3 adressse de scan
 [ $ip_node -eq -1 ] && ip_node=$(ssh $dns_conn "~/plescripts/dns/get_free_ip_node.sh -range=$ip_range")
 
 for i in $(seq 1 $max_nodes)

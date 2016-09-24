@@ -18,6 +18,7 @@ info "Running : $ME $*"
 typeset		vm_name=undef
 typeset		disk_name=undef
 typeset	-i	disk_mb=-1
+typeset		attach_to=no_attach
 
 while [ $# -ne 0 ]
 do
@@ -40,6 +41,11 @@ do
 
 		-disk_mb=*)
 			disk_mb=${1##*=}
+			shift
+			;;
+
+		-attach_to=*)
+			attach_to=${1##*=}
 			shift
 			;;
 
@@ -66,27 +72,45 @@ exit_if_param_undef port		"$str_usage"
 function get_free_SATA_port
 {
 	VBoxManage showvminfo $vm_name > /tmp/${vm_name}.info
-	typeset -ri nu=$(grep -E "^SATA"  /tmp/${vm_name}.info | sed "s/SATA (\([0-9]\),.*/\1/" | tail -1)
+	typeset -ri nu=$(grep -E "^SATA"  /tmp/${vm_name}.info | sed "s/SATA (\([0-9]*\),.*/\1/" | tail -1)
 	rm -f /tmp/${vm_name}.info
 	echo $(( nu+1 ))
 }
 
 typeset	-r	disk_full_path="$vm_path/$vm_name/${disk_name}.vdi"
 
+typeset -r on_port=$(get_free_SATA_port)
+if [ "$attach_to" == no_attach ]
+then
+	mtype=normal
+	attach_to=$vm_name
+	variant=Standard
+else
+	mtype=shareable
+	attach_to="$vm_name $attach_to"
+	variant=Fixed
+fi
+
+
+line_separator
 if [ ! -d "$disk_full_path" ]
 then
-	line_separator
+	info "Create disk : '$disk_full_path'"
 	exec_cmd VBoxManage createhd						\
 						--filename \"$disk_full_path\"	\
-						--size $disk_mb
+						--size $disk_mb --variant=$variant
 	LN
 fi
 
-line_separator
-exec_cmd VBoxManage storageattach $vm_name			\
-					--storagectl SATA				\
-					--port $(get_free_SATA_port)	\
-					--device 0						\
-					--type hdd						\
-					--medium \"$disk_full_path\"
-LN
+for vm in $attach_to
+do
+	info "Attach disk to $vm on port '$on_port'"
+	exec_cmd VBoxManage storageattach $vm				\
+						--storagectl SATA				\
+						--port $on_port					\
+						--device 0						\
+						--type hdd						\
+						--mtype	$mtype					\
+						--medium \"$disk_full_path\"
+	LN
+done

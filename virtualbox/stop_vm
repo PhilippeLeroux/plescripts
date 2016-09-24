@@ -18,6 +18,7 @@ info "$ME $@"
 typeset server=undef
 typeset	wait_os=no
 typeset reboot_vbox=no
+typeset check_db=yes
 
 while [ $# -ne 0 ]
 do
@@ -35,6 +36,11 @@ do
 
 		-wait_os)
 			wait_os=yes
+			shift
+			;;
+
+		-no_check_db)
+			check_db=no
 			shift
 			;;
 
@@ -67,7 +73,9 @@ done
 [[ $server == undef ]] && [[ -v ID_DB ]] && server=$ID_DB
 exit_if_param_undef server	"$str_usage"
 
-function wait_os
+[ $reboot_vbox == yes ] && wait_os=yes
+
+function wait_os_until_stopped
 {
 	typeset -r os_name="$1"
 
@@ -79,92 +87,105 @@ function wait_os
 	done
 }
 
+#===============================================================================
+#	Charge le nom des VMs dans vm_list
 
-function virtualbox_stop
-{
-	typeset -a vm_list
-	typeset -i ivm=0
+typeset -a vm_list	#	Contient le nom de toutes les VMs
+typeset -i ivm=0
 
-	while read vm_name
-	do
-		if [ x"$vm_name" != x ]
+while read vm_name
+do
+	if [ x"$vm_name" != x ]
+	then
+		vm_list[$ivm]=$vm_name
+		ivm=ivm+1
+	fi
+done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+
+typeset -ri max_vms=${#vm_list[@]}
+info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
+[ $max_vms -eq 0 ] && exit 1
+
+#===============================================================================
+#	Stop la base présente sur le serveur.
+if [ $check_db == yes ]
+then
+	typeset	-r	first_vm=${vm_list[0]}
+	debug "first_vm = $first_vm"
+	if [ ${first_vm:0:3} == "srv" ]
+	then
+		id=$(echo $first_vm | sed "s/srv\(.*\)0./\1/")
+		debug "id = $id"
+		if [ -d ~/plescripts/database_servers/$id ]
 		then
-			vm_list[$ivm]=$vm_name
-			ivm=ivm+1
+			db_name=$(ssh oracle@${vm_list[0]} ". .profile >/dev/null;\
+				srvctl status database -thisversion" | head -1 | cut -d\  -f4)
+
+			exec_cmd -c "ssh oracle@${vm_list[0]} \". .profile >/dev/null;\
+						srvctl stop database -db $db_name\""
 		fi
-	done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+	fi
+fi
 
-	typeset -ri max_vms=${#vm_list[@]}
+#===============================================================================
+# Stop les VMs et mémorise leur nom dans vm_stopped_list
 
-	info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
-	[ $max_vms -eq 0 ] && exit 1
+typeset -a vm_stopped_list
+typeset	-i ivm_stopped=0
 
-	# Mémorise les VMs qui sont stoppées par un acpipowerbutton
-	typeset -a vm_wait_os_list
-	typeset	-i ivm_2_wait=0
+typeset -i count_errors=0
 
-	typeset -i count_errors=0
+#	Stop toutes les VMs
+for ivm in $( seq 0 $(( max_vms - 1 )) )
+do
+	line_separator
+	exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} acpipowerbutton"
+	if [ $? -ne 0 ]
+	then
+		error "Failed to stop ${vm_list[$ivm]}"
+		LN
 
-	for ivm in $( seq 0 $(( max_vms - 1 )) )
-	do
 		line_separator
-		exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} acpipowerbutton"
+		info "Poweroff : ${vm_list[$ivm]}"
+		exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} poweroff"
 		if [ $? -ne 0 ]
 		then
-			error "Failed to stop ${vm_list[$ivm]}"
-			LN
-
-			line_separator
-			info "Poweroff : ${vm_list[$ivm]}"
-			exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} poweroff"
-			if [ $? -ne 0 ]
-			then
-				error "Failed to poweroff ${vm_list[$ivm]}"
-				count_errors=count_errors+1
-			fi
-		else
-			vm_wait_os_list[$ivm_2_wait]=${vm_list[$ivm]}
-			ivm_2_wait=ivm_2_wait+1
+			error "Failed to poweroff ${vm_list[$ivm]}"
+			count_errors=count_errors+1
 		fi
-		LN
-	done
-
-	if [ $wait_os == yes ]
-	then
-		typeset -ri	stop_at=$SECONDS
-		line_separator
-		for os_2_wait in ${vm_wait_os_list[*]}
-		do
-			wait_os "$os_2_wait"
-			LN
-		done
-		typeset -ri	duration=$(( SECONDS - stop_at ))
-		info "Total wait : $(fmt_seconds $duration)."
-		timing 2
-	fi
-
-	if [ $count_errors -ne 0 ]
-	then
-		warning "$count_errors failed."
-		exit 1
 	else
-		if [[ $reboot_vbox == yes && $(VBoxManage list runningvms | wc -l) -eq 1 ]]
-		then # Ne fonctionnera qu'avec l'option -wait_os
-			exec_cmd "~/plescripts/virtualbox/restart_vboxdrv.sh"
-		fi
-		exit 0
+		vm_stopped_list[$ivm_stopped]=${vm_list[$ivm]}
+		ivm_stopped=ivm_stopped+1
 	fi
-}
+	LN
+done
 
-[ $reboot_vbox == yes ] && wait_os=yes
+#===============================================================================
+if [ $wait_os == yes ]
+then	# Attend que toutes les VMs soient stoppée.
+	typeset -ri	stop_at=$SECONDS
+	line_separator
+	typeset -i count=0
+	for os_2_wait in ${vm_stopped_list[*]}
+	do
+		wait_os_until_stopped "$os_2_wait"
+		[ $count -ne 0 ] && LN
+		count=count+1
+	done
+	typeset -ri	duration=$(( SECONDS - stop_at ))
+	info "Total wait : $(fmt_seconds $duration)."
+	timing 2
+fi
 
-case ${hostvm##*_} in
-	virtualbox)
-		virtualbox_stop
-		;;
-
-	*)
-		error "${hostvm##*_} not implemented."
-		exit 1
-		;;
-esac
+#===============================================================================
+if [ $count_errors -ne 0 ]
+then
+	warning "$count_errors failed."
+	exit 1
+else
+	if [[ $reboot_vbox == yes && $(VBoxManage list runningvms | wc -l) -eq 1 ]]
+	then # Ne fonctionnera qu'avec l'option -wait_os
+		exec_cmd "~/plescripts/virtualbox/restart_vboxdrv.sh"
+	fi
+	exit 0
+fi
