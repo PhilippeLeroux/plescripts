@@ -66,7 +66,6 @@ case $cfg_db_type in
 		;;
 esac
 
-#for node_file in $cfg_path/node*
 for nr_node in $( seq $max_nodes )
 do
 	cfg_load_node_info $db $nr_node
