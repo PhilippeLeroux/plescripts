@@ -31,7 +31,9 @@ des disques sont déduits de l'identifiant.
 
 * Clonage du serveur de référence, actions effectuées :
 	* Cloner la VM master.
-	* Créer les disques sur le SAN : utilisation du protocole iscsi.
+	* Créer les disques :
+	  * sur le SAN : utilisation du protocole iSCSI.
+	  * ou sur VirtualBox
 	* Enregistrer le serveur dans le DNS : utilisation de bind9.
 	* Attacher les disques du SAN/VBox sur le ou les serveurs : utilisation d'oracleasm.
 
