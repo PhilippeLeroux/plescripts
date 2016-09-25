@@ -1,3 +1,5 @@
+-- vim: ts=4:sw=4
+set lines 100
 col	username				for a10	head "User name"
 col	user_id							head "Used ID"
 col default_tablespace		for a20 head "(*)tablespace"

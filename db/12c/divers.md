@@ -3,7 +3,42 @@
 
 Rappel les bases sont créées en mode threaded (donc pas d'identification OS)
 
-Je n'utilise que des bases 'Services Managed'
+# Modification du scripts sqldeveloper.sh
+
+	```
+	[kangs<<racvbox>>sqldeveloper]$ cat sqldeveloper.sh
+	#!/bin/bash
+	echo "Stop nscd.service"
+	sudo systemctl stop nscd.service
+	echo
+
+	export TNS_ADMIN=$HOME/sqldeveloper
+
+	cd "`dirname $0`"/sqldeveloper/bin && bash sqldeveloper $*
+
+	echo
+	echo "Start nscd.service"
+	sudo systemctl start nscd.service
+	```
+
+Exemple fichier tnsnames.ora pour les dataguards :
+
+	```
+	[kangs<<racvbox>>sqldeveloper]$ cat tnsnames.ora
+	PDBVENUS01 =
+		(DESCRIPTION =
+			(FAILOVER=on)
+			(LOAD_BALANCE=off)
+			(ADDRESS_LIST=
+				(ADDRESS = (PROTOCOL = TCP) (HOST = srvvenus01) (PORT = 1521) )
+				(ADDRESS = (PROTOCOL = TCP) (HOST = srvuranus01) (PORT = 1521) )
+			)
+			(CONNECT_DATA =
+				(SERVER = DEDICATED)
+				(SERVICE_NAME = pdbVENUS01_java)
+			)
+		)
+	```
 
 # Connection au CDC :
 `sqlplus sys/Oracle12 as sysdba`
@@ -95,7 +130,7 @@ Je n'utilise que des bases 'Services Managed'
 
 * Connection :
 
-Utilisation de la SCAN philae-scan sur le port 1521 et le service pdbphilae01_oci.
+	Utilisation de la SCAN philae-scan sur le port 1521 et le service pdbphilae01_oci.
 
 	```
 	oracle@srvphilae01:PHILAE_2:oracle> sqlplus sys/Oracle12@//philae-scan:1521/pdbphilae01_oci as sysdba
@@ -113,7 +148,7 @@ Utilisation de la SCAN philae-scan sur le port 1521 et le service pdbphilae01_oc
 	SQL>
 	```
 
-TODO : Créer un alias tns pour éviter l'ezconnect
+	TODO : Créer un alias tns pour éviter l'ezconnect
 
 # En vrac commandes/liens utils sur les PDBs.
 

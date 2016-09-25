@@ -1,3 +1,4 @@
+-- vim: ts=4:sw=4
 set lines 150
 col	instance_name	for	a10		head "Instance"
 col	name			for	a10		head "PDB name"
@@ -7,7 +8,7 @@ select
 ,   c.name
 ,   c.open_mode
 ,	to_char( c.open_time, 'YY/MM/DD HH24:MI' ) "Open time"
-,	round( c.total_size / 1024 / 1024 / 1024, 0 ) "Total size"
+,	round( c.total_size / 1024 / 1024 / 1024, 0 ) "Total size (Gb)"
 ,	c.recovery_status
 ,	c.restricted
 from

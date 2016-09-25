@@ -1,3 +1,4 @@
+-- vim: ts=4:sw=4
 set lines 130
 col	name			for a10		head 'DB name'
 col	open_mode		for a10		head 'Open mode'
