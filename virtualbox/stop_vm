@@ -18,7 +18,6 @@ info "$ME $@"
 typeset server=undef
 typeset	wait_os=no
 typeset reboot_vbox=no
-typeset check_db=yes
 
 while [ $# -ne 0 ]
 do
@@ -36,11 +35,6 @@ do
 
 		-wait_os)
 			wait_os=yes
-			shift
-			;;
-
-		-no_check_db)
-			check_db=no
 			shift
 			;;
 
@@ -105,27 +99,6 @@ done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
 typeset -ri max_vms=${#vm_list[@]}
 info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
 [ $max_vms -eq 0 ] && exit 1
-
-#===============================================================================
-#	Stop la base présente sur le serveur.
-if [ $check_db == yes ]
-then
-	typeset	-r	first_vm=${vm_list[0]}
-	debug "first_vm = $first_vm"
-	if [ ${first_vm:0:3} == "srv" ]
-	then
-		id=$(echo $first_vm | sed "s/srv\(.*\)0./\1/")
-		debug "id = $id"
-		if [ -d ~/plescripts/database_servers/$id ]
-		then
-			db_name=$(ssh oracle@${vm_list[0]} ". .profile >/dev/null;\
-				srvctl status database -thisversion" | head -1 | cut -d\  -f4)
-
-			exec_cmd -c "ssh oracle@${vm_list[0]} \". .profile >/dev/null;\
-						srvctl stop database -db $db_name\""
-		fi
-	fi
-fi
 
 #===============================================================================
 # Stop les VMs et mémorise leur nom dans vm_stopped_list

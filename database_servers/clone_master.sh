@@ -303,7 +303,7 @@ function configure_server
 		exec_cmd "$vm_scripts_path/clone_vm.sh -db=$db -vm_memory_mb=$vm_memory"
 	fi
 
-	exec_cmd "$vm_scripts_path/start_vm -no_check_db $server_name"
+	exec_cmd "$vm_scripts_path/start_vm $server_name"
 	wait_master
 
 	#	************************************************************************
