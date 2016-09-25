@@ -29,69 +29,54 @@ La création d'une nouvelle base SINGLE ou RAC se fait en 5 étapes :
 * Définir l'identifiant de la base et du nombre de nœuds : les noms des serveurs et
 des disques sont déduits de l'identifiant.
 
-* Clonage du serveur de référence, actions effectuées :
+* Clonage du serveur de référence : Temps ~5mn par serveur.
+
+  Actions effectuées par le script de clonage :
+
 	* Cloner la VM master.
 	* Créer les disques :
 	  * sur le SAN : utilisation du protocole iSCSI.
 	  * ou sur VirtualBox
 	* Enregistrer le serveur dans le DNS : utilisation de bind9.
-	* Attacher les disques du SAN/VBox sur le ou les serveurs : utilisation d'oracleasm.
+	* Utilisation d'oracleasm pour la gestion des disques bdd.
 
-	Toutes ces actions sont effectuées par un seul script.
-
-	Temps de clonage : ~8mn par serveur.
-
-* Installation du Grid Infrastructure et création des DGs.
+* Installation du Grid Infrastructure et création des DGs : Temps ~35mn
 
 	Que la base soit SINGLE ou RAC il n'y a qu'un script à exécuter, les scripts
 root de pré installations sont automatiquement exécutés sur le serveur ou l'ensemble
 des nœuds d'un RAC.
 
-	Temps d'installation : ~35mn
-
-* Installation d'Oracle
+* Installation d'Oracle : Temps ~20mn
 
 	Comme pour le Grid un seul script prend en charge l'ensemble des opérations que
 la base soit SINGLE ou bien RAC.
 
-	Temps d'installation : ~20mn
-
-* Création d'une base de données : un seul script également.
-
-	Temps de création cdb + 1 pdb : ~35mn
+* Création d'une base de données : Temps de création cdb + 1 pdb : ~25mn
 
 --------------------------------------------------------------------------------
-### Pré requis :
-* Disposer d'une machine assez puissante pour un RAC il faut au minimum 8Gb de RAM.
+### Télécharger les logiciels suivants :
 
-* Télécharger les logiciels suivants :
+* [Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
-	* [Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
+	Uniquement pour windows, sous linux yum install [...] ou apt-get install [...]
 
-		Uniquement pour windows, sous linux yum install [...] ou apt-get install [...]
+	Pour le moment le support de Windows est suspendu, il reprendra quand Ubuntu on Windows
+	sera opérationnel et utilisable.
 
-		Pour le moment le support de Windows est suspendu, il reprendra quand Ubuntu on Windows
-		sera opérationnel et utilisable.
+* [Oracle Linux 7, uniquement l'iso V100082-01.iso.](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
 
-	* [Oracle Linux 7, uniquement l'iso V100082-01.iso.](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
+* [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 
-	* [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
-
-	* Télécharger plescripts qui doit être extrait dans $HOME.
-		* Avec git : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
-		* Ou télécharger le zip en cliquant sur le boutton vert "Clone or download" en haut de la page.
+* Télécharger plescripts qui doit être extrait dans $HOME.
+	* Avec git : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
+	* Ou télécharger le zip en cliquant sur le boutton vert "Clone or download" en haut de la page.
 
 --------------------------------------------------------------------------------
 
 ### Création des VMs orclmaster et K2.
 2 VMs sont nécessaires pour commencer :
  - orclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
- - K2 qui est le serveur d'infrastructure et remplie de multiples fonctions :
-   - DNS     : Gestion du DNS.
-   - SAN     : Gestion des disques des bases de données (optionnel par défaut VBox)
-   - NTP     : Pour la synchronisation des serveurs de base de données.
-   - GATEWAY : Permet aux machines du réseau interne d'aller sur internet.
-   - Dépôt   : Le dépôt Oracle Linux est cloné permettant la mise à jour des serveurs.
+ - K2 qui est le serveur d'infrastructure.
 
  [Schéma réseau ascii art](https://github.com/PhilippeLeroux/plescripts/wiki/schema_reseau.txt)
 
