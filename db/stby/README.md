@@ -1,17 +1,13 @@
 #	Création d'un dataguard.
   La standby sera en 'real time apply' et ouverte en lecture seule.
 
-  **Note la FRA est grande mais pas infinie, mettre en place les backups RMAN !**
-
-  **TODO** Tester la création d'un dataguard avec au moins 2 PDBs (risque au niveau des services)
-
 ##	Pré requis.
  - [Créer 2 serveurs, ex : srvmars01 & srvvenus01.](https://github.com/PhilippeLeroux/plescripts/tree/master/database_servers/README.md)
 
    **Important** : Ne pas exécuter le second ./define_new_server.sh tant que le premier ./clone_master.sh n'est pas finie.
 
  - [Créer une base sur le serveur mars.](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
- 
+
 ## Etablir les équivalences ssh entre les 2 serveurs pour le compte Oracle.
  - Sur le poste client aller dans le répertoire `~/plescripts/db/stby`
 
@@ -104,7 +100,6 @@
  * Duplication.
 
    Le script de duplication est simple car les bases sont en 'Oracle Managed File'.
-   Pas besoin de [db|log]_convert & co.
 
  * Services.
 
@@ -121,3 +116,143 @@
 
 ##	Prochaine étape.
  L'observeur : sur K2 ??
+
+## Test : Est ce que la création du PDB est automatiquement répercuté sur la stby.
+ * Status :
+
+	```
+	oracle@srvuranus01:URANUS:12c> dgmgrl -silent sys/Oracle12 'show configuration'
+
+	Configuration - DGCONF
+
+	  Protection Mode: MaxPerformance
+	  Members:
+	  uranus - Primary database
+		venus  - Physical standby database
+
+	Fast-Start Failover: DISABLED
+
+	Configuration Status:
+	SUCCESS   (status updated 16 seconds ago)
+	```
+
+ * Liste des PDBs :
+
+	```
+	SQL> @containers.sql
+
+	Instance   PDB name   Open mode  Open time      Total size (Gb) RECOVERY RES
+	---------- ---------- ---------- -------------- --------------- -------- ---
+	URANUS     CDB$ROOT   READ WRITE 16/09/25 19:09               0 ENABLED  NO
+	URANUS     VENUS01    READ WRITE 16/09/25 19:09               1 ENABLED  NO
+	```
+
+ * Création du PDB VENUS02
+
+	```
+	SQL> create pluggable database VENUS02 from VENUS01;
+
+	Pluggable database created.
+
+	SQL> @containers.sql
+
+	Instance   PDB name   Open mode  Open time      Total size (Gb) RECOVERY RES
+	---------- ---------- ---------- -------------- --------------- -------- ---
+	URANUS     CDB$ROOT   READ WRITE 16/09/25 19:09               0 ENABLED  NO
+	URANUS     VENUS01    READ WRITE 16/09/25 19:09               1 ENABLED  NO
+	URANUS     VENUS02    MOUNTED    16/09/25 19:20               0 ENABLED
+	```
+
+ * Connection sur la base VENUS :
+	```
+	SQL> @containers.sql
+
+	Instance   PDB name   Open mode  Open time      Total size (Gb) RECOVERY RES
+	---------- ---------- ---------- -------------- --------------- -------- ---
+	VENUS      CDB$ROOT   READ ONLY  16/09/25 19:12               0 ENABLED  NO
+	VENUS      VENUS01    READ ONLY  16/09/25 19:12               0 ENABLED  NO
+	VENUS      VENUS02    MOUNTED                                 0 ENABLED
+	```
+
+ * Ajout des services
+
+ Services primaire :
+
+	```
+	oracle@srvuranus01:URANUS:12c> ~/plescripts/db/create_srv_for_single_db.sh \
+	> -db=uranus -pdbName=VENUS02 -role=primary
+	# Running : /home/oracle/plescripts/db/create_srv_for_single_db.sh -db=uranus -pdbName=VENUS02 -prefixService=pdbVENUS02 -role=primary
+	# ============================================================================================
+	# create service pdbVENUS02_oci on pdb VENUS02 (db = uranus).
+
+	08h29> srvctl                                   \
+			   add service -service pdbVENUS02_oci  \
+				   -pdb VENUS02 -db uranus          \
+				   -role           primary          \
+				   -policy         automatic        \
+				   -failovertype   select           \
+				   -failovermethod basic            \
+				   -failoverretry  3                \
+				   -failoverdelay  60               \
+				   -clbgoal        long             \
+				   -rlbgoal        throughput
+
+	08h29> srvctl start service -service pdbVENUS02_oci -db uranus
+
+	# ============================================================================================
+	# create service pdbVENUS02_java on pdb VENUS02 (db = uranus)
+
+	08h30> srvctl                                    \
+			   add service -service pdbVENUS02_java  \
+				   -pdb VENUS02 -db uranus           \
+				   -role           primary           \
+				   -policy         automatic         \
+				   -failovertype   select            \
+				   -failovermethod basic             \
+				   -failoverretry  3                 \
+				   -failoverdelay  60                \
+				   -clbgoal        long              \
+				   -rlbgoal        throughput
+
+	08h30> srvctl start service -service pdbVENUS02_java -db uranus
+
+	oracle@srvuranus01:URANUS:12c>
+	```
+
+ Services standby :
+
+	```
+	oracle@srvuranus01:URANUS:12c> ~/plescripts/db/create_srv_for_single_db.sh \
+	> -db=uranus -pdbName=VENUS02 -role=physical_standby \
+	> -start=no
+	# Running : /home/oracle/plescripts/db/create_srv_for_single_db.sh -db=uranus -pdbName=VENUS02 -prefixService=pdbVENUS02_stby -role=physical_standby -start=no
+	# ============================================================================================
+	# create service pdbVENUS02_stby_oci on pdb VENUS02 (db = uranus).
+
+	08h32> srvctl                                        \
+			   add service -service pdbVENUS02_stby_oci  \
+				   -pdb VENUS02 -db uranus               \
+				   -role           physical_standby      \
+				   -policy         automatic             \
+				   -failovertype   select                \
+				   -failovermethod basic                 \
+				   -failoverretry  3                     \
+				   -failoverdelay  60                    \
+				   -clbgoal        long                  \
+				   -rlbgoal        throughput
+
+	# ============================================================================================
+	# create service pdbVENUS02_stby_java on pdb VENUS02 (db = uranus)
+
+	08h32> srvctl                                         \
+			   add service -service pdbVENUS02_stby_java  \
+				   -pdb VENUS02 -db uranus                \
+				   -role           physical_standby       \
+				   -policy         automatic              \
+				   -failovertype   select                 \
+				   -failovermethod basic                  \
+				   -failoverretry  3                      \
+				   -failoverdelay  60                     \
+				   -clbgoal        long                   \
+				   -rlbgoal        throughput
+	```
