@@ -6,7 +6,7 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-info "Running : $ME $*"
+info "Running : $0 $*"
 
 typeset -r	SQL_PROMPT="prompt SQL>"
 
