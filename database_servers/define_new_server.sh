@@ -29,7 +29,7 @@ typeset -i	size_dg_gb=24
 typeset -i	size_lun_gb=8
 typeset		dns_test=yes
 typeset 	usefs=no
-typeset		luns_hosted_by=san
+typeset		luns_hosted_by=$disks_hosted_by
 
 #	rac si max_nodes vaut plus de 1
 typeset		db_type=std
