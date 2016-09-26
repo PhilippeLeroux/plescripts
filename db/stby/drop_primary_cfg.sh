@@ -8,12 +8,11 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -db=name -pdbName=name"
+"Usage : $ME -db=name"
 
 info "Running : $ME $*"
 
 typeset db=undef
-typeset pdbName=undef
 
 while [ $# -ne 0 ]
 do
@@ -26,11 +25,6 @@ do
 
 		-db=*)
 			db=$(to_upper ${1##*=})
-			shift
-			;;
-
-		-pdbName=*)
-			pdbName=${1##*=}
 			shift
 			;;
 
@@ -50,7 +44,6 @@ do
 done
 
 exit_if_param_undef db		"$str_usage"
-exit_if_param_undef pdbName	"$str_usage"
 
 function sqlcmd_drop_primary_cfg
 {
@@ -86,37 +79,68 @@ function sqlcmd_drop_primary_cfg
 	to_exec "startup"
 }
 
+function remove_broker_cfg
+{
+	line_separator
+dgmgrl -silent -echo<<EOS 
+connect sys/$oracle_password
+disable configuration;
+remove configuration;
+EOS
+	LN
+
+	line_separator
+	exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
+	LN
+}
+
+function remove_SRLs
+{
+	line_separator
+	sqlplus -s sys/$oracle_password as sysdba<<EOS
+	@drop_standby_redolog.sql
+EOS
+	LN
+}
+
+function create_services
+{
+typeset -r query=\
+"select
+	c.name
+from
+	gv\$containers c
+	inner join gv\$instance i
+		on  c.inst_id = i.inst_id
+	where
+		i.instance_name = '$db'
+	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' );
+"
+
+	while read pdbName
+	do
+		[ x"$pdbName" == x ] && continue
+
+		line_separator
+		exec_cmd "$ROOT/db/create_srv_for_single_db.sh -db=$db -pdbName=$pdbName"
+		LN
+	done<<<"$(sqlplus_exec_query "$query")"
+}
+
 info "Load env for $db"
 ORACLE_SID=$db
 ORAENV_ASK=NO . oraenv
 LN
 
-line_separator
-dgmgrl<<EOS 
-connect sys/$oracle_password
-disable configuration;
-remove configuration;
-EOS
-LN
+remove_broker_cfg
+
+remove_SRLs
 
 line_separator
-sqlplus sys/$oracle_password as sysdba<<EOS
-@drop_standby_redolog.sql
-EOS
+exec_cmd -c $ROOT/db/drop_all_services.sh -db=$db
 LN
 
-line_separator
-exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
-LN
-
-line_separator
-exec_cmd -c ~/plescripts/db/drop_all_services.sh -db=$db
-LN
-
-line_separator
-exec_cmd -c "~/plescripts/db/create_service_for_standalone_dataguard.sh -db=$db \
-		-pdbName=$pdbName -prefixService=pdb${pdbName}"
-LN
+create_services
 
 line_separator
 sqlplus_cmd "$(sqlcmd_drop_primary_cfg)"
