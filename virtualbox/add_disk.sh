@@ -11,6 +11,8 @@ typeset -r str_usage=\
 	-vm_name=str
 	-disk_name=str
 	-disk_mb=#
+	[-attach_to]    Ex : "vm1 vm2"
+	[-fixed_size]   Disque taille fixe (automatique si -attach_to est précisé.)
 "
 
 info "Running : $ME $*"
@@ -19,6 +21,7 @@ typeset		vm_name=undef
 typeset		disk_name=undef
 typeset	-i	disk_mb=-1
 typeset		attach_to=no_attach
+typeset		fixed_size=Standard
 
 while [ $# -ne 0 ]
 do
@@ -46,6 +49,11 @@ do
 
 		-attach_to=*)
 			attach_to=${1##*=}
+			shift
+			;;
+
+		-fixed_size)
+			fixed_size=Fixed
 			shift
 			;;
 
@@ -84,7 +92,7 @@ if [ "$attach_to" == no_attach ]
 then
 	mtype=normal
 	attach_to=$vm_name
-	variant=Standard
+	variant=$fixed_size
 else
 	mtype=shareable
 	attach_to="$vm_name $attach_to"

@@ -7,7 +7,7 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -db=name" 
+"Usage : $ME -db=name"
 
 info "Running : $ME $*"
 
@@ -53,7 +53,7 @@ then
 	typeset	-i	inode=0
 	for node_file in $cfg_path/node*
 	do
-		if [ $inode -eq 0 ] 
+		if [ $inode -eq 0 ]
 		then
 			first_vm=$(cat $node_file | cut -d: -f2)
 		else
@@ -79,7 +79,7 @@ do
 							-disk_name=$(printf "%s_lun%02d" $db $ilun)	\
 							-disk_mb=$size_mb							\
 							-attach_to=\"$attach_to\"
+							-fixed_size
 		ilun=ilun+1
 	done
 done<$cfg_path/disks
-
