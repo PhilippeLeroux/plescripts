@@ -395,17 +395,13 @@ function create_services_for_pdb
 			exec_cmd srvctl add service -db $db -service pdb$pdbName -pdb $pdbName
 			exec_cmd srvctl start service -db $db -service pdb$pdbName
 			LN
-
-			#info "Force db $db to run on node $(hostname -s)"
-			#exec_cmd srvctl modify database -db $db -e $(hostname -s)
-			#LN
 			;;
 
 		SINGLE)
 			if [ $usefs == no ]
 			then
 				info "Create service for SINGLE database."
-				exec_cmd "~/plescripts/db/create_service_for_standalone_dataguard.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName}"
+				exec_cmd "~/plescripts/db/create_srv_for_single_db.sh -db=$db -pdbName=$pdbName"
 				LN
 			else
 				warning "No services created for pdb, DIY"
