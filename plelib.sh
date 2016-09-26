@@ -5,6 +5,9 @@
 LANG=en_US.UTF-8
 umask 0002
 
+#	A utiliser le plus possible dans les scripts.
+ROOT=~/plescripts
+
 ################################################################################
 #	Initialisation de la lib.
 ################################################################################
@@ -999,30 +1002,45 @@ function timing
 #*> d'effacer l'affichage.
 function pause_in_secs
 {
-	typeset -ri	max_secs=$1
-	[ $# -eq 2 ] && suffix="$2"
+	typeset -ri max_secs=$1
+	[ $# -eq 2 ] && typeset -r suffix="$2" || typeset -r suffix
 
-	typeset -i	secs=0
-	typeset		backspaces
-	typeset		buffer=""
+	typeset -i  secs=1
+	typeset	 backspaces
+	typeset	 buffer=""
+	typeset	 bars=""
+	typeset	 all_bars=""
+	typeset -i  bars_width=0
 
 	case "$PLELIB_OUTPUT" in
 		"ENABLE"|"FILE")
 			hide_cursor
 
-			while [ $secs -ne $max_secs ]
+			while [ $secs -le $max_secs ]
 			do
-				buffer=$(printf "${secs}/${max_secs}s")
-				[ $# -eq 2 ] && buffer="$buffer$suffix"
-
-				printf "$backspaces$buffer$CEOL"
 				sleep 1
-				secs=secs+1
-				backspaces=$(fill "\b" $((${#buffer})))
-			done
+				buffer=$(printf "${secs}/${max_secs}s")
+				buffer="$buffer$suffix"
 
-			buffer=$(printf "${max_secs}/${max_secs}s")
-			printf "${backspaces}$buffer$CEOL"
+				if [[ $max_secs -lt 5 || $max_secs -gt 30 ]]
+				then
+					bars_width=-1
+					printf "$backspaces$buffer$CEOL"
+				elif [[ $secs -ne 0 && $(( secs % 5 )) -eq 0 ]]
+				then
+					all_bars="$all_bars${STRIKE}||||${NORM} "
+					bars_width=bars_width+1
+					bars=""
+					printf "$backspaces$buffer $all_bars$CEOL"
+				else
+					bars="$bars|"
+					printf "$backspaces$buffer $all_bars$bars$CEOL"
+					bars_width=bars_width+1
+				fi
+
+				secs=secs+1
+				backspaces=$(fill "\b" $((${#buffer}+bars_width+1)))
+			done
 
 			show_cursor
 
@@ -1047,7 +1065,7 @@ function pause_in_secs
 		;;
 	esac
 
-	return ${#buffer}
+	return $(( ${#buffer}+bars_width+1 ))
 }
 
 ple_start=0
@@ -1065,7 +1083,7 @@ function script_start
 #*> Doit être appelé en fin de script
 function script_stop
 {
-	info "script $1 running time : ${BOLD}$(fmt_seconds $(( SECONDS - ple_start )) )${NORM}"
+	info "script ${1##*/} running time : ${BOLD}$(fmt_seconds $(( SECONDS - ple_start )) )${NORM}"
 }
 
 PAUSE=OFF 
