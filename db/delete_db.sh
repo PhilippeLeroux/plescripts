@@ -9,8 +9,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<str> Nom de la base à supprimer.
-"
+	-db=<str> Nom de la base à supprimer."
 
 typeset db=undef
 
@@ -27,6 +26,12 @@ do
 			shift
 			;;
 
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
 		*)
 			error "Arg '$1' invalid."
 			LN
@@ -37,6 +42,20 @@ do
 done
 
 exit_if_param_undef db	"$str_usage"
+
+function error_msg_on_script_failed
+{
+	LN
+	line_separator
+	info "Si le nom de la base $db et le mot de passe sys $oracle_password sont correctes,"
+	info "exécuter avec le compte root :"
+	LN
+	info "$ cd ~/plescripts/db"
+	info "$ ./remove_all_files_for_db.sh -db=$db"
+	LN
+}
+
+trap '[ "$?" -ne 0 ] && error_msg_on_script_failed' EXIT
 
 #	Les 2 fonctions sont dupliquées de database_servers/uninstall.sh
 function get_other_nodes
@@ -57,7 +76,7 @@ function execute_on_other_nodes
 
 	for node in $node_list
 	do
-		exec_cmd ssh "$node \"$cmd\""
+		exec_cmd ssh "$node \". .bash_profile; $cmd\""
 	done
 }
 
