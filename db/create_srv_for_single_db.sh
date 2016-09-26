@@ -10,8 +10,7 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=str
 	-pdbName=str
-	-prefixService=str
-	[-role=primary]    (primary, physical_standby, logical_standby, snapshot_standby)
+	[-role=str]        (primary, physical_standby, ${STRIKE}logical_standby, snapshot_standby$NORM)
 	[-start=yes]
 
 RAC non pris en compte.
@@ -21,8 +20,7 @@ info "Running : $ME $*"
 
 typeset db=undef
 typeset pdbName=undef
-typeset prefixService=undef
-typeset role=primary
+typeset role=undef
 typeset start=yes
 
 while [ $# -ne 0 ]
@@ -40,12 +38,7 @@ do
 			;;
 
 		-pdbName=*)
-			pdbName=${1##*=}
-			shift
-			;;
-
-		-prefixService=*)
-			prefixService=${1##*=}
+			pdbName=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -77,14 +70,25 @@ done
 [[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db				"$str_usage"
 exit_if_param_undef pdbName			"$str_usage"
-exit_if_param_undef prefixService	"$str_usage"
-exit_if_param_invalid role \
-		"primary physical_standby logical_standby snapshot_standby" "$str_usage"
+
+case "$role" in
+	primary|undef)
+		typeset -r prefixService=pdb${pdbName}
+		;;
+
+	physical_standby)
+		typeset -r prefixService=pdb${pdbName}_stby
+		;;
+
+	*)
+		error "Role '$role' non pris en compte."
+		exit 1
+esac
+
 
 line_separator
-info "create service ${prefixService}_oci on pdb $pdbName (db = $db)."
+info "create service ${prefixService}_oci on pluggable $pdbName (db = $db)."
 LN
-
 #	http://docs.oracle.com/database/121/RACAD/hafeats.htm#RACAD7026
 #	Creating Services for Application Continuity ssi -failovertype TRANSACTION
 #	-replay_init_time par défaut 300s
@@ -123,7 +127,7 @@ fi
 
 line_separator
 #	Services for Application Continuity (java)
-info "create service ${prefixService}_java on pdb $pdbName (db = $db)"
+info "create service ${prefixService}_java on pluggable $pdbName (db = $db)"
 LN
 
 add_dynamic_cmd_param "add service -service ${prefixService}_java"
