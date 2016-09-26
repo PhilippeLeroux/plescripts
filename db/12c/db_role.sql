@@ -6,6 +6,7 @@ col	database_role				head 'DB role'
 col	protection_mode				head 'Protection mode'
 col	protection_level			head 'Protection level'
 col	dataguard_broker			head 'Broker'
+col	flashback_on	for a10		head 'Flashback'
 select
 	d.name
 ,	d.open_mode
@@ -14,6 +15,7 @@ select
 ,	d.protection_level
 ,	d.dataguard_broker
 ,	d.cdb
+,	d.flashback_on
 from
 	v$database d
 /
