@@ -61,7 +61,4 @@ alias ll='ls -rtl'
 #	Become grid
 alias sugrid='sudo -u grid -i'
 
-#	Execute asmcmd
-alias asmcmd='sudo -u grid -i asmcmd'
-
 . rlwrap.alias

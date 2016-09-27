@@ -53,15 +53,9 @@ done
 [[ $db == undef && $server == undef ]] && error "-db and -server undef" && info "$str_usage" && exit 1
 [[ $db != undef && $server != undef ]] && error "-db and -server defined" && info "$str_usage" && exit 1
 
-function config_server
+function copy_on_server
 {
 	typeset -r server_name="$1"
-
-	line_separator
-	exec_cmd "scp ~/plescripts/oracle_preinstall/rlwrap.alias root@$server_name:~/"
-	exec_cmd "ssh root@$server_name 'sed -i \"/.*rlwrap.alias/d\" .bash_profile'"
-	exec_cmd "ssh root@$server_name 'echo \". rlwrap.alias \" >> .bash_profile'"
-	LN
 
 	line_separator
 	exec_cmd "scp ~/plescripts/oracle_preinstall/rlwrap.alias oracle@$server_name:~/"
@@ -79,13 +73,13 @@ function config_server
 
 if [ $server != undef ]
 then
-	config_server  $server
+	copy_on_server  $server
 else
 	typeset -r cfg_path=~/plescripts/database_servers/$db
 	exit_if_dir_not_exist $cfg_path
 	for node_file in $cfg_path/node*
 	do
 		server_name=$(cat $node_file | cut -d: -f2)
-		config_server $server_name
+		copy_on_server $server_name
 	done
 fi
