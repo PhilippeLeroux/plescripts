@@ -1,3 +1,13 @@
+Table of Contents
+=================
+
+ * [Test : Est ce que la création du PDB est automatiquement répercuté sur la stby.](#test--est-ce-que-la-création-du-pdb-est-automatiquement-répercuté-sur-la-stby)
+ * [Activation du flashback :](#activation-du-flashback-)
+   * [Test #1](#test-1)
+   * [Test #2](#test-2)
+
+--------------------------------------------------------------------------------
+
 ## Test : Est ce que la création du PDB est automatiquement répercuté sur la stby.
  * Status :
 
@@ -55,9 +65,11 @@
 	VENUS      VENUS02    MOUNTED                                 0 ENABLED
 	```
 
+	Pas de problèmes !
+
  * Ajout des services
 
- Services primaire :
+    * Primary :
 
 	```
 	oracle@srvuranus01:URANUS:12c> ~/plescripts/db/create_srv_for_single_db.sh \
@@ -100,7 +112,7 @@
 	oracle@srvuranus01:URANUS:12c>
 	```
 
- Services standby :
+    * Standby :
 
 	```
 	oracle@srvuranus01:URANUS:12c> ~/plescripts/db/create_srv_for_single_db.sh \
@@ -137,6 +149,8 @@
 				   -clbgoal        long                   \
 				   -rlbgoal        throughput
 	```
+
+--------------------------------------------------------------------------------
 
 ##	Activation du flashback :
 ### Test #1
