@@ -59,7 +59,7 @@ function update_file # $1 nr license lines $2 file name to upadte
 }
 
 typeset -r license_file=~/plescripts/license
-exit_if_file_not_exists $license_file
+exit_if_file_not_exist $license_file
 typeset license_lines=$( wc -l <<<"$( cat $license_file )" )
 
 info "$license_lines lines in $license_file"

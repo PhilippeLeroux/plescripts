@@ -49,7 +49,7 @@ typeset -r	cfg_path=~/plescripts/database_servers/$db
 typeset -r	node_file=$cfg_path/node$node
 typeset -r	scanvips_file=$cfg_path/scanvips
 
-exit_if_file_not_exists $node_file "$str_usage"
+exit_if_file_not_exist $node_file "$str_usage"
 
 line_separator
 info "DNS : ajout du serveur et de sa vip"

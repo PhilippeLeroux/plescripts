@@ -99,15 +99,15 @@ function add_dynamic_cmd_param
 #*> For other parameters see exec_cmd
 function exec_dynamic_cmd
 
-#*> exit_if_file_not_exists <name> [message]
+#*> exit_if_file_not_exist <name> [message]
 #*> if file <name> not exists, script aborted.
 #*> Print [message] if specified.
-function exit_if_file_not_exists
+function exit_if_file_not_exist
 
-#*> exit_if_dir_not_exists <name> [message]
+#*> exit_if_dir_not_exist <name> [message]
 #*> if directory <name> not exits, script aborted.
 #*> Print [message] if specified.
-function exit_if_dir_not_exists
+function exit_if_dir_not_exist
 
 #*> update_value <var> <value> <file>
 #*>	Update variable <var> from file <file> with value <value>

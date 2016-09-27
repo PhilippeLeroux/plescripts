@@ -102,7 +102,7 @@ then
 	then
 		typeset -i	exit_code=0
 		typeset -r	cfg_path=~/plescripts/database_servers/$ID_DB
-		exit_if_dir_not_exists $cfg_path
+		exit_if_dir_not_exist $cfg_path
 		for f in $(ls $cfg_path/node*)
 		do
 			node_name=$(cat $f | cut -d':' -f2)

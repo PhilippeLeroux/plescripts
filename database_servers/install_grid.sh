@@ -144,7 +144,7 @@ function load_node_cfg # $1 node_file $2 idx
 	typeset -ri	idx=$2
 
 	info "Load node $(( $idx + 1 )) from $file"
-	exit_if_file_not_exists $file
+	exit_if_file_not_exist $file
 	while IFS=':' read db_type node_name node_ip node_vip_name node_vip node_priv_name node_priv_ip rem
 	do
 		if [ x"$clusterNodes" = x ]
@@ -447,7 +447,7 @@ done
 info "Total nodes #${max_nodes}"
 if [ $max_nodes -gt 1 ]
 then
-	exit_if_file_not_exists $cfg_path/scanvips
+	exit_if_file_not_exist $cfg_path/scanvips
 	typeset -r scan_name=$(cat $cfg_path/scanvips | cut -d':' -f1)
 
 	info "==> scan name     = $scan_name"

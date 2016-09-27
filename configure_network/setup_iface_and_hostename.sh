@@ -54,7 +54,7 @@ typeset -r  cfg_path=~/plescripts/database_servers/$db
 typeset -r	node_file=$cfg_path/node$node
 typeset -r	scanvips_file=$cfg_path/scanvips
 
-exit_if_file_not_exists $node_file "-db or -node invalid."
+exit_if_file_not_exist $node_file "-db or -node invalid."
 
 line_separator
 IFS=':' read db_type server_name ip_pub vip_name vip_ip ip_iscsi_name ip_iscsi db_name instance_name<<<"$(cat $node_file)"

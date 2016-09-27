@@ -49,7 +49,7 @@ do
 	esac
 done
 
-exit_if_file_not_exists "$input" "$str_usage"
+exit_if_file_not_exist "$input" "$str_usage"
 
 typeset -r vm_metrics="Net/Rate/Rx,Net/Rate/Tx,CPU/Load/User,CPU/Load/Kernel,RAM/Usage/Used,Disk/Usage/Used"
 

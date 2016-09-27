@@ -156,7 +156,7 @@ function make_log_names
 
 	[ x"$server" == x ] && server=$(cut -d_ -f2 <<< $log_mem)
 
-	exit_if_file_not_exists ${log_if}
+	exit_if_file_not_exist ${log_if}
 }
 
 #	============================================================================

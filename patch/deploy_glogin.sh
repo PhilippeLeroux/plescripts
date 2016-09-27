@@ -46,7 +46,7 @@ done
 exit_if_param_undef db	"$str_usage"
 
 typeset -r cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exists $cfg_path
+exit_if_dir_not_exist $cfg_path
 for node_file in $cfg_path/node*
 do
 	server_name=$(cat $node_file | cut -d: -f2)

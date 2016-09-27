@@ -16,8 +16,8 @@ typeset -r DOMAIN_NAME=$(hostname -d)
 typeset -r named_file=/var/named/named.${DOMAIN_NAME}
 typeset -r reverse_file=/var/named/reverse.${DOMAIN_NAME}
 
-exit_if_file_not_exists $named_file
-exit_if_file_not_exists $reverse_file
+exit_if_file_not_exist $named_file
+exit_if_file_not_exist $reverse_file
 
 typeset db=undef
 
@@ -46,7 +46,7 @@ done
 exit_if_param_undef db	$str_usage
 
 typeset -r cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exists $cfg_path
+exit_if_dir_not_exist $cfg_path
 
 typeset -ri count_nodes=$(ls -1 $cfg_path/node* | wc -l)
 

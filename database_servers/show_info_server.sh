@@ -48,7 +48,7 @@ function print_node # $1 node_file $2 idx
 	typeset -r	file=$1
 	typeset -ri	idx=$2
 
-	exit_if_file_not_exists $file
+	exit_if_file_not_exist $file
 	IFS=':' read db_type node_name node_ip node_vip_name node_vip node_priv_name node_priv_ip db_name inst_name< $file
 	case $db_type in
 		rac)
@@ -72,7 +72,7 @@ function print_node # $1 node_file $2 idx
 function print_scan
 {
 	typeset -r	file=$1
-	exit_if_file_not_exists $file
+	exit_if_file_not_exist $file
 
 	IFS=':' read scan_name vip1 vip2 vip3 < $file
 	info "scan : $scan_name"
@@ -84,7 +84,7 @@ function print_scan
 function print_disks
 {
 	typeset -r	file=$1
-	exit_if_file_not_exists $file
+	exit_if_file_not_exist $file
 
 	typeset -r upper_db=$(to_upper $db)
 	typeset -i no_first_disk

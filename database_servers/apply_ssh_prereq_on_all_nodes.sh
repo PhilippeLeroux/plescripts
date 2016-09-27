@@ -39,7 +39,7 @@ done
 exit_if_param_undef db	"$str_usage"
 
 typeset -r cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exists $cfg_path "$str_usage"
+exit_if_dir_not_exist $cfg_path "$str_usage"
 
 typeset -ri count_nodes=$(ls -1 $cfg_path/node* | wc -l)
 

@@ -53,8 +53,8 @@ done
 
 LANG=C
 
-exit_if_dir_not_exists $iso_olinux_path
-exit_if_file_not_exists $iso_olinux_path/master-ks.cfg
+exit_if_dir_not_exist $iso_olinux_path
+exit_if_file_not_exist $iso_olinux_path/master-ks.cfg
 
 typeset -r iso_name=${full_linux_iso_name##*/}
 typeset -r ISO_DEST=$iso_olinux_path/KS_ISO

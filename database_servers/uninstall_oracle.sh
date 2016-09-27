@@ -35,7 +35,7 @@ do
 	esac
 done
 
-exit_if_file_not_exists /mnt/oracle_install/database/runInstaller "$str_usage"
+exit_if_file_not_exist /mnt/oracle_install/database/runInstaller "$str_usage"
 
 info "deinstall oracle"
 fake_exec_cmd /mnt/oracle_install/database/runInstaller -deinstall -home $ORACLE_HOME

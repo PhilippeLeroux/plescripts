@@ -18,8 +18,8 @@ typeset -r named_file=/var/named/named.${DOMAIN_NAME}
 typeset -r reverse_file=/var/named/reverse.${DOMAIN_NAME}
 
 LN
-exit_if_file_not_exists $named_file
-exit_if_file_not_exists $reverse_file
+exit_if_file_not_exist $named_file
+exit_if_file_not_exist $reverse_file
 
 typeset name=undef
 typeset restart=yes

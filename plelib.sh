@@ -751,14 +751,14 @@ function exec_dynamic_cmd
 #	Fonctions agissant sur les fichiers ou répertoires.
 ################################################################################
 
-#*> exit_if_file_not_exists <name> [message]
+#*> exit_if_file_not_exist <name> [message]
 #*> if file <name> not exists, script aborted.
 #*> Print [message] if specified.
-function exit_if_file_not_exists
+function exit_if_file_not_exist
 {
 	if [ ! -f "$1" ]
 	then
-		error "File '$1' not exists."
+		error "File '$1' not exist."
 		shift
 		while [ $# -ne 0 ]
 		do
@@ -769,14 +769,14 @@ function exit_if_file_not_exists
 	fi
 }
 
-#*> exit_if_dir_not_exists <name> [message]
+#*> exit_if_dir_not_exist <name> [message]
 #*> if directory <name> not exits, script aborted.
 #*> Print [message] if specified.
-function exit_if_dir_not_exists
+function exit_if_dir_not_exist
 {
 	if [ ! -d $1 ]
 	then
-		error "Directory '$1' not exists."
+		error "Directory '$1' not exist."
 		shift
 		while [ $# -ne 0 ]
 		do
@@ -832,7 +832,7 @@ function add_value
 #*> If file doesn't exist script aborted.
 function update_value
 {
-	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exists "$3" "Call function update_value"
+	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exist "$3" "Call function update_value"
 
 	typeset -r var_name="$1"
 	typeset -r var_value="$2"
@@ -855,7 +855,7 @@ function update_value
 #*> If file doesn't exist script aborted.
 function remove_value
 {
-	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exists "$2" "Call function remove_value"
+	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exist "$2" "Call function remove_value"
 
 	typeset -r var_name=$(escape_slash "$1")
 	typeset -r file="$2"

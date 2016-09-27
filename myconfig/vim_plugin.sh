@@ -156,7 +156,7 @@ function install_pathogen
 
 function install_all
 {
-	exit_if_file_not_exists $plugin_list
+	exit_if_file_not_exist $plugin_list
 
 	clean_tod_vim
 	LN
