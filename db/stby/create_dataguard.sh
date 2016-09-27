@@ -628,7 +628,7 @@ from
 					-role=primary"
 			LN
 
-			info "Need to start stby services on primary $primary for a little time."
+			info "(1) Need to start stby services on primary $primary for a little time."
 			# Il est important de démarrer les services stby sinon le démarrage
 			# des services sur la standby échoura. (1)
 			exec_cmd "$ROOT/db/create_srv_for_single_db.sh \
@@ -656,7 +656,7 @@ from
 		then #(1) Il faut stopper les services stdby maintenant sur la primary.
 			 #    Les services stdby démarreront automatiquement lors de l'overture
 			 #    de la stdby en RO.
-			info "Stop stby services on primary $primary :"
+			info "(1) Stop stby services on primary $primary :"
 			exec_cmd "srvctl stop service -db $primary -service pdb${pdbName}_stby_oci"
 			exec_cmd "srvctl stop service -db $primary -service pdb${pdbName}_stby_java"
 			LN
