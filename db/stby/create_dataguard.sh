@@ -628,6 +628,9 @@ from
 					-role=primary"
 			LN
 
+			info "Need to start stby services on primary $primary for a little time."
+			# Il est important de démarrer les services stby sinon le démarrage
+			# des services sur la standby échoura. (1)
 			exec_cmd "$ROOT/db/create_srv_for_single_db.sh \
 					-db=$primary -pdbName=$pdbName \
 					-role=physical_standby"
@@ -650,7 +653,9 @@ from
 		LN
 
 		if [ $primary_config == yes ]
-		then	# N'est util que lors de la création des services.
+		then #(1) Il faut stopper les services stdby maintenant sur la primary.
+			 #    Les services stdby démarreront automatiquement lors de l'overture
+			 #    de la stdby en RO.
 			info "Stop stby services on primary $primary :"
 			exec_cmd "srvctl stop service -db $primary -service pdb${pdbName}_stby_oci"
 			exec_cmd "srvctl stop service -db $primary -service pdb${pdbName}_stby_java"
@@ -678,12 +683,10 @@ function check_prereq
 		info "From $client_hostname :"
 		info "$ cd ~/plescript/db/stby script"
 		info "$ ./00_setup_equivalence.sh -user1=oracle -server1=$primary_host -server2=$standby_host"
+		LN
 		count_errors=count_errors+1
-	fi
-	LN
-
-	if [ $count_errors -eq 0 ]
-	then	# count_errors != 0 donc pas de connexions possible.
+	else
+		LN
 		line_separator
 		exec_cmd -c ssh $standby_host "ps -ef | grep -qE 'ora_pmon_[${standby:0:1}]${standby:1}'"
 		if [ $? -eq 0 ]
@@ -703,17 +706,16 @@ function check_prereq
 		if [ $c -ne 0 ]
 		then
 			error "Dataguard broker configuration exist, add -primary_config=no"
-			LN
 			count_errors=count_errors+1
 		fi
 	else
 		if [ $c -eq 0 ]
 		then
 			error "Dataguard broker configuration not exist, remove -primary_config=no"
-			LN
 			count_errors=count_errors+1
 		fi
 	fi
+	LN
 
 	line_separator
 	if [ $count_errors -ne 0 ]
@@ -723,6 +725,7 @@ function check_prereq
 		exit 1
 	else
 		info "prereq [$OK]"
+		LN
 	fi
 }
 
