@@ -107,7 +107,7 @@ Table of Contents
 
 --------------------------------------------------------------------------------
 
-## Description du script : `create_dataguard.sh`
+# Description du script : `create_dataguard.sh`
  * Configuration du réseau :
    * Mise à jour du fichier tnsnames.ora pour que les bases puissent se joindre.
    * Ajout d'une entrée statique dans le listener sur les 2 serveurs pour le duplicate.
