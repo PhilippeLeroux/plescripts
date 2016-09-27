@@ -105,6 +105,8 @@ Table of Contents
 	oracle@srvmars01:MARS:stby> ./create_dataguard.sh -standby=venus -standby_host=srvvenus01
 	```
 
+--------------------------------------------------------------------------------
+
 ## Description du script : `create_dataguard.sh`
  * Configuration du réseau :
    * Mise à jour du fichier tnsnames.ora pour que les bases puissent se joindre.
