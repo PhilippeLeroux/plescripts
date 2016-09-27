@@ -43,6 +43,15 @@ then
 	exit 1
 fi
 
+function exec_dgmgrl
+{
+	typeset -r cmd="$@"
+	fake_exec_cmd "dgmgrl -silent sys/$oracle_password"
+dgmgrl -silent -echo sys/$oracle_password<<EOS
+$cmd
+EOS
+}
+
 while read dbname dash role rem
 do
 	case "$role" in
@@ -55,12 +64,12 @@ done<<<"$(dgmgrl -silent -echo sys/Oracle12 "show configuration" |\
 			grep -E "Primary|Physical")"
 
 line_separator
-exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'show configuration'"
+exec_dgmgrl "show configuration"
 
 line_separator
-exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'show database $primary'"
-exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'validate database $primary'"
+exec_dgmgrl "show database $primary"
+exec_dgmgrl "validate database $primary"
 
 line_separator
-exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'show database $standby'"
-exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'validate database $standby'"
+exec_dgmgrl "show database $standby"
+exec_dgmgrl "validate database $standby"
