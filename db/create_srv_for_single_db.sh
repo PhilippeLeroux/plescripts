@@ -82,6 +82,8 @@ case "$role" in
 
 	*)
 		error "Role '$role' non pris en compte."
+		LN
+		info "$str_usage"
 		exit 1
 esac
 
