@@ -22,7 +22,7 @@ do
 			;;
 
 		-db=*)
-			db=$(to_upper ${1##*=})
+			typeset -r db=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -65,7 +65,7 @@ exec_cmd -c "su - oracle -c /tmp/stop_orcl.sh"
 LN
 
 line_separator
-exec_cmd -c kill -9 $(ps -ef| grep [${db:0:1}]${db:1} | tr -s [:space:] | cut -d\  -f2 | xargs)
+exec_cmd -c "kill -9 $(ps -ef| grep -E \"[${db:0:1}]${db:1}\" | tr -s [:space:] | cut -d\  -f2 | xargs)"
 if [ $? -eq 0 ]
 then	# Si le kill est effectif on aura un problème avec ASM il faut lui laisser
 		# le temps de prendre en compte le kill.
@@ -98,6 +98,7 @@ then
 	oracle_rm_1=$(escape_2xquotes $oracle_rm_1)
 	oracle_rm_2=$(escape_2xquotes $oracle_rm_2)
 	oracle_rm_3=$(escape_2xquotes $oracle_rm_3)
+	oracle_rm_4=$(escape_2xquotes $oracle_rm_3)
 	for node_file in $cfg_path/node*
 	do
 		node_name=$(cat $node_file | cut -d: -f2)
@@ -106,10 +107,10 @@ then
 			warning "RAC : ATTENTION PAS TESTE DEPUIS CHANGEMENT DES VARIABLES oracle_rm_X"
 			line_separator
 			info "Remove all Oracle's files on node $node_name"
-			exec_cmd -c "ssh $node_name $oracle_rm_1"
-			exec_cmd -c "ssh $node_name $oracle_rm_2"
-			exec_cmd -c "ssh $node_name $oracle_rm_3"
-			exec_cmd -c "ssh $node_name $oracle_rm_4"
+			exec_cmd -c "ssh $node_name '$oracle_rm_1'"
+			exec_cmd -c "ssh $node_name '$oracle_rm_2'"
+			exec_cmd -c "ssh $node_name '$oracle_rm_3'"
+			exec_cmd -c "ssh $node_name '$oracle_rm_4'"
 			LN
 
 			exec_cmd -c "ssh $node_name \"$clean_oratab_cmd1\""
