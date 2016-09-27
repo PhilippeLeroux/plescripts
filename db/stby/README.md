@@ -6,7 +6,7 @@ Table of Contents
     * [Etablir les équivalences ssh entre les 2 serveurs pour le compte Oracle.](#etablir-les-équivalences-ssh-entre-les-2-serveurs-pour-le-compte-oracle)
     * [Etat des lieux :](#etat-des-lieux-)
     * [Création de la dataguard.](#création-de-la-dataguard)
-    * [Description du script : create_dataguard.sh](#description-du-script--create_dataguardsh)
+ * [Description du script : create_dataguard.sh](#description-du-script--create_dataguardsh)
  * [Le swhitchover est opérationnel.](#le-swhitchover-est-opérationnel)
  * [Le swhitchover est opérationnel.](#le-swhitchover-est-opérationnel-1)
  * [Faileover](#faileover)
