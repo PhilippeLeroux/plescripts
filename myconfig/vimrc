@@ -177,11 +177,9 @@ source $HOME/vimfunc/ManWordUnderTheCursor.vim
 nnoremap <silent> <C-M> :call ManWordUnderTheCursor()<CR>
 
 function! TocMarkdown()
-	if expand('%:t:r')
-		call system('gh-md-toc ' . shellescape(bufname("%")) . " >/tmp/toc.md")
-		set previewheight=15
-		pedit! /tmp/toc.md
-	endif
+	call system('gh-md-toc ' . shellescape(bufname("%")) . " >/tmp/toc.md")
+	set previewheight=15
+	pedit! /tmp/toc.md
 endfunction
 nnoremap <silent> <C-t> :call TocMarkdown()<CR>
 
@@ -189,6 +187,32 @@ nnoremap <silent> <C-t> :call TocMarkdown()<CR>
 source $HOME/vimfunc/ManWordUnderTheCursor.vim
 nnoremap <silent> <C-m> :call ManWordUnderTheCursor()<CR>
 
+"	============================================================================
+"	Recherche de la fonction correspondante
+function! SearchFunctionLib( func )
+	let l:res = system( 'vimsearchfunc.sh -script=' . shellescape(bufname("%")) . ' -funcName=' . a:func )
+	if l:res == 'not found'
+		return 1
+	else
+		let l:sp = split( l:res )
+		exe 'pedit +' . l:sp[0] . ' ' . l:sp[1]
+		return 0
+	endif
+endfunction
+
+function! SearchFunction()
+	let l:wordUnderCursor = expand("<cword>")
+	let l:funcPattern="function " . l:wordUnderCursor . '$'
+	echo "Search " . l:funcPattern
+	if search( l:funcPattern, 'b' ) == 0
+		if search( l:funcPattern ) == 0
+			call SearchFunctionLib( l:wordUnderCursor )
+			"echo "Function : " . l:wordUnderCursor . " not found"
+		endif
+	endif
+endfunction
+nnoremap <leader>f :call SearchFunction()<CR>
+ 
 "	============================================================================
 "	xolox/vim-session
 "let g:session_autoload='yes'
