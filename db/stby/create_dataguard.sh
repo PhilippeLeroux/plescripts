@@ -194,6 +194,7 @@ function get_alias_for
 	typeset	-r	service_name=$1
 	typeset	-r	host_name=$2
 cat<<EOA
+
 $service_name =
 	(DESCRIPTION =
 		(ADDRESS =
@@ -331,23 +332,25 @@ function add_standby_redolog
 #			et arrêter de supprimer.copier les fichiers (faire un script spécifique)
 function setup_tnsnames
 {
-	exec_cmd "rm -f $tnsnames_file"
-	if [ ! -f $tnsnames_file ]
-	then
-		info "Create file $tnsnames_file"
-		info "Add alias $primary"
-		get_alias_for $primary $primary_host > $tnsnames_file
-		echo " " >> $tnsnames_file
-		info "Add alias $standby"
-		get_alias_for $standby $standby_host >> $tnsnames_file
-		LN
-		info "Copy tnsname.ora from $primary_host to $standby_host"
-		exec_cmd "scp $tnsnames_file $standby_host:$tnsnames_file"
-		LN
-	else
-		error "L'existence du fichier tnsnames.ora n'est pas encore prise en compte."
-		exit 1
-	fi
+	line_separator
+	info "Update file $tnsnames_file"
+	LN
+
+	info "Update alias $primary"
+	exec_cmd "$ROOT/db/delete_tns_alias.sh -alias_name=$primary"
+	get_alias_for $primary $primary_host >> $tnsnames_file
+	info "updated."
+	LN
+
+	info "Update alias $standby"
+	exec_cmd "$ROOT/db/delete_tns_alias.sh -alias_name=$standby"
+	get_alias_for $standby $standby_host >> $tnsnames_file
+	info "updated."
+	LN
+
+	info "Copy tnsname.ora from $primary_host to $standby_host"
+	exec_cmd "scp $tnsnames_file $standby_host:$tnsnames_file"
+	LN
 }
 
 #	Démarre une base standby minimum.
@@ -585,12 +588,6 @@ function configure_dataguard
 	LN
 }
 
-#	Supprime tous les services de la primaire.
-function drop_all_services_on_primary
-{
-	exec_cmd $ROOT/db/drop_all_services.sh -db=$primary
-}
-
 #	Création des services :
 #		-	2 services (oci et java) avec le role primary sur les 2 bases.
 #		-	2 services (oci et java) avec le role standby sur les 2 bases.
@@ -609,12 +606,6 @@ from
 	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' );
 "
 
-	if [ $primary_config == yes ]
-	then
-		#	Les services existant ne sont pas valables pour un dataguard.
-		drop_all_services_on_primary
-	fi
-
 	line_separator
 	while read pdbName
 	do
@@ -628,7 +619,7 @@ from
 					-role=primary"
 			LN
 
-			info "(1) Need to start stby services on primary $primary for a little time."
+			info "(1) Need to start stby services on primary $primary for a short time."
 			# Il est important de démarrer les services stby sinon le démarrage
 			# des services sur la standby échoura. (1)
 			exec_cmd "$ROOT/db/create_srv_for_single_db.sh \
@@ -671,9 +662,9 @@ function sqlcmd_enable_flashback
 	to_exec "recover managed standby database disconnect;"
 }
 
-function check_prereq
+function check_ssh_prereq_and_if_stby_exist
 {
-	typeset -i	count_errors=0
+	typeset errors=no
 
 	line_separator
 	exec_cmd -c "$ROOT/shell/test_ssh_equi.sh -user=oracle -server=$standby_host"
@@ -684,18 +675,30 @@ function check_prereq
 		info "$ cd ~/plescript/db/stby script"
 		info "$ ./00_setup_equivalence.sh -user1=oracle -server1=$primary_host -server2=$standby_host"
 		LN
-		count_errors=count_errors+1
+		errors=yes
 	else
+		info "ssh equi : [$OK]"
 		LN
+
 		line_separator
 		exec_cmd -c ssh $standby_host "ps -ef | grep -qE 'ora_pmon_[${standby:0:1}]${standby:1}'"
 		if [ $? -eq 0 ]
 		then
-			error "Database $standby exist on $standby_host"
-			count_errors=count_errors+1
+			info "Standby not exist : [$KO]"
+			error "Standby $standby exist on $standby_host"
+			errors=yes
+		else
+			info "Standby not exist : [$OK]"
 		fi
 		LN
 	fi
+
+	[ $errors == yes ] && return 1 || return 0
+}
+
+function check_params
+{
+	typeset errors=no
 
 	line_separator
 	typeset -ri c=$(dgmgrl -silent sys/$oracle_password 'show configuration' | grep -E "Primary|Physical" | wc -l 2>/dev/null)
@@ -706,21 +709,61 @@ function check_prereq
 		if [ $c -ne 0 ]
 		then
 			error "Dataguard broker configuration exist, add -primary_config=no"
-			count_errors=count_errors+1
+			errors=yes
 		fi
 	else
 		if [ $c -eq 0 ]
 		then
 			error "Dataguard broker configuration not exist, remove -primary_config=no"
-			count_errors=count_errors+1
+			errors=yes
 		fi
 	fi
 	LN
 
+	[ $errors == yes ] && return 1 || return 0
+}
+
+function check_log_mode
+{
+typeset -r query=\
+"select
+    log_mode
+from
+    v\$database
+;"
+
 	line_separator
-	if [ $count_errors -ne 0 ]
+	info -n "Log mode archivelog : "
+	if [ "$(sqlplus_exec_query "$query" | tail -1)" == "ARCHIVELOG" ]
 	then
-		error "prereq [$KO] : $count_errors error(s)"
+		info -f "[$OK]"
+		LN
+		return 0
+	else
+		info -f "[$KO]"
+		info "Run : ~/plescripts/db/enable_archive_log.sh"
+		LN
+		return 1
+	fi
+}
+
+function check_prereq
+{
+	typeset errors=no
+
+	check_ssh_prereq_and_if_stby_exist
+	[ $? -ne 0 ] && errors=yes
+
+	check_params
+	[ $? -ne 0 ] && errors=yes
+
+	check_log_mode
+	[ $? -ne 0 ] && errors=yes
+
+	line_separator
+	if [ $errors == yes ]
+	then
+		error "prereq [$KO]"
 		LN
 		exit 1
 	else

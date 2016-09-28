@@ -6,7 +6,9 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -alias_name=name"
+"Usage : $ME -alias_name=name
+Attention il doit y avoir une ligne vide après la description de l'alias.
+"
 
 info "Running : $ME $*"
 
@@ -77,10 +79,19 @@ do
 	fi
 done<$TNS_ADMIN/tnsnames.ora
 
-if [ $(( nb_opened - nb_closed )) -eq 0 ]
+debug "alias_found = $alias_found"
+if [ $alias_found == yes ]
 then
-	info "$alias_name found between $first_num & $last_num"
-	exec_cmd sed '${first_num},${last_num}d' $TNS_ADMIN/tnsnames.ora
+	debug "nb_opened - nb_closed = $nb_opened - $nb_closed = $(( nb_opened - nb_closed ))"
+	if [ $(( nb_opened - nb_closed )) -eq 0 ]
+	then
+		info "Delete alias $alias_name between lines $first_num & $last_num"
+		cmd="'${first_num},${last_num}d'"
+		exec_cmd sed -i $cmd $TNS_ADMIN/tnsnames.ora
+	else
+		error "Alias found, failed to check lines"
+		exit 1
+	fi
 else
-	warning "$alias_name not found."
+	info "Alias $alias_name not found."
 fi
