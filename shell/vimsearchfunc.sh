@@ -60,7 +60,9 @@ for lib in $inc_file_list
 do
 	[ "$lib" == "." ] && continue
 	lib=$(sed "s!^~!$HOME!" <<< "$lib")
-	res=$(grep -n "function $funcName\$" $lib)
+	debug "Search : $lib"
+	debug "	grep -En \"function $funcName\\s{0,}\$\" $lib"
+	res=$(grep -En "function $funcName\\s{0,}\$" $lib)
 	if [ $? -eq 0 ]
 	then
 		debug "res = '$res'"
