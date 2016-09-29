@@ -56,7 +56,7 @@ while read dbname dash role rem
 do
 	case "$role" in
 		"Primary")	primary=$dbname ;;
-		"Physical")	standby=$dbname;;
+		"Physical")	standby_list="$standby_list$dbname ";;
 		*)	error "Cannot check database"
 			exit 1
 	esac
@@ -67,9 +67,14 @@ line_separator
 exec_dgmgrl "show configuration"
 
 line_separator
+info "Primary $primary"
 exec_dgmgrl "show database $primary"
 exec_dgmgrl "validate database $primary"
 
-line_separator
-exec_dgmgrl "show database $standby"
-exec_dgmgrl "validate database $standby"
+for standby in $standby_list
+do
+	line_separator
+	info "Standby $standby"
+	exec_dgmgrl "show database $standby"
+	exec_dgmgrl "validate database $standby"
+done
