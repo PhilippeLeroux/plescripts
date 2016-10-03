@@ -23,7 +23,7 @@ function virtualbox_reboot
 {
 	exec_cmd "stop_vm -server=$server -wait_os"
 	LN
-	exec_cmd "start_vm $server"
+	exec_cmd "start_vm $server -wait_os=no"
 }
 
 case ${hostvm##*_} in
