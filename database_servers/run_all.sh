@@ -61,7 +61,7 @@ exit_if_param_undef db	"$str_usage"
 script_start
 
 typeset	vmGroup
-if [ x"$standby" != x ]
+if [ $standby != undef ]
 then
 	vmGroup="/DG $(initcap $db) et $(initcap $standby)"
 fi
