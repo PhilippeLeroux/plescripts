@@ -41,6 +41,16 @@ function sqlplus_cmd
 	LN
 }
 
+#*>	Exécute les commandes "$@" avec sqlplus en sysasm
+#*>	Affichage correct sur la sortie std et la log.
+function sqlplus_asm_cmd
+{
+	fake_exec_cmd sqlplus -s sys/$oracle_password as sysdba
+	printf "${SPOOL}set echo off\nset timin on\n$@\n" | \
+		sqlplus -s sys/$oracle_password as sysdba 
+	LN
+}
+
 #*>	Objectif de la fonction :
 #*>	 Exécute une requête, seul son résultat est affiché, la sortie peut être 'parsée'
 #*>	 Par exemple obtenir la liste de tous les PDBs d'un CDB.
