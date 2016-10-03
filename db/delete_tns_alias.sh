@@ -45,14 +45,14 @@ done
 
 exit_if_param_undef alias_name "$str_usage"
 
-exit_if_file_not_exist $TNS_ADMIN/tnsnames.ora
-
 typeset		alias_found=no
 typeset -i	num=0
 typeset		first_num
 typeset		last_num=\$
 typeset	-i	nr_closed=0
 typeset	-i	nr_opened=0
+
+[ ! -f $TNS_ADMIN/tnsnames.ora ] && exit 0
 
 while read line
 do
