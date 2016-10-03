@@ -1005,12 +1005,12 @@ function pause_in_secs
 	typeset -ri max_secs=$1
 	[ $# -eq 2 ] && typeset -r suffix="$2" || typeset -r suffix
 
-	typeset -i  secs=1
-	typeset	 backspaces
-	typeset	 buffer=""
-	typeset	 bars=""
-	typeset	 all_bars=""
-	typeset -i  bars_width=0
+	typeset -i	secs=1
+	typeset		backspaces
+	typeset		buffer=""
+	typeset		bars=""
+	typeset		all_bars=""
+	typeset -i	bars_width=0
 
 	case "$PLELIB_OUTPUT" in
 		"ENABLE"|"FILE")
