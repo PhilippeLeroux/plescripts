@@ -12,6 +12,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-db=<str>            identifiant de la base
+	[-vmGroup=name]
 	[-node=<#>]          n° du nœud si base de type RAC
 
 	[-start_server_only] le serveur est cloné mais n'est pas démarré, utile que pour le nœud 1.
@@ -21,6 +22,7 @@ info "Running : $ME $*"
 
 typeset		db=undef
 typeset -i	node=-1
+typeset		vmGroup
 
 typeset		start_server_only=no
 
@@ -34,6 +36,11 @@ do
 
 		-node=*)
 			node=${1##*=}
+			shift
+			;;
+
+		-vmGroup=*)
+			vmGroup=${1##*=}
 			shift
 			;;
 
@@ -300,7 +307,7 @@ function configure_server
 		else
 			typeset -r vm_memory=$vm_memory_mb_for_rac_db
 		fi
-		exec_cmd "$vm_scripts_path/clone_vm.sh -db=$db -vm_memory_mb=$vm_memory"
+		exec_cmd "$vm_scripts_path/clone_vm.sh -db=$db -vm_memory_mb=$vm_memory -vmGroup=\"$vmGroup\""
 	fi
 
 	exec_cmd "$vm_scripts_path/start_vm $server_name"
@@ -461,6 +468,8 @@ then	# C'est le dernier nœud
 		LN
 	fi
 
+	script_stop $ME
+
 	if [ $disk_type == FS ]
 	then
 		info "The Oracle RDBMS software can be installed."
@@ -472,9 +481,9 @@ then	# C'est le dernier nœud
 	LN
 elif [ $max_nodes -ne 1 ]
 then	# Ce n'est pas le dernier noeud et il y a plus de 1 noeud.
+	script_stop $ME
+
 	info "Run script :"
 	info "$ME -db=$db -node=$(( node + 1 ))"
 	LN
 fi
-
-script_stop $ME
