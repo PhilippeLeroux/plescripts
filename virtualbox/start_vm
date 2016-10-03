@@ -32,7 +32,7 @@ do
 			;;
 
 		-wait_os=*)
-			wait_os=${1##*/}
+			wait_os=${1##*=}
 			shift
 			;;
 
