@@ -1,8 +1,10 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
+#	Le script n'a pas été testé depuis l'utilisation de gilib.sh
+
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -57,31 +59,6 @@ function error_msg_on_script_failed
 
 trap '[ "$?" -ne 0 ] && error_msg_on_script_failed' EXIT
 
-#	Les 2 fonctions sont dupliquées de database_servers/uninstall.sh
-function get_other_nodes
-{
-	if $(test_if_cmd_exists olsnodes)
-	then
-		typeset nl=$(olsnodes | xargs)
-		if [ x"$nl" != x ]
-		then # olsnodes ne retourne rien sur un SINGLE
-			sed "s/$(hostname -s) //" <<<"$nl"
-		fi
-	fi
-}
-
-function execute_on_other_nodes
-{
-	typeset -r cmd="$@"
-
-	for node in $node_list
-	do
-		exec_cmd ssh "$node \". .bash_profile; $cmd\""
-	done
-}
-
-typeset -r node_list=$(get_other_nodes)
-
 line_separator
 info "Delete database :"
 LN
@@ -115,7 +92,7 @@ exec_cmd "$rm_4"
 execute_on_other_nodes "$rm_4"
 LN
 
-if [ x"$node_list" != x ]
+if [ x"$gi_node_list" != x ]
 then	#	Sur les RACs les nom des instances ont été ajoutés.
 	typeset -r clean_oratab_cmd1="sed  '/${db:0:8}_\{,1\}[0-9].*/d' /etc/oratab > /tmp/oracle_oratab"
 	typeset -r clean_oratab_cmd2="cat /tmp/oracle_oratab > /etc/oratab && rm /tmp/oracle_oratab"
