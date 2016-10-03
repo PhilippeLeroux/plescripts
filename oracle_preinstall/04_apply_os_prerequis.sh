@@ -84,25 +84,6 @@ function memory_setting
 	LN
 }
 
-function hugepages_setting
-{
-	typeset -ri hugepages=$rdbms_alloc_hugepages
-
-	typeset -ri id_group_dba=$(grep "^dba" /etc/group | cut -d':' -f3)
-
-	info "Permet aux membres du group DBA d'utiliser des hugepages"
-	update_value vm.hugetlb_shm_group $id_group_dba $sysctl_file
-	exec_cmd "sysctl -w vm.hugetlb_shm_group=$id_group_dba"
-	exec_cmd "sysctl -n vm.hugetlb_shm_group"
-	LN
-
-	info "Allocation de ${hugepages} hugepages"
-	update_value vm.nr_hugepages $hugepages $sysctl_file
-	exec_cmd "sysctl -w vm.nr_hugepages=$hugepages"
-	exec_cmd "sysctl -n vm.nr_hugepages"
-	LN
-}
-
 function dev_shm_setting
 {
 	info "mount /dev/shm on startup"
@@ -133,9 +114,9 @@ function dev_shm_setting
 	esac
 }
 
-function create_tuned_profile
+function create_tuned_profiles
 {
-	exec_cmd "~/plescripts/oracle_preinstall/create_tuned_profile.sh"
+	exec_cmd "~/plescripts/oracle_preinstall/create_tuned_profiles.sh"
 }
 
 line_separator
@@ -143,20 +124,9 @@ memory_setting
 LN
 
 line_separator
-hugepages_setting
-LN
-
-line_separator
-create_tuned_profile
+create_tuned_profiles
 LN
 
 line_separator
 dev_shm_setting
 LN
-
-if [ $rdbms_alloc_hugepages -eq 0 ]
-then
-	warning "Huge pages and /dev/shm configured..."
-fi
-
-exit 0
