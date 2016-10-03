@@ -1,9 +1,11 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
+
+#	Le script n'a pas été testé depuis l'utilisation de gilib.sh
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -150,47 +152,6 @@ then
 	exit 1
 fi
 
-#	Les fonctions get_other_nodes & root_execute_on_other_nodes sont dupliquées
-#	dans db/delete_db.sh
-
-#	Retourne tous les noeuds du cluster moins le noeud courant.
-#	Si le serveur courant n'appartient pas à un cluster la fonction
-#	ne retourne rien.
-function get_other_nodes
-{
-	if $(test_if_cmd_exists olsnodes)
-	then
-		typeset nl=$(olsnodes | xargs)
-		if [ x"$nl" != x ]
-		then # olsnodes ne retourne rien sur un SINGLE
-			sed "s/$(hostname -s) //" <<<"$nl"
-		fi
-	fi
-}
-
-typeset -r node_list=$(get_other_nodes)
-typeset -r current_node=$(hostname -s)
-
-#	Exécute la commande "$@" sur tous les autres noeuds du cluster
-function root_execute_on_other_nodes
-{
-	typeset -r cmd="$@"
-
-	for node in $node_list
-	do
-		exec_cmd "ssh $node $cmd"
-	done
-}
-
-#	Exécute la commande "$@" sur tous les noeuds du cluster
-function root_execute_on_all_nodes
-{
-	typeset -r cmd="$@"
-
-	exec_cmd "$cmd"
-	root_execute_on_other_nodes "$cmd"
-}
-
 #	Exécute la commande "$@" en faisant un su - oracle -c
 #	Si le premier paramètre est -f l'exécution est forcée.
 function suoracle
@@ -229,8 +190,8 @@ function deinstall_oracle
 	info "deinstall oracle"
 	suoracle -f "~/plescripts/database_servers/uninstall_oracle.sh $arg1"
 
-	root_execute_on_all_nodes "rm -fr /opt/ORCLfmap"
-	root_execute_on_all_nodes "rm -fr /u01/app/oracle/audit"
+	execute_on_all_nodes "rm -fr /opt/ORCLfmap"
+	execute_on_all_nodes "rm -fr /u01/app/oracle/audit"
 	LN
 
 	typeset -r service_file=/usr/lib/systemd/system/oracledb.service
@@ -272,13 +233,13 @@ function remove_disks
 	LN
 
 	info "Remove disks on other nodes."
-	root_execute_on_other_nodes "oracleasm scandisks"
+	execute_on_other_nodes "oracleasm scandisks"
 	LN
 
-	root_execute_on_other_nodes "~/plescripts/disk/logout_sessions.sh"
+	execute_on_other_nodes "~/plescripts/disk/logout_sessions.sh"
 	LN
 
-	root_execute_on_other_nodes "systemctl disable oracleasm.service"
+	execute_on_other_nodes "systemctl disable oracleasm.service"
 	LN
 }
 
@@ -289,13 +250,13 @@ function deinstall_grid
 	sugrid "/mnt/oracle_install/grid/runInstaller -deinstall -home \\\$ORACLE_HOME"
 	LN
 
-	root_execute_on_all_nodes "rm -fr /etc/oraInst.loc"
+	execute_on_all_nodes "rm -fr /etc/oraInst.loc"
 	LN
 
-	root_execute_on_all_nodes "rm -fr /etc/oratab"
+	execute_on_all_nodes "rm -fr /etc/oratab"
 	LN
 
-	root_execute_on_all_nodes "rm -fr /u01/app/grid/log"
+	execute_on_all_nodes "rm -fr /u01/app/grid/log"
 	LN
 }
 
@@ -303,7 +264,7 @@ function deinstall_grid
 #	MAIN
 #	============================================================================
 line_separator
-info "Remove components on : $current_node $node_list"
+info "Remove components on : $gi_current_node $gi_node_list"
 line_separator
 LN
 
@@ -339,7 +300,7 @@ LN
 if grep -q revert_to_master <<< "$action_list"
 then
 	line_separator
-	root_execute_on_other_nodes "plescripts/database_servers/revert_to_master.sh -doit; poweroff"
+	execute_on_other_nodes "plescripts/database_servers/revert_to_master.sh -doit; poweroff"
 	exec_cmd "./revert_to_master.sh -doit"
 	exec_cmd "poweroff"
 fi
