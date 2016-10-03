@@ -12,16 +12,16 @@ exec_cmd yum -y install $oracle_rdbms_rpm
 LN
 
 line_separator
-info "iscsi packags"
+info "Install iscsi packages"
 exec_cmd yum -y install iscsi-initiator-utils
 LN
 
 line_separator
-info "git"
+info "Install git"
 exec_cmd yum -y install git
 LN
 
 line_separator
-info "git"
+info "Install rlwrap"
 exec_cmd yum -y install ~/plescripts/rpm/rlwrap-0.42-1.el7.x86_64.rpm
 LN
