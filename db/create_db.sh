@@ -34,6 +34,8 @@ typeset		pdbName=undef
 typeset		serverPoolName=undef
 typeset		policyManaged=no
 
+typeset		confirm="-confirm"
+
 typeset		skip_db_create=no
 
 typeset -r str_usage=\
@@ -78,6 +80,11 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-y)
+			confirm=""
 			shift
 			;;
 
@@ -263,8 +270,11 @@ function test_if_serverpool_exists
 {
 	typeset -r serverPoolName=$1
 
-	info "Server pool $serverPoolName exists :"
+	info "Test if server pool $serverPoolName exists :"
 	exec_cmd -ci "srvctl status srvpool -serverpool $serverPoolName"
+	res=$?
+	LN
+	return $res
 }
 
 function remove_all_log_and_db_fs_files
@@ -350,7 +360,7 @@ function create_database
 
 	make_dbca_args
 
-	exec_dynamic_cmd -confirm -ci dbca
+	exec_dynamic_cmd $confirm -ci dbca
 	typeset -ri	dbca_return=$?
 	if [ $dbca_return -eq 0 ]
 	then
@@ -501,6 +511,23 @@ else
 		LN
 	fi
 fi
+
+
+if [ "${db_type:0:3}" == "RAC" ]
+then
+	line_separator
+	for node in $( sed "s/,/ /g" <<<"$node_list" )
+	do
+		if [ $node != $(hostname -s) ]
+		then
+			exec_cmd scp $node:~/plescripts/oracle_preinstall/glogin.sql $ORACLE_HOME/sqlplus/admin/glogin.sql
+			LN
+		fi
+	done
+fi
+
+exec_cmd cp ~/plescripts/oracle_preinstall/glogin.sql $ORACLE_HOME/sqlplus/admin/glogin.sql
+LN
 
 exec_cmd "~/plescripts/memory/show_pages.sh"
 LN
