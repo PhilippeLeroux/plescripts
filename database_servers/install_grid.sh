@@ -385,14 +385,6 @@ function stop_and_disable_unwanted_grid_ressources
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl disable oc4j"
 }
 
-function adjust_shm_size
-{
-	for node in ${node_names[*]}
-	do
-		exec_cmd "ssh -t root@${node} \". .bash_profile; ~/plescripts/memory/adjust_shm_size.sh\""
-	done
-}
-
 function set_ASM_memory_target_low_and_restart_asm
 {
 	if [ $hack_asm_memory != "0" ]
@@ -406,13 +398,13 @@ function set_ASM_memory_target_low_and_restart_asm
 		then	#	RAC
 			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop cluster -all\""
 
-			[ $shm_for_db != "0" ] && adjust_shm_size
+			timing 5 
 
 			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start cluster -all\""
 		else	#	SINGLE
 			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl stop asm -f\""
 
-			[ $shm_for_db != "0" ] && adjust_shm_size
+			timing 5 
 
 			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl start asm\""
 		fi
@@ -495,13 +487,13 @@ then
 fi
 
 if [ $skip_root_scripts == no ]
-then #	Il faut toujours commencer sur le noeud d'installation du grid.
+then #	Il faut toujours commencer sur le nœud d'installation du grid.
 	typeset -i inode=0
 	while [ $inode -lt $max_nodes ]
 	do
 		run_post_install_root_scripts_on_node $inode
 		LN
-		[ $inode -eq 0 ] && timing 30
+		[[ $max_nodes -gt 1 && $inode -eq 0 ]] && timing 30
 		inode=inode+1
 	done
 fi
@@ -548,6 +540,6 @@ LN
 script_stop $ME
 LN
 
-info "The Oracle software can be installed."
+info "Oracle software can be installed."
 info "./install_oracle.sh -db=$db"
 LN
