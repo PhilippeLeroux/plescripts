@@ -1,9 +1,9 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -71,54 +71,33 @@ then	# Si le kill est effectif on aura un problème avec ASM il faut lui laisser
 		# le temps de prendre en compte le kill.
 	timing 5 "ASM Temporisation"
 fi
+LN
 
 line_separator
-oracle_rm_1="su - oracle -c 'rm -rf \$ORACLE_BASE/cfgtoollogs/dbca/${db}*'"
-oracle_rm_2="su - oracle -c 'rm -rf \$ORACLE_BASE/diag/rdbms/$lower_db'"
-oracle_rm_3="su - oracle -c 'rm -rf \$ORACLE_HOME/dbs/*${db}*'"
-oracle_rm_4="su - oracle -c 'rm -rf \$ORACLE_BASE/admin/$db'"
+oracle_rm_1="su - oracle -c \"rm -rf \$ORACLE_BASE/cfgtoollogs/dbca/${db}*\""
+oracle_rm_2="su - oracle -c \"rm -rf \$ORACLE_BASE/diag/rdbms/$lower_db\""
+oracle_rm_3="su - oracle -c \"rm -rf \$ORACLE_HOME/dbs/*${db}*\""
+oracle_rm_4="su - oracle -c \"rm -rf \$ORACLE_BASE/admin/$db\""
 
-clean_oratab_cmd1="sed  '/$db[_|0-9].*/d' /etc/oratab > /tmp/oratab"
+clean_oratab_cmd1="sed  \"/$db[_|0-9].*/d\" /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
 
-info "Remove all Oracle files on node $(hostname -s)"
-exec_cmd -c "$oracle_rm_1"
-exec_cmd -c "$oracle_rm_2"
-exec_cmd -c "$oracle_rm_3"
-exec_cmd -c "$oracle_rm_4"
+execute_on_all_nodes "$oracle_rm_1"
+LN
+execute_on_all_nodes "$oracle_rm_2"
+LN
+execute_on_all_nodes "$oracle_rm_3"
+LN
+execute_on_all_nodes "$oracle_rm_4"
 LN
 
 exec_cmd -c "$clean_oratab_cmd1"
 exec_cmd -c "$clean_oratab_cmd2"
 LN
 
-typeset -r cfg_path=~/plescripts/database_servers/${db}
-if [ -d $cfg_path ]
-then
-	oracle_rm_1=$(escape_2xquotes $oracle_rm_1)
-	oracle_rm_2=$(escape_2xquotes $oracle_rm_2)
-	oracle_rm_3=$(escape_2xquotes $oracle_rm_3)
-	oracle_rm_4=$(escape_2xquotes $oracle_rm_3)
-	for node_file in $cfg_path/node*
-	do
-		node_name=$(cat $node_file | cut -d: -f2)
-		if [ $node_name != $(hostname -s) ]
-		then
-			warning "RAC : ATTENTION PAS TESTE DEPUIS CHANGEMENT DES VARIABLES oracle_rm_X"
-			line_separator
-			info "Remove all Oracle's files on node $node_name"
-			exec_cmd -c "ssh $node_name '$oracle_rm_1'"
-			exec_cmd -c "ssh $node_name '$oracle_rm_2'"
-			exec_cmd -c "ssh $node_name '$oracle_rm_3'"
-			exec_cmd -c "ssh $node_name '$oracle_rm_4'"
-			LN
-
-			exec_cmd -c "ssh $node_name \"$clean_oratab_cmd1\""
-			exec_cmd -c "ssh $node_name \"$clean_oratab_cmd1\""
-			LN
-		fi
-	done
-fi
+execute_on_other_nodes "$clean_oratab_cmd1"
+execute_on_other_nodes "$clean_oratab_cmd2"
+LN
 
 line_separator
 info "Remove database files from ASM"
