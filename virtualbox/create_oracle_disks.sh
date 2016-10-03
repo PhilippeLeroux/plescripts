@@ -78,7 +78,7 @@ do
 							-vm_name=$first_vm							\
 							-disk_name=$(printf "%s_lun%02d" $db $ilun)	\
 							-disk_mb=$size_mb							\
-							-attach_to=\"$attach_to\"
+							-attach_to="'$attach_to'"					\
 							-fixed_size
 		ilun=ilun+1
 	done
