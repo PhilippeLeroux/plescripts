@@ -8,7 +8,7 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -db=<str> -vm_memory_mb=<#>"
+"Usage : $ME -db=<str> -vm_memory_mb=<#> [-vmGroup=<name>]"
 
 info "Running : $ME $*"
 
@@ -21,6 +21,11 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
+			shift
+			;;
+
+		-vmGroup=*)
+			vmGroup="${1##*=}"
 			shift
 			;;
 
@@ -56,15 +61,20 @@ typeset -ri max_nodes=$(cfg_max_nodes $db)
 #	ici le n° du noeud n'est pas important et il y a tjr un noeud 1.
 cfg_load_node_info $db 1
 
-case $cfg_db_type in
-	std)
-		typeset	-r	group_name="/Standalone $(initcap $db)"
-		;;
+if [ x"$vmGroup" == x ]
+then
+	case $cfg_db_type in
+		std)
+			typeset	-r	group_name="/Standalone $(initcap $db)"
+			;;
 
-	rac)
-		typeset	-r	group_name="/RAC $(initcap $db)"
-		;;
-esac
+		rac)
+			typeset	-r	group_name="/RAC $(initcap $db)"
+			;;
+	esac
+else
+	typeset	-r	group_name="$vmGroup"
+fi
 
 for nr_node in $( seq $max_nodes )
 do
