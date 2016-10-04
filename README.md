@@ -78,11 +78,9 @@ la base soit SINGLE ou bien RAC.
  - orclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
  - K2 qui est le serveur d'infrastructure.
 
- [Schéma réseau ascii art](https://github.com/PhilippeLeroux/plescripts/wiki/schema_reseau.txt)
-
  [Création des VMs orclmaster et K2](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
 
-### Ajout de serveurs de base de données Oracle.
+### Création des serveurs de base de données Oracle.
 Les 2 VMs orclmaster et K2 doivent avoir été créées.
 
 [Création des serveurs Oracle](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
@@ -91,7 +89,36 @@ La création des serveurs inclue l'installation du Grid Infrastructure et d'Orac
 Une fois cette étape terminée les bases peuvent être [créées](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
 La création de dataguard est prise en compte mais uniquement pour des bases SINGLE, je n'ai pas assez de ressources pour avoir 2 RACs
-ou 1 RAC et 1 SINGLE [voir ici, mais il reste un peu de boulot.](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/README.md)
+ou 1 RAC et 1 SINGLE [procédure ici](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/README.md)
+
+##	Script database_servers/run_all.sh
+
+**Note :** Exécuter ce script uniquement après avoir validé l'environnement en
+créant au moins un serveur Oracle avec une base mono instance.
+
+Ce script lance tous les scripts :
+ - clone_master.sh
+ - install_grid.sh
+ - install_oracle.sh
+ - create_db.sh
+ - et éventuellement create_dataguard.sh
+
+Exemples (ce postionner dans le répertoire ~/plescripts/database_servers) :
+ - Création d'une base mono instance :
+
+   `./run_all.sh -db=SIMPLE`
+
+ - Création d'un RAC 2 nœuds :
+
+   `./run_all.sh -db=RAC2N -max_nodes=2`
+
+ - Création d'un dataguard :
+
+   `./run_all.sh -db=saturne -standby=jupiter`
+
+Les derniers paramètres seront passés à create_db.sh, pour créer un RAC 2 noeuds 'Policy Managed' par exemple :
+
+`./run_all.sh -db=RAC2N -max_nodes=2 -policyManaged`
 
 --------------------------------------------------------------------------------
 [Wiki](https://github.com/PhilippeLeroux/plescripts/wiki)
