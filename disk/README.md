@@ -1,9 +1,3 @@
-**Attention : Les scripts sont prévus pour fonctionner sur des VMs de démo, en
-aucun cas ils ne doivent être utilisés sur des serveurs d'entreprises. Les scripts
-sont très loin des exigences d'une entreprise.**
-
---------------------------------------------------------------------------------
-
 Cette page décrit brièvement les scripts, pour avoir des informations _plus fonctionnelles_
 sur la façon de se servir des scripts :
 * [Ajout de disques](https://github.com/PhilippeLeroux/plescripts/wiki/01-Ajout-de-disques-sur-des-DGs-Oracle)
@@ -67,25 +61,3 @@ Permet de gérer les disques d'un serveur de base de données.
 
 	Est utilisé par `clone_master.sh` pour ajouter les disques sur les autres nœuds
 	d'un RAC.
-
---------------------------------------------------------------------------------
-
-License
--------
-
-Copyright (©) 2016 Philippe Leroux - All Rights Reserved
-
-This project including all of its source files is released under the terms of [GNU General Public License (version 3 or later)](http://www.gnu.org/licenses/gpl.txt)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
