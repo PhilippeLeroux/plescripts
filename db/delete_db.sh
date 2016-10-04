@@ -101,6 +101,8 @@ then	#	Sur les RACs les nom des instances ont été ajoutés.
 	info "Remove instance name from /etc/oratab."
 	exec_cmd "$clean_oratab_cmd1"
 	exec_cmd "$clean_oratab_cmd2"
+	LN
+
 	execute_on_other_nodes "$clean_oratab_cmd1"
 	execute_on_other_nodes "$clean_oratab_cmd2"
 	LN
