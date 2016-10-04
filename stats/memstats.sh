@@ -67,16 +67,18 @@ done
 exit_if_param_undef title "$str_usage"
 
 #	Il faut utiliser un TT sinon la dernière log créée peut être dans la minute suivante.
-typeset	-r TT=$(date +"%Hh%M")
-typeset -r mem_file=$PLESTATS_PATH/$TT_$(hostname -s)_${title}memstat.log
-typeset -r swap_file=$PLESTATS_PATH/$TT_$(hostname -s)_${title}swapstat.log
-typeset -r shm_file=$PLESTATS_PATH/$TT_$(hostname -s)_${title}shmstat.log
+typeset	TT=$(date +"%Hh%M")
+typeset -r mem_file=$PLESTATS_PATH/${TT}_$(hostname -s)_${title}memstat.log
+typeset -r swap_file=$PLESTATS_PATH/${TT}_$(hostname -s)_${title}swapstat.log
+typeset -r shm_file=$PLESTATS_PATH/${TT}_$(hostname -s)_${title}shmstat.log
+unset TT
 
 function write_headers
 {
-	echo "$(date +"%Y:%m:%d") total used free shared buffer cached" > $mem_file
-	echo "$(date +"%Y:%m:%d") total used free" > $swap_file
-	echo "$(date +"%Y:%m:%d") total used free Used%" > $shm_file
+	typeset	-r TT=$(date +"%Y:%m:%d")
+	echo "$TT total used free shared buffer cached" > $mem_file
+	echo "$TT total used free" > $swap_file
+	echo "$TT +"%Y:%m:%d") total used free Used%" > $shm_file
 
 	#	Obligatoire avec vboxsf
 	chmod ug=rw $mem_file $swap_file $shm_file
