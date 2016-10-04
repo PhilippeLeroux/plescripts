@@ -19,6 +19,7 @@ set feedback off
 
 alter session set nls_date_format = 'YY/MM/DD HH24:MI';
 
+define y='idle'
 col x new_value y noprint
 select
 	lower(user || '@' || sys_context('userenv', 'con_name')) X
