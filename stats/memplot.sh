@@ -18,6 +18,7 @@ typeset -r str_usage=\
 		[-server=<name>]     can be omitted with only one server.
 		[-start_at=HHhMM]    skip tt before HHhMM
 		[-show_log_only]     show log files.
+		[-clear_log]         remove log files.
 
 Display files produced by memstats.sh with gnuplot"
 
@@ -28,6 +29,7 @@ typeset time=undef
 typeset server=""
 typeset title=""
 typeset show_log_only=no
+typeset	clear_log=no
 
 while [ $# -ne 0 ]
 do
@@ -70,6 +72,11 @@ do
 
 		-show_log_only)
 			show_log_only=yes
+			shift
+			;;
+
+		-clear_log)
+			clear_log=yes
 			shift
 			;;
 
@@ -164,6 +171,15 @@ function make_log_names
 
 	exit_if_file_not_exist $log_shm
 	exit_if_file_not_exist $log_mem
+
+	if [ $clear_log == yes ]
+	then
+		info "Clear logs :"
+		exec_cmd "> $log_shm"
+		exec_cmd "> $log_mem"
+		exec_cmd "> $log_swap"
+		timing 10
+	fi
 }
 
 #	============================================================================
