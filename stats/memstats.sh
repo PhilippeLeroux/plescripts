@@ -66,9 +66,11 @@ done
 
 exit_if_param_undef title "$str_usage"
 
-typeset -r mem_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}memstat.log
-typeset -r swap_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}swapstat.log
-typeset -r shm_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}shmstat.log
+#	Il faut utiliser un TT sinon la dernière log créée peut être dans la minute suivante.
+typeset	-r TT=$(date +"%Hh%M")
+typeset -r mem_file=$PLESTATS_PATH/$TT_$(hostname -s)_${title}memstat.log
+typeset -r swap_file=$PLESTATS_PATH/$TT_$(hostname -s)_${title}swapstat.log
+typeset -r shm_file=$PLESTATS_PATH/$TT_$(hostname -s)_${title}shmstat.log
 
 function write_headers
 {
