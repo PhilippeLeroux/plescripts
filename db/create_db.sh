@@ -4,7 +4,7 @@
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
-. ~/plescripts/memory/memorylib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -382,21 +382,11 @@ function create_services_for_pdb
 		RAC)
 			if [ $serverPoolName == "undef" ]
 			then
-				# Lecture des noms de toutes les instances.
-				typeset inst_list
-				while IFS=':' read inst_name rem
-				do
-					[ x"$inst_list" = x ] && inst_list=$inst_name || inst_list=${inst_list}",$inst_name"
-				done<<<"$(cat /etc/oratab | grep "^${prefixInstance}[1-9]:")"
-
-				info "Create service for RAC Administrator Managed"
-				exec_cmd "srvctl add service -db $db -service pdb$pdbName -pdb $pdbName -preferred \"$inst_list\""
-				LN
-				exec_cmd srvctl start service -db $db -service pdb$pdbName
+				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName}"
 				LN
 			else
-				info "Create service for RAC Policy Managed"
-				exec_cmd "~/plescripts/db/create_service_for_policy_managed.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName} -poolName=$serverPoolName"
+				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName} -poolName=$serverPoolName"
+				LN
 			fi
 			;;
 
@@ -418,6 +408,47 @@ function create_services_for_pdb
 			fi
 			;;
 	esac
+}
+
+function update_rac_oratab
+{
+	[[ $policyManaged == "yes" || $db_type == "RACONENODE" ]] && prefixInstance=${prefixInstance}_
+
+	for node in $( sed "s/,/ /g" <<<"$node_list" )
+	do
+		line_separator
+		exec_cmd "ssh -t oracle@${node} \". .profile; ~/plescripts/db/update_rac_oratab.sh -prefixInstance=$prefixInstance\""
+		LN
+	done
+}
+
+#	Mon glogin fait planter la création de la PDB.
+function remove_glogin
+{
+	line_separator
+	info "Remove glogin.sql"
+	execute_on_all_nodes "rm -f \$ORACLE_HOME/sqlplus/admin/glogin.sql"
+	LN
+}
+
+function copy_glogin
+{
+	line_separator
+	info "Copy glogin.sql"
+	if [ "${db_type:0:3}" == "RAC" ]
+	then
+		for node in $( sed "s/,/ /g" <<<"$node_list" )
+		do
+			if [ $node != $(hostname -s) ]
+			then
+				exec_cmd scp $node:~/plescripts/oracle_preinstall/glogin.sql $ORACLE_HOME/sqlplus/admin/glogin.sql
+				LN
+			fi
+		done
+	fi
+
+	exec_cmd cp ~/plescripts/oracle_preinstall/glogin.sql $ORACLE_HOME/sqlplus/admin/glogin.sql
+	LN
 }
 
 #	============================================================================
@@ -450,19 +481,11 @@ stats_tt start create_$lower_db
 
 typeset prefixInstance=${db:0:8}
 
+remove_glogin
+
 [ $skip_db_create == no ] && create_database
 
-if [ "${db_type:0:3}" == "RAC" ]
-then
-	[[ $policyManaged == "yes" || $db_type == "RACONENODE" ]] && prefixInstance=${prefixInstance}_
-
-	for node in $( sed "s/,/ /g" <<<"$node_list" )
-	do
-		line_separator
-		exec_cmd "ssh -t oracle@${node} \". ./.profile; ~/plescripts/db/update_rac_oratab.sh -prefixInstance=$prefixInstance\""
-		LN
-	done
-fi
+[ "${db_type:0:3}" == "RAC" ] && update_rac_oratab
 
 [ $cdb == yes ] && [ x"$pdbName" != x ] && create_services_for_pdb
 
@@ -512,34 +535,16 @@ else
 	fi
 fi
 
-
-if [ "${db_type:0:3}" == "RAC" ]
-then
-	line_separator
-	for node in $( sed "s/,/ /g" <<<"$node_list" )
-	do
-		if [ $node != $(hostname -s) ]
-		then
-			exec_cmd scp $node:~/plescripts/oracle_preinstall/glogin.sql $ORACLE_HOME/sqlplus/admin/glogin.sql
-			LN
-		fi
-	done
-fi
-
-exec_cmd cp ~/plescripts/oracle_preinstall/glogin.sql $ORACLE_HOME/sqlplus/admin/glogin.sql
-LN
+copy_glogin
 
 exec_cmd "~/plescripts/memory/show_pages.sh"
 LN
 
-grep -qE ".*shm.*size.*" /etc/fstab 
-if [ $? -eq 1 ]
-then
-	info "with root user execute :"
-	info "~/plescripts/memory/adjust_shm_size.sh -sga=${totalMemory}M"
-	LN
-fi
-
 stats_tt stop create_$lower_db
 
 script_stop $ME
+
+info "Memory settings :"
+info "/dev/shm   : ~/plescripts/memory/adjust_shm_size.sh"
+info "Huge pages : ~/plescripts/memory/root_setup_hp.sh"
+LN

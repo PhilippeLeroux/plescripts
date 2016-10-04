@@ -10,16 +10,21 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=str
 	-pdbName=str
-	-prefixService=str
-	-poolName=str
+	-prefixService=str	Ex : pdb || pdbName
+	[-poolName=str]     Impliquera la création de services 'Policy Managed'
+
+Création de 2 services :
+	 prefixService || _oci
+	 prefixService || _java
 "
 
 info "Running : $ME $*"
 
 typeset db=undef
 typeset pdbName=undef
-typeset poolName=undef
 typeset prefixService=undef
+typeset poolName
+typeset preferredInstances
 
 while [ $# -ne 0 ]
 do
@@ -65,10 +70,8 @@ do
 	esac
 done
 
-[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db				"$str_usage"
 exit_if_param_undef pdbName			"$str_usage"
-exit_if_param_undef poolName		"$str_usage"
 exit_if_param_undef prefixService	"$str_usage"
 
 line_separator
@@ -78,8 +81,25 @@ warning "Le but principal étant de poser un mémo"
 warning "Donc ils sont foireux et à adapter...."
 LN
 
+function get_all_instances
+{
+	typeset list
+	while read w1 instanceName rem
+	do
+		[ x"$list" == x ] && list=$instanceName || list="$list,$instanceName"
+	done<<<"$(srvctl status database -db $db)"
+
+	echo $list
+}
+
 line_separator
-info "create service ${prefixService}_oci on pdb $pdbName (db = $db) attached to pool $poolName"
+if [ x"$poolName" == x ]
+then
+	preferredInstances=$(get_all_instances)
+	info "Create service Administrator Managed ${prefixService}_oci"
+else
+	info "Create service Policy Managed ${prefixService}_oci"
+fi
 LN
 
 #	http://docs.oracle.com/database/121/RACAD/hafeats.htm#RACAD7026
@@ -96,8 +116,14 @@ LN
 #	GRANT EXECUTE ON DBMS_APP_CONT;
 
 add_dynamic_cmd_param "add service -service ${prefixService}_oci "
-add_dynamic_cmd_param "    -pdb $pdbName -db $db -serverpool $poolName"
-add_dynamic_cmd_param "    -cardinality    uniform"
+add_dynamic_cmd_param "    -pdb $pdbName -db $db"
+if [ x"$poolName" == x ]
+then
+	add_dynamic_cmd_param "    -preferred      $preferredInstances"
+else
+	add_dynamic_cmd_param "    -serverpool     $poolName"
+	add_dynamic_cmd_param "    -cardinality    uniform"
+fi
 add_dynamic_cmd_param "    -policy         automatic"
 add_dynamic_cmd_param "    -failovertype   session"
 add_dynamic_cmd_param "    -failovermethod basic"
@@ -111,12 +137,23 @@ LN
 
 line_separator
 #	Services for Application Continuity (java)
-info "create service ${prefixService}_java on pdb $pdbName (db = $db) attached to pool $poolName"
+if [ x"$poolName" == x ]
+then
+	info "Create service Administrator Managed ${prefixService}_java"
+else
+	info "Create service Policy Managed ${prefixService}_java"
+fi
 LN
 
 add_dynamic_cmd_param "add service -service ${prefixService}_java "
-add_dynamic_cmd_param "    -pdb $pdbName -db $db -serverpool $poolName"
-add_dynamic_cmd_param "    -cardinality    uniform"
+add_dynamic_cmd_param "    -pdb $pdbName -db $db"
+if [ x"$poolName" == x ]
+then
+	add_dynamic_cmd_param "    -preferred      $preferredInstances"
+else
+	add_dynamic_cmd_param "    -serverpool     $poolName"
+	add_dynamic_cmd_param "    -cardinality    uniform"
+fi
 add_dynamic_cmd_param "    -policy         automatic"
 add_dynamic_cmd_param "    -failovertype   transaction"
 add_dynamic_cmd_param "    -failovermethod basic"
@@ -126,6 +163,7 @@ add_dynamic_cmd_param "    -commit_outcome true"
 
 exec_dynamic_cmd srvctl
 LN
+
 exec_cmd srvctl start service -service ${prefixService}_java  -db $db
 LN
 
