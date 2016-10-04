@@ -24,11 +24,11 @@ typeset -r gi_current_node=$(hostname -s)
 #	Exécute la commande "$@" sur tous les autres nœuds du cluster
 function execute_on_other_nodes
 {
-	typeset -r cmd="$@"
+	typeset -r cmd=$(escape_2xquotes "$@")
 
 	for node in $gi_node_list
 	do
-		exec_cmd "ssh -t -t $node '$cmd'</dev/null"
+		exec_cmd "ssh -t -t $node \"$cmd\"</dev/null"
 	done
 }
 
