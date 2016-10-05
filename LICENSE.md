@@ -1,5 +1,5 @@
 License
--------
+=======
 
 Copyright (©) 2016 Philippe Leroux - All Rights Reserved
 
