@@ -6,7 +6,7 @@ typeset -r cfg_path_prefix=~/plescripts/database_servers
 #*> return max nodes.
 function cfg_max_nodes
 {
-	typeset -r db=$1
+	typeset -r db=$(to_lower $1)
 
 	if [ ! -d $cfg_path_prefix/$db ]
 	then
@@ -23,12 +23,12 @@ function cfg_max_nodes
 #*>		- cfg_db_type			std ou rac
 #*>		- cfg_server_name		nom du serveur
 #*>		- cfg_server_ip			ip du serveur
-#*>		- cfg_server_vip		vip du servuer
+#*>		- cfg_server_vip		vip du serveur
 #*>		- cfg_iscsi_ip			ip des disques iscsi
 #*>		- cfg_luns_hosted_by	vbox|san
 function cfg_load_node_info 
 {
-	typeset -r	db=$1
+	typeset -r	db=$(to_lower $1)
 	typeset -ri nr_node=$2
 	typeset -r	cfg_file=$cfg_path_prefix/$db/node${nr_node}
 
