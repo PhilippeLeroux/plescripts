@@ -30,7 +30,7 @@ while [ $# -ne 0 ]
 do
 	case $1 in
 		-db=*)
-			db=${1##*=}
+			db=$(to_lower ${1##*=})
 			shift
 			;;
 
