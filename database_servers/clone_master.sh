@@ -379,7 +379,7 @@ function test_if_other_nodes_up
 {
 	typeset check_ok=yes
 
-	for node_file in $cfg_path/node*
+	for node_file in ~/plescripts/database_servers/$db/node*
 	do
 		typeset other_node=$(cat $node_file | cut -d: -f2)
 		if [ $other_node != $server_name ]
