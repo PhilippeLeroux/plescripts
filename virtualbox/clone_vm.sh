@@ -102,13 +102,15 @@ do
 		LN
 	fi
 
-	info "Create disk ${vm_name}_u01 for mount point /u01"
+	info "Move $vm_name to group $group_name"
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	LN
 
+	info "Create disk ${vm_name}_u01 for mount point /u01"
 	exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name"			\
 											-disk_name=${vm_name}_u01	\
-											-disk_mb=$((32*1024))
+											-disk_mb=$((20*1024))		\
+											-fixed_size
 	LN
 
 	# Présent ici car dans setup_first_vms/vbox_scripts/01_create_master_vm.sh
