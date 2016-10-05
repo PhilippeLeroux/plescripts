@@ -115,4 +115,4 @@ Les derniers paramètres seront passés à create_db.sh, pour créer un RAC 2 no
 `./run_all.sh -db=RAC2N -max_nodes=2 -policyManaged`
 
 --------------------------------------------------------------------------------
-[Wiki](https://github.com/PhilippeLeroux/plescripts/wiki)
+[Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)
