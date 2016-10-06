@@ -2,18 +2,25 @@
 *.swp
 *.sw*
 *.log
+
 #Dolpin
 .Trash*
+
 #Logs
 logs/**
+
 #Fichier LibreOffice
 *.odp#
+
 #divers
 .directory
+
 #
 *.link
+
 #
 test/**
+
 ###
 dns/install/etc
 dns/install/var
