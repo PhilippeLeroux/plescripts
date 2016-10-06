@@ -277,7 +277,12 @@ function start_grid_installation
 {
 	line_separator
 	info "Start grid installation (~17mn)."
-	exec_cmd -c "ssh -t grid@${node_names[0]} \"LANG=C /mnt/oracle_install/grid/runInstaller -silent -showProgress -waitforcompletion -responseFile /home/grid/grid_$db.rsp\""
+	exec_cmd -c "ssh -t grid@${node_names[0]}					\
+				\"LANG=C /mnt/oracle_install/grid/runInstaller	\
+						-silent									\
+						-showProgress							\
+						-waitforcompletion						\
+						-responseFile /home/grid/grid_$db.rsp\""
 	ret=$?
 	[ $ret -gt 250 ] && exit 1
 }
@@ -289,7 +294,8 @@ function run_post_install_root_scripts_on_node	# $1 No node
 
 	line_separator
 	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
-	exec_cmd "ssh -t root@${node_names[$inode]} \"/u01/app/oraInventory/orainstRoot.sh\""
+	exec_cmd "ssh -t root@${node_names[$inode]}				\
+				\"/u01/app/oraInventory/orainstRoot.sh\""
 	LN
 
 	typeset -i max_tests=2
@@ -321,7 +327,9 @@ function runConfigToolAllCommands
 {
 	line_separator
 	info "Run ConfigTool"
-	exec_cmd "ssh -t grid@${node_names[0]} \"LANG=C $ORACLE_HOME/cfgtoollogs/configToolAllCommands RESPONSE_FILE=/home/grid/grid_${db}.properties\""
+	exec_cmd "ssh -t grid@${node_names[0]}								\
+				\"LANG=C $ORACLE_HOME/cfgtoollogs/configToolAllCommands	\
+					RESPONSE_FILE=/home/grid/grid_${db}.properties\""
 }
 
 function create_dg # $1 nom du DG
@@ -331,7 +339,8 @@ function create_dg # $1 nom du DG
 	info "Create DG : $DG"
 	IFS=':' read dg_name size first last<<<"$(cat $cfg_path/disks | grep "^${DG}")"
 	total_disks=$(( $last - $first + 1 ))
-	exec_cmd "ssh -t grid@${node_names[0]} \". ./.profile; ~/plescripts/dg/create_new_dg.sh -name=$DG -disks=$total_disks -nomount\""
+	exec_cmd "ssh -t grid@${node_names[0]} \". .profile;	\
+		~/plescripts/dg/create_new_dg.sh -name=$DG -disks=$total_disks -nomount\""
 }
 
 #	Création des DGs.
@@ -354,12 +363,14 @@ function create_all_dgs
 			if [ $max_nodes -gt 1 ]
 			then
 				info "mount DG DATA on ${node_names[$inode]}"
-				exec_cmd "ssh -t grid@${node_names[$inode]} \". ./.profile; asmcmd mount DATA\""
+				exec_cmd "ssh -t grid@${node_names[$inode]} \". .profile;	\
+									asmcmd mount DATA\""
 				LN
 			fi
 
 			info "mount DG FRA on ${node_names[$inode]}"
-			exec_cmd "ssh -t grid@${node_names[$inode]} \". ./.profile; asmcmd mount FRA\""
+			exec_cmd "ssh -t grid@${node_names[$inode]} \". .profile;		\
+									asmcmd mount FRA\""
 			LN
 
 			inode=inode+1
@@ -391,22 +402,27 @@ function set_ASM_memory_target_low_and_restart_asm
 	then
 		line_separator
 		disclaimer
-		exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; ~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
+		exec_cmd "ssh grid@${node_names[0]} \". .profile;	\
+				~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
 		LN
 
 		if [ $max_nodes -gt 1 ]
 		then	#	RAC
-			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl stop cluster -all\""
+			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
+						crsctl stop cluster -all\""
 
 			timing 5 
 
-			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; crsctl start cluster -all\""
+			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
+						crsctl start cluster -all\""
 		else	#	SINGLE
-			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl stop asm -f\""
+			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
+						srvctl stop asm -f\""
 
 			timing 5 
 
-			exec_cmd "ssh -t root@${node_names[0]} \". ~/.bash_profile; srvctl start asm\""
+			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
+						srvctl start asm\""
 		fi
 		LN
 	else
@@ -420,7 +436,8 @@ function remove_tfa_on_all_nodes
 	disclaimer
 	for i in $( seq 0 $(( max_nodes - 1 )) )
 	do
-		exec_cmd $mode -c "ssh -n root@${node_names[$i]} . /root/.bash_profile \; tfactl uninstall"
+		exec_cmd $mode -c "ssh -n root@${node_names[$i]} . /.bash_profile;	\
+						tfactl uninstall"
 	done
 }
 
@@ -450,8 +467,8 @@ LN
 if [ $oracle_home_for_test == no ]
 then
 	#	On doit récupérer l'ORACLE_HOME du grid qui est différent entre 1 cluster et 1 single.
-	ORACLE_HOME=$(ssh grid@${node_names[0]} ". ~/.profile; env|grep ORACLE_HOME"|cut -d= -f2)
-	ORACLE_BASE=$(ssh grid@${node_names[0]} ". ~/.profile; env|grep ORACLE_BASE"|cut -d= -f2)
+	ORACLE_HOME=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_HOME"|cut -d= -f2)
+	ORACLE_BASE=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_BASE"|cut -d= -f2)
 else
 	ORACLE_HOME=/u01/oracle_home/bidon
 	ORACLE_BASE=/u01/oracle_base/bidon
@@ -534,7 +551,7 @@ fi
 stats_tt stop grid_installation
 
 info "Installation status :"
-exec_cmd "ssh grid@${node_names[0]} \". ~/.profile; crsctl stat res -t\""
+exec_cmd "ssh grid@${node_names[0]} \". .profile; crsctl stat res -t\""
 LN
 
 script_stop $ME

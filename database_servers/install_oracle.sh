@@ -153,9 +153,14 @@ function mount_install_directory
 function start_oracle_installation
 {
 	line_separator
-	info "Start Oracle installation (~35mn)"
+	info "Start Oracle installation (~30mn)"
 	info "Log here : /u01/app/oraInventory/logs"
-	exec_cmd -c "ssh oracle@${node_names[0]} \"LANG=C /mnt/oracle_install/database/runInstaller -silent -showProgress -waitforcompletion -responseFile /home/oracle/oracle_$db.rsp\""
+	exec_cmd -c "ssh oracle@${node_names[0]}						\
+				 \"LANG=C /mnt/oracle_install/database/runInstaller	\
+					-silent											\
+					-showProgress									\
+					-waitforcompletion								\
+					-responseFile /home/oracle/oracle_$db.rsp\""
 	LN
 }
 

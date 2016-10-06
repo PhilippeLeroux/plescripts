@@ -266,6 +266,7 @@ cp \$TNS_ADMIN/listener.ora \$TNS_ADMIN/listener.ora.bibi.backup
 echo "$primary_sid_list" >> \$TNS_ADMIN/listener.ora
 lsnrctl reload
 EOS
+
 	exec_cmd "chmod ug=rwx $script"
 	exec_cmd "sudo -u grid -i $script"
 	LN
@@ -293,6 +294,7 @@ cp \$TNS_ADMIN/listener.ora \$TNS_ADMIN/listener.ora.bibi.backup
 echo "$standby_sid_list" >> \$TNS_ADMIN/listener.ora
 lsnrctl reload
 EOS
+
 	exec_cmd chmod ug=rwx $script
 	exec_cmd "scp $script $standby_host:$script"
 	exec_cmd "ssh -t $standby_host sudo -u grid -i $script"
@@ -338,12 +340,14 @@ function setup_tnsnames
 
 	info "Update alias $primary"
 	exec_cmd "$ROOT/db/delete_tns_alias.sh -alias_name=$primary"
+	info "Append new alias"
 	get_alias_for $primary $primary_host >> $tnsnames_file
 	info "updated."
 	LN
 
 	info "Update alias $standby"
 	exec_cmd "$ROOT/db/delete_tns_alias.sh -alias_name=$standby"
+	info "Append new alias"
 	get_alias_for $standby $standby_host >> $tnsnames_file
 	info "updated."
 	LN
@@ -380,7 +384,8 @@ startup nomount
 XXX
 exit
 EOS
-LN
+
+	LN
 }
 
 #	Lance la duplication de la base avec RMAN
@@ -406,7 +411,8 @@ run {
 	 ;
 }
 EOR
-	exec_cmd "rman target sys/$oracle_password@$primary auxiliary sys/$oracle_password@$standby @/tmp/duplicate.rman"
+	exec_cmd "rman	target sys/$oracle_password@$primary	\
+					auxiliary sys/$oracle_password@$standby @/tmp/duplicate.rman"
 }
 
 #	Fabrique les commandes permettant :
@@ -531,13 +537,13 @@ function register_standby_to_GI
 
 	line_separator
 	info "GI : register standby database on $standby_host :"
-	exec_cmd "ssh -t $standby_host \". .profile; srvctl add database \
-		-db $standby \
-		-oraclehome $ORACLE_HOME \
-		-spfile $ORACLE_HOME/dbs/spfile${standby}.ora \
-		-role physical_standby \
-		-dbname $primary \
-		-diskgroup DATA,FRA \
+	exec_cmd "ssh -t $standby_host \". .profile; srvctl add database	\
+		-db $standby													\
+		-oraclehome $ORACLE_HOME										\
+		-spfile $ORACLE_HOME/dbs/spfile${standby}.ora					\
+		-role physical_standby											\
+		-dbname $primary												\
+		-diskgroup DATA,FRA												\
 		-verbose\""
 	LN
 
@@ -701,7 +707,8 @@ function check_params
 	typeset errors=no
 
 	line_separator
-	typeset -ri c=$(dgmgrl -silent sys/$oracle_password 'show configuration' | grep -E "Primary|Physical" | wc -l 2>/dev/null)
+	typeset -ri c=$(dgmgrl -silent sys/$oracle_password 'show configuration' |\
+						grep -E "Primary|Physical" | wc -l 2>/dev/null)
 	info "Dataguard broker : $c database configured."
 	#	Est juste là pour avertissement.
 	if [ $primary_config == yes ]
