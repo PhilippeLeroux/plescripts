@@ -4,7 +4,7 @@
 #*> interfaces réseaux.
 function get_if_path
 {
-	id=$(grep "^ID=" /etc/os-release | cut -d= -f2)
+	typeset	-r	id=$(grep "^ID=" /etc/os-release | cut -d= -f2)
 	case $id in
 		\"ol\")
 			echo "/etc/sysconfig/network-scripts"

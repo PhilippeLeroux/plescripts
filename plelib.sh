@@ -231,7 +231,7 @@ trap ctrl_c INT
 #*<		FILE	: write into $PLELIB_LOG_FILE without any effects and canal 1 with visual effects.
 function my_echo
 {
-	EOL="\n"
+	typeset	EOL="\n"
 	[ "$1" = "-n" ] && EOL="" && shift
 	typeset -r	color="$1"
 	typeset		symbol="$2"
@@ -239,7 +239,7 @@ function my_echo
 	shift 2
 
 	# Laisser les 2 lignes, sinon l'affichaged de MSG est foireux.
-	MSG="$@"
+	typeset	MSG="$@"
 	MSG=$(double_symbol_percent "$MSG")
 
 	# Escape tous les \1, \2 jusque \9
@@ -285,8 +285,8 @@ function debug
 {
 	[ "$DEBUG_MODE" != ENABLE ] && return 0
 
-	first_arg=""
-	symbol="dbg"
+	typeset	first_arg=""
+	typeset	symbol="dbg"
 	while [ $# -ne 0 ]
 	do
 		case "$1" in
@@ -314,8 +314,8 @@ function debug
 #*>   -f don't print info marker. (Useful after info -n)
 function info
 {
-	first_arg=""
-	symbol="# "
+	typeset	first_arg=""
+	typeset	symbol="# "
 	while [ $# -ne 0 ]
 	do
 		case "$1" in
@@ -341,7 +341,7 @@ function info
 #*> Fill line with charactere = or specified charactere
 function line_separator
 {
-	[ $# -eq 0 ] && car="=" || car="$1"
+	[ $# -eq 0 ] && typeset	car="=" || typeset  car="$1"
 
 	info $(fill "$car" $(tput cols)-3)
 }
@@ -409,7 +409,8 @@ function ask_for
 		[ x"$print" == x ] && info -n "$@" || info -n "$@ $print "
 
 		#	Wait user.
-		typeset -i start_s=$SECONDS
+		typeset	-i  start_s=$SECONDS
+		typeset	    keyboard
 		read keyboard</dev/tty
 		info "$keyboard"	# Affiche la touche pressée.
 		typeset -i diff_s=$(( SECONDS - start_s ))
@@ -475,6 +476,7 @@ function fake_exec_cmd
 #*< Si la première commande est ssh alors recherche la commande exécutée par ssh
 function get_cmd_name
 {
+    typeset	-a	argv
 	read -a argv <<<"$@"
 
 	typeset -ri size=${#argv[@]}
@@ -614,7 +616,7 @@ function exec_cmd
 			;;
 
 		EXEC)
-			[ $force == YES ] && COL=$RED || COL=$YELLOW
+			[ $force == YES ] && typeset -r COL=$RED || typeset -r COL=$YELLOW
 			[ $hide_command == NO ] && my_echo "$COL" "$(date +"%Hh%M")> " "$simplify_cmd"
 
 			typeset -ri eval_start_at=$SECONDS
@@ -716,7 +718,7 @@ function exec_dynamic_cmd
 	#	10h40> ma_commande  \
 	#              -x=42    \
 	#			   -t
-	typeset -ri l=ple_dyn_param_max_len+4
+	typeset	-ri	l=ple_dyn_param_max_len+4
 	typeset		c=$(printf "%-${l}s" "${cmd_name##* }")
 	fake_exec_cmd "$(echo "$c\\\\")"
 
@@ -731,11 +733,11 @@ function exec_dynamic_cmd
 	[ $confirm == yes ] && confirm_or_exit "Continue" || true
 
 	#	Avec la paramètre -h exec_cmd n'affiche pas le temps d'exécution.
-	typeset -ri	exec_cmd_start_at=$SECONDS
+	typeset	-ri	exec_cmd_start_at=$SECONDS
 	exec_cmd -hf $cmd_name "${ple_dyn_param_cmd[@]}"
-	typeset -ri exec_cmd_return=$?
+	typeset	-ri	exec_cmd_return=$?
 
-	typeset -ri exec_cmd_duration=$(( SECONDS - exec_cmd_start_at ))
+	typeset	-ri	exec_cmd_duration=$(( SECONDS - exec_cmd_start_at ))
 	if [ $exec_cmd_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 	then
 		my_echo "${YELLOW}" "$(date +"%Hh%M")< " "${cmd_name##* } running time : $(fmt_seconds $exec_cmd_duration)"
@@ -1109,9 +1111,9 @@ function test_pause # $1 message
 #*>    -i : remove all decimals
 function compute
 {
-	bc_args=""
-	scale=""
-	return_int=no
+	typeset	bc_args=""
+	typeset	scale=""
+	typeset	return_int=no
 
 	while [ $# -ne 0 ]
 	do
@@ -1131,7 +1133,7 @@ function compute
 		esac
 	done
 
-	val=$(echo "$@" | bc $bc_args)
+	typeset	val=$(echo "$@" | bc $bc_args)
 	[ x"$scale" != x ] && val=$(LANG=C printf "%.${scale}f" $val)
 	[ $return_int = yes ] && echo ${val%%.*} || echo $val
 }
@@ -1169,10 +1171,10 @@ function fmt_number
 	len=len-1
 
 	case "${LANG:0:2}" in
-		fr)	car_group=" "
+		fr)	typeset	-r	car_group=" "
 			;;
 
-		*)	car_group=","
+		*)	typeset	-r	car_group=","
 			;;
 	esac
 

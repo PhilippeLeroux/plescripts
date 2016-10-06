@@ -3,6 +3,7 @@
 #*>	return disks without partitions.
 function get_unused_disks
 {
+	typeset	device
 	while read device
 	do
 		[ ! -b ${device}1 ] && echo $device
@@ -31,6 +32,7 @@ function get_uuid_disk
 #*>	Retourne le type du disque $1 ou unused si le disque n'est pas utilisé.
 function disk_type
 {
+	typeset t
 	# utilise read sinon il y a un espace en fin de ligne, je ne comprends pas
 	read t<<<"$(blkid $1 | sed 's/.*TYPE=\"\(.*\)\"/\1/')"
 	[ x"$t" = x ] && echo "unused" || echo $t
@@ -58,11 +60,11 @@ function clear_device
 #*> La partition est créée sur tout le disque.
 function add_partition_to
 {
-typeset -r device=$1
-info "add partition to $device"
-fake_exec_cmd "fdisk $device n p 1"
-if [ $? -eq 0 ]
-then
+	typeset -r device=$1
+	info "add partition to $device"
+	fake_exec_cmd "fdisk $device n p 1"
+	[ $? -ne 0 ] && return 0
+
 LANG=C fdisk $device <<EOS >/dev/null
 n
 p
@@ -71,21 +73,19 @@ p
 
 w
 EOS
-fi
 }
 
 #*>	Supprime la partition du disque $1
 function delete_partition
 {
-typeset -r device=$1
-fake_exec_cmd "fdisk $device d"
-if [ $? -eq 0 ]
-then
+	typeset -r device=$1
+	fake_exec_cmd "fdisk $device d"
+	[ $? -ne 0 ] && return 0
+
 LANG=C fdisk $device <<EOS >/dev/null
 d
 w
 EOS
-fi
 }
 
 #*>	Convertie la valeur en base 16 $1 en base 10
@@ -99,6 +99,8 @@ function hexa_2_deci
 #*>	Format de retour "minor# major#"
 function read_minor_major
 {
+	typeset	minor
+	typeset	major
 	read minor major <<<$(stat -c '%t %T' $1)
 	echo "$(hexa_2_deci $minor) $(hexa_2_deci $major)"
 }
@@ -111,17 +113,19 @@ function get_disk_minor_major
 	typeset -ri	minor=$1
 	typeset -ri major=$2
 
-	device_name=$(ls -l /dev | grep -E ".*disk +${minor}, +${major} .*" | tr -s [[:space:]] | cut -d' ' -f10)
+	typeset	-r	device_name=$(ls -l /dev | grep -E ".*disk +${minor}, +${major} .*" | tr -s [[:space:]] | cut -d' ' -f10)
 	echo $os_disks_path/$device_name
 }
 
 #*> Retourne le nom du disque système utilisé par le disque oracleasm $1
 function get_os_disk_used_by_oracleasm
 {
-	typeset -r oracleasm_disk_name=$1
+	typeset -r	oracleasm_disk_name=$1
 
-	typeset -r oracle_disks_path=/dev/oracleasm/disks
+	typeset -r	oracle_disks_path=/dev/oracleasm/disks
 
+	typeset		minor
+	typeset		major
 	read minor major<<<$(read_minor_major $oracle_disks_path/$oracleasm_disk_name)
 	get_disk_minor_major $minor $major
 }
