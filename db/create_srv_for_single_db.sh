@@ -69,7 +69,6 @@ do
 	esac
 done
 
-[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db				"$str_usage"
 exit_if_param_undef pdbName			"$str_usage"
 
@@ -128,9 +127,17 @@ function oci_service
 	exec_dynamic_cmd srvctl
 	LN
 
-	if [[ $action == add && $start == yes ]]
+	if [ $action == add ]
 	then
-		exec_cmd srvctl start service -service ${prefixService}_oci -db $db
+		if [ $start == yes ]
+		then
+			exec_cmd srvctl start service -service ${prefixService}_oci -db $db
+			LN
+		fi
+
+		exec_cmd "~/plescripts/db/add_tns_alias.sh		\
+					-service_name=${prefixService}_oci	\
+					-host_name=$(hostname -s)"
 		LN
 	fi
 }

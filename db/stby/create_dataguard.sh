@@ -186,30 +186,6 @@ function sqlcmd_create_standby_redo_logs
 	done
 }
 
-#	Affiche sur la sortie standard la configuration de l'alias TNS.
-#	$1	service_name qui sera aussi le nom de l'alias.
-#	$2	nom du serveur
-function get_alias_for
-{
-	typeset	-r	service_name=$1
-	typeset	-r	host_name=$2
-cat<<EOA
-
-$service_name =
-	(DESCRIPTION =
-		(ADDRESS =
-			(PROTOCOL = TCP)
-			(HOST = $host_name)
-			(PORT = 1521)
-		)
-		(CONNECT_DATA =
-			(SERVER = DEDICATED)
-			(SERVICE_NAME = $service_name)
-		)
-	)
-EOA
-}
-
 #	Affiche sur la sortie standard la configuration d'un listener statique.
 #	$1	GLOBAL_DBNAME
 #	$2	SID_NAME
@@ -330,30 +306,19 @@ function add_standby_redolog
 #	Configure les fichiers tnsnames sur le serveur primaire et secondaire.
 #	1	Sur le serveur primaire si le fichier existe, il est supprimé.
 #	2	Sur le serveur secondaire le fichier est écrasé par celui du primaire.
-#	TODO :	faire évoluer rapidement pour tester l'existence ou non des ALIAS
-#			et arrêter de supprimer.copier les fichiers (faire un script spécifique)
 function setup_tnsnames
 {
 	line_separator
-	info "Update file $tnsnames_file"
+	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+				-service_name=$primary			\
+				-host_name=$primary_host"
 	LN
 
-	info "Update alias $primary"
-	exec_cmd "$ROOT/db/delete_tns_alias.sh -alias_name=$primary"
-	info "Append new alias"
-	get_alias_for $primary $primary_host >> $tnsnames_file
-	info "updated."
-	LN
-
-	info "Update alias $standby"
-	exec_cmd "$ROOT/db/delete_tns_alias.sh -alias_name=$standby"
-	info "Append new alias"
-	get_alias_for $standby $standby_host >> $tnsnames_file
-	info "updated."
-	LN
-
-	info "Copy tnsname.ora from $primary_host to $standby_host"
-	exec_cmd "scp $tnsnames_file $standby_host:$tnsnames_file"
+	line_separator
+	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+				-service_name=$standby			\
+				-host_name=$standby_host		\
+				-copy_server_list=$standby_host"
 	LN
 }
 
@@ -780,7 +745,6 @@ function check_prereq
 }
 
 typeset	-r	primary_host=$(hostname -s)
-typeset	-r	tnsnames_file=$TNS_ADMIN/tnsnames.ora
 
 script_start
 

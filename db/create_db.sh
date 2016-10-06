@@ -394,6 +394,7 @@ function create_services_for_pdb
 			info "Create service for RAC One Node"
 			exec_cmd srvctl add service -db $db -service pdb$pdbName -pdb $pdbName
 			exec_cmd srvctl start service -db $db -service pdb$pdbName
+			exec_cmd "~/plescripts/db/add_tns_alias.sh -service_name=pdb$pdbName -host_name=$(hostname -s)"
 			LN
 			;;
 

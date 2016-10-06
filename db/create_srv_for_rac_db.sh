@@ -92,6 +92,12 @@ function get_all_instances
 	echo $list
 }
 
+#	return scan name
+function get_scan_name
+{
+	srvctl config scan | head -1 | sed "s/.*: \(.*-scan\),.*/\1/"
+}
+
 line_separator
 if [ x"$poolName" == x ]
 then
@@ -101,6 +107,8 @@ else
 	info "Create service Policy Managed ${prefixService}_oci"
 fi
 LN
+
+typeset	-r	scan_name=$(get_scan_name)
 
 #	http://docs.oracle.com/database/121/RACAD/hafeats.htm#RACAD7026
 #	Creating Services for Application Continuity ssi -failovertype TRANSACTION
@@ -133,6 +141,12 @@ add_dynamic_cmd_param "    -rlbgoal        throughput"
 exec_dynamic_cmd srvctl
 LN
 exec_cmd srvctl start service -service ${prefixService}_oci -db $db
+LN
+
+exec_cmd "~/plescripts/db/add_tns_alias.sh			\
+				-service_name=${prefixService}_oci	\
+				-host_name=$scan_name				\
+				-copy_server_list=\"${gi_node_list}\""
 LN
 
 line_separator
