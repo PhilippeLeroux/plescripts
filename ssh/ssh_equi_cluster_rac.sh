@@ -1,11 +1,10 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 #	Seul root peut exécuter ce script
 #	Permet d'établir les équivalences ssh nécessaires pour un cluster RAC.
+#	Il doit être exécuté sur tous les nœuds d'un RAC
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
 
