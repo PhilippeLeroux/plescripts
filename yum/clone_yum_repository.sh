@@ -39,10 +39,3 @@ line_separator
 info "Clonage du dépôt Oracle Linux sur $infra_hostname"
 exec_cmd "ssh $infra_conn '~/plescripts/yum/sync_oracle_repository.sh -copy_iso'"
 LN
-
-line_separator
-exec_cmd "~/plescripts/shell/start_vm $master_name"
-exec_cmd "~/plescripts/shell/wait_server $master_name"
-exec_cmd "ssh $master_conn '~/plescripts/yum/disable_net_repository.sh'"
-exec_cmd "~/plescripts/shell/stop_vm $master_name"
-LN

@@ -1,21 +1,26 @@
 * sync_oracle_repository.sh ne doit être exécuté que sur le serveur d'infra.
-	- Création : duplique les CDs et se synchronise puis export NFS du repo.
 
-	  passer le paramètre -copy_iso_path=...
+	* -copy_iso :
 
-	- Synchro : synchronise le repo Oracle Linux
+		Duplique le CD Oracle Linux, le synchronise puis export NFS du dépôt sur
+		le réseau public des VMs.
 
-	  C'est le mode de fonctionnement par défaut.
+	* -update_repository_file_only :
 
-* disable_net_repository.sh désactive l'accès au dépôt internet.
+		Met à jour le fichier public-yum-ol7.repo qui est à utiliser sur les VMs.
+
+	* Pas de paramètre :
+
+		Teste si des mises à jour sont disponibles, si oui met à jour le serveur et
+		synchronise le dépôt.
 
 * clone_yum_repository.sh
   - Clone le repository OL7 sur K2.
   - Met à jour le master.
 
-  Si des serveurs existent, il faut exécuter le script `disable_net_repository.sh` pour
-  qu'ils prennent en compte le repo sur K2
+  **Note :** Ce script n'est pas lancé lors de la création du serveur K2, il faut le faire
+  explicitement.
 
 * public-yum-ol7.repo
 	- Doit être déployé sur tous les serveurs.
-	- Tous les serveurs doivent monter l'export sur /mnt/yum
+	- Tous les serveurs doivent monter l'export sur /mnt

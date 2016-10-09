@@ -9,8 +9,8 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-copy_iso]        : Les ISO Linux Oracle seront copiés avant la synchronisation.
-	[-only_nfs_update] : Met uniquement à jour l'export NFS, pas de synchronisation.
+	[-copy_iso]                    : Les ISO Linux Oracle seront copiés avant la synchronisation.
+	[-update_repository_file_only] : Met à jour le fichier de configuration du dépôt
 
 	Synchronise le dépôt Oracle Linux.
 "
@@ -24,7 +24,7 @@ then
 fi
 
 typeset	copy_iso=no
-typeset	only_nfs_update=no
+typeset	update_repository_file_only=no
 
 while [ $# -ne 0 ]
 do
@@ -40,8 +40,8 @@ do
 			shift
 			;;
 
-		-only_nfs_update)
-			only_nfs_update=yes
+		-update_repository_file_only)
+			update_repository_file_only=yes
 			shift
 			;;
 
@@ -62,6 +62,9 @@ done
 
 exit_if_param_undef mountpoint_iso_path	"$str_usage"
 
+#	Liste des actions :
+#		1. Monte sur un répertoire de 'loopback' l'ISO Oracle Linux
+#		2. Copy le contenu sur le répertoire local : $infra_olinux_repository_path
 function copy_oracle_linux_iso
 {
 	typeset	-r	loop_directory=/tmp/mnt
@@ -129,12 +132,14 @@ function nfs_export_repo
 		LN
 	else
 		info "NFS export [$OK]"
+		LN
 	fi
+
 	exec_cmd exportfs
 	LN
 }
 
-function update_yum_config
+function update_yum_repository_file
 {
 	typeset -r yum_file=~/plescripts/yum/public-yum-ol7.repo
 
@@ -144,7 +149,7 @@ function update_yum_config
 	LN
 }
 
-if [ $only_nfs_update == no ]
+if [ $update_repository_file_only == no ]
 then
 	if [ $copy_iso == yes ]
 	then
@@ -166,10 +171,12 @@ then
 	exec_cmd -c reposync	--newest-only	\
 							--download_path=$infra_olinux_repository_path \
 							--repoid=ol7_latest
+	LN
 
 	exec_cmd createrepo $infra_olinux_repository_path
 	LN
+
 	nfs_export_repo
 else
-	update_yum_config
+	update_yum_repository_file
 fi
