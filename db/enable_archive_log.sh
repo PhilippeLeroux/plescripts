@@ -78,6 +78,7 @@ function enable_archivelog
 	fake_exec_cmd "sqlplus sys/$oracle_password as sysdba"
 	printf "set echo off\nset timin on\n$cmds\n" | sqlplus -s sys/$oracle_password as sysdba
 	exec_cmd "srvctl start database -db $ORACLE_DB"
+	LN
 }
 
 test_if_cmd_exists olsnodes
