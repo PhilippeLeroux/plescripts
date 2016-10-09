@@ -6,22 +6,6 @@
 EXEC_CMD_ACTION=EXEC
 
 line_separator
-#	Il arrive que des fichiers soient vues comme corrompus, pour résoudre le
-#	problème il suffit de démonter puis de remonter le répertoire.
-#	L'origine du pb ??
-info "NFS problem workaround"
-exec_cmd umount /mnt$infra_olinux_repository_path
-timing 1
-output=$(ls -1qA /mnt$infra_olinux_repository_path)
-if [ x"$output" != x ]
-then	# Le répertoire n'est pas vide donc umount a échoué.
-	error "Cannot umount '/mnt$infra_olinux_repository_path'"
-	exit 1
-fi
-exec_cmd mount /mnt$infra_olinux_repository_path
-timing 1
-
-line_separator
 info "Install Oracle rdbms rpm"
 exec_cmd yum -y install $oracle_rdbms_rpm
 LN

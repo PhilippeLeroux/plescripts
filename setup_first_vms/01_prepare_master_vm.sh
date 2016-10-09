@@ -33,7 +33,7 @@ case $type_shared_fs in
 		info "Création des points de montage NFS :"
 		master_ssh "mkdir /mnt/plescripts"
 		master_ssh "ln -s /mnt/plescripts ~/plescripts"
-		master_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,$nfs_options"
+		master_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,_netdev,$nfs_options"
 		master_ssh "mkdir -p ~/$oracle_install"
 		;;
 esac
