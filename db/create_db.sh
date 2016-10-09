@@ -56,6 +56,7 @@ typeset -r str_usage=\
 
 	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == db || 01
 	    Le service de la pdb sera : pdb || db || 01
+		Pour ne pas créer de pdb utiliser -pdbName=no
 
 	2 : Si -pdbName est précisé -cdb vaut automatiquement yes
 
@@ -466,6 +467,7 @@ exit_if_param_undef db "$str_usage"
 #	Ajustement des paramètres
 #	Détermine le nom de la PDB si non précisée.
 [ $cdb == yes ] && [ $pdbName == undef ] && pdbName=${lower_db}01
+[ $pdbName == no ] && pdbName=undef
 
 if [ $pdbName != undef ]
 then
@@ -488,7 +490,7 @@ remove_glogin
 
 [ "${db_type:0:3}" == "RAC" ] && update_rac_oratab
 
-[ $cdb == yes ] && [ x"$pdbName" != x ] && create_services_for_pdb
+[ $cdb == yes ] && [ $pdbName != undef ] && create_services_for_pdb
 
 line_separator
 export ORACLE_DB=${db}
