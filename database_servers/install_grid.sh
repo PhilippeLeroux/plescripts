@@ -199,7 +199,7 @@ function create_response_file	# $1 fichier décrivant les disques
 	LN
 	update_value ORACLE_HOME								$ORACLE_HOME		$rsp_file
 	LN
-	update_value INVENTORY_LOCATION							$ROOT_DISK/app/oraInventory	$rsp_file
+	update_value INVENTORY_LOCATION							$GRID_DISK/app/oraInventory	$rsp_file
 	LN
 	update_value oracle.install.asm.SYSASMPassword			$oracle_password	$rsp_file
 	LN
@@ -298,7 +298,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	line_separator
 	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
 	exec_cmd "ssh -t root@${node_names[$inode]}				\
-				\"$ROOT_DISK/app/oraInventory/orainstRoot.sh\""
+				\"$GRID_DISK/app/oraInventory/orainstRoot.sh\""
 	LN
 
 	typeset -i max_tests=2
@@ -459,21 +459,11 @@ done
 info "Total nodes #${max_nodes}"
 if [ $max_nodes -gt 1 ]
 then
-
-	if [ $rac_u01_fs == ocfs2 ]
-	then
-		ROOT_DISK=/u02
-	else
-		ROOT_DISK=/u01
-	fi
-
 	exit_if_file_not_exist $cfg_path/scanvips
 	typeset -r scan_name=$(cat $cfg_path/scanvips | cut -d':' -f1)
 
 	info "==> scan name     = $scan_name"
 	info "==> clusterNodes  = $clusterNodes"
-else
-	ROOT_DISK=/u01
 fi
 LN
 
@@ -483,8 +473,8 @@ then
 	ORACLE_HOME=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_HOME"|cut -d= -f2)
 	ORACLE_BASE=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_BASE"|cut -d= -f2)
 else
-	ORACLE_HOME=$ROOT_DISK/oracle_home/bidon
-	ORACLE_BASE=$ROOT_DISK/oracle_base/bidon
+	ORACLE_HOME=$GRID_DISK/oracle_home/bidon
+	ORACLE_BASE=$GRID_DISK/oracle_base/bidon
 fi
 
 info "ORACLE_HOME = '$ORACLE_HOME'"
