@@ -1,15 +1,5 @@
 # vim: ts=4:sw=4
 
-#*>	return disks without partitions.
-function get_unused_disks
-{
-	typeset	device
-	while read device
-	do
-		[ ! -b ${device}1 ] && echo $device
-	done<<<"$(find /dev -regex "/dev/sd.")" | sort
-}
-
 #*> Retourne la taille du disque $1 en bytes.
 function disk_size_bytes
 {
@@ -73,6 +63,8 @@ p
 
 w
 EOS
+	#	fdisk ne retourne pas d'erreur
+	[ ! -b ${device}1 ] && return 1 || return 0
 }
 
 #*>	Supprime la partition du disque $1
@@ -128,4 +120,15 @@ function get_os_disk_used_by_oracleasm
 	typeset		major
 	read minor major<<<$(read_minor_major $oracle_disks_path/$oracleasm_disk_name)
 	get_disk_minor_major $minor $major
+}
+
+
+#*>	return disks without partitions.
+function get_unused_disks
+{
+	typeset	device
+	while read device
+	do
+		[ "$(disk_type $device)" == unused ] && echo $device
+	done<<<"$(find /dev -regex "/dev/sd.")" | sort
 }
