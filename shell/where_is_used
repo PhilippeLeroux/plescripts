@@ -44,6 +44,8 @@ done
 
 [ "$word" = undef ] && info "$str_usage" && exit 1
 
+typeset -i count=0
+
 function trunc_line
 {
 	typeset -r line=$1
@@ -61,24 +63,31 @@ function trunc_line
 	fi
 }
 
-find_cmd="find ~/plescripts/ -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.json\" ! -name \"*.swp\" ! -path \*/.\* | xargs "
+function search_in_dir
+{
+	typeset	-r	dir_name="$1"
+	find_cmd="find $dir_name -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.json\" ! -name \"*.swp\" ! -path \*/.\* | xargs "
 
-if [ $strict = no ]
-then
-	find_cmd=$find_cmd"grep -n \"$word\""
-else
-	find_cmd=$find_cmd"grep -n \"\<$word\>\""
-fi
+	if [ $strict = no ]
+	then
+		find_cmd=$find_cmd"grep -n \"$word\""
+	else
+		find_cmd=$find_cmd"grep -n \"\<$word\>\""
+	fi
 
-fake_exec_cmd $find_cmd
-typeset -i count=0
-prev_file_name=""
-while IFS=":" read file_name line
-do
-	[ "$prev_file_name" != "$file_name" ] && echo " " && info "$file_name" && count=count+1
-	echo $(trunc_line "$line")
-	prev_file_name=$file_name
-done<<<"$(eval $find_cmd)"
+	fake_exec_cmd $find_cmd
+	prev_file_name=""
+	while IFS=":" read file_name line
+	do
+		[ "$prev_file_name" != "$file_name" ] && echo " " && info "$file_name" && count=count+1
+		echo $(trunc_line "$line")
+		prev_file_name=$file_name
+	done<<<"$(eval $find_cmd)"
+	LN
+}
 
-LN
+search_in_dir ~/plescripts/
+search_in_dir ~/plewiki/
+
 info "'$word' présent dans $count fichiers."
+LN
