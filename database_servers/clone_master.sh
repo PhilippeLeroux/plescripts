@@ -11,11 +11,11 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<str>            identifiant de la base
-	[-vmGroup=name]
-	[-node=<#>]          n° du nœud si base de type RAC
+	-db=<str>            Identifiant de la base.
+	[-vmGroup=name]      Nom du group ou doit être enregistré la VM.
+	[-node=<#>]          N° du nœud si base de type RAC.
 
-	[-start_server_only] le serveur est cloné mais n'est pas démarré, utile que pour le nœud 1.
+	[-start_server_only] Le serveur est déjà cloné, uniquement le démarrer. (Util uniqement lors du debug)
 "
 
 info "Running : $ME $*"
@@ -219,7 +219,7 @@ function create_rdbms_fs
 }
 
 #	Sur le premier noeud les disques doivent être crées puis exportés.
-function configure_disks_node1
+function create_san_LUNs_and_attach_to_node1
 {
 	line_separator
 	info "Setup SAN"
@@ -237,7 +237,7 @@ function configure_disks_node1
 
 #	Dans le cas d'un RAC les autres noeuds vont se connecter au portail et
 #	appeler oracleasm pour accéder aux disques.
-function configure_disks_other_node_than_1
+function attach_existing_LUNs_on_node
 {
 	line_separator
 	info "Setup SAN"
@@ -296,6 +296,48 @@ function make_ssh_equi_with_san
 	LN
 }
 
+#	Création des disques et points de montages pour l'installation des logiciels
+#	Oracle & Grid
+function create_disks_for_oracle_and_grid_softwares
+{
+	line_separator
+	if [[ $max_nodes -eq 1 || $rac_u01_fs == default ]]
+	then
+		info "Create mount point $ORCL_DISK for Oracle & Grid"
+		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh	\
+												-mount_point=$ORCL_DISK	\
+												-suffix_vglv=orcl		\
+												-type_fs=xfs
+		LN
+	else
+		info "Install ocfs2"
+		exec_cmd  "ssh -t root@$server_name \"yum -y install ocfs2-tools\""
+		LN
+
+		exec_cmd ssh -t root@$server_name	\
+						plescripts/disk/create_cluster_ocfs2.sh -db=$db
+		LN
+
+		typeset action=create
+		[ $node -ne 1 ] && action=add
+		exec_cmd ssh -t root@$server_name	\
+						plescripts/disk/create_fs_ocfs2.sh	\
+								-db=$db						\
+								-mount_point=$ORCL_DISK		\
+								-device=/dev/sdc			\
+								-action=$action
+		LN
+
+		info "Create mount point $GRID_DISK for grid"
+		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh	\
+												-mount_point=$GRID_DISK	\
+												-suffix_vglv=grid		\
+												-type_fs=xfs
+		LN
+
+	fi
+}
+
 #	Configure le master cloné
 function configure_server
 {
@@ -324,14 +366,6 @@ function configure_server
 	LN
 
 	line_separator
-	info "Create mount point /u01"
-	exec_cmd ssh -t root@$master_name plescripts/disk/create_fs.sh	\
-											-mount_point=/u01		\
-											-suffix_vglv=orcl		\
-											-type_fs=xfs
-	LN
-
-	line_separator
 	register_server_2_dns
 
 	line_separator
@@ -348,6 +382,8 @@ function configure_server
 	line_separator
 	make_ssh_equi_with_san
 	LN
+
+	create_disks_for_oracle_and_grid_softwares
 }
 
 #	Met en place tous les pré requis Oracle
@@ -419,9 +455,9 @@ case $cfg_luns_hosted_by in
 	san)
 		if [ $node -eq 1 ]
 		then
-			configure_disks_node1
+			create_san_LUNs_and_attach_to_node1
 		else
-			configure_disks_other_node_than_1
+			attach_existing_LUNs_on_node
 		fi
 	;;
 

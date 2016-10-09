@@ -57,8 +57,9 @@ done
 exit_if_param_undef db				"$str_usage"
 exit_if_param_undef vm_memory_mb	"$str_usage"
 
+typeset		node_list
 typeset -ri max_nodes=$(cfg_max_nodes $db)
-#	ici le n° du noeud n'est pas important et il y a tjr un noeud 1.
+#	ici le n° du nœud n'est pas important et il y a toujours un nœud 1.
 cfg_load_node_info $db 1
 
 if [ x"$vmGroup" == x ]
@@ -81,6 +82,11 @@ do
 	cfg_load_node_info $db $nr_node
 	typeset	vm_name=$cfg_server_name
 
+	if [ $nr_node -ne 1 ]
+	then
+		[ x"$node_list" == x ] && node_list=$vm_name || node_list="$node_list $vm_name"
+	fi
+
 	info "Clone $vm_name from $master_name"
 	exec_cmd VBoxManage clonevm "$master_name"		\
 						--name "$vm_name"			\
@@ -91,7 +97,6 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
 	exec_cmd VBoxManage modifyvm $vm_name --cpus 2
 	LN
-	
 
 	if [ $type_shared_fs == vbox ]
 	then
@@ -106,12 +111,36 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	LN
 
-	info "Create disk ${vm_name}_u01 for mount point /u01"
-	exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name"			\
-											-disk_name=${vm_name}_u01	\
-											-disk_mb=$((20*1024))		\
+	case $cfg_db_type in
+			std)
+				info "Create disk ${vm_name}_u01 for mount point /u01"
+				exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name"			\
+														-disk_name=${vm_name}_u01	\
+														-disk_mb=$((20*1024))		\
+														-fixed_size
+				LN
+				;;
+
+			rac)
+				if [ $rac_u01_fs == ocfs2 ]
+				then
+					info "Create disk ${vm_name}_u02 for mount point /u02 for grid"
+					exec_cmd $vm_scripts_path/add_disk.sh						\
+											-vm_name="$vm_name"			\
+											-disk_name=${vm_name}_u02	\
+											-disk_mb=$((10*1024))				\
 											-fixed_size
-	LN
+
+				else
+					info "Create disk ${vm_name}_u01 for mount point /u01"
+					exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name"			\
+															-disk_name=${vm_name}_u01	\
+															-disk_mb=$((20*1024))		\
+															-fixed_size
+					LN
+				fi
+				;;
+	esac
 
 	# Présent ici car dans setup_first_vms/vbox_scripts/01_create_master_vm.sh
 	# le Guru apparaît toujours.
@@ -119,6 +148,19 @@ do
 	exec_cmd VBoxManage setextradata "$vm_name" GUI/GuruMeditationHandler PowerOff
 	LN
 done
+
+if [[ $cfg_db_type == rac && $rac_u01_fs == ocfs2 ]]
+then # Avec ocfs2 /u01 est partagé par tous les nœuds.
+	cfg_load_node_info $db 1
+
+	info "Create shared disk ${cfg_server_name}_u01 for mount point /u01 for oracle"
+	exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$cfg_server_name"			\
+											-disk_name=${cfg_server_name}_u01	\
+											-disk_mb=$((10*1024))				\
+											-attach_to="'$node_list'"			\
+											-fixed_size
+	LN
+fi
 
 [ $cfg_luns_hosted_by == san ] && exit 0
 

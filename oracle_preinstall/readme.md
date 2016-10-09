@@ -47,7 +47,7 @@ Disque de 10Gb : 5.3Gb
 Disque de 
 
 ### Compte grid pour un RAC, xfs
- * ORACLE_BASE == /u03/app/grid
- * ORACLE_HOME == /u03/app/12.1.0.2/grid
+ * ORACLE_BASE == /u02/app/grid
+ * ORACLE_HOME == /u02/app/12.1.0.2/grid
 
-Disque de 20Gb	: 6.5G + 78M
+Disque de 10Gb	: 6.5G + 78M

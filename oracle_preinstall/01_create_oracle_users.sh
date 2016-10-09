@@ -42,6 +42,12 @@ ORCL_RELEASE=${ORACLE_RELEASE:0:2}
 
 info "Create grid profile."
 exec_cmd "cp ~/plescripts/oracle_preinstall/grid_env.template  ~/plescripts/oracle_preinstall/grid_env"
+LN
+
+exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+LN
+
 case $db_type in
 	rac)
 		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/$ORACLE_RELEASE/grid!\" ~/plescripts/oracle_preinstall/grid_env"
@@ -66,7 +72,7 @@ typeset -r profile_oracle=/tmp/profile_oracle
 info "Create oracle profile."
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" \
 			~/plescripts/oracle_preinstall/template_profile.oracle |\
-			 sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > $profile_oracle"
+			sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > $profile_oracle"
 LN
 
 . $profile_oracle
@@ -114,6 +120,9 @@ LN
 line_separator
 info "remove $GRID_ROOT/"
 exec_cmd "rm -rf $GRID_ROOT/*"
+info "remove $ORCL_ROOT/"
+exec_cmd "rm -rf $ORCL_ROOT/*"
+LN
 LN
 
 #	Charge la fonction make_vimrc_file
@@ -125,7 +134,7 @@ make_vimrc_file "/root"
 line_separator
 info "create users grid"
 exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper \
-			 -s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
+			-s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
 
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
 exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/grid/rlwrap.alias
@@ -187,12 +196,13 @@ line_separator
 info "oracle directories"
 exec_cmd mkdir -p $ORACLE_BASE
 exec_cmd mkdir -p $ORACLE_HOME
-exec_cmd chown -R oracle:oinstall $ORACLE_BASE
+exec_cmd chown -R oracle:oinstall $ORCL_ROOT
 LN
 
 line_separator
 info "set full permission for owner & group on $GRID_ROOT"
 exec_cmd chmod -R 775 $GRID_ROOT
+exec_cmd chmod -R 775 $ORCL_ROOT
 LN
 
 grep grid_env /root/.bash_profile 1>/dev/null

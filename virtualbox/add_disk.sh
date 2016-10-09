@@ -11,7 +11,7 @@ typeset -r str_usage=\
 	-vm_name=str
 	-disk_name=str
 	-disk_mb=#
-	[-attach_to]    Ex : "vm1 vm2"
+	[-attach_to]    Ex : 'vm1 vm2'
 	[-fixed_size]   Disque taille fixe (automatique si -attach_to est précisé.)
 "
 

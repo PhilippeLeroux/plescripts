@@ -49,7 +49,7 @@ do
 		*)
 			error "Arg '$1' invalid."
 			LN
-			info $str_usage
+			info "$str_usage"
 			exit 1
 			;;
 	esac
@@ -110,9 +110,9 @@ function create_response_file
 	update_value oracle.install.option				INSTALL_DB_SWONLY					$rsp_file
 	update_value ORACLE_HOSTNAME					${node_names[0]}					$rsp_file
 	update_value UNIX_GROUP_NAME					oinstall							$rsp_file
-	update_value INVENTORY_LOCATION					/u01/app/oraInventory				$rsp_file
-	update_value ORACLE_HOME						/u01/app/oracle/$oracle_release/dbhome_1	$rsp_file
-	update_value ORACLE_BASE						/u01/app/oracle						$rsp_file
+	update_value INVENTORY_LOCATION					$ORA_INVENTORY						$rsp_file
+	update_value ORACLE_HOME						$ROOT_DISK/app/oracle/$oracle_release/dbhome_1	$rsp_file
+	update_value ORACLE_BASE						$ROOT_DISK/app/oracle				$rsp_file
 	update_value oracle.install.db.CLUSTER_NODES	empty								$rsp_file
 	update_value oracle.install.db.InstallEdition	EE									$rsp_file
 	update_value oracle.install.db.DBA_GROUP		dba									$rsp_file
@@ -129,9 +129,8 @@ function create_response_file
 			server_list=$server_list","${node_names[$inode]}
 		done
 		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
+		LN
 	fi
-
-	LN
 }
 
 function copy_response_file
@@ -154,14 +153,16 @@ function start_oracle_installation
 {
 	line_separator
 	info "Start Oracle installation (~30mn)"
-	info "Log here : /u01/app/oraInventory/logs"
+	info "Log here : $ORA_INVENTORY/logs"
 	exec_cmd -c "ssh oracle@${node_names[0]}						\
 				 \"LANG=C /mnt/oracle_install/database/runInstaller	\
 					-silent											\
 					-showProgress									\
 					-waitforcompletion								\
 					-responseFile /home/oracle/oracle_$db.rsp\""
+	ret=$?
 	LN
+	[ $ret -gt 250 ] && exit 1
 }
 
 function run_post_install_root_scripts_on_node	# $1 No node
@@ -169,7 +170,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	typeset  -ri inode=$1
 	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
 
-	typeset -r script_root_sh="/u01/app/oracle/$oracle_release/dbhome_1/root.sh"
+	typeset -r script_root_sh="$ROOT_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
 	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C $script_root_sh\" </dev/null"
@@ -197,6 +198,18 @@ info "Total nodes #${max_nodes}"
 if [ $max_nodes -gt 1 ]
 then
 	info "==> clusterNodes  = $clusterNodes"
+
+	if [ $rac_u01_fs == ocfs2 ]
+	then
+		ROOT_DISK=/u01
+		ORA_INVENTORY=/u02/app/oraInventory
+	else
+		ROOT_DISK=/u01
+		ORA_INVENTORY=/u01/app/oraInventory
+	fi
+else
+	ROOT_DISK=/u01
+	ORA_INVENTORY=/u01/app/oraInventory
 fi
 LN
 
@@ -233,13 +246,23 @@ LN
 line_separator
 info "Database can be created :"
 LN
-info "$ ssh oracle@${node_names[0]}"
-info "oracle@${node_names[0]}:NOSID:oracle> cd db"
-info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db"
-if [ $max_nodes -gt 1 ]
+if [ $max_nodes -eq 1 ]
 then
-	info "or"
-	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -policyManaged"
-	info "or"
-	info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -db_type=RACONENODE"
+info \
+"$ ssh oracle@${node_names[0]}
+  oracle@${node_names[0]}:NOSID:oracle> cd db
+  oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db"
+LN
+else
+info	\
+"$ ssh oracle@${node_names[0]}
+
+  oracle@${node_names[0]}:NOSID:oracle> cd db
+
+  oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db
+  or
+  oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -policyManaged
+  or
+  oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -db_type=RACONENODE"
+LN
 fi

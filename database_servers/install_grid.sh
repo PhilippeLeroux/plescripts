@@ -199,6 +199,8 @@ function create_response_file	# $1 fichier décrivant les disques
 	LN
 	update_value ORACLE_HOME								$ORACLE_HOME		$rsp_file
 	LN
+	update_value INVENTORY_LOCATION							$ROOT_DISK/app/oraInventory	$rsp_file
+	LN
 	update_value oracle.install.asm.SYSASMPassword			$oracle_password	$rsp_file
 	LN
 	update_value oracle.install.asm.monitorPassword			$oracle_password	$rsp_file
@@ -284,6 +286,7 @@ function start_grid_installation
 						-waitforcompletion						\
 						-responseFile /home/grid/grid_$db.rsp\""
 	ret=$?
+	LN
 	[ $ret -gt 250 ] && exit 1
 }
 
@@ -295,7 +298,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	line_separator
 	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
 	exec_cmd "ssh -t root@${node_names[$inode]}				\
-				\"/u01/app/oraInventory/orainstRoot.sh\""
+				\"$ROOT_DISK/app/oraInventory/orainstRoot.sh\""
 	LN
 
 	typeset -i max_tests=2
@@ -436,8 +439,8 @@ function remove_tfa_on_all_nodes
 	disclaimer
 	for i in $( seq 0 $(( max_nodes - 1 )) )
 	do
-		exec_cmd $mode -c "ssh -n root@${node_names[$i]} . /.bash_profile;	\
-						tfactl uninstall"
+		exec_cmd -c ssh -t root@${node_names[$i]} \
+				". /root/.bash_profile \; tfactl uninstall"
 	done
 }
 
@@ -456,11 +459,21 @@ done
 info "Total nodes #${max_nodes}"
 if [ $max_nodes -gt 1 ]
 then
+
+	if [ $rac_u01_fs == ocfs2 ]
+	then
+		ROOT_DISK=/u02
+	else
+		ROOT_DISK=/u01
+	fi
+
 	exit_if_file_not_exist $cfg_path/scanvips
 	typeset -r scan_name=$(cat $cfg_path/scanvips | cut -d':' -f1)
 
 	info "==> scan name     = $scan_name"
 	info "==> clusterNodes  = $clusterNodes"
+else
+	ROOT_DISK=/u01
 fi
 LN
 
@@ -470,8 +483,8 @@ then
 	ORACLE_HOME=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_HOME"|cut -d= -f2)
 	ORACLE_BASE=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_BASE"|cut -d= -f2)
 else
-	ORACLE_HOME=/u01/oracle_home/bidon
-	ORACLE_BASE=/u01/oracle_base/bidon
+	ORACLE_HOME=$ROOT_DISK/oracle_home/bidon
+	ORACLE_BASE=$ROOT_DISK/oracle_base/bidon
 fi
 
 info "ORACLE_HOME = '$ORACLE_HOME'"
@@ -522,9 +535,9 @@ then
 		if [ $do_hacks == yes ]
 		then
 			[ $force_MGMTDB == yes ] && runConfigToolAllCommands && LN
-			stop_and_disable_unwanted_grid_ressources
-			LN
 			remove_tfa_on_all_nodes
+			LN
+			stop_and_disable_unwanted_grid_ressources
 			LN
 			set_ASM_memory_target_low_and_restart_asm
 			LN

@@ -1,4 +1,5 @@
-export GRID_ROOT=/u01
+export GRID_ROOT=
+export ORCL_ROOT=
 export GRID_BASE=$GRID_ROOT/app/grid
 export GRID_HOME=
 

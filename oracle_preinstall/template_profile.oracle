@@ -9,19 +9,18 @@ export ORACLE_UNQNAME=TO_DEFINE
 
 export ORACLE_TERM=xterm
 
-export ORACLE_BASE=$GRID_ROOT/app/oracle
+export ORACLE_BASE=$ORCL_ROOT/app/oracle
 export ORACLE_HOME=$ORACLE_BASE/RELEASE_ORACLE/dbhome_1
-export ORACLE_PATH=/u01/app/common/oracle/sql
+export ORACLE_PATH=$ORCL_ROOT/app/common/oracle/sql
 
 export NLS_DATE_FORMAT="DD-MON-YYYY HH24:MI:SS"
 export TNS_ADMIN=$ORACLE_HOME/network/admin
 export ORA_NLSZZ=$ORACLE_HOME/nls/data
 
-#export SQLPATH=/u01/app/common/oracle/sql
-
 PATH=${PATH}:$HOME/bin:$ORACLE_HOME/bin:$GRID_HOME/bin
 PATH=${PATH}:/usr/bin:/bin:/usr/bin/X11:/usr/local/bin
-PATH=${PATH}:/u01/app/common/oracle/bin
+PATH=${PATH}:$ORCL_ROOT/app/common/oracle/bin
+PATH=${PATH}:$ORCL_ROOT/app/oracle/12.1.0.2/dbhome_1/OPatch
 export PATH
 
 LD_LIBRARY_PATH=$ORACLE_HOME/lib

@@ -18,7 +18,8 @@ export ORA_NLSZZ=$ORACLE_HOME/nls/data
 
 PATH=${PATH}:$HOME/bin:$ORACLE_HOME/bin
 PATH=${PATH}:/usr/bin:/bin:/usr/bin/X11:/usr/local/bin
-PATH=${PATH}:/u01/app/common/oracle/bin
+PATH=${PATH}:$GRID_ROOT/app/common/oracle/bin
+PATH=${PATH}:$GRID_ROOT/app/oracle/12.1.0.2/dbhome_1/OPatch
 export PATH
 
 LD_LIBRARY_PATH=$ORACLE_HOME/lib
@@ -36,9 +37,6 @@ CLASSPATH=${CLASSPATH}:$ORACLE_HOME/jlib
 CLASSPATH=${CLASSPATH}:$ORACLE_HOME/rdbms/jlib
 CLASSPATH=${CLASSPATH}:$ORACLE_HOME/network/jlib
 export CLASSPATH
-
-#export ORACLE_PATH=/u01/app/oracle/common/oracle/sql
-#export SQLPATH=/u01/app/common/oracle/sql
 
 # KSH
 # export PS1="${USER}@${HOSTNAME%%.*}:\${ORACLE_SID}:\${PWD##*/}> "
