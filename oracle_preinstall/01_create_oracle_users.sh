@@ -9,7 +9,12 @@ typeset ORCL_RELEASE=undef
 typeset ORACLE_RELEASE=undef
 typeset db_type=undef
 
-typeset -r str_usage="Usage $0 -release=aa.bb.cc.dd -db_type=[single|rac]"
+typeset	-r	ME=$0
+typeset -r	str_usage=\
+"Usage $ME
+	-release=aa.bb.cc.dd
+	-db_type=[single|rac]
+"
 
 #	ksh ou bash, mais ksh c'est trop chiant.
 typeset -r the_shell=bash
@@ -35,6 +40,8 @@ do
 			;;
 	esac
 done
+
+exit_if_param_invalid user "both oracle grid" "$str_usage"
 
 [ $ORACLE_RELEASE = undef ] &&	$ORACLE_RELEASE=$oracle_release
 
@@ -69,6 +76,8 @@ LN
 
 typeset -r profile_oracle=/tmp/profile_oracle
 
+#	============================================================================
+#	Création du profile Oracle pour être sourcé.
 info "Create oracle profile."
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" \
 			~/plescripts/oracle_preinstall/template_profile.oracle |\
@@ -83,8 +92,11 @@ then
 	exit 1
 fi
 
+#	============================================================================
+#	Nettoyage.
 exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
 
+#	============================================================================
 line_separator
 info "create all groups"
 #Generic Name          OS Group    Admin Privilege   Description
@@ -117,20 +129,23 @@ LN
 #exec_cmd groupadd -g 1270 dgdba			#	Data Guard management
 #exec_cmd groupadd -g 1280 kmdba			#	Encryption key management
 
+#	============================================================================
+#	Supprime les répertoires s'ils existent.
 line_separator
 info "remove $GRID_ROOT/"
 exec_cmd "rm -rf $GRID_ROOT/*"
 info "remove $ORCL_ROOT/"
 exec_cmd "rm -rf $ORCL_ROOT/*"
 LN
-LN
 
-#	Charge la fonction make_vimrc_file
+#	============================================================================
+#	Charge la fonction make_vimrc_file pour mettre à jour root
 . ~/plescripts/oracle_preinstall/make_vimrc_file
 
 #	Met à jour root également.
 make_vimrc_file "/root"
 
+#	============================================================================
 line_separator
 info "create users grid"
 exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper \
@@ -158,6 +173,7 @@ make_vimrc_file "/home/grid"
 exec_cmd "find /home/grid | xargs chown grid:oinstall"
 LN
 
+#	============================================================================
 line_separator
 info "create user oracle"
 exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper	\
@@ -185,6 +201,7 @@ make_vimrc_file "/home/oracle"
 exec_cmd "find /home/oracle | xargs chown oracle:oinstall"
 LN
 
+#	============================================================================
 line_separator
 info "grid directories"
 exec_cmd mkdir -p $GRID_BASE
@@ -192,6 +209,7 @@ exec_cmd mkdir -p $GRID_HOME
 exec_cmd chown -R grid:oinstall $GRID_ROOT
 LN
 
+#	============================================================================
 line_separator
 info "oracle directories"
 exec_cmd mkdir -p $ORACLE_BASE
@@ -199,12 +217,15 @@ exec_cmd mkdir -p $ORACLE_HOME
 exec_cmd chown -R oracle:oinstall $ORCL_ROOT
 LN
 
+#	============================================================================
 line_separator
 info "set full permission for owner & group on $GRID_ROOT"
 exec_cmd chmod -R 775 $GRID_ROOT
 exec_cmd chmod -R 775 $ORCL_ROOT
 LN
 
+#	============================================================================
+#	Le compte root source grid_env pour manipuler les commandes du Grid Infra.
 grep grid_env /root/.bash_profile 1>/dev/null
 if [ $? -ne 0 ]
 then
@@ -221,6 +242,8 @@ then
 	exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /root/rlwrap.alias
 fi
 
+#	============================================================================
+#	Mots de passe oracle/oracle & grid/grid
 line_separator
 info "set password for users oracle & grid"
 exec_cmd "printf \"oracle\noracle\n\" | passwd oracle >/dev/null 2>&1"
@@ -231,6 +254,9 @@ line_separator
 exec_cmd "rm ~/plescripts/oracle_preinstall/grid_env"
 LN
 
+#	============================================================================
+#	oracle peut faire un sudo grid sans mot de passe
+#	grid peut faire un sudo oracle sans mot de passe.
 grep -E "^oracle" /etc/sudoers >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
