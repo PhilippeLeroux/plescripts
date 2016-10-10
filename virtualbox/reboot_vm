@@ -9,7 +9,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME <str>"
 
-info "Runninf : $ME $*"
+info "Running : $ME $*"
 
 [[ $# -eq 0 ]] && [[ -v ID_DB ]] && server=$ID_DB || server=$1
 
