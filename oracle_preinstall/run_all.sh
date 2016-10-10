@@ -13,7 +13,7 @@ cd ~/plescripts/oracle_preinstall
 exec_cmd "./01_create_oracle_users.sh -release=$oracle_release -db_type=$db_type"
 LN
 
-exec_cmd "./02_install_oracle_iscsi_rpms.sh"
+exec_cmd "./02_install_some_rpms.sh"
 LN
 
 if [ $db_type != single_fs ]
