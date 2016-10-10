@@ -41,8 +41,6 @@ do
 	esac
 done
 
-exit_if_param_invalid user "both oracle grid" "$str_usage"
-
 [ $ORACLE_RELEASE = undef ] &&	$ORACLE_RELEASE=$oracle_release
 
 ORCL_RELEASE=${ORACLE_RELEASE:0:2}
