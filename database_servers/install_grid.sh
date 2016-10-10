@@ -194,61 +194,38 @@ function create_response_file	# $1 fichier décrivant les disques
 	LN
 
 	update_value ORACLE_HOSTNAME							${node_names[0]}	$rsp_file
-	LN
 	update_value ORACLE_BASE								$ORACLE_BASE		$rsp_file
-	LN
 	update_value ORACLE_HOME								$ORACLE_HOME		$rsp_file
-	LN
 	update_value INVENTORY_LOCATION							$GRID_DISK/app/oraInventory	$rsp_file
-	LN
 	update_value oracle.install.asm.SYSASMPassword			$oracle_password	$rsp_file
-	LN
 	update_value oracle.install.asm.monitorPassword			$oracle_password	$rsp_file
-	LN
 
 	if [ $max_nodes -eq 1 ]
 	then
 		update_value oracle.install.option							HA_CONFIG		$rsp_file
-		LN
 		update_value oracle.install.asm.diskGroup.name				DATA			$rsp_file
-		LN
 		update_value oracle.install.asm.diskGroup.redundancy		EXTERNAL		$rsp_file
-		LN
 		update_value oracle.install.crs.config.gpnp.scanName		empty			$rsp_file
-		LN
 		update_value oracle.install.crs.config.gpnp.scanPort		empty			$rsp_file
-		LN
 		update_value oracle.install.crs.config.clusterName			empty			$rsp_file
-		LN
 		update_value oracle.install.crs.config.clusterNodes			empty			$rsp_file
-		LN
 		update_value oracle.install.crs.config.networkInterfaceList empty			$rsp_file
-		LN
 		update_value oracle.install.crs.config.storageOption		empty			$rsp_file
-		LN
 		update_value oracle.install.asm.diskGroup.disks $(make_disk_list $disk_cfg_file) $rsp_file
-		LN
 	else
 		update_value oracle.install.option						CRS_CONFIG				$rsp_file
-		LN
 		update_value oracle.install.asm.diskGroup.name			CRS						$rsp_file
-		LN
 		update_value oracle.install.crs.config.gpnp.scanName	$scan_name				$rsp_file
-		LN
 		update_value oracle.install.crs.config.gpnp.scanPort	1521					$rsp_file
-		LN
 		update_value oracle.install.crs.config.clusterName		$scan_name				$rsp_file
-		LN
 		update_value oracle.install.crs.config.clusterNodes		$clusterNodes			$rsp_file
-		LN
+
 		typeset nil=$if_pub_name:${if_pub_network}.0:1,$if_rac_name:${if_rac_network}.0:2
 		update_value oracle.install.crs.config.networkInterfaceList $nil				$rsp_file
-		LN
 		update_value oracle.install.crs.config.storageOption	LOCAL_ASM_STORAGE		$rsp_file
-		LN
 		update_value oracle.install.asm.diskGroup.disks $(make_disk_list $disk_cfg_file) $rsp_file
-		LN
 	fi
+	LN
 }
 
 function create_property_file

@@ -129,8 +129,8 @@ function create_response_file
 			server_list=$server_list","${node_names[$inode]}
 		done
 		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
-		LN
 	fi
+	LN
 }
 
 function copy_response_file
