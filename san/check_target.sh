@@ -14,6 +14,17 @@ function show_lv_errors
 	lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$"
 }
 
+#./remove_lv.sh -vg_name=asm01 -prefix=testsan -first_no=18
+function cmd_remove_lv
+{
+	echo "cd ~/san"
+	while read lv_name vg_name rem
+	do
+		read prefix name no <<<"$(echo $lv_name|sed "s/\(..\)\(.*\)\([0-9].\)$/\1 \2 \3/")"
+		echo "./remove_lv.sh -vg_name=$vg_name -prefix=$name -first_no=$no"
+	done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
+}
+
 function restart_target
 {
 	info "Restart target :"
@@ -34,7 +45,7 @@ function restart_target
 typeset -i lv_errors=$(count_lv_errors)
 if [ $lv_errors -ne 0 ]
 then
-	info "LV errors : $lv_errors"
+	error "LV errors : $lv_errors"
 	LN
 
 	restart_target
@@ -47,6 +58,8 @@ then
 		LN
 
 		show_lv_errors
+		LN
+		cmd_remove_lv
 		LN
 		exit 1
 	fi

@@ -57,6 +57,8 @@ done
 exit_if_param_undef db				"$str_usage"
 exit_if_param_undef vm_memory_mb	"$str_usage"
 
+cfg_exist $db
+
 typeset		node_list
 typeset -ri max_nodes=$(cfg_max_nodes $db)
 #	ici le n° du nœud n'est pas important et il y a toujours un nœud 1.
@@ -96,6 +98,11 @@ do
 
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
 	exec_cmd VBoxManage modifyvm $vm_name --cpus 2
+	exec_cmd "VBoxManage modifyvm $vm_name --description \"$(~/plescripts/virtualbox/vbox_desc -db=$db)\""
+	LN
+
+	info "Test pour voir si perf réseau meilleurs :"
+	exec_cmd VBoxManage modifyvm "$vm_name" --hpet on
 	LN
 
 	if [ $type_shared_fs == vbox ]

@@ -47,4 +47,4 @@ do
 	all_devices=$all_devices" "$(readlink -f $link_name)
 done<<<"$(ls -1 $links_asm_path/lv${db}*)"
 
-exec_cmd "iostat -m 2 $all_devices"
+exec_cmd "iostat -k 2 $all_devices"

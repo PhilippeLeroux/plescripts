@@ -75,7 +75,7 @@ else
 typeset -r session_name="$node1"
 exec_cmd -ci tmux kill-session -t \"$session_name\"
 
-tmux new -s "$session_name"	ssh -t root@K2 "~/plescripts/san/dbiostat.sh -db=$db"	\;\
+tmux new -s "$session_name"	ssh -t root@${node1} "~/plescripts/disk/iostat_on_bdd_disks.sh"	\;\
 							split-window -h "ssh root@${node1} vmstat 2"			\;\
 							split-window -v "ssh -t root@${node1} top"
 fi

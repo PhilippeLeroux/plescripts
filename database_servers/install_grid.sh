@@ -513,7 +513,6 @@ then
 			runConfigToolAllCommands
 		fi
 	else	#	SINGLE
-		line_separator
 		runConfigToolAllCommands
 		LN
 

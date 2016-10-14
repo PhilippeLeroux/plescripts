@@ -19,9 +19,9 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 
 1.	Définir le serveur :
 
-	Création d'un serveur standalone : `./define_new_server.sh -db=daisy`
+	* Création d'un serveur standalone : `./define_new_server.sh -db=daisy`
 
-	Création d'un RAC 2 nœuds : `./define_new_server.sh -db=daisy -max_nodes=2`
+	* Création d'un RAC 2 nœuds : `./define_new_server.sh -db=daisy -max_nodes=2`
 
 	**Note** Par défaut les disques sont créés sur VBox, pour créer les disques
 	sur le SAN utiliser l'option `-luns_hosted_by=san`
@@ -29,13 +29,13 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	Un nouveau répertoire nommé daisy est créée contenant les fichiers décrivant
 	le paramétrage du ou des serveurs.
 
-	Par défaut les DGs DATA et FRA ont une taille de 24Gb chacun, la taille
-	peut être changée à l'aide du paramètre -size_dg_gb
+	Modifier la taille par défaut des DGs DATA et FRA avec le paramètre -size_dg_gb.
+	Par exemple pour créer 2 DGs de 128Gb exécuter : `./define_new_server.sh -db=daisy -size_dg_gb=128`
 
 	Dans le cas d'un serveur standalone sont créées :
 
-		1 serveur nommé  :	srvdaisy01
-		8 disques nommés :	S1DISKDAISY01,S1DISKDAISY02,..., S1DISKDAISY08
+	 * 1 serveur nommé  :	srvdaisy01
+	 * 8 disques nommés :	S1DISKDAISY01,S1DISKDAISY02,..., S1DISKDAISY08
 
 	Dans le cas d'un RAC 2 nœuds on a un serveur de plus srvdaisy02 et 3 disques
 	supplémentaires pour le CRS
@@ -45,9 +45,9 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	_Remarque :_  Le script `~/plescripts/yum/update_master.sh` met à jour les
 	RPMs du master ce qui fait gagner du temps en particulier pour les RACs.
 
-	Cloner un serveur standalone : `./clone_master.sh -db=daisy`
+	* Cloner un serveur standalone : `./clone_master.sh -db=daisy`
 
-	Cloner le nœud d'un RAC      : `./clone_master.sh -db=daisy -node=1`
+	* Cloner le nœud d'un RAC      : `./clone_master.sh -db=daisy -node=1`
 
 	Pour un RAC exécuter clone_master.sh autant de fois qu'il y a de noeuds en
 	changeant le n° du nœud à chaque fois.
@@ -66,7 +66,8 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	Le compte oracle est configuré pour se connecter grid sans mot de passe via
 	l'alias sugrid.
 
-	Visualiser la configuration du DNS et du SAN.
+	Visualiser la configuration du DNS :
+
 	```
 	ssh root@K2 plescripts/dns/show_dns.sh
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,6 +84,11 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	# daisy-scan         | 192.170.100.16
 	# daisy-scan         | 192.170.100.17
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	```
+
+	Visualiser la configuration du SAN (Non valable si les LUNs sont sur VBox) :
+
+	```
 	ssh -t root@K2 plescripts/san/show_db_info.sh -db=daisy
 	# RAC cluster 2 nodes.
 	# LUNs for daisy :
@@ -131,7 +137,7 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	Les 2 DGs DATA et FRA sont créées, pour un cluster il y a en plus le DG CRS
 
 	__Note__ pour consommer le minimum de ressources un certain nombre de hacks
-	sont fait, -no_hacks permet de ne pas les mettre en œuvre.
+	sont fait, -no_hacks permet de ne pas les mettre en œuvres.
 
 4.	Installation d'Oracle
 
@@ -140,6 +146,4 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	Oracle est installé en standalone ou cluster. Les scripts root sont exécutés
 	sur l'ensemble des nœuds.
 
-5.	C'est terminé.
-
-	[Création d'une base](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
+5.	[Création d'une base](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)

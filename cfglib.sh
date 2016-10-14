@@ -3,16 +3,20 @@
 typeset -r cfg_path_prefix=~/plescripts/database_servers
 
 #*> $1 db
+function cfg_exist
+{
+	if [ ! -d $cfg_path_prefix/$(to_lower $1) ]
+	then
+		error "No configuration file found for $1"
+		exit 1
+	fi
+}
+
+#*> $1 db
 #*> return max nodes.
 function cfg_max_nodes
 {
 	typeset -r db=$(to_lower $1)
-
-	if [ ! -d $cfg_path_prefix/$db ]
-	then
-		error "not exist $cfg_path_prefix/$db"
-		exit 1
-	fi
 
 	ls -1 $cfg_path_prefix/$db/node*|wc -l
 }
@@ -31,12 +35,6 @@ function cfg_load_node_info
 	typeset -r	db=$(to_lower $1)
 	typeset -ri nr_node=$2
 	typeset -r	cfg_file=$cfg_path_prefix/$db/node${nr_node}
-
-	if [ ! -f $cfg_file ]
-	then
-		error "not exist : $cfg_file"
-		exit 1
-	fi
 
 	#	cfg_uX champs non utilisés
 	IFS=: read	cfg_db_type cfg_server_name cfg_server_ip cfg_u1 cfg_server_vip	\

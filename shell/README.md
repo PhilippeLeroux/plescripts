@@ -1,6 +1,8 @@
 - clean_log
 
-	permet de supprimer les caractères de controles dans les logs
+	Permet de supprimer les caractères de controles dans les logs.
+
+	Est utilisé par vimL
 
 - make_ssh_user_equivalence_with.sh
 
@@ -8,7 +10,9 @@
 
 - gen_docs.sh
 
-	génération d'un doc pour mes scripts 'lib'
+	génération d'une doc pour mes scripts 'lib'
+
+	N'est plus vraiment utilisé.
 
 - grid_logs : standalone ou RAC 2 nœuds
 
@@ -31,21 +35,21 @@
 	Exécute le script tmux_monitor_server.sh avec le/les noms de serveur(s)
 	correspondant à une base dans un xterm en plein écran.
 
-- oracle_logs -db=<str>
+- oracle_logs -db=<str>	ou base définie par set_db
 
 	Afficher les fichiers d'alerte d'une base en RAC.
 
 	[screen]([[https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/oracle_logs.png)
 
-- show_grid_status [db] ou base définie par set_db
+- show_grid_status -db=<str> ou base définie par set_db
 
 	Appel de crsclt stat res -t sur le premièr serveur.
 
-- start_vm [vm_name]
+- start_vm [vm_name] ou serveur(s) de base définie par set_db
 
 	Démarre la VM vm_name, le nom peut être incomplet.
 
-- stop_vm [vm_name]
+- stop_vm [vm_name]  ou serveur(s) de base définie par set_db
 
 	Stop la VM vm_name, le nom peut être incomplet.
 
@@ -54,15 +58,6 @@
 	Lance vmstat et top dans 2 terminaux multiplexés, il y en a 4 pour un RAC 2 noeuds.
 
 	[screen]([[https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/tmux_monitor_server.png)
-
-- vim_plugin
-
-	Permet de gérer mes plugins vim.
-
-- vim_plugin_list.txt
-
-	Utilisé par vim_plugin.
-	Tous les plugins dans ce fichier seront (ré)installé par vim_plugin -init
 
 - where_is_used
 

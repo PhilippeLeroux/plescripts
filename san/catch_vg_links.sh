@@ -1,10 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -40,6 +38,7 @@ exit_if_param_undef vg_name	"$str_usage"
 if [ -d /dev/$vg_name ]
 then
 	exec_cmd "ls -rtl /dev/$vg_name > ~/plescripts/san/${vg_name}.link"
+	exec_cmd "chown ${common_user_name}:users ~/plescripts/san/${vg_name}.link"
 else
 	exec_cmd -c "rm ~/plescripts/san/${vg_name}.link"
 fi

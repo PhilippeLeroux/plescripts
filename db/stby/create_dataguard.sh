@@ -643,7 +643,7 @@ function check_ssh_prereq_and_if_stby_exist
 	then
 		line_separator
 		info "From $client_hostname :"
-		info "$ cd ~/plescript/db/stby script"
+		info "$ cd ~/plescripts/db/stby"
 		info "$ ./00_setup_equivalence.sh -user1=oracle -server1=$primary_host -server2=$standby_host"
 		LN
 		errors=yes

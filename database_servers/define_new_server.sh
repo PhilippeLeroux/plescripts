@@ -14,8 +14,8 @@ typeset -r str_usage=\
 	-db=<identifiant>     identifiant de la base.
 	[-luns_hosted_by=$disks_hosted_by] san|vbox
 	[-max_nodes=1]        nombre de nœuds pour un RAC.
-	[-size_dg_gb=24]      taille du DG ou du FS.
-	[-size_lun_gb=8]      taille des LUNs si utilisation d'ASM.
+	[-size_dg_gb=$default_size_dg_mb]      taille du DG ou du FS.
+	[-size_lun_gb=$default_size_lun_mb]      taille des LUNs si utilisation d'ASM.
 	[-no_dns_test]        ne pas tester si les IPs sont utilisées.
 	[-usefs]              ne pas utiliser ASM mais un FS.
 	[-ip_node=<node>]     nœud IP, sinon prend la première IP disponible.
@@ -25,8 +25,8 @@ info "Running : $ME $*"
 typeset		db=undef
 typeset -i	ip_node=-1
 typeset -i	max_nodes=1
-typeset -i	size_dg_gb=24
-typeset -i	size_lun_gb=8
+typeset -i	size_dg_gb=$default_size_dg_mb
+typeset -i	size_lun_gb=$default_size_lun_mb
 typeset		dns_test=yes
 typeset 	usefs=no
 typeset		luns_hosted_by=$disks_hosted_by
@@ -176,15 +176,15 @@ function normalyse_asm_disks
 		i_lun=4
 	fi
 
-	typeset -ri max_luns=$( echo "$size_dg_gb / $size_lun_gb" | bc)
+	typeset	-ri	max_luns=$(( size_dg_gb / size_lun_gb ))
 
-	buffer="DATA:${size_lun_gb}:$i_lun:"
-	typeset -i last_lun=i_lun+max_luns
+	typeset		buffer="DATA:${size_lun_gb}:$i_lun:"
+	typeset	-i	last_lun=i_lun+max_luns-1
 	i_lun=last_lun+1
 	echo "$buffer$last_lun" >> $cfg_path/disks
 
 	buffer="FRA:${size_lun_gb}:$i_lun:"
-	last_lun=i_lun+max_luns
+	last_lun=i_lun+max_luns-1
 	i_lun=last_lun+1
 	echo "$buffer$last_lun" >> $cfg_path/disks
 }
@@ -211,17 +211,15 @@ for i in $(seq 1 $max_nodes)
 do
 	normalyze_node $i
 done
-LN
 
 [ $db_type == rac ] && normalyze_scan
 
-typeset -i data_lun_count=$(($size_dg_gb / $size_lun_gb))
-if [ $(($size_dg_gb % $size_lun_gb)) -ne 0 ]
+typeset -i data_lun_count=$(( size_dg_gb /  size_lun_gb))
+if [ $data_lun_count -lt $default_minimum_lun ]
 then
-	data_lun_count=$data_lun_count+1
-	size_dg_gb=$(($size_lun_gb * $data_lun_count))
-	LN
-	info "Adjust DGs sizes to ${size_dg_gb}Gb."
+	data_lun_count=$default_minimum_lun
+	size_dg_gb=$(( size_lun_gb *  data_lun_count ))
+	info "Adjust DGs sizes to ${size_dg_gb}Gb (min $default_minimum_lun disks/DG)"
 	LN
 fi
 

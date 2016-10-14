@@ -61,16 +61,13 @@ exit_if_param_undef db	"$str_usage"
 script_start
 
 typeset	vmGroup
-if [ $standby != undef ]
-then
-	vmGroup="/DG $(initcap $db) et $(initcap $standby)"
-fi
+[ $standby != undef ] && vmGroup="/DG $(initcap $db) et $(initcap $standby)"
 
 function configure_server
 {
 	typeset -r db=$1
 
-	exec_cmd ./define_new_server.sh -db=$db -max_nodes=$max_nodes
+	exec_cmd ./define_new_server.sh -db=$db -max_nodes=$max_nodes -luns_hosted_by=san
 	LN
 
 	for inode in $( seq $max_nodes )
@@ -88,17 +85,21 @@ function configure_server
 
 configure_server $db
 
-exec_cmd "ssh -t -t oracle@srv${db}01 \". .profile; cd db; ./create_db.sh -y -db=$db $@\""
+exec_cmd "ssh -t -t oracle@srv${db}01 \". .profile; db/create_db.sh -y -db=$db $@\""
 LN
 
 if [ $standby != undef ]
 then
 	configure_server $standby
 
-	exec_cmd "~/plescripts/db/stby/00_setup_equivalence.sh -user1=oracle -server1=srv${db}01 -server2=srv${standby}01"
+	exec_cmd "~/plescripts/db/stby/00_setup_equivalence.sh	\
+				-user1=oracle -server1=srv${db}01 -server2=srv${standby}01"
 	LN
 
-	exec_cmd "ssh -t -t oracle@srv${db}01 \". .profile; cd db/stby; ./create_dataguard.sh -standby=$standby -standby_host=srv${standby}01\""
+	exec_cmd "ssh -t -t oracle@srv${db}01								\
+			\". .profile;												\
+				db/stby/create_dataguard.sh								\
+					-standby=$standby -standby_host=srv${standby}01\""
 	LN
 fi
 

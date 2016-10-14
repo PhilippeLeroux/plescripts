@@ -31,6 +31,7 @@ des disques sont déduits de l'identifiant.
 	* Créer les disques :
 	  * sur le SAN : utilisation du protocole iSCSI.
 	  * ou sur VirtualBox
+	  * [Benchs VBox VS iSCSI](https://github.com/PhilippeLeroux/plescripts/wiki/bench_vbox_iscsi) 
 	* Enregistrer le serveur dans le DNS : utilisation de bind9.
 	* Utilisation d'oracleasm pour la gestion des disques bdd.
 
