@@ -138,6 +138,10 @@ do
 		else
 			info "    Détails avec :"
 			info "    sudo xfs_bmap -v \"$vdi_file\""
+			info ""
+			info "    Défragmentation :"
+			info "       - sudo xfs_fsr -v \"$vdi_file\""
+			info "       - ${ME##*/} -reorg (Tous les fichiers seront réorganisés)"
 			LN
 		fi
 	fi
