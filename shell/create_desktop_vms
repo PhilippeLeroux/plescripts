@@ -13,7 +13,7 @@ LN
 
 line_separator
 info "Global config"
-exec_cmd VBoxManage modifyvm $vm_name --ostype OpenSUSE_64
+exec_cmd VBoxManage modifyvm $vm_name --ostype Ubuntu_64
 exec_cmd VBoxManage modifyvm $vm_name --acpi on
 exec_cmd VBoxManage modifyvm $vm_name --ioapic on
 exec_cmd VBoxManage modifyvm $vm_name --memory 2048
@@ -28,6 +28,7 @@ info "Add Iface 1"
 exec_cmd VBoxManage modifyvm $vm_name --nic1 hostonly
 exec_cmd VBoxManage modifyvm $vm_name --hostonlyadapter1 vboxnet1
 exec_cmd VBoxManage modifyvm $vm_name --nictype1 virtio
+exec_cmd VBoxManage modifyvm $vm_name --cableconnected1 on
 LN
 
 line_separator

@@ -63,6 +63,7 @@ exec_cmd VBoxManage modifyvm $master_name --vram 9
 exec_cmd VBoxManage modifyvm $master_name --cpus 2
 exec_cmd VBoxManage modifyvm $master_name --rtcuseutc on
 exec_cmd VBoxManage modifyvm $master_name --largepages on
+exec_cmd VBoxManage modifyvm $master_name --hpet on
 LN
 
 line_separator
@@ -70,12 +71,14 @@ info "Add Iface 1"
 exec_cmd VBoxManage modifyvm $master_name --nic1 hostonly
 exec_cmd VBoxManage modifyvm $master_name --hostonlyadapter1 vboxnet1
 exec_cmd VBoxManage modifyvm $master_name --nictype1 virtio
+exec_cmd VBoxManage modifyvm $master_name --cableconnected1 on
 LN
 
 line_separator
 info "Add Iface 2"
 exec_cmd VBoxManage modifyvm $master_name --nic2 intnet
 exec_cmd VBoxManage modifyvm $master_name --nictype2 virtio
+exec_cmd VBoxManage modifyvm $master_name --cableconnected2 on
 LN
 
 line_separator
