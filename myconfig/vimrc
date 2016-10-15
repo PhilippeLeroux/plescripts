@@ -202,7 +202,7 @@ endfunction
 
 function! SearchFunction()
 	let l:wordUnderCursor = expand("<cword>")
-	let l:funcPattern="function " . l:wordUnderCursor . '$'
+	let l:funcPattern="function " . l:wordUnderCursor
 	echo "Search " . l:funcPattern
 	if search( l:funcPattern, 'b' ) == 0
 		if search( l:funcPattern ) == 0

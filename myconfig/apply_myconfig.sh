@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -65,7 +64,20 @@ exec_cmd "echo \"[ -f ~/.bashrc_extensions ] && . ~/.bashrc_extensions || true\"
 LN
 
 line_separator
-exec_cmd "sudo zypper install git-core gvim"
+. /etc/os-release
+case "$ID" in
+	opensuse)
+		exec_cmd "sudo zypper install git-core gvim"
+		;;
+
+	neon)
+		exec_cmd "sudo apt install vim-gnome"
+		;;
+
+	*)
+		warning "$PRETTY_NAME : installation de gvim non faite."
+		;;
+esac
 LN
 
 line_separator
