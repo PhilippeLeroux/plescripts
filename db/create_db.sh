@@ -546,8 +546,4 @@ LN
 stats_tt stop create_$lower_db
 
 script_stop $ME
-
-info "Memory settings :"
-info "/dev/shm   : ~/plescripts/memory/adjust_shm_size.sh"
-info "Huge pages : ~/plescripts/memory/root_setup_hp.sh"
 LN
