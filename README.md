@@ -28,25 +28,39 @@ des disques sont déduits de l'identifiant.
   Actions effectuées par le script de clonage :
 
 	* Cloner la VM master.
-	* Créer les disques :
-	  * sur le SAN : utilisation du protocole iSCSI.
+	* Créer les disques ([Benchs VBox VS iSCSI](https://github.com/PhilippeLeroux/plescripts/wiki/bench_vbox_iscsi)) :
+	  * sur le SAN, utilisation du protocole iSCSI.
 	  * ou sur VirtualBox
-	  * [Benchs VBox VS iSCSI](https://github.com/PhilippeLeroux/plescripts/wiki/bench_vbox_iscsi) 
-	* Enregistrer le serveur dans le DNS : utilisation de bind9.
-	* Utilisation d'oracleasm pour la gestion des disques bdd.
+	* Enregistrer le serveur dans le DNS, utilisation de bind9.
+	* Utilisation d'oracleasm pour la gestion du mapping des disques de bases de données.
 
-* Installation du Grid Infrastructure et création des DGs : Temps ~35mn
+* Installation du Grid Infrastructure et création des DGs
 
-	Que la base soit SINGLE ou RAC il n'y a qu'un script à exécuter, les scripts
+  Temps :
+
+	* ~35mn pour un RAC 2 nœuds.
+	* ~8mn pour une SINGLE.
+
+  Que la base soit SINGLE ou RAC il n'y a qu'un script à exécuter, les scripts
 root de pré installations sont automatiquement exécutés sur le serveur ou l'ensemble
 des nœuds d'un RAC.
 
-* Installation d'Oracle : Temps ~20mn
+* Installation d'Oracle
 
-	Comme pour le Grid un seul script prend en charge l'ensemble des opérations que
+  Temps :
+
+	* ~20mn pour un RAC 2 nœuds.
+	* ~5mn pour une SINGLE.
+
+  Comme pour le Grid Infra un seul script prend en charge l'ensemble des opérations que
 la base soit SINGLE ou bien RAC.
 
-* Création d'une base de données : Temps de création cdb + 1 pdb : ~25mn
+* Création d'une base de données.
+
+  Temps de création cdb + 1 pdb :
+
+	* ~30mn pour un RAC 2 nœuds.
+	* ~18mn pour une SINGLE.
 
 --------------------------------------------------------------------------------
 ### Télécharger les logiciels suivants :
@@ -86,12 +100,18 @@ Une fois cette étape terminée les bases peuvent être [créées](https://githu
 La création de dataguard est prise en compte mais uniquement pour des bases SINGLE, je n'ai pas assez de ressources pour avoir 2 RACs
 ou 1 RAC et 1 SINGLE [procédure ici](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/README.md)
 
-##	Script database_servers/run_all.sh
+##	Scripts database_servers/vbox_run_all.sh & database_servers/iscsi_run_all.sh
 
-**Note :** Exécuter ce script uniquement après avoir validé l'environnement en
-créant au moins un serveur Oracle avec une base mono instance.
+ * vbox_run_all.sh : utilise des disques VBox pour les LUNs de base de données.
+ * iscsi_run_all.sh : utilise des disques exportés via iSCSI depuis K2 pour les LUNs de base de données.
+
+**Note :** Initialement ces scripts ont été conçues pour automatiser les jeux de tests.
+
+Exécuter ces scripts uniquement après avoir validé l'environnement en créant au moins
+un serveur Oracle avec une base mono instance.
 
 Ce script lance tous les scripts :
+ - define_new_server.sh
  - clone_master.sh
  - install_grid.sh
  - install_oracle.sh
@@ -101,19 +121,19 @@ Ce script lance tous les scripts :
 Exemples (ce postionner dans le répertoire ~/plescripts/database_servers) :
  - Création d'une base mono instance :
 
-   `./run_all.sh -db=SIMPLE`
+   `./vbox_run_all.sh -db=SINGLE`
 
  - Création d'un RAC 2 nœuds :
 
-   `./run_all.sh -db=RAC2N -max_nodes=2`
+   `./vbox_run_all.sh -db=RAC2N -max_nodes=2`
 
  - Création d'un dataguard :
 
-   `./run_all.sh -db=saturne -standby=jupiter`
+   `./vbox_run_all.sh -db=saturne -standby=jupiter`
 
-Les derniers paramètres seront passés à create_db.sh, pour créer un RAC 2 noeuds 'Policy Managed' par exemple :
+Les derniers paramètres seront passés à create_db.sh, pour créer un RAC 2 nœuds 'Policy Managed' par exemple :
 
-`./run_all.sh -db=RAC2N -max_nodes=2 -policyManaged`
+`./vbox_run_all.sh -db=RAC2N -max_nodes=2 -policyManaged`
 
 --------------------------------------------------------------------------------
 [Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)
