@@ -1,8 +1,12 @@
+# vim: ts=4:sw=4
+
 if [ x"$plelib_banner" == x ]
 then
 	echo "inclure plelib avant dblib"
 	exit 1
 fi
+
+. ~/plescripts/global.cfg
 
 #	La variable SPOOL permet de loger la sortie de sqplus.
 if [ "$PLELIB_OUTPUT" == FILE ]
