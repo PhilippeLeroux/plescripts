@@ -79,7 +79,7 @@ exit_if_param_undef pdbName			"$str_usage"
 #	-failoverretry par défaut 30
 #	-failoverdelay 10s entre chaque retry.
 #	-notification: FAN is highly recommended—set this value to TRUE to enable FAN for OCI and ODP.Net clients.
-#	
+#
 #	Creating Services for Transaction Guard : To enable Transaction Guard, but not Application Continuity
 #	-commit_outcome TRUE
 #	To use Transaction Guard, a DBA must grant permission, as follows:
@@ -89,7 +89,7 @@ exit_if_param_undef pdbName			"$str_usage"
 function test_if_service_exist
 {
 	typeset -r service_name=$1
-	exec_cmd -ci "srvctl status service -db $db -service $service_name >/dev/null 2>&1"
+	exec_cmd -ci "srvctl status service -db $db -service $service_name" >/dev/null 2>&1
 }
 
 function oci_service
@@ -167,12 +167,12 @@ function java_service
 	then
 		add_dynamic_cmd_param "    -role             $role"
 		add_dynamic_cmd_param "    -policy           automatic"
-#	----------------------------------------------------------------------------	
+#	----------------------------------------------------------------------------
 #	Ne fonctionne pas : aq_ha_notification non activé : RAC only
 #		add_dynamic_cmd_param "    -failovertype     TRANSACTION"
 #		add_dynamic_cmd_param "    -replay_init_time 600"
 #		add_dynamic_cmd_param "    -commit_outcome   TRUE"
-#	----------------------------------------------------------------------------	
+#	----------------------------------------------------------------------------
 		add_dynamic_cmd_param "    -failovertype     SELECT"
 		add_dynamic_cmd_param "    -failovermethod   basic"
 		add_dynamic_cmd_param "    -failoverretry    30"
