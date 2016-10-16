@@ -39,8 +39,6 @@ done
 typeset hostvm_type=undef
 info "Select hypervisor :"
 info "	1 : vbox for linux"
-info "	2 : vbox for windows"
-info "	x : other"
 while [ 0 -eq 0 ] # forever
 do
 	read -s -n 1 keyboard
@@ -52,18 +50,6 @@ do
 			common_user_n=$USER
 			full_linux_iso_n="$HOME/ISO/oracle_linux_7/V100082-01.iso"
 			break
-			;;
-
-		2)	LN
-			info "N'est plus à jour"
-			exit 0
-			break
-			;;
-
-		x)	LN
-			warning "No scripts provided to create VMs."
-			warning "And you must configure global.cfg manually !"
-			exit 0
 			;;
 
 		*)	error "$keyboard invalid."
