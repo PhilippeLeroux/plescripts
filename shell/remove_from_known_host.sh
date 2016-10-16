@@ -16,7 +16,7 @@ typeset -r str_usage=\
 	-ip supprime du fichier ~/.ssh/know_hosts les lignes commençant par l'ip
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset host=undef
 typeset ip=undef

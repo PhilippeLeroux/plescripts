@@ -224,6 +224,14 @@ trap ctrl_c INT
 #	Fonctions d'affichages
 ################################################################################
 
+#*> Idéalement tous les scripts doivent appeler cette fonction.
+#*> script_banner $ME $*
+function script_banner
+{
+	info "Running : $@"
+	LN
+}
+
 #*< Used by fonctions info, warning and error.
 #*< Action depand of PLELIB_OUTPUT
 #*<		DISABLE : no visual effects.

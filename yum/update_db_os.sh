@@ -12,7 +12,7 @@ typeset -r str_usage=\
 	Mise à jour de l'OS, tient compte des bases.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

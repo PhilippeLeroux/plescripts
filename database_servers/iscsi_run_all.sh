@@ -14,7 +14,7 @@ typeset -r str_usage=\
 	[others]       Transmis à create_db.sh
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset db=undef
 typeset standby=undef

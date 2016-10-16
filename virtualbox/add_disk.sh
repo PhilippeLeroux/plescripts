@@ -15,7 +15,7 @@ typeset -r str_usage=\
 	[-fixed_size]   Disque taille fixe (automatique si -attach_to est précisé.)
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset		vm_name=undef
 typeset		disk_name=undef

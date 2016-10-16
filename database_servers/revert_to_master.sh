@@ -19,7 +19,7 @@ typeset -r str_usage=\
 	Le paramètre -force permet de ne pas tester si le Grid Infra est installé.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset force=no
 

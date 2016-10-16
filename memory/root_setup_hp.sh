@@ -11,7 +11,7 @@ typeset -r str_usage=\
 "Usage : $ME [-reset]
 Par défaut active les hpages, pour revenir aux pages normalles utiliser -reset"
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 #	activate_profile
 typeset action=normal

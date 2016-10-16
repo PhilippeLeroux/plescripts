@@ -10,7 +10,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage="Usage : $ME -db=<str> -delete_vms=yes"
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset	db=undef
 typeset	delete_vms=yes

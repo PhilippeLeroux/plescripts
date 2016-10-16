@@ -18,7 +18,7 @@ Le script doit être exécuter depuis le host, il n'y aura pas de mot de passe
 demandé.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset	server1=undef
 typeset	server2=undef

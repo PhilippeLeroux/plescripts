@@ -13,7 +13,7 @@ typeset -r str_usage=\
 	-db=name
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset	add_to_cluster=no
 

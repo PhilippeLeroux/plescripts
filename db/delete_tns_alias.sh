@@ -10,7 +10,7 @@ typeset -r str_usage=\
 Attention il doit y avoir une ligne vide après la description de l'alias.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset	alias_name=undef
 

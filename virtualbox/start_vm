@@ -12,7 +12,7 @@ typeset -r str_usage=\
 	[-wait_os=yes]  par défaut attend que l'OS de la VM ait démarré pour lancer la VM suivante.
 "
 
-info "$ME $@"
+script_banner $ME $@
 
 typeset server=undef
 typeset	wait_os=yes

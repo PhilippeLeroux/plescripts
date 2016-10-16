@@ -9,7 +9,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME -user=name -server=name"
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset user=undef
 typeset server=undef

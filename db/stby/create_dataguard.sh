@@ -38,7 +38,7 @@ typeset -r str_usage=\
 			-skip_configure_dataguard passe cette étape.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset standby=undef
 typeset standby_host=undef

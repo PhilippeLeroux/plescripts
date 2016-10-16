@@ -12,7 +12,7 @@ typeset -r str_usage=\
 Doit être exécuté sur le serveur master.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset argv
 [ "$DEBUG_MODE" == "ENABLE" ] && argv="-c"

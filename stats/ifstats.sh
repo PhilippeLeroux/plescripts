@@ -24,7 +24,7 @@ typeset -r str_usage=\
 "
 
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset -i	max_count=0
 typeset -i	pause_of_secs=1

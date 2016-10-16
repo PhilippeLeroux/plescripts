@@ -18,7 +18,7 @@ typeset -r str_usage=\
 	[-start_server_only] Le serveur est déjà cloné, uniquement le démarrer. (Util uniqement lors du debug)
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset		db=undef
 typeset -i	node=-1

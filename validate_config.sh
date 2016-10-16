@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -12,7 +11,7 @@ typeset -r str_usage=\
 Ce script vérifie que l'OS host remplie les conditions nécessaires au bon
 fonctionnement de la démo."
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset db=undef
 

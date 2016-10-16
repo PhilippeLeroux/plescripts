@@ -10,7 +10,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME -db=<str> -vm_memory_mb=<#> [-vmGroup=<name>]"
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset		db=undef
 typeset	-i	vm_memory_mb=-1

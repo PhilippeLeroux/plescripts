@@ -12,7 +12,7 @@ typeset -r str_usage=\
 Doit être exécuté sur le serveur d'infrastructure : $infra_hostname
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset -r hn=$(hostname -s)
 if [ "$hn" != "$infra_hostname" ]

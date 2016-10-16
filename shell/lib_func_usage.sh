@@ -14,7 +14,7 @@ script.
 Ex : ${0##*/} ~/plescripts/plelib.sh
 "
 
-info "Running : ${ME##*/} $*"
+script_banner $ME $*
 
 typeset libname=undef
 

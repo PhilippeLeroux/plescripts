@@ -13,7 +13,7 @@ typeset -r str_usage=\
 IO d'un RAC 2 nœuds.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset	db=undef
 

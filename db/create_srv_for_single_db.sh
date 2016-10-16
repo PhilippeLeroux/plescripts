@@ -18,7 +18,7 @@ typeset -r str_usage=\
 	* RAC non pris en compte.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset db=undef
 typeset pdbName=undef

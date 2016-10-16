@@ -11,7 +11,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME [-emul]"
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

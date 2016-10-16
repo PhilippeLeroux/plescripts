@@ -12,7 +12,7 @@ typeset -r str_usage=\
 	Affiche les dernières logs.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

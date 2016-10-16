@@ -11,7 +11,7 @@ typeset -r str_usage=\
 L'environnement de la base doit être chargé
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

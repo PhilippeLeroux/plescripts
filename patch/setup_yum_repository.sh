@@ -10,7 +10,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME -server_list=<name1 name2 ...>"
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset	server_list=undef
 

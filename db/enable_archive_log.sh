@@ -5,8 +5,6 @@
 . ~/plescripts/dblib.sh
 EXEC_CMD_ACTION=EXEC
 
-info "Running : $0 $*"
-
 #	============================================================================
 #	Fonctions fabriquant les commandes sql.
 

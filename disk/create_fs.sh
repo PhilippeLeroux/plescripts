@@ -15,7 +15,7 @@ typeset -r str_usage=\
 	-type_fs=name
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset mount_point=undef
 typeset	device=check

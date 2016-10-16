@@ -28,7 +28,7 @@ typeset -r str_usage=\
 	Ajouter le flag '!' permet de ne pas effectuer une action avec le paramètre -all.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset type=ASM
 typeset action_list

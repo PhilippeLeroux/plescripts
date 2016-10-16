@@ -14,7 +14,7 @@ typeset -r str_usage=\
 	-action=[create|add]
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset	add_to_cluster=no
 

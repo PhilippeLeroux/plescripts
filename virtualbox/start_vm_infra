@@ -7,7 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-info "$ME $@"
+script_banner $ME $@
 
 exec_cmd "VBoxManage startvm ${infra_hostname} --type headless"
 exec_cmd "~/plescripts/shell/wait_server ${infra_hostname}"

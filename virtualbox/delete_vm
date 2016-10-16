@@ -13,7 +13,7 @@ typeset -r str_usage=\
 	[-y]
 "
 
-info "$ME $@"
+script_banner $ME $@
 
 typeset	db=undef
 typeset	server=undef

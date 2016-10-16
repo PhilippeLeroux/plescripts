@@ -13,7 +13,7 @@ typeset -r str_usage=\
 	[-reboot_vbox] : reboot tous les composants de vbox.
 "
 
-info "$ME $@"
+script_banner $ME $@
 
 typeset server=undef
 typeset	wait_os=no

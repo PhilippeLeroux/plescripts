@@ -18,7 +18,7 @@ Création de 2 services :
 	 prefixService || _java
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset db=undef
 typeset pdbName=undef

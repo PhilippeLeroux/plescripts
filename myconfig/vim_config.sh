@@ -9,7 +9,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME -backup|-restore"
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset action=undef
 

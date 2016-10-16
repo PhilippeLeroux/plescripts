@@ -15,7 +15,7 @@ typeset -r str_usage=\
 	Synchronise le dépôt Oracle Linux.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 if [ "$(hostname -s)" != "$infra_hostname" ]
 then

@@ -29,7 +29,7 @@ typeset -r str_usage=\
 
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
 "
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset	db=undef
 typeset	rsp_file_only=no

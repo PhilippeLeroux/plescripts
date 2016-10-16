@@ -8,7 +8,7 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 #Doit être exécuté sur le serveur d'infrastructure ou le master.
 

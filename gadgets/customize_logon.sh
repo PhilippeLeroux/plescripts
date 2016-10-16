@@ -12,7 +12,7 @@ typeset -r str_usage=\
 	Si name = auto ou est omis alors utilise le nom du serveur.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset name=${1-auto}
 

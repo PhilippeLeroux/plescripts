@@ -15,7 +15,7 @@ typeset -r str_usage=\
 	[-skip_gt=#]   	Ne pas réorganiser les fichiers de plus de # extents.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset		reorg=no
 typeset		ask=no

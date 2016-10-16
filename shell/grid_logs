@@ -10,7 +10,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME ...."
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset db=undef
 

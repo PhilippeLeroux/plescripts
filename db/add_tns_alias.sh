@@ -13,7 +13,7 @@ typeset -r str_usage=\
 	[-copy_server_list=] Copie avec scp le tnsnames sur la liste des servers.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset service_name=undef
 typeset host_name=undef

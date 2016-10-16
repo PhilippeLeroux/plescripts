@@ -1,8 +1,10 @@
 #!/bin/bash
+# vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
 
 function sqlcmd_set_low_memory
 {

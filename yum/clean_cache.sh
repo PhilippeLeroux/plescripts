@@ -9,7 +9,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME ...."
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 exec_cmd rm -fr /var/cache/yum/*
 exec_cmd yum clean all

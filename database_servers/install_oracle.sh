@@ -16,7 +16,7 @@ typeset -r str_usage=\
 	-action=install  Si config l'installation n'est pas lancée.
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset db=undef
 typeset action=install

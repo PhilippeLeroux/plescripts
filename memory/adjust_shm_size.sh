@@ -11,7 +11,7 @@ typeset -r str_usage=\
 	[-sga=$shm_for_db]		(Ex : -sga=512M)
 "
 
-info "Running : $ME $*"
+script_banner $ME $*
 
 typeset sga=$shm_for_db
 
