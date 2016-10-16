@@ -1,85 +1,82 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
-. ~/plescripts/global.cfg
+. ~/plescripts/dblib.sh
 EXEC_CMD_ACTION=EXEC
 
 info "Running : $0 $*"
 
-typeset -r	SQL_PROMPT="prompt SQL>"
+#	============================================================================
+#	Fonctions fabriquant les commandes sql.
 
-#	$@	liste des mots constituant l'instruction sql à exécuter.
-function exec_sql
+function sqlcmd_restart_to_mount_state
 {
-    typeset -r sql_cmd="$@"
-    [ "${sql_cmd:${#sql_cmd}-1}" == ";" ] && typeset -r eoc=";"
-    echo "$SQL_PROMPT $sql_cmd$eoc"
-    echo "$sql_cmd"
-    echo "prompt"
+	set_sql_cmd "shutdown immediate"
+
+	set_sql_cmd "startup mount"
 }
 
-function make_sql_cmds_without_srvctl
+function sqlcmd_enable_archivelog
 {
-	cat <<EOS
-$(exec_sql archive log list)
+	set_sql_cmd "alter database archivelog;"
 
-$(exec_sql shutdown immediate)
+	set_sql_cmd "alter database open;"
 
-$(exec_sql startup mount)
-
-$(exec_sql alter database archivelog\;)
-
-$(exec_sql alter database open\;)
-
-$(exec_sql shutdown immediate)
-
-$(exec_sql startup)
-
-$(exec_sql archive log list)
-EOS
+	set_sql_cmd "archive log list;"
 }
 
-function enable_archivelog_without_srvctl
+function sqlcmd_enable_archivelog_full_sqlplus
 {
-	typeset -r cmds="$(make_sql_cmds_without_srvctl)"
-	fake_exec_cmd "sqlplus sys/$oracle_password as sysdba"
-	printf "set echo off\nset timin on\n$cmds\n" | sqlplus -s sys/$oracle_password as sysdba
+	sqlcmd_restart_to_mount_state
+
+	sqlcmd_enable_archivelog
+
+	set_sql_cmd "shutdown immediate"
+
+	set_sql_cmd "startup"
+}
+
+function sqlcmd_enable_archivelog_GI_present
+{
+	set_sql_cmd "startup mount"
+
+	sqlcmd_enable_archivelog
+
+	set_sql_cmd "shutdown immediate"
+}
+
+#	============================================================================
+#	MAIN
+
+#	Active les archivelogs avec la commande sqlplus.
+function enable_archivelog_with_sqlplus
+{
+	sqlplus_cmd "$(sqlcmd_enable_archivelog_full_sqlplus)"
 	LN
 }
 
-function make_sql_cmds
+#	Active les archivelogs quand le Grid Infra est présent (RAC possible).
+function enable_archivelog_GI_present
 {
-	cat <<EOS
-$(exec_sql startup mount)
-
-$(exec_sql alter database archivelog\;)
-
-$(exec_sql alter database open\;)
-
-$(exec_sql archive log list)
-
-$(exec_sql shutdown immediate)
-EOS
-}
-
-function enable_archivelog
-{
-	typeset -r cmds="$(make_sql_cmds)"
-
 	if [ ! -v ORACLE_DB ]
 	then
 		error "ORACLE_DB not defined."
 		exit 1
 	fi
 
+	info "Stop database :"
 	exec_cmd "srvctl stop database -db $ORACLE_DB"
-	fake_exec_cmd "sqlplus sys/$oracle_password as sysdba"
-	printf "set echo off\nset timin on\n$cmds\n" | sqlplus -s sys/$oracle_password as sysdba
+	LN
+
+	info "Enable archivelog :"
+	sqlplus_cmd "$(sqlcmd_enable_archivelog_GI_present)"
+	LN
+
+	info "Start database :"
 	exec_cmd "srvctl start database -db $ORACLE_DB"
 	LN
 }
 
 test_if_cmd_exists olsnodes
-[ $? -ne 0 ] && enable_archivelog_without_srvctl || enable_archivelog
+[ $? -ne 0 ] && enable_archivelog_with_sqlplus || enable_archivelog_GI_present

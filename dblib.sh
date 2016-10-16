@@ -31,24 +31,44 @@ $@
 WT
 }
 
+#*> return :
+#*>    1 if EXEC_CMD_ACTION = NOP
+#*>    0 if EXEC_CMD_ACTION = EXEC
+function sqlplus_cmd_as # $1 sysdba|sysasm
+{
+	typeset	-r	priv="$1"
+	shift
+
+	fake_exec_cmd sqlplus -s sys/$oracle_password as $priv
+	if [ $? -eq 0 ]
+	then
+		printf "${SPOOL}set echo off\nset timin on\n$@\n" | \
+			sqlplus -s sys/$oracle_password as $priv
+		return 0
+	else
+		printf "${SPOOL}set echo off\nset timin on\n$@\n"
+		return 1
+	fi
+}
+
 #*>	Exécute les commandes "$@" avec sqlplus en sysdba
 #*>	Affichage correct sur la sortie std et la log.
+#*> return :
+#*>    1 if EXEC_CMD_ACTION = NOP
+#*>    0 if EXEC_CMD_ACTION = EXEC
 function sqlplus_cmd
 {
-	fake_exec_cmd sqlplus -s sys/$oracle_password as sysdba
-	printf "${SPOOL}set echo off\nset timin on\n$@\n" | \
-		sqlplus -s sys/$oracle_password as sysdba 
-	LN
+	sqlplus_cmd_as sysdba "$@"
 }
 
 #*>	Exécute les commandes "$@" avec sqlplus en sysasm
 #*>	Affichage correct sur la sortie std et la log.
+#*> return :
+#*>    1 if EXEC_CMD_ACTION = NOP
+#*>    0 if EXEC_CMD_ACTION = EXEC
 function sqlplus_asm_cmd
 {
-	fake_exec_cmd sqlplus -s sys/$oracle_password as sysdba
-	printf "${SPOOL}set echo off\nset timin on\n$@\n" | \
-		sqlplus -s sys/$oracle_password as sysdba 
-	LN
+	sqlplus_cmd_as sysasm "$@"
 }
 
 #*>	Objectif de la fonction :
