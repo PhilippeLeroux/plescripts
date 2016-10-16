@@ -182,7 +182,7 @@ function sqlcmd_create_standby_redo_logs
 
 	for i in $( seq $nr )
 	do
-		to_exec "alter database add standby logfile thread 1 size $redo_size_mb;"
+		set_sql_cmd "alter database add standby logfile thread 1 size $redo_size_mb;"
 	done
 }
 
@@ -279,9 +279,9 @@ EOS
 
 function sqlcmd_print_redo
 {
-	to_exec "set lines 130 pages 45"
-	to_exec "col member for a45"
-	to_exec "select * from v\$logfile order by type, group#;"
+	set_sql_cmd "set lines 130 pages 45"
+	set_sql_cmd "col member for a45"
+	set_sql_cmd "select * from v\$logfile order by type, group#;"
 }
 
 #	Création des SRLs sur la base primaire.
@@ -383,33 +383,33 @@ EOR
 #	Fabrique les commandes permettant :
 #		- de configurer un dataguard
 #		- faire le duplicate
-#	Toutes les commandes sont fabriquées avec la fonction to_exec.
+#	Toutes les commandes sont fabriquées avec la fonction set_sql_cmd.
 #	Passer la sortie de cette fonction en paramètre de la fonction sqlplus_cmd
 #	EST INUTILE : log_archive_dest_2='service=$standby async valid_for=(online_logfiles,primary_role) db_unique_name=$standby'
 function sqlcmd_primary_config
 {
-	to_exec "alter system set standby_file_management='AUTO' scope=both sid='*';"
+	set_sql_cmd "alter system set standby_file_management='AUTO' scope=both sid='*';"
 
-	to_exec "alter system set fal_server='$standby' scope=both sid='*';"
+	set_sql_cmd "alter system set fal_server='$standby' scope=both sid='*';"
 
-	to_exec "alter system set dg_broker_config_file1 = '+DATA/$primary/dr1db_$primary.dat' scope=both sid='*';"
+	set_sql_cmd "alter system set dg_broker_config_file1 = '+DATA/$primary/dr1db_$primary.dat' scope=both sid='*';"
 
-	to_exec "alter system set dg_broker_config_file2 = '+FRA/$primary/dr2db_$primary.dat' scope=both sid='*';"
+	set_sql_cmd "alter system set dg_broker_config_file2 = '+FRA/$primary/dr2db_$primary.dat' scope=both sid='*';"
 
-	to_exec "alter system set dg_broker_start=true scope=both sid='*';"
+	set_sql_cmd "alter system set dg_broker_start=true scope=both sid='*';"
 
 	if [ $primary_config == yes ]
 	then
-		to_exec "alter database force logging;"
+		set_sql_cmd "alter database force logging;"
 
 		if [ "$(read_remote_login_passwordfile)" != "EXCLUSIVE" ]
 		then
 			echo prompt
 			echo prompt --	Paramètres nécessitant un arrêt/démarrage :
-			to_exec "alter system set remote_login_passwordfile='EXCLUSIVE' scope=spfile sid='*';"
+			set_sql_cmd "alter system set remote_login_passwordfile='EXCLUSIVE' scope=spfile sid='*';"
 
-			to_exec "shutdown immediate"
-			to_exec "startup"
+			set_sql_cmd "shutdown immediate"
+			set_sql_cmd "startup"
 		fi
 	fi
 }
@@ -482,9 +482,9 @@ function duplicate
 
 function sqlcmd_mount_db_and_start_recover
 {
-	to_exec "shutdown immediate;"
-	to_exec "startup mount;"
-	to_exec "recover managed standby database disconnect;"
+	set_sql_cmd "shutdown immediate;"
+	set_sql_cmd "startup mount;"
+	set_sql_cmd "recover managed standby database disconnect;"
 }
 
 #	Après que la duplication ait été faite finalise la configuration.
@@ -555,7 +555,7 @@ function configure_dataguard
 	# Remarque : si la base n'est pas en 'Real Time Query' relancer la base
 	# pour que le 'temporary file' soit crée.
 	info "Open read only $standby for Real Time Query"
-	sqlplus_cmd_on_standby "$(to_exec "alter database open read only;")"
+	sqlplus_cmd_on_standby "$(set_sql_cmd "alter database open read only;")"
 	LN
 }
 
@@ -628,9 +628,9 @@ from
 
 function sqlcmd_enable_flashback
 {
-	to_exec "recover managed standby database cancel;"
-	to_exec "alter database flashback on;"
-	to_exec "recover managed standby database disconnect;"
+	set_sql_cmd "recover managed standby database cancel;"
+	set_sql_cmd "alter database flashback on;"
+	set_sql_cmd "recover managed standby database disconnect;"
 }
 
 function check_ssh_prereq_and_if_stby_exist

@@ -44,9 +44,9 @@ fi
 
 function slqcmd_setup_memory_hpages
 {
-	to_exec "alter system set memory_target=0 scope=spfile sid='*';"
-	to_exec "alter system set memory_max_target=0 scope=spfile sid='*';"
-	to_exec "alter system set sga_target=$hack_asm_memory scope=spfile sid='*';"
+	set_sql_cmd "alter system set memory_target=0 scope=spfile sid='*';"
+	set_sql_cmd "alter system set memory_max_target=0 scope=spfile sid='*';"
+	set_sql_cmd "alter system set sga_target=$hack_asm_memory scope=spfile sid='*';"
 }
 
 sqlplus_asm_cmd "$(slqcmd_setup_memory_hpages)"

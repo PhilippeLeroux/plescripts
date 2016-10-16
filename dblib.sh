@@ -20,9 +20,9 @@ typeset -r	SQL_PROMPT="prompt SQL>"
 #*>		- affiche sur la seconde ligne la commande.
 #*>
 #*>	Le but étant de construire dans une fonction 'les_commandes' l'ensemble des
-#*>	commandes à exécuter à l'aide de to_exec.
+#*>	commandes à exécuter à l'aide de set_sql_cmd.
 #*>	La fonction 'les_commandes' donnera la liste des commandes à la fonction sqlplus_cmd
-function to_exec
+function set_sql_cmd
 {
 cat<<WT
 prompt

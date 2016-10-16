@@ -16,9 +16,9 @@ Resume 2016/09/24 :
 #*>		- affiche sur la seconde ligne la commande.
 #*>
 #*>	Le but étant de construire dans une fonction 'les_commandes' l'ensemble des
-#*>	commandes à exécuter à l'aide de to_exec.
+#*>	commandes à exécuter à l'aide de set_sql_cmd.
 #*>	La fonction 'les_commandes' donnera la liste des commandes à la fonction sqlplus_cmd
-function to_exec
+function set_sql_cmd
 
 #*>	Exécute les commandes "$@" avec sqlplus en sysdba
 #*>	Affichage correct sur la sortie std et la log.

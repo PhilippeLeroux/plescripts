@@ -47,36 +47,36 @@ exit_if_param_undef db		"$str_usage"
 
 function sqlcmd_drop_primary_cfg
 {
-	to_exec "alter system reset standby_file_management scope=spfile sid='*';"
+	set_sql_cmd "alter system reset standby_file_management scope=spfile sid='*';"
 
-	to_exec "alter system reset log_archive_config scope=spfile sid='*';"
+	set_sql_cmd "alter system reset log_archive_config scope=spfile sid='*';"
 
-	to_exec "alter system reset fal_server scope=spfile sid='*';"
+	set_sql_cmd "alter system reset fal_server scope=spfile sid='*';"
 
-	to_exec "alter system reset log_archive_dest_1 scope=spfile sid='*';"
+	set_sql_cmd "alter system reset log_archive_dest_1 scope=spfile sid='*';"
 
-	to_exec "alter system reset log_archive_dest_2 scope=spfile sid='*';"
+	set_sql_cmd "alter system reset log_archive_dest_2 scope=spfile sid='*';"
 
-	to_exec "alter system reset log_archive_dest_state_2 scope=spfile sid='*';"
+	set_sql_cmd "alter system reset log_archive_dest_state_2 scope=spfile sid='*';"
 
-	to_exec "alter system reset remote_login_passwordfile scope=spfile sid='*';"
+	set_sql_cmd "alter system reset remote_login_passwordfile scope=spfile sid='*';"
 
 	# Les 2 paramètres ne sont pas positionné, mais me sert de mémo pour ailleurs.
-	to_exec "alter system reset db_file_name_convert scope=spfile sid='*';"
+	set_sql_cmd "alter system reset db_file_name_convert scope=spfile sid='*';"
 
-	to_exec "alter system reset log_file_name_convert scope=spfile sid='*';"
+	set_sql_cmd "alter system reset log_file_name_convert scope=spfile sid='*';"
 	#	--
 
-	to_exec "alter system reset dg_broker_config_file1 scope=spfile sid='*';"
+	set_sql_cmd "alter system reset dg_broker_config_file1 scope=spfile sid='*';"
 
-	to_exec "alter system reset dg_broker_config_file2 scope=spfile sid='*';"
+	set_sql_cmd "alter system reset dg_broker_config_file2 scope=spfile sid='*';"
 
-	to_exec "alter system reset dg_broker_start scope=spfile sid='*';"
+	set_sql_cmd "alter system reset dg_broker_start scope=spfile sid='*';"
 
-	to_exec "alter database no force logging;"
+	set_sql_cmd "alter database no force logging;"
 
-	to_exec "shutdown immediate"
-	to_exec "startup"
+	set_sql_cmd "shutdown immediate"
+	set_sql_cmd "startup"
 }
 
 function remove_broker_cfg
