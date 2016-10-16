@@ -60,7 +60,6 @@ function read_hpages_from_alert_log
 		then
 			warning "----------------------------------------------------"
 			warning "Not enougth large pages !"
-			warning "Use : su -c \"./adjust_hpages.sh -nr_hugepages=$expected_pages\""
 			warning "----------------------------------------------------"
 			LN
 			count_missing_hpages=count_missing_hpages+expected_pages
@@ -119,14 +118,6 @@ typeset -ri actual_hpages=$(sysctl -n vm.nr_hugepages)
 
 print_hpages_instances
 print_hpages_mgmtdb
-
-if [ $count_missing_hpages -ne 0 ]
-then
-	line_separator
-	warning "Set large pages :"
-	warning "Use : su -c \"./adjust_hpages.sh -nr_hugepages=$count_missing_hpages\""
-	LN
-fi
 
 line_separator
 info "Hpage size             : $(fmt_number $hpage_size_mb)Mb"
