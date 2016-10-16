@@ -30,7 +30,7 @@ do
 	esac
 done
 
-[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
+[[ $db == undef && x"$ID_DB" == x ]] && db=$ID_DB
 exit_if_param_undef db
 
 cfg_exist $db

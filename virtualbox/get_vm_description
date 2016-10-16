@@ -38,10 +38,10 @@ do
 	esac
 done
 
-[[ $db == undef ]] && [[ -v ID_DB ]] && db=$ID_DB
+[[ $db == undef && x"$ID_DB" ]] && db=$ID_DB
 exit_if_param_undef db	"$str_usage"
 
-show_info_server > /tmp/info.txt
+show_info_server -db=$db > /tmp/info.txt
 clean_log_file /tmp/info.txt
 cat /tmp/info.txt
 rm -r /tmp/info.txt

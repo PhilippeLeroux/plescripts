@@ -98,7 +98,8 @@ do
 
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
 	exec_cmd VBoxManage modifyvm $vm_name --cpus 2
-	exec_cmd "VBoxManage modifyvm $vm_name --description \"$(~/plescripts/virtualbox/vbox_desc -db=$db)\""
+	exec_cmd "VBoxManage modifyvm $vm_name	\
+			--description \"$(~/plescripts/virtualbox/get_vm_description -db=$db)\""
 	LN
 
 	info "Test pour voir si perf réseau meilleurs :"
