@@ -50,7 +50,7 @@ configuration du poste client/host et des VMs master et K2.
 	avec le compte sys il faut donc utiliser la syntaxe : `sqlplus sys/Oracle12 as sysbda`
 
 	Paramètres utiles :
-	 - -db_type=RACONENODE, crée un RAC One Node et le service : ron_<nom_du_serveur ou est crée la base> (ron = rac one node)
+	 - -db_type=RACONENODE, crée un RAC One Node et le service ron_<nom_du_serveur ou est crée la base> (ron = rac one node)
 
 	 - -pdbName= permet de nommer le nom de la PDB créée.
 
