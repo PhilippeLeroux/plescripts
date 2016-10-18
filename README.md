@@ -100,7 +100,7 @@ Une fois cette étape terminée les bases peuvent être [créées](https://githu
 La création de dataguard est prise en compte mais uniquement pour des bases SINGLE, je n'ai pas assez de ressources pour avoir 2 RACs
 ou 1 RAC et 1 SINGLE [procédure ici](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/README.md)
 
-##	Scripts database_servers/vbox_run_all.sh & database_servers/iscsi_run_all.sh
+##	Scripts complémentaires.
 
  * vbox_run_all.sh : utilise des disques VBox pour les LUNs de base de données.
  * iscsi_run_all.sh : utilise des disques exportés via iSCSI depuis K2 pour les LUNs de base de données.
@@ -134,6 +134,8 @@ Exemples (ce postionner dans le répertoire ~/plescripts/database_servers) :
 Les derniers paramètres seront passés à create_db.sh, pour créer un RAC 2 nœuds 'Policy Managed' par exemple :
 
 `./vbox_run_all.sh -db=RAC2N -max_nodes=2 -policyManaged`
+
+Si l'un des paramètres est invalide, le script create_db.sh plantera.
 
 --------------------------------------------------------------------------------
 [Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)
