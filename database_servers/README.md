@@ -1,17 +1,12 @@
 ### Objectif des scripts
 
 Le but de ces scripts et de créer une infrastructure complète avec un minimum
-d'interventions
+d'interventions.
 
-Toutes les actions nécessaires sur K2 sont scriptées et transparentes :
-- Le DNS est mis à jour.
-- Le SAN est mis à jour, si nécessaire.
-- Les horloges des serveurs synchronisées sur la même source.
-- Les disques sont attachés via oracleasm.
+Quand un script se termine sans erreurs, il affiche la prochaine commande à exécuter
+avec les paramètres nécessaires.
 
-La VM master sera clonée afin d'éviter d'installer l'OS à chaque fois.
-
-**Note** : Tous les scripts sont exécutés depuis le poste client.
+**Note** : Tous les scripts sont exécutés depuis le poste client/serveur host.
 
 ### Création de nouveaux serveurs :
 
@@ -21,24 +16,114 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 
 	* Création d'un serveur standalone : `./define_new_server.sh -db=daisy`
 
+	  Le script affiche la configuration du réseau et des disques :
+
+	  ```c
+		# Node #1 standalone :
+		#       Server name     srvdaisy01       : 192.170.100.18
+		#       Interco iSCSI   srvdaisy01-iscsi : 66.60.60.18
+
+		# DG DATA :
+		#       S1DISKDAISY01  4Gb
+		#       S1DISKDAISY02  4Gb
+		#       S1DISKDAISY03  4Gb
+		#       S1DISKDAISY04  4Gb
+		#       S1DISKDAISY05  4Gb
+		#       S1DISKDAISY06  4Gb
+		#       S1DISKDAISY07  4Gb
+		#       S1DISKDAISY08  4Gb
+		#             8 disks 32Gb
+
+		# DG FRA :
+		#       S1DISKDAISY09  4Gb
+		#       S1DISKDAISY10  4Gb
+		#       S1DISKDAISY11  4Gb
+		#       S1DISKDAISY12  4Gb
+		#       S1DISKDAISY13  4Gb
+		#       S1DISKDAISY14  4Gb
+		#       S1DISKDAISY15  4Gb
+		#       S1DISKDAISY16  4Gb
+		#             8 disks 32Gb
+
+		# Note :
+		#       Le n° des disques est informatif, il se peut, dans certains cas,
+		#       qu'ils soient différents.
+		#       Par exemple si un FS est créée sur une LUN avant les disques pour ASM.
+
+		#       Les n° des disques correspondront au n° de leurs LUNs.
+
+		# Run : ./clone_master.sh -db=daisy
+	  ```
+
 	* Création d'un RAC 2 nœuds : `./define_new_server.sh -db=daisy -max_nodes=2`
 
-	**Note** Par défaut les disques sont créés sur VBox, pour créer les disques
-	sur le SAN utiliser l'option `-luns_hosted_by=san`
+	  Le script affiche la configuration du réseau et des disques :
+
+	  ```c
+		# Node #1 RAC :
+		#       Server name     srvdaisy01       : 192.170.100.12
+		#       VIP             srvdaisy01-vip   : 192.170.100.13
+		#       Interco RAC     srvdaisy01-rac   : 66.60.20.12
+		#       Interco iSCSI   srvdaisy01-iscsi : 66.60.60.12
+
+		# Node #2 RAC :
+		#       Server name     srvdaisy02       : 192.170.100.14
+		#       VIP             srvdaisy02-vip   : 192.170.100.15
+		#       Interco RAC     srvdaisy02-rac   : 66.60.20.14
+		#       Interco iSCSI   srvdaisy02-iscsi : 66.60.60.14
+
+		# scan : daisy-scan
+		#        192.170.100.16
+		#        192.170.100.17
+		#        192.170.100.18
+
+		# DG CRS :
+		#       S1DISKDAISY01  6Gb
+		#       S1DISKDAISY02  6Gb
+		#       S1DISKDAISY03  6Gb
+		#             3 disks 18Gb
+
+		# DG DATA :
+		#       S1DISKDAISY04  4Gb
+		#       S1DISKDAISY05  4Gb
+		#       S1DISKDAISY06  4Gb
+		#       S1DISKDAISY07  4Gb
+		#       S1DISKDAISY08  4Gb
+		#       S1DISKDAISY09  4Gb
+		#       S1DISKDAISY10  4Gb
+		#       S1DISKDAISY11  4Gb
+		#             8 disks 32Gb
+
+		# DG FRA :
+		#       S1DISKDAISY12  4Gb
+		#       S1DISKDAISY13  4Gb
+		#       S1DISKDAISY14  4Gb
+		#       S1DISKDAISY15  4Gb
+		#       S1DISKDAISY16  4Gb
+		#       S1DISKDAISY17  4Gb
+		#       S1DISKDAISY18  4Gb
+		#       S1DISKDAISY19  4Gb
+		#             8 disks 32Gb
+
+		# Note :
+		#       Le n° des disques est informatif, il se peut, dans certains cas,
+		#       qu'ils soient différents.
+		#       Par exemple si un FS est créée sur une LUN avant les disques pour ASM.
+
+		#       Les n° des disques correspondront au n° de leurs LUNs.
+
+		# Run : ./clone_master.sh -db=daisy -node=1
+	  ```
+
+	Ces informations sont enregistrées dans le champ description des VMs.
 
 	Un nouveau répertoire nommé daisy est créée contenant les fichiers décrivant
 	le paramétrage du ou des serveurs.
 
-	Modifier la taille par défaut des DGs DATA et FRA avec le paramètre -size_dg_gb.
-	Par exemple pour créer 2 DGs de 128Gb exécuter : `./define_new_server.sh -db=daisy -size_dg_gb=128`
+	Paramètres utiles :
+	 * `-luns_hosted_by` permet de choisir si les disques sont gérés par le SAN ou VBox : `-luns_hosted_by=san|vbox`
 
-	Dans le cas d'un serveur standalone sont créées :
-
-	 * 1 serveur nommé  :	srvdaisy01
-	 * 8 disques nommés :	S1DISKDAISY01,S1DISKDAISY02,..., S1DISKDAISY08
-
-	Dans le cas d'un RAC 2 nœuds on a un serveur de plus srvdaisy02 et 3 disques
-	supplémentaires pour le CRS
+	 * `-size_dg_gb` permet de choisir la taille des DGs
 
 2.	Clonage des VMs
 
@@ -59,7 +144,7 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	* Configuration du réseau.
 	* Création des disques.
 	* Création des comptes oracle & grid.
-	* Application des pré-requis Oracle.
+	* Application des pré requis Oracle.
 	* Établie les connections ssh sans mot de passe entre le poste client et
 	le serveur avec les comptes root, grid et oracle.
 
@@ -68,7 +153,7 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 
 	Visualiser la configuration du DNS :
 
-	```
+	```c
 	ssh root@K2 plescripts/dns/show_dns.sh
 	# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	# Server             | ip
@@ -88,7 +173,7 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 
 	Visualiser la configuration du SAN (Non valable si les LUNs sont sur VBox) :
 
-	```
+	```c
 	ssh -t root@K2 plescripts/san/show_db_info.sh -db=daisy
 	# RAC cluster 2 nodes.
 	# LUNs for daisy :
@@ -125,7 +210,7 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 	# Connected !
 	```
 
-	TODO : Ajouter un screen de la commande `oracleasm listdisks`
+	C'est oracleasm que gère le 'mapping' des disques.
 
 3.	Installation du grid.
 
