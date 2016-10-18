@@ -120,14 +120,6 @@ function print_disks
 			LN
 		fi
 	done < $file
-
-	info "${BOLD}Note :${NORM}"
-	info "\tLe n° des disques est informatif, il se peut, dans certains cas,"
-	info "\tqu'ils soient différents."
-	info "\tPar exemple si un FS est créée sur une LUN avant les disques pour ASM."
-	LN
-	info "\tLes n° des disques correspondront au n° de leurs LUNs."
-	LN
 }
 
 for inode in $( seq $max_nodes )

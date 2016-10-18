@@ -52,7 +52,7 @@ configuration du poste client/host et des VMs master et K2.
 	Paramètres utiles :
 	 - -db_type=RACONENODE, crée un RAC One Node et le service ron_'nom_du_serveur ou est crée la base' (ron = rac one node)
 
-	 - -pdbName= permet de nommer le nom de la PDB créée.
+	 - -pdbName= permet de nommer la PDB créée.
 
 		Sans ce paramètre la règle de nommage est :
 		 * Nom de la pdb = nom du cdb || 01
@@ -165,3 +165,5 @@ configuration du poste client/host et des VMs master et K2.
 		MOUNTED  EXTERN  N         512   4096  1048576     32752    26801                0           26801              0             N  DATA/
 		MOUNTED  EXTERN  N         512   4096  1048576     32752    30560                0           30560              0             N  FRA/
 		```
+
+	**Pour chaque service créé, un alias TNS est également créé.**

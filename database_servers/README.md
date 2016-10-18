@@ -45,13 +45,6 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 		#       S1DISKDAISY16  4Gb
 		#             8 disks 32Gb
 
-		# Note :
-		#       Le n° des disques est informatif, il se peut, dans certains cas,
-		#       qu'ils soient différents.
-		#       Par exemple si un FS est créée sur une LUN avant les disques pour ASM.
-
-		#       Les n° des disques correspondront au n° de leurs LUNs.
-
 		# Run : ./clone_master.sh -db=daisy
 	  ```
 
@@ -104,13 +97,6 @@ Se postionner dans le répertoire `cd ~/plescripts/database_servers`
 		#       S1DISKDAISY18  4Gb
 		#       S1DISKDAISY19  4Gb
 		#             8 disks 32Gb
-
-		# Note :
-		#       Le n° des disques est informatif, il se peut, dans certains cas,
-		#       qu'ils soient différents.
-		#       Par exemple si un FS est créée sur une LUN avant les disques pour ASM.
-
-		#       Les n° des disques correspondront au n° de leurs LUNs.
 
 		# Run : ./clone_master.sh -db=daisy -node=1
 	  ```
