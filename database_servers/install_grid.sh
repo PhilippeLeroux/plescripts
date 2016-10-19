@@ -287,16 +287,24 @@ function run_post_install_root_scripts_on_node	# $1 No node
 		max_tests=max_tests-1
 		if [ $max_tests -eq 0 ]
 		then
-			error "Arrive de temps en temps workaround :"
-			info "Depuis le poste $client_hostname :"
-			info "	ssh root@${node_names[$inode]}"
-			info "	$ORACLE_HOME/root.sh"
-			LN
+			warning "Arrive de temps en temps, workaround :"
 			info "Relancer le script :"
-			info "./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
+			info "./install_grid.sh -db=$db -skip_grid_install"
+			info ""
+			info "Si le script échoue une troisième fois :"
+			info "	- Redémarrer les 2 VMs"
+			info "	- ./install_grid.sh -db=$db -skip_grid_install"
+			LN
 			exit 1
 		else
-			info "Nouvelle tentative."
+			info "Test Ifaces :"
+			exec_cmd "ssh root@${node_names[1]}	\
+						\"plescripts/database_servers/rac_ping_all_ifaces.sh -db=$db -node=1\""
+			LN
+			exec_cmd "ssh root@${node_names[$inode]}	\
+						\"plescripts/database_servers/rac_ping_all_ifaces.sh -db=$db -node=$inode\""
+			LN
+			timing 20 "Nouvelle tentative dans"
 		fi
 	done
 }
