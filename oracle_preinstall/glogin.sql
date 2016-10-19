@@ -33,3 +33,4 @@ set linesize 120
 set numformat 999,999,999
 
 set feedback on
+set termout on
