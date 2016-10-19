@@ -5,6 +5,7 @@
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -33,6 +34,7 @@ typeset		lang=french
 typeset		pdbName=undef
 typeset		serverPoolName=undef
 typeset		policyManaged=no
+typeset		enable_flashback=yes
 
 typeset		confirm="-confirm"
 
@@ -53,6 +55,7 @@ typeset -r str_usage=\
 	[-db_type=SINGLE|RAC|RACONENODE]	(3)
 	[-policyManaged]  : créer une base en 'Policy Managed'	(4)
 	[-serverPoolName=<str>] : nom du pool à utiliser, s'il n'existe pas il sera créée. (5)
+	[-enable_flashback=$enable_flashback] : yes|no
 
 	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == db || 01
 	    Le service de la pdb sera : pdb || db || 01
@@ -162,6 +165,11 @@ do
 
 		-policyManaged)
 			policyManaged=yes
+			shift
+			;;
+
+		-enable_flashback=*)
+			enable_flashback=${1##*=}
 			shift
 			;;
 
@@ -461,7 +469,8 @@ script_start
 check_rac_or_single
 check_if_ASM_used
 
-exit_if_param_undef db "$str_usage"
+exit_if_param_undef		db							"$str_usage"
+exit_if_param_invalid	enable_flashback "yes no"	"$str_usage"
 
 #	----------------------------------------------------------------------------
 #	Ajustement des paramètres
@@ -511,6 +520,14 @@ info "Enable archivelog :"
 info "Instance : $ORACLE_SID"
 exec_cmd "~/plescripts/db/enable_archive_log.sh"
 LN
+
+if [ $enable_flashback == yes ]
+then
+	line_separator
+	info "Enable flashback :"
+	sqlplus_cmd "$(set_sql_cmd "alter database flashback on;")"
+	LN
+fi
 
 if [ $usefs == no ]
 then
