@@ -14,7 +14,7 @@
 		Teste si des mises à jour sont disponibles, si oui met à jour le serveur et
 		synchronise le dépôt.
 
-* clone_yum_repository.sh
+* clone_ol_repository_on_infra_server.sh
   - Clone le repository OL7 sur K2.
   - Met à jour le master.
 

@@ -13,3 +13,4 @@ script_banner $ME $*
 
 exec_cmd rm -fr /var/cache/yum/*
 exec_cmd yum clean all
+exec_cmd yum makecache

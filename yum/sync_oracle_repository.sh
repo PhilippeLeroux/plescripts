@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -9,9 +8,8 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-copy_iso]                    : Les ISO Linux Oracle seront copiés avant la synchronisation.
-	[-update_repository_file_only] : Met à jour le fichier de configuration du dépôt
-
+	[-copy_iso]   : Les ISO Linux Oracle seront copiés avant la synchronisation.
+	[-force_sync] : Synchronise le dépôt locale même s'il n'y a pas de maj disponible.
 	Synchronise le dépôt Oracle Linux.
 "
 
@@ -24,7 +22,7 @@ then
 fi
 
 typeset	copy_iso=no
-typeset	update_repository_file_only=no
+typeset	force_sync=no
 
 while [ $# -ne 0 ]
 do
@@ -40,8 +38,8 @@ do
 			shift
 			;;
 
-		-update_repository_file_only)
-			update_repository_file_only=yes
+		-force_sync)
+			force_sync=yes
 			shift
 			;;
 
@@ -123,7 +121,7 @@ function nfs_export_repo
 	info "Exporte sur le réseau $infra_network $infra_olinux_repository_path"
 	LN
 
-	exec_cmd -c "grep -q \"$infra_olinux_repository_path\" /etc/exports >/dev/null 2>&1"
+	exec_cmd -c "grep -q \"$infra_olinux_repository_path\" /etc/exports"
 	if [ $? -ne 0 ]
 	then
 		exec_cmd "echo \"$infra_olinux_repository_path ${infra_network}.0/${if_pub_prefix}(ro,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
@@ -149,34 +147,41 @@ function update_yum_repository_file
 	LN
 }
 
-if [ $update_repository_file_only == no ]
+if [ $copy_iso == yes ]
 then
-	if [ $copy_iso == yes ]
-	then
-		copy_oracle_linux_iso
-	else
-		test_if_rpm_update_available
-		[ $? -ne 0 ] && exit 0
-
-		line_separator
-		exec_cmd yum -y update
-		LN
-		info "Notes :"
-		info " * yum/update_master.sh met à jour la VM master $master_name, à exécuter depuis $client_hostname"
-		info " * yum/update_db_os.sh met à jour une VM de base de données, à exécuter sur le serveur."
-		LN
-	fi
-
-	line_separator
-	exec_cmd -c reposync	--newest-only	\
-							--download_path=$infra_olinux_repository_path \
-							--repoid=ol7_latest
+	copy_oracle_linux_iso
+elif [ $force_sync == no ]
+then
+	test_if_rpm_update_available
+	[ $? -ne 0 ] && exit 0
 	LN
-
-	exec_cmd createrepo $infra_olinux_repository_path
-	LN
-
-	nfs_export_repo
-else
-	update_yum_repository_file
 fi
+
+line_separator
+info "Update $(hostname -s)"
+exec_cmd yum -y update
+LN
+
+line_separator
+info "Sync local repository :"
+exec_cmd -c reposync	--newest-only									\
+						--download_path=$infra_olinux_repository_path	\
+						--repoid=ol7_latest
+LN
+
+info "Remove old packages :"
+exec_cmd rm $(repomanage --old $infra_olinux_repository_path)
+LN
+
+info "Update local repository :"
+exec_cmd createrepo --update $infra_olinux_repository_path
+LN
+
+nfs_export_repo
+LN
+
+line_separator
+info "Notes :"
+info " * yum/update_master.sh met à jour la VM master $master_name, à exécuter depuis $client_hostname"
+info " * yum/update_db_os.sh met à jour une VM de base de données, à exécuter sur le serveur."
+LN

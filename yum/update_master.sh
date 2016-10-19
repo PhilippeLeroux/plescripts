@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -46,6 +45,6 @@ exec_cmd start_vm $master_name
 [ $? -ne 0 ] && exit 1
 exec_cmd wait_server $master_name
 [ $? -ne 0 ] && exit 1
-exec_cmd "ssh root@${master_name} \"yum -y update\""
+exec_cmd "ssh root@${master_name} \"yum makecache; yum -y update\""
 LN
 exec_cmd stop_vm $master_name

@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -46,6 +45,9 @@ then
 fi
 
 typeset	-r	cur_hostname=$(hostname -s)
+
+exec_cmd yum makecache
+LN
 
 exec_cmd -ci "yum check-update >/dev/null 2>&1"
 check_update=$?

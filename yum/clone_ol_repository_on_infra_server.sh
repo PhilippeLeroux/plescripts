@@ -35,6 +35,13 @@ do
 	esac
 done
 
+if [ "$(hostname -s)" != "$client_hostname" ]
+then
+	error "Must be executed from $client_hostname"
+	LN
+	exit 1
+fi
+
 line_separator
 info "Clonage du dépôt Oracle Linux sur $infra_hostname"
 exec_cmd "ssh $infra_conn '~/plescripts/yum/sync_oracle_repository.sh -copy_iso'"
