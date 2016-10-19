@@ -190,7 +190,13 @@ function sqlcmd_create_standby_redo_logs
 #	$1	GLOBAL_DBNAME
 #	$2	SID_NAME
 #	$3	ORACLE_HOME
-function get_primary_sid_list_listener_for
+#
+#	Remarque :
+#	 - Il peut y avoir plusieurs SID_LIST_LISTENER, les configurations s'ejoutent.
+#	 - TODO : la suppression d'un SID_LIST_LISTENER devrait être facilement faisable.
+#		grep -n "# Added by bibi : $sid_name" pour la première ligne.
+#		grep -n "End bibi : $sid_name" pour la dernière ligne.
+function get_sid_list_listener_for
 {
 	typeset	-r	g_dbname=$1
 	typeset -r	sid_name=$2
@@ -198,11 +204,9 @@ function get_primary_sid_list_listener_for
 
 cat<<EOL
 
-#	Added by bibi
-#	L'entrée *_DGMGRL peut être évitée mais il faut modifier les propriètés du dgmgrl
-SID_LIST_LISTENER=
+SID_LIST_LISTENER=	# Added by bibi : $sid_name
 	(SID_LIST=
-		(SID_DESC=
+		(SID_DESC= # Peut être évité si les propriétés du dataguard sont modifiées.
 			(SID_NAME=$sid_name)
 			(GLOBAL_DBNAME=${g_dbname}_DGMGRL)
 			(ORACLE_HOME=$orcl_home)
@@ -214,15 +218,14 @@ SID_LIST_LISTENER=
 			(ORACLE_HOME=$orcl_home)
 			(ENVS="TNS_ADMIN=$orcl_home/network/admin")
 		)
-	)
-#	End bibi
+	) #	End bibi : $sid_name
 EOL
 }
 
 #	Ajoute une entrée statique au listener de la primaire.
 function primary_listener_add_static_entry
 {
-	typeset -r primary_sid_list=$(get_primary_sid_list_listener_for $primary $primary "$ORACLE_HOME")
+	typeset -r primary_sid_list=$(get_sid_list_listener_for $primary $primary "$ORACLE_HOME")
 	info "Add static listeners on $primary_host : "
 	info "On SINGLE GLOBAL_DBNAME == SID_NAME"
 
@@ -230,7 +233,7 @@ typeset -r script=/tmp/setup_listener.sh
 cat<<EOS > $script
 #!/bin/bash
 
-grep -q SID_LIST_LISTENER \$TNS_ADMIN/listener.ora
+grep -q "# Added by bibi : $primary" \$TNS_ADMIN/listener.ora
 if [ \$? -eq 0 ]
 then
 	echo "Already configured."
@@ -251,14 +254,14 @@ EOS
 #	Ajoute une entrée statique au listener de la secondaire.
 function standby_listener_add_static_entry
 {
-	typeset -r standby_sid_list=$(get_primary_sid_list_listener_for $standby $standby "$ORACLE_HOME")
+	typeset -r standby_sid_list=$(get_sid_list_listener_for $standby $standby "$ORACLE_HOME")
 	info "Add static listeners on $standby_host : "
 	info "On SINGLE GLOBAL_DBNAME == SID_NAME"
 typeset -r script=/tmp/setup_listener.sh
 cat<<EOS > $script
 #!/bin/bash
 
-grep -q SID_LIST_LISTENER \$TNS_ADMIN/listener.ora
+grep -q "# Added by bibi : $standby" \$TNS_ADMIN/listener.ora
 if [ \$? -eq 0 ]
 then
 	echo "Already configured."
