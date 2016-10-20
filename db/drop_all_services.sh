@@ -47,11 +47,6 @@ while read label serviceName w1 w2 w3
 do
 	[ x"$label" == x ] && continue
 
-	if [ "$w2" == "running" ]
-	then
-		exec_cmd srvctl stop service -db $db -service $serviceName
-	fi
-
-	exec_cmd srvctl remove service -db $db -service $serviceName
+	exec_cmd ~/plescripts/db/drop_service.sh -db=$db -service=$serviceName
 	LN
 done<<<"$(srvctl status service -db $db)"

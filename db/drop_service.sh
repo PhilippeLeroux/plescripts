@@ -54,6 +54,22 @@ done
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef service	"$str_usage"
 
-exec_cmd -c srvctl stop service -s $service -db $db
+function is_running
+{
+	typeset	-r	db=$1
+	typeset	-r	service=$2
+
+	srvctl status service -db $db -service $service | grep -q "is running"
+}
+
+if $(is_running $db $service)
+then
+	exec_cmd srvctl stop service -db $db -service $service
+	LN
+fi
+
+exec_cmd srvctl remove service -db $db -service $service
 LN
-exec_cmd srvctl remove service -s $service -db $db
+
+exec_cmd ~/plescripts/db/delete_tns_alias.sh -alias_name=$service
+LN

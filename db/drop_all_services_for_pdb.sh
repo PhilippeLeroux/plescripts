@@ -55,8 +55,16 @@ done
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef pdbName	"$str_usage"
 
+typeset -i	count=0
+
 while read label service_name rem
 do
+	[ x"$label" == x ] && continue
+
 	exec_cmd "~/plescripts/db/drop_service.sh -db=$db -service=$service_name"
 	LN
+	count=count+1
 done<<<"$(srvctl status service -db $db | grep pdb$(to_upper $pdbName))"
+
+info "$count services removed."
+LN
