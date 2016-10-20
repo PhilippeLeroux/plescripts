@@ -5,40 +5,43 @@ Rappel les bases sont créées en mode threaded (donc pas d'identification OS)
 
 # Modification du scripts sqldeveloper.sh
 
-	```
-	[kangs<<racvbox>>sqldeveloper]$ cat sqldeveloper.sh
-	#!/bin/bash
-	echo "Stop nscd.service"
-	sudo systemctl stop nscd.service
-	echo
+```
+[kangs<<racvbox>>sqldeveloper]$ cat sqldeveloper.sh
+#!/bin/bash
+echo "Stop nscd.service"
+sudo systemctl stop nscd.service
+echo
 
-	export TNS_ADMIN=$HOME/sqldeveloper
+export TNS_ADMIN=$HOME/sqldeveloper
 
-	cd "`dirname $0`"/sqldeveloper/bin && bash sqldeveloper $*
+cd "`dirname $0`"/sqldeveloper/bin && bash sqldeveloper $*
 
-	echo
-	echo "Start nscd.service"
-	sudo systemctl start nscd.service
-	```
+echo
+echo "Start nscd.service"
+sudo systemctl start nscd.service
+```
 
-Exemple fichier tnsnames.ora pour les dataguards :
+Générer un alias TNS pour dataguard :
+```
+cd ~plescripts/db/stby
+./gen_dataguard_tns.sh -service=pdbFOO_java -server_list=srvmercure01 srvjupiter01
 
-	```
-	[kangs<<racvbox>>sqldeveloper]$ cat tnsnames.ora
-	PDBVENUS01 =
+# Running : ./gen_dataguard_tns.sh -service=pdbFOO_java -server_list=srvmercure01 srvjupiter01
+
+PDBFOO_JAVA =
 		(DESCRIPTION =
-			(FAILOVER=on)
-			(LOAD_BALANCE=off)
-			(ADDRESS_LIST=
-				(ADDRESS = (PROTOCOL = TCP) (HOST = srvvenus01) (PORT = 1521) )
-				(ADDRESS = (PROTOCOL = TCP) (HOST = srvuranus01) (PORT = 1521) )
-			)
-			(CONNECT_DATA =
-				(SERVER = DEDICATED)
-				(SERVICE_NAME = pdbVENUS01_java)
-			)
+				(FAILOVER=on)
+				(LOAD_BALANCE=off)
+				(ADDRESS_LIST=
+						(ADDRESS = (PROTOCOL = TCP) (HOST = srvmercure01) (PORT = 1521) )
+						(ADDRESS = (PROTOCOL = TCP) (HOST = srvjupiter01) (PORT = 1521) )
+				)
+				(CONNECT_DATA =
+						(SERVER = DEDICATED)
+						(SERVICE_NAME = pdbFOO_java)
+				)
 		)
-	```
+```
 
 # Connection au CDC :
 `sqlplus sys/Oracle12 as sysdba`
@@ -150,7 +153,7 @@ Exemple fichier tnsnames.ora pour les dataguards :
 
 	TODO : Créer un alias tns pour éviter l'ezconnect
 
-# En vrac commandes/liens utils sur les PDBs.
+# En vrac commandes/liens utiles sur les PDBs.
 
 [About CDB and PDB Information in Views](http://docs.oracle.com/database/121/ADMIN/cdb_mon.htm#ADMIN13980)
 
