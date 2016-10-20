@@ -658,7 +658,7 @@ function exec_cmd
 				then
 					error "$user_cmd return $eval_return"
 				else
-					[ $continue_on_error == YES ] && warning "$user_cmd return $eval_return"
+					[ $continue_on_error == YES ] && warning "$user_cmd return $eval_return, continue..."
 				fi
 
 				[ $force == YES ] && EXEC_CMD_ACTION=NOP
