@@ -1,3 +1,5 @@
+--	vim: ts=4:sw=4
+
 declare
 procedure metadata_param( name varchar2, value boolean )
 as

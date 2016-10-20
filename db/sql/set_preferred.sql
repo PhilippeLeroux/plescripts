@@ -1,3 +1,5 @@
+--	vim: ts=4:sw=4
+
 set lines 130 pages 90
 set serveroutput on size unlimited
 declare

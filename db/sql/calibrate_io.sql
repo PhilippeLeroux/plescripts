@@ -1,3 +1,5 @@
+--	vim: ts=4:sw=4
+
 set echo off termout off
 set lines 120
 col col_date new_v fmt_date noprint
