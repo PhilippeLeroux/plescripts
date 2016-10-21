@@ -62,6 +62,7 @@ function get_address
 cat<<EOS
 $(to_upper $service) =
 	(DESCRIPTION =
+		(CONNECT_TIMEOUT= 4) (RETRY_COUNT=20)(RETRY_DELAY=3)
 		(FAILOVER=on)
 		(LOAD_BALANCE=off)
 		(ADDRESS_LIST=
