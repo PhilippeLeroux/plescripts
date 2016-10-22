@@ -207,7 +207,7 @@ configuration du poste client/host et des VMs master et K2.
 
  * drop_all_services_for_pdb.sh : supprime tous les services d'un PDB et les alias TNS associées.
 
- * drop_service.sh : supprime un service et sont alias TNS s'il existe.
+ * drop_service.sh : supprime un service et son alias TNS s'il existe.
 
 #### Scripts pour la gestion des alias TNS
  * add_tns_alias.sh
