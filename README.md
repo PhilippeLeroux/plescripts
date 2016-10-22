@@ -16,8 +16,7 @@ L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable.
 Une fois les VMs master et K2 opérationnelles, la création d'une nouvelle base
 SINGLE ou RAC se fait en 5 étapes :
 
-1. Définir l'identifiant de la base et du nombre de nœuds : les noms des serveurs et
-des disques sont déduits de l'identifiant.
+1. Définir l'identifiant de la base et le nombre de nœuds.
 
 2. Clonage du serveur de référence : ~5mn par serveur.
 
@@ -32,7 +31,7 @@ des disques sont déduits de l'identifiant.
 	* ~5mn pour une SINGLE.
 
 
-5. Création d'une base de données cdb + 1 pdb :
+5. Création d'une base de données CDB + 1 PDB :
 
 	* ~30mn pour un RAC 2 nœuds.
 	* ~18mn pour une SINGLE.
@@ -40,40 +39,38 @@ des disques sont déduits de l'identifiant.
 --------------------------------------------------------------------------------
 ### Télécharger les logiciels suivants :
 
-* [Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads)
+* VirtualBox
+  * Linux : zypper install [...] ou yum install [...] ou apt-get install [...] en fonction de la distribution.
+	(Testé uniquement avec tumbleweed)
 
-	Uniquement pour windows, sous linux yum install [...] ou apt-get install [...]
+  * _Windows télécharger [Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads) (Windows n'est plus pris en compte pour le moment.)_
 
-	Pour le moment le support de Windows est suspendu, il reprendra quand Ubuntu on Windows
-	sera opérationnel et utilisable.
+* Oracle Linux 7 : uniquement l'ISO [V100082-01.iso](https://edelivery.oracle.com/osdc/faces/SearchSoftware) est nécessaire. Rechercher Linux 7, puis décocher les autres ISO.
 
-* Oracle Linux 7, uniquement l'ISO [V100082-01.iso](https://edelivery.oracle.com/osdc/faces/SearchSoftware) est nécessaire. Rechercher Linux 7, puis décocher les autres ISO.
+* [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 
-* 4 archives [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
-
-* Télécharger plescripts qui doit être extrait dans $HOME.
+* plescripts qui doit être extrait dans $HOME.
 	* Avec git : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
 	* Ou télécharger le zip en cliquant sur le boutton vert "Clone or download" en haut de la page.
 
 --------------------------------------------------------------------------------
 
-### Création des VMs orclmaster et K2.
-2 VMs sont nécessaires pour commencer :
- - orclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
- - K2 qui est le serveur d'infrastructure (DNS, SAN, NTP server, ...)
+### Création des VMs nfsorclmaster et K2.
+2 VMs sont nécessaires pour commencer : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-nfsorclmaster-et-K2)
+ - nfsorclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
+ - K2 qui est le serveur d'infrastructure (DNS, SAN, Gateway, NTP server, ...)
 
- [Instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-orclmaster-et-K2)
+ 
 
 --------------------------------------------------------------------------------
 
 ### Création des serveurs de base de données Oracle.
 
-[Instructions](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
+* Installation du Grid Infra & d'Oracle : [instructions](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
 
-La création des serveurs inclue l'installation du Grid Infrastructure et d'Oracle.
-Une fois cette étape terminée les bases peuvent être [créées](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
+* Création d'un base : [instructions](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
-La mise en dataguard de 2 serveurs standalone est prise en compte, instructions [ici](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/README.md)
+* Mise en dataguard de 2 serveurs standalones : [instructions](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/README.md)
 
 --------------------------------------------------------------------------------
 
