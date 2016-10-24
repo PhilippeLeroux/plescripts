@@ -10,10 +10,10 @@ avec les paramètres nécessaires.
 
 ### Mise en œuvre
 
-* [Créer le ou les serveurs](https://github.com/PhilippeLeroux/plescripts/wiki/database_servers/CREATE_SERVERS)
+* [Créer le ou les serveurs](https://github.com/PhilippeLeroux/plescripts/wiki/CREATE_SERVERS)
 
-* [Installer le Grid Infra et Oracle](https://github.com/PhilippeLeroux/plescripts/wiki/database_servers/INSTALL_GRID_ORCL)
+* [Installer le Grid Infra et Oracle](https://github.com/PhilippeLeroux/plescripts/wiki/INSTALL_GRID_ORCL)
 
 * [Créer une base](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
-* [Supprimer les serveurs](https://github.com/PhilippeLeroux/plescripts/wiki/database_servers/SUPPRIMER_SERVEUR)
+* [Supprimer les serveurs](https://github.com/PhilippeLeroux/plescripts/wiki/SUPPRIMER_SERVEUR)
