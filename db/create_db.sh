@@ -516,6 +516,11 @@ ORAENV_ASK=NO . oraenv
 LN
 
 line_separator
+info "Ajust FRA size"
+sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
+LN
+
+line_separator
 info "Enable archivelog :"
 info "Instance : $ORACLE_SID"
 exec_cmd "~/plescripts/db/enable_archive_log.sh"
@@ -557,6 +562,16 @@ fi
 
 copy_glogin
 
+line_separator
+info "Configure RMAN"
+exec_cmd "~/plescripts/db/configure_backup.sh"
+LN
+
+info "Backup database"
+exec_cmd "~/plescripts/db/image_copy_backup.sh"
+LN
+
+line_separator
 exec_cmd "~/plescripts/memory/show_pages.sh"
 LN
 

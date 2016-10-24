@@ -1,0 +1,6 @@
+delete noprompt copy of database;
+delete noprompt backup;
+crosscheck backup;
+delete noprompt expired backup;
+crosscheck copy of database;
+delete noprompt expired copy of database;

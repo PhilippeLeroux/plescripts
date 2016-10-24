@@ -11,9 +11,9 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-standby=name         Nom de la base standby (sera créée)
-	-standby_host=name    Nom du serveur ou résidera la standby
-	[-primary_config=yes] Mettre no lors de la recréation d'une standby après failover.
+	-standby=name             Nom de la base standby (sera créée)
+	-standby_host=name        Nom du serveur ou résidera la standby
+	[-create_primary_cfg=yes] Mettre 'no' si la configuration à déjà été faite.
 
 	Le script doit être exécuté sur la base primaire et l'envirronement de la base
 	primaire chargé.
@@ -42,7 +42,7 @@ script_banner $ME $*
 
 typeset standby=undef
 typeset standby_host=undef
-typeset primary_config=yes
+typeset create_primary_cfg=yes
 
 typeset _setup_primary=yes
 typeset _setup_network=yes
@@ -70,8 +70,8 @@ do
 			shift
 			;;
 
-		-primary_config=*)
-			primary_config=$(to_lower ${1##*=})
+		-create_primary_cfg=*)
+			create_primary_cfg=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -389,7 +389,7 @@ EOR
 #	Toutes les commandes sont fabriquées avec la fonction set_sql_cmd.
 #	Passer la sortie de cette fonction en paramètre de la fonction sqlplus_cmd
 #	EST INUTILE : log_archive_dest_2='service=$standby async valid_for=(online_logfiles,primary_role) db_unique_name=$standby'
-function sqlcmd_primary_config
+function sqlcmd_create_primary_cfg
 {
 	set_sql_cmd "alter system set standby_file_management='AUTO' scope=both sid='*';"
 
@@ -401,7 +401,7 @@ function sqlcmd_primary_config
 
 	set_sql_cmd "alter system set dg_broker_start=true scope=both sid='*';"
 
-	if [ $primary_config == yes ]
+	if [ $create_primary_cfg == yes ]
 	then
 		set_sql_cmd "alter database force logging;"
 
@@ -417,7 +417,7 @@ function sqlcmd_primary_config
 	fi
 }
 
-#	Efface la configuration du broker.
+#	Supprime la standby de la configuration du dataguard.
 function dgmgrl_remove_standby
 {
 	line_separator
@@ -433,14 +433,14 @@ LN
 #	le duplicate RMAN.
 function setup_primary
 {
-	if [ $primary_config == yes ]
+	if [ $create_primary_cfg == yes ]
 	then
 		line_separator
 		add_standby_redolog
 
 		line_separator
 		info "Setup primary database $primary for duplicate & dataguard."
-		sqlplus_cmd "$(sqlcmd_primary_config)"
+		sqlplus_cmd "$(sqlcmd_create_primary_cfg)"
 		LN
 	else
 		dgmgrl_remove_standby
@@ -549,7 +549,7 @@ LN
 function configure_dataguard
 {
 	line_separator
-	[ $primary_config == yes ] && create_dataguard_config
+	[ $create_primary_cfg == yes ] && create_dataguard_config
 
 	add_standby_to_dataguard_config
 
@@ -585,7 +585,7 @@ from
 	do
 		[ x"$pdbName" == x ] && continue
 
-		if [ $primary_config == yes ]
+		if [ $create_primary_cfg == yes ]
 		then
 			info "Create stby service for pdb $pdbName on cdb $primary"
 			exec_cmd "$ROOT/db/create_srv_for_single_db.sh \
@@ -617,7 +617,7 @@ from
 				-role=physical_standby -start=no'</dev/null"
 		LN
 
-		if [ $primary_config == yes ]
+		if [ $create_primary_cfg == yes ]
 		then #(1) Il faut stopper les services stdby maintenant sur la primary.
 			 #    Les services stdby démarreront automatiquement lors de l'overture
 			 #    de la stdby en RO.
@@ -629,6 +629,7 @@ from
 	done<<<"$(sqlplus_exec_query "$query")"
 }
 
+#	Instruction pour activer le flashback sur la base standby.
 function sqlcmd_enable_flashback
 {
 	set_sql_cmd "recover managed standby database cancel;"
@@ -636,6 +637,9 @@ function sqlcmd_enable_flashback
 	set_sql_cmd "recover managed standby database disconnect;"
 }
 
+#	Vérifie :
+#		- si l'équivalence ssh entre les serveurs existe.
+#		- si la base sur serveur standby existe déjà.
 function check_ssh_prereq_and_if_stby_exist
 {
 	typeset errors=no
@@ -670,6 +674,8 @@ function check_ssh_prereq_and_if_stby_exist
 	[ $errors == yes ] && return 1 || return 0
 }
 
+#	Valide les paramètres.
+#	Si la configuration dataguard existe alors il faut utiliser le paramètre -create_primary_cfg=no
 function check_params
 {
 	typeset errors=no
@@ -679,17 +685,17 @@ function check_params
 						grep -E "Primary|Physical" | wc -l 2>/dev/null)
 	info "Dataguard broker : $c database configured."
 	#	Est juste là pour avertissement.
-	if [ $primary_config == yes ]
+	if [ $create_primary_cfg == yes ]
 	then
 		if [ $c -ne 0 ]
 		then
-			error "Dataguard broker configuration exist, add -primary_config=no"
+			error "Dataguard broker configuration exist, add -create_primary_cfg=no"
 			errors=yes
 		fi
 	else
 		if [ $c -eq 0 ]
 		then
-			error "Dataguard broker configuration not exist, remove -primary_config=no"
+			error "Dataguard broker configuration not exist, remove -create_primary_cfg=no"
 			errors=yes
 		fi
 	fi
@@ -747,6 +753,30 @@ function check_prereq
 	fi
 }
 
+function configure_rman
+{
+	line_separator
+	if [ $create_primary_cfg == yes ]
+	then
+		exec_cmd "rman target sys/$oracle_password \
+			@$HOME/plescripts/db/rman/ajust_config_for_dataguard.rman"
+	fi
+
+	exec_cmd "ssh $standby_host	\
+		'. .bash_profile; ~/plescripts/db/configure_backup.sh -with_standby'"
+	LN
+
+	#	Nécessaire sinon le backup échoue.
+	exec_cmd "ssh $standby_host						\
+		'. .bash_profile; cd ~/plescripts/db/rman;	\
+			rman target sys/$oracle_password @purge.rman'"
+	LN
+
+	exec_cmd "ssh $standby_host	\
+		'. .bash_profile; ~/plescripts/db/image_copy_backup.sh'"
+	LN
+}
+
 typeset	-r	primary_host=$(hostname -s)
 
 script_start
@@ -776,6 +806,8 @@ then
 	info "Enable flashback on $standby"
 	sqlplus_cmd_on_standby "$(sqlcmd_enable_flashback)"
 fi
+
+configure_rman
 
 exec_cmd "$ROOT/db/stby/show_dataguard_cfg.sh"
 
