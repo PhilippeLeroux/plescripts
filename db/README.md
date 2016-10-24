@@ -76,7 +76,9 @@ configuration du poste client/host et des VMs master et K2.
 
 	   L'utilisation de ce paramètre active automatiquement `-policyManaged`
 
-	Une fois le script terminé le statue de la base est affichée
+	Une sauvegarde est lancée avec rman une fois la base créée.
+
+	Une fois le script terminé le statue de la base est affichée :
 
 	- exemple d'une base SINGLE :
 
@@ -184,8 +186,6 @@ configuration du poste client/host et des VMs master et K2.
 #### Création de services et alias TNS
  * create_srv_for_rac_db.sh : crée des services pour un RAC
 
-	TODO : Ajouter les alias TNS pour les services OCI.
-
  * create_srv_for_single_db.sh : crée des services pour une mono instance.
 
 	Le script va créer un service pour les connexions OCI et un service pour les connexions Java.
@@ -201,6 +201,8 @@ configuration du poste client/host et des VMs master et K2.
 	 * *_stby_oci et *_stby_java qui ont le rôle 'standby'
 
 	Des alias TNS sont créés pour les services de type OCI.
+
+	Ce script n'est pas valable si la bases sont en RAC.
 
 #### Suppression de services et alias TNS
  * drop_all_services.sh : supprime tous les services existant et les alias TNS associées.

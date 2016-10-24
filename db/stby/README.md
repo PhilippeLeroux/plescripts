@@ -1,16 +1,16 @@
 Table of Contents
 =================
 
- * [Création d'un dataguard.](#création-dun-dataguard)
+  * [Table of Contents](#table-of-contents)
+  * [Création d'un dataguard.](#création-dun-dataguard)
     * [Pré requis.](#pré-requis)
     * [Etablir les équivalences ssh entre les 2 serveurs pour le compte Oracle.](#etablir-les-équivalences-ssh-entre-les-2-serveurs-pour-le-compte-oracle)
     * [Etat des lieux :](#etat-des-lieux-)
-    * [Création de la dataguard.](#création-de-la-dataguard)
- * [Description du script : create_dataguard.sh](#description-du-script--create_dataguardsh)
- * [Le swhitchover est opérationnel.](#le-swhitchover-est-opérationnel)
- * [Le swhitchover est opérationnel.](#le-swhitchover-est-opérationnel-1)
- * [Faileover](#faileover)
- * [Prochaine étape.](#prochaine-étape)
+    * [Création du dataguard.](#création-du-dataguard)
+  * [Description du script : create_dataguard.sh](#description-du-script--create_dataguardsh)
+  * [Testé :](#testé-)
+  * [Prochaine étape.](#prochaine-étape)
+  * [Log pour garder une trace clair sur les étapes.](#log-pour-garder-une-trace-clair-sur-les-étapes)
 
 --------------------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ Table of Contents
 	--------------------------------------------------------------------------------
 	```
 
-##	Création de la dataguard.
+##	Création du dataguard.
  - Se connecter avec le compte oracle sur le serveur 'srvmars01' et charger l'environnement de la base.
 
  - Exécuter le script :
@@ -110,7 +110,7 @@ Table of Contents
 # Description du script : `create_dataguard.sh`
  * Configuration du réseau :
    * Mise à jour du fichier tnsnames.ora pour que les bases puissent se joindre.
-   * Ajout d'une entrée statique dans le listener sur les 2 serveurs pour le duplicate.
+   * Ajout d'une entrée statique dans le listener sur les 2 serveurs pour le duplicate et le dataguard.
 
  * Avant de lancer le duplicate :
    * Copie du fichier password vers la standby.
@@ -150,6 +150,7 @@ Table of Contents
  * Après le duplicate :
    * Ajout de la base dans le GI
    * Redémarre la base en mount et démarre le recover.
+   * Lance une sauvegarde rman.
 
  * Services.
 
@@ -165,14 +166,12 @@ Table of Contents
 
 --------------------------------------------------------------------------------
 
-# Le swhitchover est opérationnel.
+# Testé :
 
-  Rien de spécial à dire sauf qu'il est testé.
-
---------------------------------------------------------------------------------
-
-# Faileover
- [Effectuer un faileover](https://github.com/PhilippeLeroux/plescripts/wiki/faileover)
+  * le switchover : [log](https://github.com/PhilippeLeroux/plescripts/database_servers/switchover.md)
+  * le faileover : [test](https://github.com/PhilippeLeroux/plescripts/wiki/faileover)
+  * le reinstate.
+  * Convertion en physical vers snapshot et snapshot vers physical.
 
 --------------------------------------------------------------------------------
 
