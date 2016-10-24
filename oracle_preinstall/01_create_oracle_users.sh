@@ -132,8 +132,13 @@ LN
 line_separator
 info "remove $GRID_ROOT/"
 exec_cmd "rm -rf $GRID_ROOT/*"
-info "remove $ORCL_ROOT/"
-exec_cmd "rm -rf $ORCL_ROOT/*"
+
+if [ "$GRID_ROOT" != "$ORCL_ROOT" ]
+then
+	info "remove $ORCL_ROOT/"
+	exec_cmd "rm -rf $ORCL_ROOT/*"
+fi
+
 LN
 
 #	============================================================================
@@ -217,9 +222,11 @@ LN
 
 #	============================================================================
 line_separator
-info "set full permission for owner & group on $GRID_ROOT"
+info -n "set full permission for owner & group on $GRID_ROOT"
+[ "$GRID_ROOT" != "$ORCL_ROOT" ] && info -d " & $ORCL_ROOT"
+
 exec_cmd chmod -R 775 $GRID_ROOT
-exec_cmd chmod -R 775 $ORCL_ROOT
+[ "$GRID_ROOT" != "$ORCL_ROOT" ] && exec_cmd chmod -R 775 $ORCL_ROOT
 LN
 
 #	============================================================================
