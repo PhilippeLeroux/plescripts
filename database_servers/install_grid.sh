@@ -196,7 +196,7 @@ function create_response_file	# $1 fichier décrivant les disques
 	update_value ORACLE_HOSTNAME							${node_names[0]}	$rsp_file
 	update_value ORACLE_BASE								$ORACLE_BASE		$rsp_file
 	update_value ORACLE_HOME								$ORACLE_HOME		$rsp_file
-	update_value INVENTORY_LOCATION							$GRID_DISK/app/oraInventory	$rsp_file
+	update_value INVENTORY_LOCATION							${ORACLE_BASE%/*/*}/app/oraInventory	$rsp_file
 	update_value oracle.install.asm.SYSASMPassword			$oracle_password	$rsp_file
 	update_value oracle.install.asm.monitorPassword			$oracle_password	$rsp_file
 
@@ -275,7 +275,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	line_separator
 	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
 	exec_cmd "ssh -t root@${node_names[$inode]}				\
-				\"$GRID_DISK/app/oraInventory/orainstRoot.sh\""
+				\"${ORACLE_BASE%/*/*}/app/oraInventory/orainstRoot.sh\""
 	LN
 
 	typeset -i max_tests=2
