@@ -8,9 +8,9 @@ Table of Contents
     * [Etat des lieux :](#etat-des-lieux-)
     * [Création du dataguard.](#création-du-dataguard)
   * [Description du script : create_dataguard.sh](#description-du-script--create_dataguardsh)
-  * [Testé :](#testé-)
+  * [Actions testées :](#actions-testées-)
   * [Prochaine étape.](#prochaine-étape)
-  * [Log pour garder une trace claire sur les étapes.](#log-pour-garder-une-trace-clair-sur-les-étapes)
+  * [Log pour garder une trace claire sur les étapes.](#log-pour-garder-une-trace-claire-sur-les-étapes)
 
 --------------------------------------------------------------------------------
 
