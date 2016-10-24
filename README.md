@@ -60,13 +60,13 @@ SINGLE ou RAC se fait en 5 étapes :
  - nfsorclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
  - K2 qui est le serveur d'infrastructure (DNS, SAN, Gateway, NTP server, ...)
 
- 
-
 --------------------------------------------------------------------------------
 
 ### Création des serveurs de base de données Oracle.
 
-* Installation du Grid Infra & d'Oracle : [instructions](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/README.md)
+* Création du ou des serveurs : [instructions](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/CREATE_SERVERS.md)
+
+* Installation du Grid Infra & d'Oracle : [instructions](https://github.com/PhilippeLeroux/plescripts/blob/master/database_servers/INSTALL_GRID_ORCL.md)
 
 * Création d'un base : [instructions](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 

@@ -1,8 +1,10 @@
-###	Installation du grid.
+###	Pré requis.
 
 La ou les VMs doivent avoir été créées, instructions [ici](https://github.com/PhilippeLeroux/plescripts/tree/master/database_servers/CREATE_SERVERS.md)
 
 **Note** : Tous les scripts sont exécutés depuis le poste client/serveur host.
+
+###	Installation du grid.
 
 * Se positionner dans le répertoire : `cd ~/plescripts/database_servers`
 
