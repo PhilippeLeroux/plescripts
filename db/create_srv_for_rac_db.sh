@@ -16,6 +16,8 @@ typeset -r str_usage=\
 Création de 2 services :
 	 prefixService || _oci
 	 prefixService || _java
+
+Pour les standalones serveurs : create_srv_for_single_db.sh
 "
 
 script_banner $ME $*

@@ -13,9 +13,9 @@ typeset -r str_usage=\
 	[-role=str]        (primary, physical_standby, ${STRIKE}logical_standby, snapshot_standby$NORM)
 	[-start=yes]
 
-	* Si le service existe et que le rôle est définie le service est modifié en fonction du rôle.
+Si le service existe et que le rôle est définie le service est modifié en fonction du rôle.
 
-	* RAC non pris en compte.
+Pour les RACs : create_srv_for_rac_db.sh
 "
 
 script_banner $ME $*
