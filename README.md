@@ -56,7 +56,7 @@ SINGLE ou RAC se fait en 5 étapes :
 --------------------------------------------------------------------------------
 
 ### Création des VMs nfsorclmaster et K2.
-2 VMs sont nécessaires pour commencer : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-des-VMs-nfsorclmaster-et-K2)
+2 VMs sont nécessaires pour commencer : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Création-des-VMs-orclmaster-et-K2)
  - nfsorclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
  - K2 qui est le serveur d'infrastructure (DNS, SAN, Gateway, NTP server, ...)
 
