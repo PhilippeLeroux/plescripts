@@ -133,12 +133,12 @@ do
 				if [ $rac_u01_fs == ocfs2 ]
 				then
 					info "Create disk ${vm_name}_u02 for mount point /u02 for grid"
-					exec_cmd $vm_scripts_path/add_disk.sh						\
+					exec_cmd $vm_scripts_path/add_disk.sh				\
 											-vm_name="$vm_name"			\
 											-disk_name=${vm_name}_u02	\
-											-disk_mb=$((10*1024))				\
+											-disk_mb=$((10*1024))		\
 											-fixed_size
-
+					LN
 				else
 					info "Create disk ${vm_name}_u01 for mount point /u01"
 					exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name"			\
