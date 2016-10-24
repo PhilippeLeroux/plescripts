@@ -10,7 +10,7 @@ Table of Contents
   * [Description du script : create_dataguard.sh](#description-du-script--create_dataguardsh)
   * [Testé :](#testé-)
   * [Prochaine étape.](#prochaine-étape)
-  * [Log pour garder une trace clair sur les étapes.](#log-pour-garder-une-trace-clair-sur-les-étapes)
+  * [Log pour garder une trace claire sur les étapes.](#log-pour-garder-une-trace-clair-sur-les-étapes)
 
 --------------------------------------------------------------------------------
 
@@ -166,11 +166,12 @@ Table of Contents
 
 --------------------------------------------------------------------------------
 
-# Testé :
+# Actions testées :
 
-  * le switchover : [log](https://github.com/PhilippeLeroux/plescripts/database_servers/switchover.md)
-  * le faileover : [test](https://github.com/PhilippeLeroux/plescripts/wiki/faileover)
-  * le reinstate.
+  * switchover : [log](https://github.com/PhilippeLeroux/plescripts/database_servers/switchover.md)
+  * faileover : [test](https://github.com/PhilippeLeroux/plescripts/wiki/faileover)
+  * reinstate, si le reinstate n'est pas possible le script `create_dataguard.sh`
+  avec le paramètre `-create_primary_cfg=no` permet de recréer la standby.
   * Convertion en physical vers snapshot et snapshot vers physical.
 
 --------------------------------------------------------------------------------
@@ -181,7 +182,7 @@ Table of Contents
 
 --------------------------------------------------------------------------------
 
-# Log pour garder une trace clair sur les étapes.
+# Log pour garder une trace claire sur les étapes.
 ```
 # Running : ./create_dataguard.sh -standby=uranus -standby_host=srvuranus01
 # Create dataguard :
