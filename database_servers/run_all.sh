@@ -6,19 +6,24 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME\
-	-db=id
-	[-standby=id]  Permet de créer une standby.
-	[-max_nodes=#] Pour un RAC préciser le nombre de nœuds.
-	[others]       Transmis à create_db.sh
-"
 
 script_banner $ME $*
 
-typeset db=undef
-typeset standby=undef
-typeset max_nodes=1
+typeset		db=undef
+typeset		standby=undef
+typeset		max_nodes=1
+typeset	-i	db_size_gb=$default_size_dg_gb
+typeset		luns_hosted_by=san
+
+typeset -r	str_usage=\
+"Usage : $ME
+	-db=id
+	[-vbox]          Utiliser VBox pour gérer les LUNs.
+	[-db_size_gb=$db_size_gb] Taille de la base.
+	[-standby=id]    Permet de créer une standby.
+	[-max_nodes=#]   Pour un RAC préciser le nombre de nœuds.
+	[others]         Transmis à create_db.sh
+"
 
 while [ $# -ne 0 ]
 do
@@ -29,6 +34,11 @@ do
 			shift
 			;;
 
+		-vbox)
+			luns_hosted_by=vbox
+			shift
+			;;
+
 		-standby=*)
 			standby="${1##*=}"
 			shift
@@ -36,6 +46,11 @@ do
 
 		-db=*)
 			db=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-db_size_gb=*)
+			db_size_gb=${1##*=}
 			shift
 			;;
 
@@ -67,7 +82,11 @@ function configure_server
 {
 	typeset -r db=$1
 
-	exec_cmd ./define_new_server.sh -db=$db -max_nodes=$max_nodes -luns_hosted_by=san
+	exec_cmd ./define_new_server.sh							\
+							-db=$db							\
+							-size_dg_gb=$db_size_gb			\
+							-max_nodes=$max_nodes			\
+							-luns_hosted_by=$luns_hosted_by
 	LN
 
 	for inode in $( seq $max_nodes )

@@ -74,17 +74,15 @@ SINGLE ou RAC se fait en 5 étapes :
 
 --------------------------------------------------------------------------------
 
-##	Scripts complémentaires.
+##	Script `run_all.sh`
 
- * vbox_run_all.sh : utilise des disques VBox pour les LUNs de base de données.
- * iscsi_run_all.sh : utilise des disques exportés via iSCSI depuis K2 pour les LUNs de base de données.
-
-**Note :** Initialement ces scripts ont été conçues pour automatiser les jeux de tests.
+Le script `run_all.sh` permet de lancer tous les scripts simultanément, initialement
+il sert comme jeu de test mais est finalement bien pratique.
 
 Exécuter ces scripts uniquement après avoir validé l'environnement en créant au moins
 un serveur Oracle avec une base mono instance.
 
-Ce script lance tous les scripts :
+Ce script lance les scripts :
  - define_new_server.sh
  - clone_master.sh
  - install_grid.sh
@@ -92,16 +90,30 @@ Ce script lance tous les scripts :
  - create_db.sh
  - et éventuellement create_dataguard.sh
 
-Exemples, ce postionner dans le répertoire `~/plescripts/database_servers` :
- - Création d'une base mono instance : `./vbox_run_all.sh -db=SINGLE`
+Paramètres utiles :
+ - -vbox permet de faire gérer les LUNs par VBox.
+ - -db_size_gb=# indique la taille de la base souhaitée.
+ - -standby=db identifiant de la standby.
+ - -h  permet d'avoir la liste exhaustive des paramètres.
 
- - Création d'un RAC 2 nœuds : `./vbox_run_all.sh -db=RAC2N -max_nodes=2`
+Exemples, se positionner dans le répertoire `~/plescripts/database_servers` :
+ - Création d'une base mono instance : `./run_all.sh -vbox -db=SINGLE`
 
- - Création d'un dataguard : `./vbox_run_all.sh -db=saturne -standby=jupiter`
+ - Création d'un RAC 2 nœuds : `./run_all.sh -db=RAC2N -max_nodes=2`
 
-Les derniers paramètres seront passés à create_db.sh, pour créer un RAC 2 nœuds 'Policy Managed' par exemple : `./vbox_run_all.sh -db=RAC2N -max_nodes=2 -policyManaged`
+ - Création d'un dataguard : `./run_all.sh -db=saturne -standby=jupiter`
+
+Dès qu'un paramètre est inconnu pour `run_all.sh` ce paramètre et tous les suivants
+sont transmis au script `create_db.sh`
+
+Par exemple : `./run_all.sh -db=RAC2N -max_nodes=2 -policyManaged`
+
+Le paramètre `-policyManaged` est passé au script `create_db.sh`
 
 Si l'un des paramètres est invalide, le script create_db.sh plantera.
+
+**Remarque :** Pour un RAC il sera demandé de saisir un mot de passe une fois que
+toutes les VMs auront été clonée.
 
 --------------------------------------------------------------------------------
 [Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)
