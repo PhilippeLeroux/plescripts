@@ -14,6 +14,7 @@ typeset -r str_usage=\
 	-standby=name             Nom de la base standby (sera créée)
 	-standby_host=name        Nom du serveur ou résidera la standby
 	[-create_primary_cfg=yes] Mettre 'no' si la configuration à déjà été faite.
+	[-no_backup]              Ne pas faire de backup.
 
 	Le script doit être exécuté sur la base primaire et l'envirronement de la base
 	primaire chargé.
@@ -43,6 +44,7 @@ script_banner $ME $*
 typeset standby=undef
 typeset standby_host=undef
 typeset create_primary_cfg=yes
+typeset	backup=yes
 
 typeset _setup_primary=yes
 typeset _setup_network=yes
@@ -67,6 +69,11 @@ do
 
 		-standby_host=*)
 			standby_host=${1##*=}
+			shift
+			;;
+
+		-no_backup)
+			backup=no
 			shift
 			;;
 
@@ -772,9 +779,12 @@ function configure_rman
 			rman target sys/$oracle_password @purge.rman'"
 	LN
 
-	exec_cmd "ssh $standby_host	\
-		'. .bash_profile; ~/plescripts/db/image_copy_backup.sh'"
-	LN
+	if [ $backup == yes ]
+	then
+		exec_cmd "ssh $standby_host	\
+			'. .bash_profile; ~/plescripts/db/image_copy_backup.sh'"
+		LN
+	fi
 }
 
 typeset	-r	primary_host=$(hostname -s)

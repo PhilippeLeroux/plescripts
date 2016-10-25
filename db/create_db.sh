@@ -35,7 +35,7 @@ typeset		pdbName=undef
 typeset		serverPoolName=undef
 typeset		policyManaged=no
 typeset		enable_flashback=yes
-
+typeset		backup=yes
 typeset		confirm="-confirm"
 
 typeset		skip_db_create=no
@@ -56,6 +56,7 @@ typeset -r str_usage=\
 	[-policyManaged]  : créer une base en 'Policy Managed'	(4)
 	[-serverPoolName=<str>] : nom du pool à utiliser, s'il n'existe pas il sera créée. (5)
 	[-enable_flashback=$enable_flashback] : yes|no
+	[-no_backup]      : Par de backup après création de la base.
 
 	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == db || 01
 	    Le service de la pdb sera : pdb || db || 01
@@ -170,6 +171,11 @@ do
 
 		-enable_flashback=*)
 			enable_flashback=${1##*=}
+			shift
+			;;
+
+		-no_backup)
+			backup=no
 			shift
 			;;
 
@@ -567,9 +573,12 @@ info "Configure RMAN"
 exec_cmd "~/plescripts/db/configure_backup.sh"
 LN
 
-info "Backup database"
-exec_cmd "~/plescripts/db/image_copy_backup.sh"
-LN
+if [ $backup == yes ]
+then
+	info "Backup database"
+	exec_cmd "~/plescripts/db/image_copy_backup.sh"
+	LN
+fi
 
 line_separator
 exec_cmd "~/plescripts/memory/show_pages.sh"
