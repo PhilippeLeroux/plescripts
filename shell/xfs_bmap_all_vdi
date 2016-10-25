@@ -70,10 +70,10 @@ function xfs_bmap_file
 {
 	typeset -r	vdi_file=$1
 
-	typeset -ri nr_extents=$(sudo xfs_bmap "$vdi_file" | tail -1 | tr -s [:space:] | cut -d: -f1)
+	typeset -ri nr_extents=$(sudo xfs_bmap "$vdi_file" | tail -1 | tr -s [:space:] | cut -d: -f1)+1
 
 	typeset -r file_size=$(fmt_bytesU_2_better $(stat --printf="%s" "$vdi_file"))
-	msg=$(printf "%-20s %8s : %02d extents " "${vdi_file##*/}" $file_size $nr_extents)
+	msg=$(printf "%-20s %8s : %2d extents " "${vdi_file##*/}" $file_size $nr_extents)
 	if [ $nr_extents -le $max_ext ]
 	then
 		info "$msg [$OK]"
