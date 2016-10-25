@@ -14,8 +14,8 @@ typeset -r str_usage=\
 	-db=<identifiant>     identifiant de la base.
 	[-luns_hosted_by=$disks_hosted_by] san|vbox
 	[-max_nodes=1]        nombre de nœuds pour un RAC.
-	[-size_dg_gb=$default_size_dg_mb]      taille du DG ou du FS.
-	[-size_lun_gb=$default_size_lun_mb]      taille des LUNs si utilisation d'ASM.
+	[-size_dg_gb=$default_size_dg_gb]      taille du DG ou du FS.
+	[-size_lun_gb=$default_size_lun_gb]      taille des LUNs si utilisation d'ASM.
 	[-no_dns_test]        ne pas tester si les IPs sont utilisées.
 	[-usefs]              ne pas utiliser ASM mais un FS.
 	[-ip_node=<node>]     nœud IP, sinon prend la première IP disponible.
@@ -25,8 +25,8 @@ script_banner $ME $*
 typeset		db=undef
 typeset -i	ip_node=-1
 typeset -i	max_nodes=1
-typeset -i	size_dg_gb=$default_size_dg_mb
-typeset -i	size_lun_gb=$default_size_lun_mb
+typeset -i	size_dg_gb=$default_size_dg_gb
+typeset -i	size_lun_gb=$default_size_lun_gb
 typeset		dns_test=yes
 typeset 	usefs=no
 typeset		luns_hosted_by=$disks_hosted_by
