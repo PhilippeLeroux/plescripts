@@ -56,7 +56,7 @@ typeset -r str_usage=\
 	[-policyManaged]  : créer une base en 'Policy Managed'	(4)
 	[-serverPoolName=<str>] : nom du pool à utiliser, s'il n'existe pas il sera créée. (5)
 	[-enable_flashback=$enable_flashback] : yes|no
-	[-no_backup]      : Par de backup après création de la base.
+	[-no_backup]      : Pas de backup après création de la base.
 
 	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == db || 01
 	    Le service de la pdb sera : pdb || db || 01
