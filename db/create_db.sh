@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 PLELIB_OUTPUT=FILE
@@ -296,7 +295,7 @@ function remove_all_log_and_db_fs_files
 {
 	line_separator
 	info "Remove all files on $(hostname -s)"
-	if [ "$usefs" = "yes" ]
+	if [ "$usefs" == "yes" ]
 	then
 		# Marche pas avec -i sed (oracle donc) n'a pas le droit de créer
 		# de fichier temporaire dans /etc
