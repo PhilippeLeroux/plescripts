@@ -5,11 +5,17 @@ typeset -r cfg_path_prefix=~/plescripts/database_servers
 #*> $1 db
 function cfg_exist
 {
+	typeset	-r	db=$1
+
+	info -n "Test if configuration file for $db exist : "
 	if [ ! -d $cfg_path_prefix/$(to_lower $1) ]
 	then
-		error "No configuration file found for $1"
+		info -f "[$KO]"
+		LN
 		exit 1
 	fi
+	info -f "[$OK]"
+	LN
 }
 
 #*> $1 db
