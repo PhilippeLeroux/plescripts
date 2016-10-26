@@ -1,5 +1,8 @@
 # .kshrc
 
+#Preco Oracle RAC
+[ -t 0 ] && stty intr ^C
+
 # Source global definitions
 if [ -f /etc/kshrc ]; then
 	. /etc/kshrc

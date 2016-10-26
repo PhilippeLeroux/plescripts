@@ -45,6 +45,9 @@ done
 
 ORCL_RELEASE=${ORACLE_RELEASE:0:2}
 
+typeset -r  bashrc_firstline="# .bashrc"
+typeset -r  bashrc_code_to_append="# Preco Oracle RAC\n[ -t 0 ] && stty intr ^C"
+
 info "Create grid profile."
 exec_cmd "cp ~/plescripts/oracle_preinstall/grid_env.template  ~/plescripts/oracle_preinstall/grid_env"
 LN
@@ -147,10 +150,16 @@ LN
 
 #	============================================================================
 #	Charge la fonction make_vimrc_file pour mettre à jour root
-. ~/plescripts/oracle_preinstall/make_vimrc_file
+line_separator
 
+. ~/plescripts/oracle_preinstall/make_vimrc_file
 #	Met à jour root également.
 make_vimrc_file "/root"
+LN
+
+exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /root/.bashrc
+LN
+
 
 #	============================================================================
 line_separator
@@ -175,6 +184,7 @@ else
 	exec_cmd "echo \". /home/grid/profile.grid\" >> /home/grid/.bash_profile"
 	# Permet aux scripts utilisant ssh de continuer à fonctionner.
 	exec_cmd "ln -s /home/grid/.bash_profile /home/grid/.profile"
+	exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /home/grid/.bashrc
 fi
 make_vimrc_file "/home/grid"
 exec_cmd "find /home/grid | xargs chown grid:oinstall"
@@ -203,6 +213,7 @@ else
 	exec_cmd "echo \". /home/oracle/profile.oracle\" >> /home/oracle/.bash_profile"
 	# Permet aux scripts utilisant ssh de continuer à fonctionner.
 	exec_cmd "ln -s /home/oracle/.bash_profile /home/oracle/.profile"
+	exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /home/oracle/.bashrc
 fi
 make_vimrc_file "/home/oracle"
 exec_cmd "find /home/oracle | xargs chown oracle:oinstall"
