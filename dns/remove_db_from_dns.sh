@@ -1,8 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -45,16 +45,20 @@ done
 
 exit_if_param_undef db	$str_usage
 
-typeset -r cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exist $cfg_path
+cfg_exist $db
 
-typeset -ri count_nodes=$(ls -1 $cfg_path/node* | wc -l)
+typeset -ri max_nodes=$(cfg_max_nodes $db)
 
-for node_file in $cfg_path/node*
+info "Backup DNS configuration :"
+exec_cmd cp $named_file ${named_file}.backup
+exec_cmd cp $reverse_file ${reverse_file}.backup
+LN
+
+for inode in $( seq $max_nodes )
 do
-	server_name=$(cat $node_file | cut -d: -f2)
-	exec_cmd ~/plescripts/dns/remove_server.sh -name=$server_name -no_restart
-	[ $count_nodes -gt 1 ] && exec_cmd ~/plescripts/dns/remove_server.sh -name=$server_name-vip -no_restart
+	cfg_load_node_info $db $inode
+	exec_cmd ~/plescripts/dns/remove_server.sh -name=$cfg_server_name -no_restart
+	[ $max_nodes -gt 1 ] && exec_cmd ~/plescripts/dns/remove_server.sh -name=$cfg_server_name-vip -no_restart
 	LN
 done
 
