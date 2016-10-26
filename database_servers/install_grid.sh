@@ -288,12 +288,13 @@ function run_post_install_root_scripts_on_node	# $1 No node
 		if [ $max_tests -eq 0 ]
 		then
 			warning "Arrive de temps en temps, workaround :"
-			info "Relancer le script :"
-			info "./install_grid.sh -db=$db -skip_grid_install"
-			info ""
-			info "Si le script échoue une troisième fois :"
-			info "	- Redémarrer les 2 VMs"
-			info "	- ./install_grid.sh -db=$db -skip_grid_install"
+			info "	- Se connecter sur le noeud #${inode} : ssh root@{node_names[$inode]}"
+			info "	- Exécuter le script root : \$ORACLE_HOME/root.sh"
+			info "	  Vérifier la log, si le script c'est bien terminé :"
+			info "	    - ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
+			info "	  sinon :"
+			info "	    - Redémarrer les 2 VMs"
+			info "      - ./install_grid.sh -db=$db -skip_grid_install"
 			LN
 			exit 1
 		else
