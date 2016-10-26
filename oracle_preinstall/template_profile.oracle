@@ -5,7 +5,7 @@ export LANG=en_US.UTF-8
 export ORACLE_SID=NOSID
 export ORACLE_UNQNAME=TO_DEFINE
 
-. ./grid_env
+. grid_env
 
 export ORACLE_TERM=xterm
 

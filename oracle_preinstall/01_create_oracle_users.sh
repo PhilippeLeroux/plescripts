@@ -56,17 +56,15 @@ case $db_type in
 	rac)
 		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
 		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
-		LN
-
 		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/$ORACLE_RELEASE/grid!\" ~/plescripts/oracle_preinstall/grid_env"
+		LN
 		;;
 
 	single|single_fs)
 		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
 		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
-		LN
-
 		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/grid/$ORACLE_RELEASE!\" ~/plescripts/oracle_preinstall/grid_env"
+		LN
 		;;
 
 	*)
@@ -79,17 +77,7 @@ case $db_type in
 esac
 LN
 
-typeset -r profile_oracle=/tmp/profile_oracle
-
-#	============================================================================
-#	Création du profile Oracle pour être sourcé.
-info "Create oracle profile."
-exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" \
-			~/plescripts/oracle_preinstall/template_profile.oracle |\
-			sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > $profile_oracle"
-LN
-
-. $profile_oracle
+. ~/plescripts/oracle_preinstall/grid_env
 
 if [ x"$GRID_ROOT" = x ]
 then
@@ -145,21 +133,11 @@ then
 	info "remove $ORCL_ROOT/"
 	exec_cmd "rm -rf $ORCL_ROOT/*"
 fi
-
 LN
 
 #	============================================================================
-#	Charge la fonction make_vimrc_file pour mettre à jour root
-line_separator
-
+#	Source la fonction make_vimrc_file
 . ~/plescripts/oracle_preinstall/make_vimrc_file
-#	Met à jour root également.
-make_vimrc_file "/root"
-LN
-
-exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /root/.bashrc
-LN
-
 
 #	============================================================================
 line_separator
@@ -187,7 +165,7 @@ else
 	exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /home/grid/.bashrc
 fi
 make_vimrc_file "/home/grid"
-exec_cmd "find /home/grid | xargs chown grid:oinstall"
+exec_cmd chown -R grid:oinstall /home/grid
 LN
 
 #	============================================================================
@@ -196,7 +174,6 @@ info "create user oracle"
 exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper	\
 			-s /bin/${the_shell} -c \"Oracle Software Owner\" oracle
 
-exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/oracle/grid_env
 exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/oracle/rlwrap.alias
 
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\"	\
@@ -216,7 +193,7 @@ else
 	exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /home/oracle/.bashrc
 fi
 make_vimrc_file "/home/oracle"
-exec_cmd "find /home/oracle | xargs chown oracle:oinstall"
+exec_cmd chown -R oracle:oinstall /home/oracle
 LN
 
 #	============================================================================
@@ -229,6 +206,15 @@ LN
 
 #	============================================================================
 line_separator
+typeset -r profile_oracle=/tmp/profile_oracle
+exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/oracle/grid_env
+exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" \
+			~/plescripts/oracle_preinstall/template_profile.oracle |\
+			sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > $profile_oracle"
+LN
+
+. $profile_oracle
+
 info "oracle directories"
 exec_cmd mkdir -p $ORACLE_BASE
 exec_cmd mkdir -p $ORACLE_HOME
@@ -246,6 +232,11 @@ LN
 
 #	============================================================================
 #	Le compte root source grid_env pour manipuler les commandes du Grid Infra.
+line_separator
+make_vimrc_file "/root"
+LN
+exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /root/.bashrc
+LN
 grep grid_env /root/.bash_profile 1>/dev/null
 if [ $? -ne 0 ]
 then
@@ -254,7 +245,7 @@ then
 	(	echo "if [ -f /home/grid/grid_env ]"
 		echo "then"
 		echo "    . /home/grid/grid_env"
-		echo "    export PATH=\$PATH:$GRID_HOME/bin"
+		echo "    export PATH=\$PATH:\$GRID_HOME/bin"
 		echo "fi"
 		echo ". rlwrap.alias"
 	)	>> /root/.bash_profile
