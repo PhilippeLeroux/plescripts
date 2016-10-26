@@ -217,4 +217,4 @@ configuration du poste client/host et des VMs master et K2.
 
 Ces scripts sont utilisés par les scripts de gestion des services.
 
-[Exemples d'utilisation.](https://github.com/PhilippeLeroux/plescripts/wiki/pluggable_db)
+[Exemples](https://github.com/PhilippeLeroux/plescripts/wiki/Création-d'un-PDB) d'utilisation lors de la création d'un noveau PDB.
