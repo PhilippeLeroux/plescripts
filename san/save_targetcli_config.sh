@@ -21,7 +21,7 @@ do
 			shift
 			;;
 
-		-name=*)
+		-name=*)	# Obsolète, concervé pour compatibilité.
 			name=${1##*=}
 			shift
 			;;
@@ -43,6 +43,7 @@ done
 
 exit_if_param_undef name	"$str_usage"
 
+if [ 0 -eq 1 ]; then
 typeset -r targetcli_path=~/plescripts/san/targetcli_backup
 
 if [ ! -d $targetcli_path ]
@@ -56,3 +57,7 @@ info "Backup file : $targetcli_file"
 exec_cmd "targetcli / saveconfig $targetcli_file"
 exec_cmd "targetcli / saveconfig"
 exec_cmd "chown $common_user_name:users $targetcli_file"
+fi # [ 0 -eq 1 ]; then
+info "Targetcli save config :"
+exec_cmd "targetcli / saveconfig"
+LN
