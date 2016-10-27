@@ -7,9 +7,21 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : ${ME##*/}
+	-service=name                       Nom du servie
+	-server_list=\"server1 server2 ...\"  Liste des serveurs.
 
-script_banner $ME $*
+Créé un alias TNS du même nom que le service.
+La définition de l'alias est affiché sur la canal 1.
+
+Exemples :
+ - Alias pour un RAC       
+	${ME##*/} -service=pdbFOO01_java -server_list=\"foo-scan\"
+ - Alias pour une SINGLE
+	${ME##*/} -service=pdbFOO_java -server_list=\"srvfoo01\"
+ - Alias pour un dataguard
+	${ME##*/} -service=pdbDAISY01_java -server_list=\"srvdaisy01 srvdonald01\"
+"
 
 typeset service=undef
 typeset server_list=undef
@@ -51,6 +63,8 @@ done
 exit_if_param_undef service		"$str_usage"
 exit_if_param_undef server_list	"$str_usage"
 
+typeset	-ri	count_servers=$(echo "$server_list" | wc -w)
+
 function get_address
 {
 	for server in $server_list
@@ -59,12 +73,22 @@ function get_address
 	done
 }
 
+#	Ouvre la section DESCRIPTION, des options supplémentaire sont affichées pour
+#	un dataguard.
+function open_section_description
+{
+	echo "	(DESCRIPTION ="
+
+	[ $count_servers -eq 1 ] && return 0
+
+	echo "		(CONNECT_TIMEOUT= 4) (RETRY_COUNT=20)(RETRY_DELAY=3)"
+	echo "		(FAILOVER=on)"
+	echo "		(LOAD_BALANCE=off)"
+}
+
 cat<<EOS
 $(to_upper $service) =
-	(DESCRIPTION =
-		(CONNECT_TIMEOUT= 4) (RETRY_COUNT=20)(RETRY_DELAY=3)
-		(FAILOVER=on)
-		(LOAD_BALANCE=off)
+$(open_section_description)
 		(ADDRESS_LIST=
 $(get_address)
 		)
