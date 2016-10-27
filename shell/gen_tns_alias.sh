@@ -8,11 +8,12 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : ${ME##*/}
-	-service=name                       Nom du servie
+	-service=name                       Nom du service.
 	-server_list=\"server1 server2 ...\"  Liste des serveurs.
 
 Créé un alias TNS du même nom que le service.
-La définition de l'alias est affiché sur la canal 1.
+La définition de l'alias est affichée sur la canal 1.
+Si il y a plus d'un serveur dans -server_list alors configuration dataguard.
 
 Exemples :
  - Alias pour un RAC       
@@ -73,7 +74,7 @@ function get_address
 	done
 }
 
-#	Ouvre la section DESCRIPTION, des options supplémentaire sont affichées pour
+#	Ouvre la section DESCRIPTION, des options supplémentaires sont affichées pour
 #	un dataguard.
 function open_section_description
 {
