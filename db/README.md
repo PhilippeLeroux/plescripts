@@ -184,13 +184,15 @@ configuration du poste client/host et des VMs master et K2.
 ###	Description des scripts liées à la gestion des services.
 
 #### Création de services et alias TNS
+
+2 types de services sont créés : un pour les connexions OCI et l'autre pour les
+connexions Java, pour les bases en dataguard 2 autres services sont nécessaires.
+
+Pour chaque service OCI un alias TNS est créé localement.
+
  * create_srv_for_rac_db.sh : crée des services pour un RAC
 
  * create_srv_for_single_db.sh : crée des services pour une mono instance.
-
-	Le script va créer un service pour les connexions OCI et un service pour les connexions Java.
-	Pour chaque service OCI un alias TNS est ajouté dans tnsnames.ora, le service et
-	l'alias ont le même nom.
 
  * add_srv_for_dataguard.sh : crée des services pour une base en dataguard.
 
