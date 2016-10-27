@@ -819,6 +819,10 @@ fi
 
 configure_rman
 
+info "Copy glogin.sql"
+exec_cmd "scp $ORACLE_HOME/sqlplus/admin/glogin.sql $standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
+LN
+
 exec_cmd "$ROOT/db/stby/show_dataguard_cfg.sh"
 
 script_stop $ME
