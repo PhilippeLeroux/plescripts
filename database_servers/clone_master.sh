@@ -263,39 +263,10 @@ function wait_master
 #	mots de passe root.
 function make_ssh_equi_with_san
 {
-	typeset -r san_public_key=$(get_public_key_for $san_hostname)
-	typeset -r san_public_key_escaped=$(escape_slash "$san_public_key")
-
-	#	-c nécessaire si ~/.ssh/known_hosts n'existe pas
-	#	Ajoute la clef public du serveur SAN dans le known_hosts du serveur.
-	exec_cmd -c "ssh -t root@$server_name \"sed -i '/${san_public_key_escaped}/d' ~/.ssh/known_hosts 1>/dev/null\""
-	exec_cmd "ssh -t root@$server_name \"echo \\\"$san_public_key\\\" >> ~/.ssh/known_hosts\""
-	LN
-
-	#	Création de la clef public pour le compte root.
-	exec_cmd "ssh -t root@$server_name \"[ ! -f ~/.ssh/id_rsa ] && ssh-keygen -t rsa -N \\\"\\\" -f ~/.ssh/id_rsa\" || true"
-	LN
-
-	typeset -r public_key_file=id_rsa_${server_name}.pub
-	#	Copie la clef de root du serveur en local.
-	exec_cmd "scp root@$server_name:/root/.ssh/id_rsa.pub /tmp/$public_key_file"
-	#	Copie le clef local vers le SAN.
-	exec_cmd "scp /tmp/$public_key_file root@$san_hostname:/root/.ssh/$public_key_file"
-	exec_cmd "rm /tmp/$public_key_file"
-	#	Comme ça pas besoin de mot de passe, la clef et sur le serveur SAN.
-	LN
-
-	#	Fais le ménage au cas ou ...
-	exec_cmd -c "ssh root@$san_hostname sed -i '/$server_name/d' /root/.ssh/authorized_keys"
-	LN
-
-	#	Ajoute la clef dans les autorisées.
-	exec_cmd "ssh root@$san_hostname \"cat /root/.ssh/$public_key_file >> /root/.ssh/authorized_keys\""
-	LN
-
-	#	La clef peut être supprimée du serveur.
-	exec_cmd "ssh root@$san_hostname rm /root/.ssh/$public_key_file"
-	LN
+	exec_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh	\
+						-user1=root						\
+						-server1=$san_hostname			\
+						-server2=$server_name"
 }
 
 #	Création des disques et points de montages pour l'installation des logiciels
@@ -393,8 +364,6 @@ function configure_oracle_accounts
 {
 	run_oracle_preinstall
 
-	exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$server_name"
-
 	exec_cmd "ssh -t root@$server_name plescripts/gadgets/install.sh"
 	LN
 }
@@ -448,6 +417,11 @@ script_start
 configure_server
 
 configure_oracle_accounts
+
+#	Equivalence entre le poste client/serveur host et le serveur de bdd
+#	Permet depuis le poster client/serveur host de se connecter sans mot de passe
+#	avec les comptes root, grid et oracle.
+exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$server_name"
 
 copy_color_file
 

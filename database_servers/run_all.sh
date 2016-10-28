@@ -111,7 +111,7 @@ if [ $standby != undef ]
 then
 	configure_server $standby
 
-	exec_cmd "~/plescripts/db/stby/00_setup_equivalence.sh	\
+	exec_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh	\
 				-user1=oracle -server1=srv${db}01 -server2=srv${standby}01"
 	LN
 

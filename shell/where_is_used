@@ -1,10 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -66,21 +64,28 @@ function trunc_line
 function search_in_dir
 {
 	typeset	-r	dir_name="$1"
-	find_cmd="find $dir_name -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.json\" ! -name \"*.swp\" ! -path \*/.\* -print0 | xargs -0 "
+	typeset		find_cmd="find $dir_name -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.json\" ! -name \"*.swp\" ! -path \*/.\* -print0 | xargs -0"
+	#typeset		find_cmd="find $dir_name -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.json\" ! -name \"*.swp\" -print0 | xargs -0"
 
-	if [ $strict = no ]
+	if [ $strict == no ]
 	then
-		find_cmd=$find_cmd"grep -n \"$word\""
+		find_cmd=$find_cmd" grep -En \"$word\""
 	else
-		find_cmd=$find_cmd"grep -n \"\<$word\>\""
+		find_cmd=$find_cmd" grep -En \"\<$word\>\""
 	fi
 
 	fake_exec_cmd $find_cmd
-	prev_file_name=""
+	typeset prev_file_name=""
 	while IFS=":" read file_name line
 	do
+		[ x"$file_name" == x ] && continue
+
+		# Affiche une seule fois le nom du fichier si $word est présent plusieurs fois.
 		[ "$prev_file_name" != "$file_name" ] && echo " " && info "$file_name" && count=count+1
+
+		# Affiche toutes les lignes ou apparait $word
 		echo $(trunc_line "$line")
+
 		prev_file_name=$file_name
 	done<<<"$(eval $find_cmd)"
 	LN

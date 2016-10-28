@@ -1,8 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -38,39 +38,24 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
-typeset -r cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exist $cfg_path "$str_usage"
+cfg_exist $db
 
-typeset -ri count_nodes=$(ls -1 $cfg_path/node* | wc -l)
+typeset -ri max_nodes=$(cfg_max_nodes $db)
+
+if [ $max_nodes -ne 2 ]
+then
+	error "NE FONCTIONNE PAS AVEC PLUS DE 2 NŒUDS !"
+	exit 1
+fi
 
 typeset -a node_list
 
-#	Charge le nom de tous les noeuds.
-for inode in $( seq 1 $count_nodes )
+#	Charge le nom de tous les nœuds.
+for inode in $( seq $max_nodes )
 do
-	typeset -i i=inode-1
-	node_list[$i]=$( cat $cfg_path/node${inode} | cut -d':' -f2 )
+	cfg_load_node_info $db $inode
+	node_list+=( $cfg_server_name )
 done
 
+exec_cmd "~/plescripts/ssh/setup_rac_ssh_equivalence.sh -server1=${node_list[0]} -server2=${node_list[1]}"
 LN
-warning "The password for root will be asked ${count_nodes} times."
-confirm_or_exit -reply_list=CR -print="" "Press a key to continue."
-
-#	Fait la configuration ssh
-for il in $( seq 0 $(( $count_nodes - 1 )) )
-do
-	line_separator
-	on_server=${node_list[$il]}
-	for ir in $( seq 0 $(( $count_nodes - 1 )) )
-	do
-		remote_server=${node_list[$ir]}
-		if [ "$on_server" != "$remote_server" ]
-		then
-			info "Setup ssh from $on_server to $remote_server"
-			exec_cmd "ssh -t root@$on_server \"~/plescripts/ssh/ssh_equi_cluster_rac.sh -remote_server=$remote_server\""
-			LN
-		fi
-	done
-done
-LN
-

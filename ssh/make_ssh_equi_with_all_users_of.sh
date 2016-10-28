@@ -39,11 +39,12 @@ function copy_public_key
 #	============================================================
 #	MAIN
 #	============================================================
-typeset -r str_usage="Usage : $0 -remote_server=<str>
+typeset -r str_usage=\
+"Usage : $0 -remote_server=<str>
 	Met en place les connections ssh sans mots de passes avec les comptes
 	root, grid et oracle du serveur -remote_server
 
-	Seul le mot de passe root sera demandé.
+	Seul le mot de passe root sera demandé, s'il n'y a pas d'équivalence.
 "
 
 typeset remote_server=undef

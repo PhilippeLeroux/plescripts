@@ -25,13 +25,13 @@ Table of Contents
  - [Créer une base sur le serveur mars.](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
 ## Etablir les équivalences ssh entre les 2 serveurs pour le compte Oracle.
- - Sur le poste client aller dans le répertoire `~/plescripts/db/stby`
+ - Sur le poste client aller dans le répertoire `~/plescripts/ssh`
 
  - Etablir l'équivalence ssh entre les comptes oracle des 2 serveurs.
 
    Exécuter la commande :
 
-   `./00_setup_equivalence.sh -server1=srvmars01 -server2=srvvenus01 -user1=oracle`
+   `./setup_ssh_equivalence.sh -server1=srvmars01 -server2=srvvenus01 -user1=oracle`
 
 ## Etat des lieux :
  - Initiallement la base est créées comme une SINGLE, les services sur la PDB mars01 sont minimaux :
