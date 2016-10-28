@@ -112,8 +112,5 @@ Le paramètre `-policyManaged` est passé au script `create_db.sh`
 
 Si l'un des paramètres est invalide, le script create_db.sh plantera.
 
-**Remarque :** Pour un RAC il sera demandé de saisir un mot de passe une fois que
-toutes les VMs auront été clonée.
-
 --------------------------------------------------------------------------------
 [Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)
