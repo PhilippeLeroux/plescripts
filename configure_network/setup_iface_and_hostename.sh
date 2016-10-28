@@ -1,19 +1,16 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/networklib.sh
-
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
 typeset -r str_usage="Usage : $ME -db=<id> -node=<No>"
 
-typeset	 db=undef
+typeset		db=undef
 typeset -i  node=-1
 
 while [ $# -ne 0 ]
@@ -85,6 +82,8 @@ remove_value NETMASK					$if_pub_file
 if_hwaddr=$(get_if_hwaddr $if_pub_name)
 update_value HWADDR		$if_hwaddr		$if_pub_file
 update_value ZONE		trusted			$if_pub_file
+#	Pas d'accès internet.
+remove_value GATEWAY					$if_pub_file
 LN
 
 line_separator
@@ -99,8 +98,8 @@ remove_value NETMASK						$if_iscsi_file
 if_hwaddr=$(get_if_hwaddr $if_iscsi_name)
 update_value HWADDR		$if_hwaddr			$if_iscsi_file
 update_value ZONE		trusted				$if_iscsi_file
-# Effectue la commande 2 fois car la première insère et ne met pas de double quote
-# alors que la seconde update et met les double quote.
+# Effectue la commande 2 fois car la première insère et ne met pas de double quotes
+# le seconde update met les double quotes ????
 update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_iscsi_file
 update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_iscsi_file
 LN
