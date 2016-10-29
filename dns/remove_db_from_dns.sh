@@ -30,7 +30,7 @@ do
 			;;
 
 		-db=*)
-			db=${1##*=}
+			db=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -62,9 +62,9 @@ do
 	LN
 done
 
-if [ -f $cfg_path/scanvips ]
+if [ -f $cfg_path_prefix/$db/scanvips ]
 then
-	scan_name=$(cat $cfg_path/scanvips | cut -d: -f1)
+	scan_name=$(cat $cfg_path_prefix/$db/scanvips | cut -d: -f1)
 	exec_cmd ~/plescripts/dns/remove_server.sh -name=$scan_name -no_restart
 	LN
 fi
