@@ -202,10 +202,6 @@ Pour chaque service OCI un alias TNS est créé localement.
 	 * *_oci et *_java qui ont le rôle 'primary'
 	 * *_stby_oci et *_stby_java qui ont le rôle 'standby'
 
-	Des alias TNS sont créés pour les services de type OCI.
-
-	Ce script n'est pas valable si la bases sont en RAC.
-
 #### Suppression de services et alias TNS
  * drop_all_services.sh : supprime tous les services existant et les alias TNS associées.
 
