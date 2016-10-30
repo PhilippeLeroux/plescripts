@@ -419,7 +419,7 @@ configure_server
 configure_oracle_accounts
 
 #	Equivalence entre le poste client/serveur host et le serveur de bdd
-#	Permet depuis le poster client/serveur host de se connecter sans mot de passe
+#	Permet depuis le poste client/serveur host de se connecter sans mot de passe
 #	avec les comptes root, grid et oracle.
 exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$server_name"
 

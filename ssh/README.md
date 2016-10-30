@@ -1,3 +1,30 @@
+### Liste des équivalences ssh.
+
+L'utilisateur local du client/serveur host a une équivalence avec les comptes root des
+VMs :
+* K2
+* nfsorclmaster
+
+nfsorclmaster est cloné pour tout nouveau serveur Oracle, le fichier 'know_host'
+est mis à jour pour que l'équivalence reste valide.
+
+Lors de la configuration du serveur Oracle une équivalence ssh est établie entre
+l'utilisateur local du client/serveur host avec les comptes oracle et grid.
+
+Liste des équivalences ssh :
+
+* L'utilisateur local peut se connecter sans mot de passe sur toutes les VMs de
+base de données aux utilisateurs root, grid et oracle et au compte root de K2.
+
+* Dans le cas de VMs constituant les nœuds d'un RAC les utilisateurs root, grid et
+oracle ont tous des équivalences entre eux.
+
+* Dans le cas de 2 serveurs standalones mis en dataguard les comptes oracle ont une
+équivalence ssh entre eux.
+
+* Le compte root de toutes les VMs de base de données a une équivalence ssh avec
+le compte root du serveur K2.
+
 ### Description des scripts.
 
 *	make_ssh_equi_with_all_users_of.sh

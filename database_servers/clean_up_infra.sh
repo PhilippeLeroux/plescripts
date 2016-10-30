@@ -88,7 +88,7 @@ then
 	LN
 
 	line_separator
-	exec_cmd sudo systemctl restart nscd.service
+	exec_cmd -c sudo systemctl restart nscd.service
 	LN
 else
 	warning "No servers for $db"

@@ -102,7 +102,6 @@ do
 			--description \"$(~/plescripts/virtualbox/get_vm_description -db=$db)\""
 	LN
 
-	info "Test pour voir si perf réseau meilleurs :"
 	exec_cmd VBoxManage modifyvm "$vm_name" --hpet on
 	LN
 
