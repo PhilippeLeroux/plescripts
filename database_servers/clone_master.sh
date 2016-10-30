@@ -167,12 +167,11 @@ function reboot_server
 function configure_ifaces_hostname_and_reboot
 {
 	info "Configure network..."
-	exec_cmd "ssh -t $master_conn plescripts/configure_network/setup_iface_and_hostename.sh -db=$db -node=$node; exit"
+	exec_cmd "ssh -t $master_conn plescripts/configure_network/setup_iface_and_hostename.sh -db=$db -node=$node"
 	LN
 
+	#	Le reboot est nécessaire à cause du changement du nom du serveur.
 	reboot_server $server_name
-
-	test_pause "$server_name : Check network configuration."
 }
 
 #	Nomme l'initiator
@@ -462,9 +461,6 @@ LN
 
 info "Enable stats."
 exec_cmd "ssh -t root@${server_name} plescripts/stats/create_systemd_service_stats.sh"
-LN
-
-reboot_server $server_name
 LN
 
 if [ $type_shared_fs == vbox ]

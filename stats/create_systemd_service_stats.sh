@@ -70,3 +70,7 @@ LN
 info "Enable service"
 exec_cmd "systemctl enable $service_name"
 LN
+
+info "Start service"
+exec_cmd "systemctl start $service_name"
+LN

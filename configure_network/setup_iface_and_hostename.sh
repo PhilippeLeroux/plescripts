@@ -186,6 +186,5 @@ then
 	exec_cmd "echo \"#$scan_name $scan_vip1\" >> /etc/hosts"
 	exec_cmd "echo \"#$scan_name $scan_vip2\" >> /etc/hosts"
 	exec_cmd "echo \"#$scan_name $scan_vip3\" >> /etc/hosts"
+	LN
 fi
-
-exit 0

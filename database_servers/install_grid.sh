@@ -298,14 +298,12 @@ function run_post_install_root_scripts_on_node	# $1 No node
 			LN
 			exit 1
 		else
-			info "Test Ifaces :"
-			exec_cmd "ssh root@${node_names[1]}	\
-						\"plescripts/database_servers/rac_ping_all_ifaces.sh -db=$db -node=1\""
+			exec_cmd "stop_vm -server=$server -wait_os"
 			LN
-			exec_cmd "ssh root@${node_names[$inode]}	\
-						\"plescripts/database_servers/rac_ping_all_ifaces.sh -db=$db -node=$inode\""
+			exec_cmd "start_vm $server -wait_os=yes"
 			LN
-			timing 20 "Nouvelle tentative dans"
+			timing 120 "Wait crs up"
+			LN
 		fi
 	done
 }
