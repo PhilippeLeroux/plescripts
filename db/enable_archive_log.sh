@@ -44,9 +44,6 @@ function sqlcmd_enable_archivelog_GI_present
 	set_sql_cmd "shutdown immediate"
 }
 
-#	============================================================================
-#	MAIN
-
 #	Active les archivelogs avec la commande sqlplus.
 function enable_archivelog_with_sqlplus
 {
