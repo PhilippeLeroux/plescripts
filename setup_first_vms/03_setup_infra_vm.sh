@@ -54,17 +54,8 @@ exec_cmd "firewall-cmd --reload"
 LN
 
 line_separator
-case $type_shared_fs in
-	nfs)
-		exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,async,comment=systemd.automount\"  >> /etc/fstab"
-		LN
-		;;
-
-	vbox)
-		exec_cmd "echo \"plescripts  /mnt/plescripts     vboxsf defaults,uid=$common_user_name,gid=users,_netdev 0 0\" >> /etc/fstab"
-		LN
-		;;
-esac
+exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,async,comment=systemd.automount\"  >> /etc/fstab"
+LN
 
 line_separator
 info "Création du VG asm01 sur le disque sdb"

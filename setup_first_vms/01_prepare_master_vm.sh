@@ -21,22 +21,11 @@ function master_ssh
 }
 
 line_separator
-case $type_shared_fs in
-	vbox)
-		info "Création des points de montage VBox :"
-		master_ssh "mkdir /mnt/plescripts"
-		master_ssh "mount -t vboxsf plescripts /mnt/plescripts"
-		master_ssh "ln -s /mnt/plescripts ~/plescripts"
-		;;
-
-	nfs)
-		info "Création des points de montage NFS :"
-		master_ssh "mkdir /mnt/plescripts"
-		master_ssh "ln -s /mnt/plescripts ~/plescripts"
-		master_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,_netdev,$nfs_options"
-		master_ssh "mkdir -p ~/$oracle_install"
-		;;
-esac
+info "Création des points de montage NFS :"
+master_ssh "mkdir /mnt/plescripts"
+master_ssh "ln -s /mnt/plescripts ~/plescripts"
+master_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,_netdev,$nfs_options"
+master_ssh "mkdir -p ~/$oracle_install"
 LN
 
 info "Mise en place du fichier ~/.bashrc_extensions"

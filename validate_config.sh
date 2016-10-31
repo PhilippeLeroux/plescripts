@@ -73,18 +73,15 @@ else
 fi
 LN
 
-if [ $type_shared_fs == nfs ]
+info "$client_hostname doit exporter via NFS les répertoires :"
+info -n "	- $HOME/plescripts "
+grep "$HOME/plescripts" /etc/exports >/dev/null 2>&1
+if [ $? -ne 0 ]
 then
-	info "$client_hostname doit exporter via NFS les répertoires :"
-	info -n "	- $HOME/plescripts "
-	grep "$HOME/plescripts" /etc/exports >/dev/null 2>&1
-	if [ $? -ne 0 ]
-	then
-		count_errors=count_errors+1
-		info -f "[$KO]"
-	else
-		info -f "[$OK]"
-	fi
+	count_errors=count_errors+1
+	info -f "[$KO]"
+else
+	info -f "[$OK]"
 fi
 
 info -n "	- $HOME/$oracle_install "

@@ -53,14 +53,11 @@ exec_cmd -c "sudo showmount -e localhost"
 LN
 
 typeset -i	nfs_errors=0
-if [ $type_shared_fs == nfs ]
-then
-	exec_cmd -c "sudo showmount -e localhost | grep -q /home/$common_user_name/$oracle_install"
-	[ $? -ne 0 ] && nfs_errors=nfs_errors+1 || info "${GREEN}Passed.${NORM}"
+exec_cmd -c "sudo showmount -e localhost | grep -q /home/$common_user_name/$oracle_install"
+[ $? -ne 0 ] && nfs_errors=nfs_errors+1 || info "${GREEN}Passed.${NORM}"
 
-	exec_cmd -c "sudo showmount -e localhost | grep -q /home/$common_user_name/plescripts"
-	[ $? -ne 0 ] && nfs_errors=nfs_errors+1 || info "${GREEN}Passed.${NORM}"
-fi
+exec_cmd -c "sudo showmount -e localhost | grep -q /home/$common_user_name/plescripts"
+[ $? -ne 0 ] && nfs_errors=nfs_errors+1 || info "${GREEN}Passed.${NORM}"
 
 exec_cmd -c "sudo showmount -e localhost | grep -q $iso_olinux_path"
 [ $? -ne 0 ] && nfs_errors=nfs_errors+1  || info "${GREEN}Passed.${NORM}"
@@ -105,13 +102,6 @@ info "Ajoute $infra_hostname au groupe Infra"
 exec_cmd VBoxManage modifyvm "$infra_hostname" --groups "/Infra"
 LN
 
-if [ $type_shared_fs == vbox ]
-then
-	line_separator
-	exec_cmd VBoxManage sharedfolder add $master_name --name "plescripts" --hostpath "$HOME/plescripts --automount"
-	LN
-fi
-
 line_separator
 info "Démarre la VM $infra_hostname"
 exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
@@ -146,15 +136,6 @@ LN
 info "Copie la configuration des Ifaces sur $infra_hostname (utilise l'IP $master_ip)"
 exec_cmd "scp ~/plescripts/setup_first_vms/ifcfg_infra_server/* root@${master_ip}:/etc/sysconfig/network-scripts/"
 LN
-
-case $type_shared_fs in
-	vbox)
-		line_separator
-		info "Compilation des 'Guest Additions'"
-		exec_cmd "ssh -t root@$master_ip \"$vm_scripts_path/compile_guest_additions.sh -host=${master_ip}\""
-		LN
-		;;
-esac
 
 info "Redémarrage de la VM $infra_hostname, la nouvelle configuration réseau sera effective."
 exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"

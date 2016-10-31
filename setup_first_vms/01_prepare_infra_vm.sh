@@ -20,22 +20,11 @@ function infra_ssh
 }
 
 line_separator
-case $type_shared_fs in
-	vbox)
-		info "Création des points de montage VBox :"
-		infra_ssh "mkdir /mnt/plescripts"
-		infra_ssh "mount -t vboxsf plescripts /mnt/plescripts"
-		infra_ssh "ln -s /mnt/plescripts ~/plescripts"
-		;;
-
-	nfs)
-		info "Création des points de montage NFS :"
-		infra_ssh "mkdir /mnt/plescripts"
-		infra_ssh "ln -s /mnt/plescripts ~/plescripts"
-		infra_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,$nfs_options"
-		infra_ssh "mkdir -p ~/$oracle_install"
-		;;
-esac
+info "Création des points de montage NFS :"
+infra_ssh "mkdir /mnt/plescripts"
+infra_ssh "ln -s /mnt/plescripts ~/plescripts"
+infra_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,$nfs_options"
+infra_ssh "mkdir -p ~/$oracle_install"
 LN
 
 info "Met à jour /etc/hostname avec ${infra_hostname}.${infra_domain}"

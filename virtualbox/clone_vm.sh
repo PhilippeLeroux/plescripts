@@ -105,15 +105,6 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --hpet on
 	LN
 
-	if [ $type_shared_fs == vbox ]
-	then
-		exec_cmd VBoxManage sharedfolder add $vm_name							\
-										--name \"${oracle_release%.*.*}\"		\
-										--hostpath \"$HOME/$oracle_install\"	\
-										--automount
-		LN
-	fi
-
 	info "Move $vm_name to group $group_name"
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	LN

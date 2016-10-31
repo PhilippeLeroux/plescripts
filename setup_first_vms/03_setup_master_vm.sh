@@ -27,15 +27,7 @@ fi
 unset hn
 
 info "Montage des scripts plescripts de $client_hostname sur /mnt/plescripts"
-case $type_shared_fs in
-	vbox)
-		exec_cmd -c "mount -t vboxsf plescripts /mnt/plescripts"
-		;;
-
-	nfs)
-		exec_cmd -c "mount ${client_hostname}:/home/$common_user_name/plescripts /mnt/plescripts -t nfs -o rw,$nfs_options"
-		;;
-esac
+exec_cmd -c "mount ${client_hostname}:/home/$common_user_name/plescripts /mnt/plescripts -t nfs -o rw,$nfs_options"
 
 line_separator
 info "Mise à jour de l'Iface $if_pub_name"
@@ -70,21 +62,10 @@ LN
 line_separator
 exec_cmd yum -y install nfs-utils iscsi-initiator-utils deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm
 
-case $type_shared_fs in
-	nfs)
-		line_separator
-		exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
-		exec_cmd $argv mount -a /mnt/plescripts
-		LN
-	;;
-
-	vbox)
-		line_separator
-		exec_cmd "echo \"plescripts /mnt/plescripts vboxsf defaults,uid=$common_user_name,gid=users,_netdev 0 0\" >> /etc/fstab"
-		exec_cmd $argv mount -a /mnt/plescripts
-		LN
-	;;
-esac
+line_separator
+exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
+exec_cmd $argv mount -a /mnt/plescripts
+LN
 
 exec_cmd ~/plescripts/ntp/config_ntp.sh -role=master
 

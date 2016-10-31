@@ -74,13 +74,6 @@ exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
 LN
 
-case $type_shared_fs in
-	vbox)
-		exec_cmd VBoxManage sharedfolder add $master_name --name "plescripts" --hostpath "$HOME/plescripts --automount"
-		LN
-		;;
-esac
-
 line_separator
 #	Peut importe le rôle de la VM - standalone ou noeud RAC - ajout d'une 3ieme NIC.
 info "Ajout d'une carte pour l'interco RAC"
@@ -103,17 +96,6 @@ master_ssh "echo DNS1=$infra_ip >> $if_pub_file"
 master_ssh "echo GATEWAY=$infra_ip >> $if_pub_file"
 master_ssh "systemctl restart network"
 LN
-
-if [ $type_shared_fs == vbox ]
-then
-	line_separator
-	exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=${master_ip}"
-	LN
-
-	exec_cmd "$vm_scripts_path/reboot_vm $master_name"
-	wait_server $master_name
-	[ $? -ne 0 ] && exit 1
-fi
 
 exec_cmd "~/plescripts/setup_first_vms/01_prepare_master_vm.sh"
 master_ssh "~/plescripts/setup_first_vms/02_update_config.sh"

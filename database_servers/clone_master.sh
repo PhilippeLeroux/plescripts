@@ -188,15 +188,7 @@ function mount_oracle_install
 {
 	line_separator
 	info "Mount point for Oracle installation"
-	case $type_shared_fs in
-		nfs)
-			fstab="$client_hostname:/home/$common_user_name/${oracle_install} /mnt/oracle_install nfs ro,$nfs_options,noauto"
-			;;
-
-		vbox)
-			fstab="${oracle_release%.*.*} /mnt/oracle_install vboxsf defaults,_netdev 0 0"
-			;;
-	esac
+	typeset fstab="$client_hostname:/home/$common_user_name/${oracle_install} /mnt/oracle_install nfs ro,$nfs_options,noauto"
 
 	exec_cmd "ssh -t root@${server_name} sed -i '/oracle_install/d' /etc/fstab"
 	exec_cmd "ssh -t root@${server_name} \"[ ! -d /mnt/oracle_install ] && mkdir /mnt/oracle_install || true\""
@@ -462,11 +454,6 @@ LN
 info "Enable stats."
 exec_cmd "ssh -t root@${server_name} plescripts/stats/create_systemd_service_stats.sh"
 LN
-
-if [ $type_shared_fs == vbox ]
-then
-	exec_cmd "$vm_scripts_path/compile_guest_additions.sh -host=$server_name"
-fi
 
 if [ $node -eq $max_nodes ]
 then	# C'est le dernier nœud

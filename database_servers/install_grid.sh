@@ -283,6 +283,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	do
 		exec_cmd -c "ssh -t -t root@${node_names[$inode]} \"$ORACLE_HOME/root.sh\""
 		[ $? -eq 0 ] && break
+		LN
 
 		max_tests=max_tests-1
 		if [ $max_tests -eq 0 ]
@@ -298,10 +299,20 @@ function run_post_install_root_scripts_on_node	# $1 No node
 			LN
 			exit 1
 		else
-			exec_cmd "stop_vm -server=$server -wait_os"
+			warning "Reboot VMs : ${node_names[*]}"
+
+			for node_name in ${node_names[*]}
+			do
+				exec_cmd "stop_vm -server=$node_name -wait_os"
+			done
 			LN
-			exec_cmd "start_vm $server -wait_os=yes"
+
+			for node_name in ${node_names[*]}
+			do
+				exec_cmd "start_vm $node_name -wait_os=yes"
+			done
 			LN
+
 			timing 120 "Wait crs up"
 			LN
 		fi
@@ -321,13 +332,13 @@ function runConfigToolAllCommands
 
 function create_dg # $1 nom du DG
 {
-	typeset -r DG=$1
+	typeset -r	DG=$1
 
 	info "Create DG : $DG"
 	IFS=':' read dg_name size first last<<<"$(cat $cfg_path/disks | grep "^${DG}")"
 	total_disks=$(( $last - $first + 1 ))
 	exec_cmd "ssh -t grid@${node_names[0]} \". .profile;	\
-		~/plescripts/dg/create_new_dg.sh -name=$DG -disks=$total_disks -nomount\""
+		~/plescripts/dg/create_new_dg.sh -name=$DG -disks=$total_disks\""
 }
 
 #	Création des DGs.
@@ -341,28 +352,6 @@ function create_all_dgs
 	[ $max_nodes -gt 1 ] && create_dg DATA
 
 	create_dg FRA
-
-	if [ $max_nodes -ne 1 ]
-	then	# Sur les autres noeaud les DGs sont à monter uniquement.
-		typeset -i inode=1
-		while [ $inode -lt $max_nodes ]
-		do
-			if [ $max_nodes -gt 1 ]
-			then
-				info "mount DG DATA on ${node_names[$inode]}"
-				exec_cmd "ssh -t grid@${node_names[$inode]} \". .profile;	\
-									asmcmd mount DATA\""
-				LN
-			fi
-
-			info "mount DG FRA on ${node_names[$inode]}"
-			exec_cmd "ssh -t grid@${node_names[$inode]} \". .profile;		\
-									asmcmd mount FRA\""
-			LN
-
-			inode=inode+1
-		done
-	fi
 }
 
 function disclaimer
