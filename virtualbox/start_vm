@@ -75,55 +75,39 @@ function start_db
 								srvctl start database -db $db_name"
 }
 
+typeset -a vm_list
+typeset -i max_vms=0
+while read vm_name
+do
+	[ x"$vm_name" == x ] && continue
 
-function virtualbox_start
-{
-	typeset -a vm_list
-	typeset -i max_vms=0
-	while read vm_name
-	do
-		[ x"$vm_name" == x ] && continue
+	vm_list[$max_vms]=$vm_name
+	max_vms=max_vms+1
+done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
 
-		vm_list[$max_vms]=$vm_name
-		max_vms=max_vms+1
-	done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
+[ $max_vms -eq 0 ] && exit 1
 
-	info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
-	[ $max_vms -eq 0 ] && exit 1
+typeset -i nr_vm_started=0
+exec_cmd -c "VBoxManage startvm ${vm_list[0]} --type headless"
+typeset -i vm_last_status=$?	#	Mémorise le status de la dernière VM démarrée.
+[ $vm_last_status -ne 0 ] && error "Failed to start ${vm_list[0]}" || nr_vm_started=1
+LN
 
-	typeset -i nr_vm_started=0
-	exec_cmd -c "VBoxManage startvm ${vm_list[0]} --type headless"
-	typeset -i vm_last_status=$?	#	Mémorise le status de la dernière VM démarrée.
-	[ $vm_last_status -ne 0 ] && error "Failed to start ${vm_list[0]}" || nr_vm_started=1
+for i in $( seq 1 $(( max_vms - 1 )) )
+do
+	# Attends que l'OS soit démarré pour éviter le GURU_MEDITATION.
+	[[ $wait_os == yes && $vm_last_status -eq 0 ]] && wait_server ${vm_list[$((i-1))]}
+
+	exec_cmd -c "VBoxManage startvm ${vm_list[$i]} --type headless"
+	vm_last_status=$?
+	[ $vm_last_status -ne 0 ] && error "Failed to start ${vm_list[$i]}" || nr_vm_started=nr_vm_started+1
 	LN
+done
 
-	for i in $( seq 1 $(( max_vms - 1 )) )
-	do
-		# Attends que l'OS soit démarré pour éviter le GURU_MEDITATION.
-		[[ $wait_os == yes && $vm_last_status -eq 0 ]] && wait_server ${vm_list[$((i-1))]}
-
-		exec_cmd -c "VBoxManage startvm ${vm_list[$i]} --type headless"
-		vm_last_status=$?
-		[ $vm_last_status -ne 0 ] && error "Failed to start ${vm_list[$i]}" || nr_vm_started=nr_vm_started+1
-		LN
-	done
-
-	if [ $nr_vm_started -eq $max_vms ]
-	then
-		return 0	# Toutes les VMs ont démarrés.
-	else
-		return 1	# Au moins une VM n'a pas démarré.
-	fi
-}
-
-case ${hostvm##*_} in
-	virtualbox)
-		virtualbox_start
-		exit $?
-		;;
-
-	*)
-		error "${hostvm##*_} not implemented."
-		exit 1
-		;;
-esac
+if [ $nr_vm_started -eq $max_vms ]
+then
+	exit 0	# Toutes les VMs ont démarrés.
+else
+	exit 1	# Au moins une VM n'a pas démarré.
+fi

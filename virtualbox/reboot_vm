@@ -19,22 +19,6 @@ then
 	exit 1
 fi
 
-function virtualbox_reboot
-{
-	exec_cmd "stop_vm -server=$server -wait_os"
-	LN
-	exec_cmd "start_vm $server -wait_os=no"
-}
-
-case ${hostvm##*_} in
-	virtualbox)
-		virtualbox_reboot
-		exit $?
-		;;
-
-	*)
-		error "${hostvm##*_} not implemented."
-		exit 1
-		;;
-esac
-
+exec_cmd "stop_vm -server=$server -wait_os"
+LN
+exec_cmd "start_vm $server -wait_os=no"

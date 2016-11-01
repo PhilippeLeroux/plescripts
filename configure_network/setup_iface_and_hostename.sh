@@ -107,27 +107,14 @@ LN
 if [[ $db_type == rac* ]]
 then
 	line_separator
-	#>	HACK
-	#	Le n° du nœud IP est identique sur les réseaux iscsi et RAC, le fichier de
-	#	configuration ne contient pas l'information sur le réseau RAC mais il peut
-	#	être facilement déduit :
-	#		- global.cfg est inclus maintenant (depuis presque le début je crois)
-	#		- je lie le n° du nœud IP ISCSI
-	#	et je l'adresse IP de l'interco RAC.
-	#<	HACK
-	#	TODO : je crois qu'il va falloir que je m'occupe sérieusement de ces fichiers
-	#	de configurations que ne servent pas à grand chose aujourd'hui et rendent
-	#	difficile la compréhension du code.
 	typeset -r ip_rac=${if_rac_network}.${ip_iscsi##*.}
 	info "Configure interface $if_rac_name :"
-	if [ ! -f $if_rac_file ]
-	then	# Je pense que le fichier n'existera pas (création tardive de la NIC) donc
-			# par précotion je fais ce test et je copie if_iscsi_file si besoin.
-		exec_cmd "cp $if_iscsi_file $if_rac_file"
-		update_value NAME	$if_rac_name	$if_rac_file
-		update_value DEVICE	$if_rac_name	$if_rac_file
-	fi
-
+	#	Le fichier de configuration de l'interface n'existe pas car elle a été
+	#	ajoutée après l'installation de l'OS. Donc copie de la configuration d'une
+	#	interface existante et mise à jour.
+	exec_cmd "cp $if_iscsi_file $if_rac_file"
+	update_value NAME		$if_rac_name		$if_rac_file
+	update_value DEVICE		$if_rac_name		$if_rac_file
 	update_value BOOTPROTO	static				$if_rac_file
 	update_value IPADDR		$ip_rac				$if_rac_file
 	update_value USERCTL	yes					$if_rac_file

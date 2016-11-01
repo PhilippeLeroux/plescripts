@@ -22,21 +22,8 @@ exec_cmd mount /mnt$infra_olinux_repository_path
 timing 1
 
 line_separator
-info "Install Oracle rdbms rpm"
-exec_cmd yum -y install $oracle_rdbms_rpm
-LN
-
-line_separator
-info "Install iscsi packages"
-exec_cmd yum -y install iscsi-initiator-utils
-LN
-
-line_separator
-info "Install git"
-exec_cmd yum -y install git
-LN
-
-line_separator
-info "Install rlwrap"
-exec_cmd yum -y install ~/plescripts/rpm/rlwrap-0.42-1.el7.x86_64.rpm
+exec_cmd yum -y install	iscsi-initiator-utils	\
+						git						\
+						$oracle_rdbms_rpm		\
+						~/plescripts/rpm/rlwrap-0.42-1.el7.x86_64.rpm
 LN

@@ -313,7 +313,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 			done
 			LN
 
-			timing 120 "Wait crs up"
+			timing 240 "Wait crs up"
 			LN
 		fi
 	done
