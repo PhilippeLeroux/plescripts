@@ -169,8 +169,15 @@ exec_cmd -c reposync	--newest-only									\
 						--repoid=ol7_latest
 LN
 
-info "Remove old packages :"
-exec_cmd rm $(repomanage --old $infra_olinux_repository_path)
+info "Load packages 2 remove."
+typeset -r packages_2_remove="$(repomanage --old $infra_olinux_repository_path)"
+if [ x"$packages_2_remove" == x ]
+then
+	info "no packages to remove."
+else
+	info "Remove old packages :"
+	exec_cmd rm $(repomanage --old $infra_olinux_repository_path)
+fi
 LN
 
 info "Update local repository :"

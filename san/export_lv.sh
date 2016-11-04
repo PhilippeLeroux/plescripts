@@ -67,7 +67,7 @@ do
 			;;
 
 		-no_backup)
-			do_backup=yes
+			do_backup=no
 			shift
 			;;
 
@@ -97,4 +97,4 @@ info "Create luns"
 create_lun_range $first_no $count $initiator_name lv$prefix
 LN
 
-[ $do_backup = yes ] && exec_cmd ~/plescripts/san/save_targetcli_config.sh -name="after_export_lv"
+[ $do_backup == yes ] && exec_cmd ~/plescripts/san/save_targetcli_config.sh -name="after_export_lv" || true

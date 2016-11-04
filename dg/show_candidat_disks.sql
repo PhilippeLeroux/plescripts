@@ -1,3 +1,5 @@
+-- vim: ts=4:sw=4
+
 set lines 130 pages 500
 col group_number for 99	head "group#"
 col dg_name for a12

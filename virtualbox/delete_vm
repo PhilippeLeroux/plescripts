@@ -63,33 +63,27 @@ line_separator
 
 #	Lecture de toutes les VMs correspondantes au pattern $server.
 typeset -a vm_list
-typeset -i ivm=0
 while read vm_name
 do
-	if [ x"$vm_name" != x ]
-	then
-		vm_list[$ivm]=$vm_name
-		ivm=ivm+1
-	fi
+	[ x"$vm_name" != x ] && vm_list+=( $vm_name )
 done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
 
 typeset -ri max_vms=${#vm_list[@]}
-
 info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
 [ $max_vms -eq 0 ] && exit 1
 
 [ $confirm == yes ] && confirm_or_exit "Delete them ?"
 
 info "Stop all VMs..."
-for ivm in $( seq 0 $(( max_vms - 1 )) )
+for vm in ${vm_list[*]}
 do
-	exec_cmd -c "VBoxManage controlvm ${vm_list[$ivm]} poweroff"
+	exec_cmd -c "VBoxManage controlvm $vm poweroff"
 done
 LN
 
 info "Delete all VMs.."
-for ivm in $( seq 0 $(( max_vms - 1 )) )
+for vm in ${vm_list[*]}
 do
-	exec_cmd -c "VBoxManage unregistervm ${vm_list[$ivm]} --delete"
+	exec_cmd -c "VBoxManage unregistervm $vm --delete"
 done
 LN

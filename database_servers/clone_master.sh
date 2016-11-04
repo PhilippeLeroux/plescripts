@@ -316,8 +316,10 @@ function configure_server
 		exec_cmd "$vm_scripts_path/clone_vm.sh -db=$db -vm_memory_mb=$vm_memory -vmGroup=\"$vmGroup\""
 	fi
 
-	exec_cmd "$vm_scripts_path/start_vm $server_name"
-	wait_master
+	#	-wait_os=no car le nom du serveur n'a pas encore été changé.
+	exec_cmd "$vm_scripts_path/start_vm $server_name -wait_os=no"
+	LN
+	exec_cmd "wait_server $master_name"
 
 	#	************************************************************************
 	#	La VM a été clonée mais sa configuration réseau correspond toujours à
@@ -386,10 +388,10 @@ function test_if_other_nodes_up
 			nc $other_node 22 </dev/null >/dev/null 2>&1
 			if [ $? -ne 0 ]
 			then
-				info -f "$KO"
+				info -f "[$KO]"
 				check_ok=no
 			else
-				info -f "$OK"
+				info -f "[$OK]"
 			fi
 			LN
 		fi

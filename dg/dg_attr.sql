@@ -1,3 +1,5 @@
+-- vim: ts=4:sw=4
+
 set lines 150 pages 90
 col dg_name		for a8		head "DG name"
 col attr_name	for a18		head "Attr name"

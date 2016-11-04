@@ -267,55 +267,61 @@ function start_grid_installation
 	[ $ret -gt 250 ] && exit 1
 }
 
-function run_post_install_root_scripts_on_node	# $1 No node
+function run_post_install_root_scripts_on_node	# $1 server_name
 {
-	typeset  -ri inode=$1
-	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
+	typeset  -r server_name=$1
 
 	line_separator
-	info "Run post install scripts on node ${node_names[$inode]} (~10mn)"
-	exec_cmd "ssh -t root@${node_names[$inode]}				\
+	info "Run post install scripts on node $server_name (~10mn)"
+	LN
+
+	exec_cmd "ssh -t root@$server_name										\
 				\"${ORACLE_BASE%/*/*}/app/oraInventory/orainstRoot.sh\""
 	LN
 
-	typeset -i max_tests=2
-	while [ 0 -eq 0 ]
+	exec_cmd -c "ssh -t -t root@$server_name \"$ORACLE_HOME/root.sh\""
+	return $?
+}
+
+function run_post_install_root_scripts
+{
+	typeset -i inode=0
+	while [ $inode -lt $max_nodes ]
 	do
-		exec_cmd -c "ssh -t -t root@${node_names[$inode]} \"$ORACLE_HOME/root.sh\""
-		[ $? -eq 0 ] && break
+		run_post_install_root_scripts_on_node ${node_names[$inode]}
+		typeset -i ret=$?
 		LN
 
-		max_tests=max_tests-1
-		if [ $max_tests -eq 0 ]
+		if [ $ret -ne 0 ]
 		then
-			warning "Arrive de temps en temps, workaround :"
-			info "	- Se connecter sur le noeud #${inode} : ssh root@{node_names[$inode]}"
-			info "	- Exécuter le script root : \$ORACLE_HOME/root.sh"
-			info "	  Vérifier la log, si le script c'est bien terminé :"
-			info "	    - ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
-			info "	  sinon :"
-			info "	    - Redémarrer les 2 VMs"
-			info "      - ./install_grid.sh -db=$db -skip_grid_install"
+			error "root scripts on server ${node_names[$inode]} failed."
+			[ $inode -eq 0 ] && exit 1
+			
 			LN
-			exit 1
-		else
-			warning "Reboot VMs : ${node_names[*]}"
-
-			for node_name in ${node_names[*]}
-			do
-				exec_cmd "stop_vm -server=$node_name -wait_os"
-			done
+			warning "Workaround :"
 			LN
 
-			for node_name in ${node_names[*]}
-			do
-				exec_cmd "start_vm $node_name -wait_os=yes"
-			done
+			run_post_install_root_scripts_on_node ${node_names[0]}
+			LN
+			timing 10
+
+			run_post_install_root_scripts_on_node ${node_names[$inode]}
+			typeset -i ret=$?
 			LN
 
-			timing 240 "Wait crs up"
-			LN
+			if [ $ret -ne 0 ]
+			then
+				error "Workaround failed."
+				LN
+				info "1. Redémarrer les serveurs."
+				info "2. Relancer l'installation du grid : ./install_grid.sh -skip_grid_install"
+				LN
+				exit 1
+			fi
 		fi
+
+		[[ $max_nodes -gt 1 && $inode -eq 0 ]] && timing 10
+		inode=inode+1
 	done
 }
 
@@ -479,17 +485,7 @@ then
 	LN
 fi
 
-if [ $skip_root_scripts == no ]
-then #	Il faut toujours commencer sur le nœud d'installation du grid.
-	typeset -i inode=0
-	while [ $inode -lt $max_nodes ]
-	do
-		run_post_install_root_scripts_on_node $inode
-		LN
-		[[ $max_nodes -gt 1 && $inode -eq 0 ]] && timing 30
-		inode=inode+1
-	done
-fi
+[ $skip_root_scripts == no ] && run_post_install_root_scripts
 
 if [ $skip_configToolAllCommands == no ]
 then

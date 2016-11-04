@@ -8,12 +8,11 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : $ME -db=name"
 
 script_banner $ME $*
 
 typeset		db=undef
-typeset	-i	ilun=1
 
 while [ $# -ne 0 ]
 do
@@ -26,11 +25,6 @@ do
 
 		-db=*)
 			db=${1##*=}
-			shift
-			;;
-
-		-ilun=*)
-			ilun=${1##*=}
 			shift
 			;;
 
@@ -51,18 +45,36 @@ done
 
 exit_if_param_undef	db	"$str_usage"
 
+nr_disk=$(oracleasm listdisks | sort | tail -1 | sed "s/.*\(..\)$/\1/")
+if [ x"$nr_disk" == x ]
+then
+	typeset -i nr_disk=1
+else
+	typeset -i nr_disk=$(( 10#$nr_disk + 1 ))
+fi
+
 while read device
 do
 	[ x"$device" == x ] && exit
 	add_partition_to $device
 	part_name=${device}1
-	oracle_label=$(printf "s1disk${db}%02d" $ilun)
-	ilun=ilun+1
+	oracle_label=$(printf "s1disk${db}%02d" $nr_disk)
+	nr_disk=nr_disk+1
 	timing 1 "Wait partition."
-	exec_cmd "oracleasm createdisk $oracle_label ${part_name}"
+	exec_cmd oracleasm createdisk $oracle_label ${part_name}
 	LN
-done<<<"$(get_unused_disks)"
+done<<<"$(get_unused_disks_without_partitions)"
 
 info "Oracle disks :"
-oracleasm listdisks
+exec_cmd oracleasm listdisks
 LN
+
+#	Le script est utilisé lors de la création des serveurs avant que le grid
+#	ne soit installé, donc test l'existence de kfod.
+test_if_cmd_exists kfod
+if [ $? -eq 0 ]
+then
+	info "Disks candidats :"
+	exec_cmd su - grid -c kfod
+	LN
+fi

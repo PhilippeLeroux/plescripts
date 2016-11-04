@@ -123,8 +123,8 @@ function get_os_disk_used_by_oracleasm
 }
 
 
-#*>	return disks without partitions.
-function get_unused_disks
+#*>	return unused disks without partitions.
+function get_unused_disks_without_partitions
 {
 	typeset	device
 	while read device

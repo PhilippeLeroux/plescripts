@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -109,9 +108,6 @@ olsnodes | while read server_name
 do
 	[ x"$server_name" == x ] && break || true	# Pas un RAC
 	[ $hostn == $server_name ] && continue
-	exec_cmd "ssh $server_name \". ./.profile; oracleasm scandisks\""
+	exec_cmd "ssh $server_name \". .bash_profile; oracleasm scandisks\""
 	LN
 done
-
-exec_cmd "~/plescripts/san/save_targetcli_config.sh -name=delete_oracleasm_disks"
-LN

@@ -68,7 +68,7 @@ SINGLE ou RAC se fait en 5 étapes :
 
 * Installation du Grid Infra & d'Oracle : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Installation-:-Grid-infra-&-Oracle)
 
-* Création d'un base : [instructions](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
+* Création d'une base : [instructions](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
 * Mise en dataguard de 2 serveurs standalones : [instructions](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/README.md)
 

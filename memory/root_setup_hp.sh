@@ -8,8 +8,8 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME [-reset]
-Par défaut active les hpages, pour revenir aux pages normalles utiliser -reset"
+"Usage : $ME
+Active les hpages"
 
 script_banner $ME $*
 

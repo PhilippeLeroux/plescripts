@@ -1,4 +1,5 @@
 #/bin/bash
+# vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
@@ -56,11 +57,8 @@ typeset -a disk_list
 
 while read size disk_name
 do
-	i=${#size_list[@]}
-	typeset -i size_gb=$size
-	size_gb=size_gb/1024
-	size_list[$i]=$size_gb
-	disk_list[$i]=$disk_name
+	size_list+=( $(( size / 1024 )) )
+	disk_list+=( $disk_name )
 done<<<"$(kfod nohdr=true op=disks)"
 
 if [ $disks -gt ${#disk_list[@]} ]

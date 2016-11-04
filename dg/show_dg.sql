@@ -1,3 +1,5 @@
+-- vim: ts=4:sw=4
+
 set lines 130 pages 500
 break on dg_name on failgroup skip 1
 col dg_name for a12

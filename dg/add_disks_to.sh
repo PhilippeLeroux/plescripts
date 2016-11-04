@@ -1,4 +1,5 @@
 #/bin/bash
+# vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
@@ -44,26 +45,27 @@ while read size disk
 do
 	[ x"$disk" == x ] && continue
 
-	i=${#size_list[@]}
-	typeset -i size_gb=$size
-	size_gb=size_gb/1024
-	size_list[$i]=$size_gb
-	disk_list[$i]=$disk
+	size_list+=( $(( size / 1024 )) )
+	disk_list+=( $disk )
 done<<<"$(kfod nohdr=true op=disks)"
 
 if [ $disks -gt ${#disk_list[@]} ]
 then
 	error "Demande de $disks disks"
 	error "Disponible ${#disk_list[@]} disks"
+	LN
+	info "Documentation sur l'ajout de disques :"
+	info "https://github.com/PhilippeLeroux/plescripts/wiki/01-Ajout-de-disques-sur-des-DGs-Oracle"
 	exit 1
 fi
 
 function make_sql_cmd
 {
-	for i in $(seq 1 $(( $disks - 1 )) )
+	for (( i=1; i < $disks; ++i ))
 	do
 		other_disks="$other_disks\n,   '${disk_list[$i]}'"
 	done
+
 	cat <<EOS
 alter diskgroup $name add
 disk

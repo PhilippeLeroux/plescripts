@@ -126,7 +126,7 @@ do
 					exec_cmd $vm_scripts_path/add_disk.sh				\
 											-vm_name="$vm_name"			\
 											-disk_name=${vm_name}_u02	\
-											-disk_mb=$((10*1024))		\
+											-disk_mb=$((15*1024))		\
 											-fixed_size
 					LN
 				else

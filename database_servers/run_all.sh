@@ -104,7 +104,7 @@ function configure_server
 
 configure_server $db
 
-exec_cmd "ssh -t -t oracle@srv${db}01 \". .profile; db/create_db.sh -y -db=$db $@\""
+exec_cmd "ssh -t -t oracle@srv${db}01 \". .profile; ~/plescripts/db/create_db.sh -y -db=$db $@\""
 LN
 
 if [ $standby != undef ]
@@ -117,7 +117,7 @@ then
 
 	exec_cmd "ssh -t -t oracle@srv${db}01								\
 			\". .profile;												\
-				db/stby/create_dataguard.sh								\
+				~/plescripts/db/stby/create_dataguard.sh				\
 					-standby=$standby -standby_host=srv${standby}01\""
 	LN
 fi

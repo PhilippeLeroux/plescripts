@@ -43,12 +43,12 @@ done
 
 exit_if_param_undef name	"$str_usage"
 
-if [ 0 -eq 1 ]; then
 typeset -r targetcli_path=~/plescripts/san/targetcli_backup
 
 if [ ! -d $targetcli_path ]
 then
 	exec_cmd "mkdir $targetcli_path"
+	exec_cmd "chown $common_user_name:users $targetcli_path"
 fi
 
 typeset -r targetcli_file=${targetcli_path}/$(date +"%Y%m%d_%Hh%Mmn%S")_${name}.json
@@ -57,7 +57,4 @@ info "Backup file : $targetcli_file"
 exec_cmd "targetcli / saveconfig $targetcli_file"
 exec_cmd "targetcli / saveconfig"
 exec_cmd "chown $common_user_name:users $targetcli_file"
-fi # [ 0 -eq 1 ]; then
-info "Targetcli save config :"
-exec_cmd "targetcli / saveconfig"
 LN

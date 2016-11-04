@@ -32,6 +32,7 @@ done
 typeset -i count_missing_hpages=0
 
 #	Incrémente la variable count_missing_hpages
+#	$1 full path alertlog
 function read_hpages_from_alert_log
 {
 	typeset -r alog="$1"
@@ -39,9 +40,10 @@ function read_hpages_from_alert_log
 	if [ -f $alog ]
 	then
 		line_separator
+		info "Read from $alog"
 
 		typeset -i	available_pages expected_pages allocated_pages
-		read page_size_kb available_pages expected_pages allocated_pages errors <<<$(grep "^     2048K" $alog | tail -1)
+		read page_size_kb available_pages expected_pages allocated_pages errors <<<$(grep -E "^\s*2048K\s*[0-9].*" $alog | tail -1)
 
 		typeset	-ri	page_size_b=$(convert_2_bytes $page_size_kb)
 
@@ -49,7 +51,6 @@ function read_hpages_from_alert_log
 		typeset -ri	expected_pages_size=expected_pages*page_size_b
 		typeset -ri	allocated_pages_size=allocated_pages*page_size_b
 
-		info "Read from $alog"
 		info "HugePage size          : $(fmt_bytesU_2_better -i $page_size_kb)"
 		info "Available pages        : $available_pages = $(fmt_bytesU_2_better -i $available_pages_size)"
 		info "Expected pages         : $expected_pages = $(fmt_bytesU_2_better -i $expected_pages_size)"
@@ -72,7 +73,7 @@ function read_hpages_from_alert_log
 }
 
 #	Affiche le nombre de hpages souhaitées par l'instance.
-function print_hpages_instances
+function print_hpages_orcl_instance
 {
 	if [ -v ORACLE_SID ]
 	then
@@ -87,6 +88,15 @@ function print_hpages_instances
 	else
 		warning "ORACLE_SID undef"
 	fi
+}
+
+#	Ne fonctionne pas : pas de moyen fiable de trouver l'information.
+function print_hpages_asm_instance
+{
+	typeset	-r ASM=$1
+
+	typeset -r alog="$GRID_BASE/diag/asm/+asm/$ASM/trace/alert_$ASM.log"
+	read_hpages_from_alert_log $alog
 }
 
 #	Affiche le nombre de hpages souhaitées par -MGMTDB
@@ -116,28 +126,35 @@ typeset -i shm_used_mb=-1
 read fs shm_max_size_mb shm_used_mb rem<<<"$(df -m /dev/shm | tail -1)"
 typeset -ri actual_hpages=$(sysctl -n vm.nr_hugepages)
 
-print_hpages_instances
+print_hpages_orcl_instance
 print_hpages_mgmtdb
 
+typeset -r has_ASM=$(ps -ef|grep "[a]sm_pmon_+ASM" | cut -d_ -f3)
+[ x"$has_ASM" != x ] && warning "$has_ASM ignored.\n"
+
 line_separator
+info "OS config :"
 info "Hpage size             : $(fmt_number $hpage_size_mb)Mb"
 info "Hpage total            : $(fmt_number $hpage_total) = $(fmt_number $(( hpage_total * hpage_size_mb )))Mb"
 info "Hpage free             : $(fmt_number $hpage_free) = $(fmt_number $(( hpage_free * hpage_size_mb )))Mb"
 info "Hpage used             : $(fmt_number $hpage_used) = $(fmt_number $(( hpage_used * hpage_size_mb )))Mb"
 LN
-total_memory_used_mb=total_memory_used_mb+hpage_used
+typeset -ri total_hpages_used_mb=total_memory_used_mb+hpage_used
 
 line_separator
 info "/dev/shm :"
 info "Shm max size           : $(fmt_number $shm_max_size_mb)Mb"
 info "Shm used               : $(fmt_number $shm_used_mb)Mb"
 LN
-total_memory_used_mb=total_memory_used_mb+shm_used_mb
+typeset -ri total_smallpages_used_mb=total_memory_used_mb+shm_used_mb
 
 line_separator
 max_memory_mb=$(compute -i "$(memory_total_kb) / 1024")
 free_memory_mb=$(compute -i "$(memory_free_kb) / 1024")
 info "Max memory             : $(fmt_number $max_memory_mb)Mb"
-info "Memory used by all SGA : $(fmt_number $total_memory_used_mb)Mb (/dev/shm)"
 info "Free memory            : $(fmt_number $free_memory_mb)Mb"
+info
+info "SGA"
+info "  Small pages          : $(fmt_number $total_smallpages_used_mb)Mb (/dev/shm)"
+info "  Huge pages           : $(fmt_number $total_hpages_used_mb)Mb"
 LN

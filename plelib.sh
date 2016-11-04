@@ -5,7 +5,7 @@
 LANG=en_US.UTF-8
 umask 0002
 
-#	A utiliser le plus possible dans les scripts.
+#	Faire disparaître l'utilisation de cette variable.
 ROOT=~/plescripts
 
 ################################################################################
@@ -148,7 +148,7 @@ fi
 if [ ! -f $PLELIB_LOG_FILE ]
 then
 	touch $PLELIB_LOG_FILE >/dev/null 2>&1
-	chmod ug=rw,o=r $PLELIB_LOG_FILE
+	chmod ug=rw,o=r $PLELIB_LOG_FILE >/dev/null 2>&1
 	[ $? -ne 0 ] && exit 1
 fi
 
@@ -640,12 +640,14 @@ function exec_cmd
 				[ x"$eval_return" == x ] &&	eval_return=0
 			fi
 
+			typeset -r simplified_user_cmd=$(get_cmd_name "$@")
+
 			if [ $hide_command == NO ]
 			then
 				typeset -ri eval_duration=$(( SECONDS - eval_start_at ))
 				if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 				then
-					my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$(get_cmd_name "$@") running time : $(fmt_seconds $eval_duration)"
+					my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$simplified_user_cmd running time : $(fmt_seconds $eval_duration)"
 				fi
 			fi
 
@@ -653,12 +655,11 @@ function exec_cmd
 			then
 				[ $hide_command == YES ] && my_echo "$COL" "$(date +"%Hh%M")> " "$@"
 
-				typeset -r user_cmd=$(cut -d' ' -f1 <<< "$@")
 				if [ $continue_on_error == NO ]
 				then
-					error "$user_cmd return $eval_return"
+					error "$simplified_user_cmd return $eval_return"
 				else
-					[ $continue_on_error == YES ] && warning "$user_cmd return $eval_return, continue..."
+					[ $continue_on_error == YES ] && warning "$simplified_user_cmd return $eval_return, continue..."
 				fi
 
 				[ $force == YES ] && EXEC_CMD_ACTION=NOP

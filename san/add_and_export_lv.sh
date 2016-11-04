@@ -1,13 +1,11 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
 . ~/plescripts/disklib.sh
 . ~/plescripts/san/lvlib.sh
 EXEC_CMD_ACTION=EXEC
-
-. ~/plescripts/global.cfg
 
 typeset -r ME=$0
 typeset -r str_usage=\
@@ -116,7 +114,7 @@ function get_vg_free_gb # $1 vg_name
 }
 
 #	============================================================
-if [ $export_to != undef ]
+if [ "$export_to" != undef ]
 then	#	Déduction du préfixe à partir du nom du premier serveur.
 	typeset -r first_server_name=$(echo $export_to | cut -d' ' -f1)
 	read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$first_server_name" )"

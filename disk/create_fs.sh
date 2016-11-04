@@ -77,7 +77,7 @@ typeset	-r	lv_name=lv${suffix_vglv}
 if [ "$device" == check ]
 then
 	info "Search unused disk :"
-	device=$(get_unused_disks | head -1)
+	device=$(get_unused_disks_without_partitions | head -1)
 	if [ x"$device" == x ]
 	then
 		error "No device found."

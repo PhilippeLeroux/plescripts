@@ -39,7 +39,6 @@ typeset		vbox_running=no	#	Converne VirtualBox
 
 typeset		infra_running=no
 typeset	-a	vm_list
-typeset	-i	vm_count=0
 while read vm_name rem
 do
 	if [ "$vm_name" == \"$infra_hostname\" ]
@@ -47,17 +46,18 @@ do
 		infra_running=yes
 	elif [ x"$vm_name" != x ]
 	then
-		vm_list[$vm_count]=$vm_name
-		vm_count=vm_count+1
+		vm_list+=( $vm_name )
 	fi
 done<<<"$(VBoxManage list runningvms)"
+
+typeset -ri	vm_count=${#vm_list[@]}
 
 line_separator
 info "Save state for running VMs."
 info "    $vm_count VMs running : ${vm_list[@]}"
-for i in $( seq 0 $(( vm_count-1 )) )
+for vm in ${vm_list[*]}
 do
-	exec_cmd -c "VBoxManage controlvm ${vm_list[$i]}  savestate" &
+	exec_cmd -c "VBoxManage controlvm $vm savestate" &
 	LN
 done
 LN
@@ -117,9 +117,9 @@ fi
 
 line_separator
 info "Start $vm_count VMs"
-for i in $( seq 0 $(( vm_count-1 )) )
+for vm in ${vm_list[*]}
 do
-	exec_cmd -c "VBoxManage startvm ${vm_list[$i]} --type headless"
+	exec_cmd -c "VBoxManage startvm $vm --type headless"
 done
 
 if [ $vbox_running == yes ]
