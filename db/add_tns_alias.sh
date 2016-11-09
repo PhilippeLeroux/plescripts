@@ -93,7 +93,7 @@ then
 	exit 1
 fi
 
-exec_cmd "$ROOT/db/delete_tns_alias.sh -alias_name=$service_name"
+exec_cmd "~/plescripts/db/delete_tns_alias.sh -alias_name=$service_name"
 LN
 
 info "Append new alias : $service_name"

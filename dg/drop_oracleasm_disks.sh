@@ -98,9 +98,15 @@ line_separator
 exec_cmd "~/plescripts/disk/remove_unused_partition.sh"
 LN
 
-line_separator
-exec_cmd ssh -t root@K2 "~/plescripts/san/delete_db_lun.sh -db=$db -lun=$nr_disk -count=$count -vg_name=$vg_name"
-LN
+if [ $disks_hosted_by == san ]
+then
+	line_separator
+	exec_cmd ssh -t root@K2 "~/plescripts/san/delete_db_lun.sh -db=$db -lun=$nr_disk -count=$count -vg_name=$vg_name"
+	LN
+else
+	warning "Disks not removed form VBox : DIY"
+	LN
+fi
 
 line_separator
 typeset -r hostn=$(hostname -s)

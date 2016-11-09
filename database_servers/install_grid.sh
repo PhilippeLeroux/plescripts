@@ -279,8 +279,18 @@ function run_post_install_root_scripts_on_node	# $1 server_name
 				\"${ORACLE_BASE%/*/*}/app/oraInventory/orainstRoot.sh\""
 	LN
 
-	exec_cmd -c "ssh -t -t root@$server_name \"$ORACLE_HOME/root.sh\""
+	exec_cmd -c "ssh -t root@$server_name \". .bash_profile; $ORACLE_HOME/root.sh\""
 	return $?
+}
+
+function print_manual_workaround
+{
+	info "Manual workaround"
+	info "> ssh root@${node_names[$inode]}"
+	info "> $ORACLE_HOME/root.sh"
+	info "if log ok : ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
+	info "if log ko : reboot servers, wait crs up and ./install_grid.sh -skip_grid_install"
+	LN
 }
 
 function run_post_install_root_scripts
@@ -313,9 +323,7 @@ function run_post_install_root_scripts
 			then
 				error "Workaround failed."
 				LN
-				info "1. Redémarrer les serveurs."
-				info "2. Relancer l'installation du grid : ./install_grid.sh -skip_grid_install"
-				LN
+				print_manual_workaround
 				exit 1
 			fi
 		fi
@@ -452,8 +460,8 @@ then
 	ORACLE_HOME=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_HOME"|cut -d= -f2)
 	ORACLE_BASE=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_BASE"|cut -d= -f2)
 else
-	ORACLE_HOME=$GRID_DISK/oracle_home/bidon
-	ORACLE_BASE=$GRID_DISK/oracle_base/bidon
+	ORACLE_HOME=/$GRID_DISK/oracle_home/bidon
+	ORACLE_BASE=/$GRID_DISK/oracle_base/bidon
 fi
 
 info "ORACLE_HOME = '$ORACLE_HOME'"

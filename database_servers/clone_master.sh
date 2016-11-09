@@ -104,7 +104,10 @@ function run_oracle_preinstall
 		[ $disk_type == FS ] && db_type=single_fs || db_type=single
 	fi
 
-	exec_cmd "ssh -t root@$server_name plescripts/oracle_preinstall/run_all.sh $db_type"
+	#	Source .bash_profile pour éviter les erreurs du script oracle_preinstall/02_install_some_rpms.sh
+	#	Voir dans le script la section "NFS problem workaround"
+	#	Note je ne sais pas si c'est efficace, c'est un teste.
+	exec_cmd "ssh -t root@$server_name \". .bash_profile; plescripts/oracle_preinstall/run_all.sh $db_type\""
 	LN
 
 	line_separator
@@ -265,12 +268,19 @@ function make_ssh_equi_with_san
 function create_disks_for_oracle_and_grid_softwares
 {
 	line_separator
-	if [[ $max_nodes -eq 1 || $rac_u01_fs == default ]]
+	info "Create mount point /$GRID_DISK for Grid"
+	exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh		\
+											-mount_point=/$GRID_DISK	\
+											-suffix_vglv=grid			\
+											-type_fs=xfs
+	LN
+
+	if [[ $max_nodes -eq 1 || $rac_orcl_fs == default ]]
 	then
-		info "Create mount point $ORCL_DISK for Oracle & Grid"
-		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh	\
-												-mount_point=$ORCL_DISK	\
-												-suffix_vglv=orcl		\
+		info "Create mount point /$ORCL_DISK for Oracle"
+		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh		\
+												-mount_point=/$ORCL_DISK	\
+												-suffix_vglv=orcl			\
 												-type_fs=xfs
 		LN
 	else
@@ -287,18 +297,10 @@ function create_disks_for_oracle_and_grid_softwares
 		exec_cmd ssh -t root@$server_name	\
 						plescripts/disk/create_fs_ocfs2.sh	\
 								-db=$db						\
-								-mount_point=$ORCL_DISK		\
+								-mount_point=/$ORCL_DISK	\
 								-device=/dev/sdc			\
 								-action=$action
 		LN
-
-		info "Create mount point $GRID_DISK for grid"
-		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh	\
-												-mount_point=$GRID_DISK	\
-												-suffix_vglv=grid		\
-												-type_fs=xfs
-		LN
-
 	fi
 }
 

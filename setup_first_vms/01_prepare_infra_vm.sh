@@ -20,20 +20,20 @@ function infra_ssh
 }
 
 line_separator
-info "Création des points de montage NFS :"
+info "Create NFS mount points."
 infra_ssh "mkdir /mnt/plescripts"
 infra_ssh "ln -s /mnt/plescripts ~/plescripts"
 infra_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,$nfs_options"
 infra_ssh "mkdir -p ~/$oracle_install"
 LN
 
-info "Met à jour /etc/hostname avec ${infra_hostname}.${infra_domain}"
+info "Update /etc/hostname with ${infra_hostname}.${infra_domain}"
 infra_ssh "echo \"${infra_hostname}.${infra_domain}\" > /etc/hostname"
 LN
 
 if [ ! -f ~/.bashrc_extensions ]
 then
-	info "Mise en place du fichier ~/.bashrc_extensions"
+	info "Copy .bashrc_extensions to home directory."
 	infra_ssh "cp ~/plescripts/myconfig/bashrc_extensions ~/.bashrc_extensions"
 fi
 
@@ -43,7 +43,7 @@ infra_ssh "useradd -g users -M -N -u 1000 $common_user_name"
 LN
 
 line_separator
-info "Création des liens symboliques sur les répertoires les plus utilisés."
+info "Create links on frequently used directories"
 infra_ssh "ln -s ~/plescripts/san ~/san"
 infra_ssh "ln -s ~/plescripts/dns ~/dns"
 LN

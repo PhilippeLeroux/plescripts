@@ -91,7 +91,7 @@ replace DNS_IP				$dns_ip				$named_conf
 replace DOMAIN_NAME			$domain_name		$named_conf
 replace	REVERSED_NETWORK	$reversed_network	$named_conf
 replace MY_NETWORK			$infra_network		$named_conf
-replace MY_MASK				$if_pub_prefix			$named_conf
+replace MY_MASK				$if_pub_prefix		$named_conf
 LN
 
 info "Configuration de $named_domain"

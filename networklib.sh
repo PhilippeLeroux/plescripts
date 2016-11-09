@@ -1,5 +1,29 @@
 # vim: ts=4:sw=4
 
+#*> Convert net prefix to net mask
+#*>	$1 net prefix
+#*> return net mask
+function convert_net_prefix_2_net_mask
+{
+	typeset -i net_prefix=$1
+
+	while [ $net_prefix -ne 0 ]
+	do
+		if [ $net_prefix -lt 8 ]
+		then
+			binary=$(fill 1 $net_prefix)
+			typeset -i decimal=2#$binary
+			[ x"$mask" == x ] && mask=$decimal || mask="${mask}.$decimal"
+			net_prefix=0
+		else
+			net_prefix=net_prefix-8
+			[ x"$mask" == x ] && mask=255 || mask="${mask}.255"
+		fi
+	done
+
+	echo $mask
+}
+
 #*> Retourne le chemin contenant les fichiers de configuration des
 #*> interfaces réseaux.
 function get_if_path

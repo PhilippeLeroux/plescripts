@@ -38,75 +38,79 @@ do
 done
 
 line_separator
-info "Nettoyage du fichier know_host de $client_hostname :"
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${infra_hostname}
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${infra_ip}
+info "Clean up know_host file from $client_hostname :"
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh		\
+									-host=${master_name}	\
+									-ip=${infra_ip}
+
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh		\
+									-host=${infra_hostname}	\
+									-ip=${infra_ip}
 LN
 
-#===============================================================================
-#	Validation des exports NFS depuis le poste client.
 line_separator
-info "Validation exports NFS :"
-exec_cmd -c "sudo showmount -e localhost"
-LN
-
-typeset -i	nfs_errors=0
-exec_cmd -c "sudo showmount -e localhost | grep -q /home/$common_user_name/$oracle_install"
-[ $? -ne 0 ] && nfs_errors=nfs_errors+1 || info "${GREEN}Passed.${NORM}"
-
-exec_cmd -c "sudo showmount -e localhost | grep -q /home/$common_user_name/plescripts"
-[ $? -ne 0 ] && nfs_errors=nfs_errors+1 || info "${GREEN}Passed.${NORM}"
-
-exec_cmd -c "sudo showmount -e localhost | grep -q $iso_olinux_path"
-[ $? -ne 0 ] && nfs_errors=nfs_errors+1  || info "${GREEN}Passed.${NORM}"
-LN
-
-if [ $nfs_errors -ne 0 ]
+exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"
+if [ $? -ne 0 ]
 then
-	info "Les exports NFS attendus depuis $client_hostname ne sont pas présent."
+	cat /tmp/vc
+	rm -f /tmp/vc
 	exit 1
 fi
+rm -f /tmp/vc
+
 #===============================================================================
-
 line_separator
-info "Arrêt de la VM $master_name"
-exec_cmd -c VBoxManage controlvm $master_name acpipowerbutton
+info "Stop VM $master_name"
+#	Normallement la VM est démarrée, si ce n'est pas le cas erreur mais continue.
+exec_cmd -c $vm_scripts_path/stop_vm -server=$master_name
 [ $? -eq 0 ] && timing 20 "Attend l'arrêt complet"
-
-line_separator
-info "Clonage de la VM master."
-exec_cmd VBoxManage clonevm $master_name --name $infra_hostname --basefolder \"$vm_path\" --register
 LN
 
 line_separator
-info "Ajout d'une carte pour la connexion internet."
+info "Clone VM master"
+exec_cmd VBoxManage clonevm $master_name --name $infra_hostname			\
+							--basefolder \"$vm_path\" --register
+LN
+
+line_separator
+info "Add NIC for internet connection"
 exec_cmd VBoxManage modifyvm $infra_hostname --nic3 bridged
 exec_cmd VBoxManage modifyvm $infra_hostname --bridgeadapter3 "enp3s0"
 exec_cmd VBoxManage modifyvm $infra_hostname --nictype3 virtio
+exec_cmd VBoxManage modifyvm $infra_hostname --cableconnected3 on
 LN
 
 line_separator
-info "Attribution de 2 cpus"
+info "Settup 2 cpus"
 exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
 
+if [ 0 -eq 1 ]; then
 line_separator
-info "Ajout d'un disque pour le SAN (targetcli)"
-exec_cmd VBoxManage createhd --filename \"$vm_path/$infra_hostname/asm01_disk01.vdi\" --size $(( 256 / 1024 ))
-exec_cmd VBoxManage storageattach $infra_hostname --storagectl SATA --port 1 --device 0 --type hdd --medium \"$vm_path/$infra_hostname/asm01.vdi\"
+exec_cmd VBoxManage modifymedium \
+	disk \"$vm_path/$infra_hostname/$infra_hostname.vdi\" --resize $(( 32 * 1024 ))
+LN
+fi # [ 0 -eq 1 ]; then
+
+line_separator
+info "Add disk for SAN storage (targetcli)"
+exec_cmd "$vm_scripts_path/add_disk.sh					\
+				-vm_name=$infra_hostname				\
+				-disk_name=asm01_disk01					\
+				-disk_mb=$(( 128 * 1024 ))" -fixed_size
 LN
 
 line_separator
-info "Ajoute $infra_hostname au groupe Infra"
+info "Move $infra_hostname to group Infra"
 exec_cmd VBoxManage modifyvm "$infra_hostname" --groups "/Infra"
 LN
 
 line_separator
-info "Démarre la VM $infra_hostname"
-exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
+info "Start VM $infra_hostname"
+exec_cmd "$vm_scripts_path/start_vm $infra_hostname -wait_os=no"
 LN
-wait_server $master_ip
+
+#	La VM à encore l'IP du master.
+exec_cmd wait_server $master_ip
 LN
 
 #	La VM infra vient d'être clonée depuis le master, elle possède donc la
@@ -118,29 +122,29 @@ LN
 line_separator
 typeset -r if_cfg_path=~/plescripts/setup_first_vms/ifcfg_infra_server
 line_separator
-info "Mise à jour de la configuration de l'Iface public : $if_pub_name"
+info "Update public Iface : $if_pub_name"
 update_value IPADDR	$infra_ip		$if_cfg_path/ifcfg-$if_pub_name
 update_value PREFIX	$if_pub_prefix	$if_cfg_path/ifcfg-$if_pub_name
 update_value DNS1	$infra_ip		$if_cfg_path/ifcfg-$if_pub_name
 LN
 
-info "Mise à jour de la configuration de l'Iface iscsi : $if_iscsi_name"
+info "Update iSCSI Iface : $if_iscsi_name"
 update_value IPADDR	${if_iscsi_network}.${infra_ip_node}	$if_cfg_path/ifcfg-$if_iscsi_name
 update_value PREFIX	$if_iscsi_prefix						$if_cfg_path/ifcfg-$if_iscsi_name
 LN
 
-info "Mise à jour de la configuration de l'Iface internet : $if_net_name"
+info "Update internet Iface : $if_net_name"
 update_value DNS1	$infra_ip	$if_cfg_path/ifcfg-$if_net_name
 LN
 
-info "Copie la configuration des Ifaces sur $infra_hostname (utilise l'IP $master_ip)"
+info "Copy Ifaces files to $infra_hostname (Use IP $master_ip)"
 exec_cmd "scp ~/plescripts/setup_first_vms/ifcfg_infra_server/* root@${master_ip}:/etc/sysconfig/network-scripts/"
 LN
 
-info "Redémarrage de la VM $infra_hostname, la nouvelle configuration réseau sera effective."
+info "Restart VM $infra_hostname, new network config take effect."
 exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"
 LN
-wait_server $infra_ip
+exec_cmd wait_server $infra_ip
 [ $? -ne 0 ] && exit 1
 
 line_separator
@@ -150,26 +154,35 @@ exec_cmd "ssh -t root@$infra_ip \"~/plescripts/setup_first_vms/03_setup_infra_vm
 LN
 
 line_separator
-info "Arrêt de la VM $infra_hostname pour ajuster la RAM"
+info "Stop VM $infra_hostname to adjust RAM"
 exec_cmd "$vm_scripts_path/stop_vm -server=$infra_hostname -wait_os"
 LN
 
 line_separator
-info "Ajuste la RAM"
+info "Adjust RAM"
 exec_cmd VBoxManage modifyvm $infra_hostname --memory $vm_memory_mb_for_infra
 LN
 
 line_separator
-info "Démarre la VM."
+info "Start VM."
 exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
-wait_server $infra_hostname
+exec_cmd wait_server $infra_hostname
 
 line_separator
-info "L'IP $master_ip n'est plus utile dans le known_host de $client_name"
+info "Remove IP $master_ip & $infra_ip from known_host file of $client_name"
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${infra_ip}
 LN
 
 line_separator
-info "Équivalence ssh entre $client_hostname et $infra_hostname"
+info "Setup ssh equivalence between $client_hostname and $infra_hostname"
 exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_hostname"
+LN
+
+line_separator
+info "Create yum repository"
+exec_cmd "~/plescripts/yum/clone_ol_repository_on_infra_server.sh"
+LN
+
+info "Execute : ./03_create_master_vm.sh"
 LN

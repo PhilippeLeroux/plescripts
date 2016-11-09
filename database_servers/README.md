@@ -8,12 +8,6 @@ avec les paramètres nécessaires.
 
 **Note** : Tous les scripts sont exécutés depuis le poste client/serveur host.
 
-### Mise en œuvre
+* [Création de serveurs de base de données](https://github.com/PhilippeLeroux/plescripts)
 
-* [Créer le ou les serveurs](https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers)
-
-* [Installer le Grid Infra et Oracle](https://github.com/PhilippeLeroux/plescripts/wiki/Installation-:-Grid-infra-&-Oracle)
-
-* [Créer une base](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
-
-* [Supprimer les serveurs](https://github.com/PhilippeLeroux/plescripts/wiki/Remove-server(s))
+* [Supprimer des serveurs](https://github.com/PhilippeLeroux/plescripts/wiki/Remove-server(s))

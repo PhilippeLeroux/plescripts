@@ -5,9 +5,6 @@
 LANG=en_US.UTF-8
 umask 0002
 
-#	Faire disparaître l'utilisation de cette variable.
-ROOT=~/plescripts
-
 ################################################################################
 #	Initialisation de la lib.
 ################################################################################

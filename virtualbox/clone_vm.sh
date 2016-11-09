@@ -109,36 +109,25 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
 	LN
 
-	case $cfg_db_type in
-			std)
-				info "Create disk ${vm_name}_u01 for mount point /u01"
-				exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name"			\
-														-disk_name=${vm_name}_u01	\
-														-disk_mb=$((20*1024))		\
-														-fixed_size
-				LN
-				;;
+	info "Create disk ${vm_name}_$GRID_DISK for mount point /$GRID_DISK for grid"
+	exec_cmd $vm_scripts_path/add_disk.sh						\
+							-vm_name="$vm_name"					\
+							-disk_name=${vm_name}_$GRID_DISK	\
+							-disk_mb=$((20*1024))				\
+							-fixed_size
+	LN
 
-			rac)
-				if [ $rac_u01_fs == ocfs2 ]
-				then
-					info "Create disk ${vm_name}_u02 for mount point /u02 for grid"
-					exec_cmd $vm_scripts_path/add_disk.sh				\
-											-vm_name="$vm_name"			\
-											-disk_name=${vm_name}_u02	\
-											-disk_mb=$((15*1024))		\
-											-fixed_size
-					LN
-				else
-					info "Create disk ${vm_name}_u01 for mount point /u01"
-					exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$vm_name"			\
-															-disk_name=${vm_name}_u01	\
-															-disk_mb=$((20*1024))		\
-															-fixed_size
-					LN
-				fi
-				;;
-	esac
+	if [[ $cfg_db_type != rac || $rac_orcl_fs != ocfs2 ]]
+	then # Si utilisation de ocfs2 les disques sont crées après la création de
+		 # tous les serveurs.
+		info "Create disk ${vm_name}_$ORCL_DISK for mount point /$ORCL_DISK for Oracle"
+		exec_cmd $vm_scripts_path/add_disk.sh						\
+								-vm_name="$vm_name"					\
+								-disk_name=${vm_name}_$ORCL_DISK	\
+								-disk_mb=$((20*1024))				\
+								-fixed_size
+		LN
+	fi
 
 	# Présent ici car dans setup_first_vms/vbox_scripts/01_create_master_vm.sh
 	# le Guru apparaît toujours.
@@ -147,16 +136,17 @@ do
 	LN
 done
 
-if [[ $cfg_db_type == rac && $rac_u01_fs == ocfs2 ]]
-then # Avec ocfs2 /u01 est partagé par tous les nœuds.
+if [[ $cfg_db_type == rac && $rac_orcl_fs == ocfs2 ]]
+then # Avec ocfs2 le disque Oracle est partagé par tous les nœuds.
 	cfg_load_node_info $db 1
 
-	info "Create shared disk ${cfg_server_name}_u01 for mount point /u01 for oracle"
-	exec_cmd $vm_scripts_path/add_disk.sh	-vm_name="$cfg_server_name"			\
-											-disk_name=${cfg_server_name}_u01	\
-											-disk_mb=$((10*1024))				\
-											-attach_to="'$node_list'"			\
-											-fixed_size
+	info "Create shared disk ${cfg_server_name}_$ORCL_DISK for mount point /$ORCL_DISK for oracle"
+	exec_cmd $vm_scripts_path/add_disk.sh									\
+								-vm_name="$cfg_server_name"					\
+								-disk_name=${cfg_server_name}_$ORCL_DISK	\
+								-disk_mb=$((20*1024))						\
+								-attach_to="'$node_list'"					\
+								-fixed_size
 	LN
 fi
 

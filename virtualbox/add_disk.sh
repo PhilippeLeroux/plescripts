@@ -12,7 +12,9 @@ typeset -r str_usage=\
 	-disk_name=str
 	-disk_mb=#
 	[-attach_to]    Ex : 'vm1 vm2'
-	[-fixed_size]   Disque taille fixe (automatique si -attach_to est précisé.)
+	[-fixed_size]   Disk size is fixed (auto with -attach_to)
+
+Add disk to SATA controller on the first free port, the controller must exists.
 "
 
 script_banner $ME $*
@@ -28,7 +30,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 

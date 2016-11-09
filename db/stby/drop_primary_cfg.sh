@@ -122,7 +122,7 @@ from
 		[ x"$pdbName" == x ] && continue
 
 		line_separator
-		exec_cmd "$ROOT/db/create_srv_for_single_db.sh -db=$db -pdbName=$pdbName"
+		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh -db=$db -pdbName=$pdbName"
 		LN
 	done<<<"$(sqlplus_exec_query "$query")"
 }
@@ -137,7 +137,7 @@ remove_broker_cfg
 remove_SRLs
 
 line_separator
-exec_cmd -c $ROOT/db/drop_all_services.sh -db=$db
+exec_cmd -c ~/plescripts/db/drop_all_services.sh -db=$db
 LN
 
 create_services

@@ -8,9 +8,10 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-copy_iso]   : Les ISO Linux Oracle seront copiés avant la synchronisation.
-	[-force_sync] : Synchronise le dépôt locale même s'il n'y a pas de maj disponible.
-	Synchronise le dépôt Oracle Linux.
+	[-force_sync]   Synchronise le dépôt locale même s'il n'y a pas de maj disponible.
+	[-use_tar=name] Utilise l'archive 'name' pour créer le dépôt
+
+Synchronise le dépôt Oracle Linux.
 "
 
 script_banner $ME $*
@@ -21,8 +22,8 @@ then
 	exit 1
 fi
 
-typeset	copy_iso=no
 typeset	force_sync=no
+typeset	use_tar=none
 
 while [ $# -ne 0 ]
 do
@@ -33,13 +34,13 @@ do
 			shift
 			;;
 
-		-copy_iso)
-			copy_iso=yes
+		-force_sync)
+			force_sync=yes
 			shift
 			;;
 
-		-force_sync)
-			force_sync=yes
+		-use_tar=*)
+			use_tar=${1##*=}
 			shift
 			;;
 
@@ -57,63 +58,6 @@ do
 			;;
 	esac
 done
-
-exit_if_param_undef mountpoint_iso_path	"$str_usage"
-
-#	Liste des actions :
-#		1. Monte sur un répertoire de 'loopback' l'ISO Oracle Linux
-#		2. Copy le contenu sur le répertoire local : $infra_olinux_repository_path
-function copy_oracle_linux_iso
-{
-	typeset	-r	loop_directory=/tmp/mnt
-	typeset -r	mountpoint_iso_path=/mnt/oracle_linux
-
-	line_separator
-	exec_cmd -c showmount -e $client_hostname
-	LN
-
-	exec_cmd -c showmount -e $client_hostname | grep -q $iso_olinux_path
-	if [ $? -ne 0 ]
-	then
-		error "$client_hostname doit exporter $iso_olinux_path"
-		exit 1
-	fi
-
-	[ ! -d $mountpoint_iso_path ] && exec_cmd mkdir $mountpoint_iso_path
-	exec_cmd "mount $client_hostname:$iso_olinux_path $mountpoint_iso_path -t nfs -o ro,noatime,nodiratime,async"
-
-	if [ ! -d $infra_olinux_repository_path ]
-	then
-		info "Create directory : $infra_olinux_repository_path"
-		exec_cmd mkdir -p $infra_olinux_repository_path
-	fi
-
-	if [ ! -d $loop_directory ]
-	then
-		info "Create directory : $loop_directory"
-		exec_cmd mkdir -p $loop_directory
-	fi
-
-	for iso_name in $mountpoint_iso_path/*.iso
-	do
-		info "mount $iso_name"
-		exec_cmd mount -ro loop $iso_name $loop_directory
-		LN
-		info "Copy $iso_name to $infra_olinux_repository_path"
-		exec_cmd rsync -avHPS $loop_directory $infra_olinux_repository_path
-		LN
-		exec_cmd umount $loop_directory
-		LN
-	done
-
-	info "Remove $loop_directory"
-	exec_cmd rm -rf $loop_directory
-	LN
-	info "Remove $mountpoint_iso_path"
-	exec_cmd umount $mountpoint_iso_path
-	exec_cmd rmdir $mountpoint_iso_path
-	LN
-}
 
 function nfs_export_repo
 {
@@ -147,10 +91,7 @@ function update_yum_repository_file
 	LN
 }
 
-if [ $copy_iso == yes ]
-then
-	copy_oracle_linux_iso
-elif [ $force_sync == no ]
+if [ $force_sync == no ]
 then
 	test_if_rpm_update_available
 	[ $? -ne 0 ] && exit 0
@@ -163,6 +104,26 @@ exec_cmd yum -y update
 LN
 
 line_separator
+if [ ! -d $infra_olinux_repository_path ]
+then
+	info "Create directory : $infra_olinux_repository_path"
+	exec_cmd mkdir -p $infra_olinux_repository_path
+	LN
+fi
+
+if [ "$use_tar" != none ]
+then #	$use_tar contient le dépôt OL7 à partir de ol7, gains de temps dans les
+	 #	testes. Cloner le dépôt prend une heure avec l'archive 2mn maximum.
+	info "Extract repository from $use_tar"
+	root_dir="/$(echo $infra_olinux_repository_path | cut -d/ -f2)"
+	exec_cmd mv "$use_tar"	"$root_dir"
+	fake_exec_cmd cd $root_dir
+	cd "$root_dir"
+	exec_cmd tar xf "${use_tar##*/}"
+	exec_cmd rm "${use_tar##*/}"
+	LN
+fi
+
 info "Sync local repository :"
 exec_cmd -c reposync	--newest-only									\
 						--download_path=$infra_olinux_repository_path	\

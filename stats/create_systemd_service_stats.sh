@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -67,10 +66,13 @@ info "$service_file created."
 exec_cmd "cat $service_file"
 LN
 
-info "Enable service"
-exec_cmd "systemctl enable $service_name"
-LN
+if [ "$PLESTATISTICS" == ENABLE ]
+then
+	info "Enable service"
+	exec_cmd "systemctl enable $service_name"
+	LN
 
-info "Start service"
-exec_cmd "systemctl start $service_name"
-LN
+	info "Start service"
+	exec_cmd "systemctl start $service_name"
+	LN
+fi

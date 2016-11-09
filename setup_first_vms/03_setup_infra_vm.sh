@@ -39,7 +39,7 @@ exec_cmd "firewall-cmd --reload"
 LN
 
 line_separator
-info "Activation des services NFS serveur."
+info "Enable & start NFS services"
 exec_cmd "systemctl enable rpcbind"
 exec_cmd "systemctl start rpcbind"
 LN
@@ -48,7 +48,7 @@ exec_cmd "systemctl enable nfs-server"
 exec_cmd "systemctl start nfs-server"
 LN
 
-info "Ajoute nfs dans la zone 'trusted'"
+info "Add NFS to trusted zone"
 exec_cmd "firewall-cmd --add-service=nfs --permanent --zone=trusted"
 exec_cmd "firewall-cmd --reload"
 LN
@@ -58,12 +58,12 @@ exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescr
 LN
 
 line_separator
-info "Création du VG asm01 sur le disque sdb"
-exec_cmd "~/plescripts/san/create_vg.sh -device=sdb -vg=asm01"
+info "Create VG asm01 on first unused disk :"
+exec_cmd "~/plescripts/san/create_vg.sh -device=auto -vg=asm01"
 LN
 
 line_separator
-info "Configure SAN"
+info "Setup SAN"
 exec_cmd "~/plescripts/san/targetcli_default_cfg.sh"
 LN
 

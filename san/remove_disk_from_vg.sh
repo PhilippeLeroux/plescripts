@@ -9,7 +9,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-device=<str>] Nom du disque à utiliser, par exemple sdb ou auto
+	[-device=<str>] Nom du disque à supprimer.
 	[-vg=<str>]     Nom du VG à créer, par exemple asm01.
 "
 
@@ -72,55 +72,25 @@ function exit_if_device_not_exists
 	fi
 }
 
-function exit_if_vg_exists
-{
-	typeset -r vg_name=$1
-
-	info "Test if $vg_name not exists."
-	exec_cmd -f -ci "vgdisplay $vg_name >/dev/null 2>&1"
-	if [ $? -eq 0 ]
-	then
-		error "$vg_name exists !"
-		LN
-
-		info "$str_usage"
-		LN
-		exit 1
-	fi
-}
-
-if [ $device == auto ]
-then
-	line_separator
-	info "Search unused disk..."
-	device=$(get_unused_disks_without_partitions | head -1)
-	if [ x"$device" == x ]
-	then
-		error "No disk unused found."
-		exit 1
-	fi
-	device=${device##*/}
-	info "Disk found : $device"
-	LN
-fi
-
 line_separator
-info "Create VG $vg on device $device"
+info "Remove device $device from $vg"
 line_separator
 LN
 
-#	Test utile si device != auto
 exit_if_device_not_exists $device
 LN
 
-exit_if_vg_exists $vg
+info "Actual size :"
+exec_cmd "vgs $vg"
 LN
 
-exec_cmd "pvcreate /dev/$device"
+exec_cmd "vgreduce $vg /dev/$device"
 LN
 
-exec_cmd "vgcreate $vg /dev/$device"
+clear_device /dev/$device $(( 10 * 1024 * 1024 ))
 LN
 
-exec_cmd "vgdisplay $vg"
+info "New size :"
+exec_cmd "vgs $vg"
 LN
+

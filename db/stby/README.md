@@ -1,7 +1,6 @@
 Table of Contents
 =================
 
-  * [Table of Contents](#table-of-contents)
   * [Création d'un dataguard.](#création-dun-dataguard)
     * [Pré requis.](#pré-requis)
     * [Etablir les équivalences ssh entre les 2 serveurs pour le compte Oracle.](#etablir-les-équivalences-ssh-entre-les-2-serveurs-pour-le-compte-oracle)
@@ -168,16 +167,28 @@ Table of Contents
 
 # Actions testées :
 
-  * switchover : [log](https://github.com/PhilippeLeroux/plescripts/database_servers/switchover.md)
+  * switchover : [log](https://github.com/PhilippeLeroux/plescripts/db/stby/switchover.md)
+
   * faileover : [test](https://github.com/PhilippeLeroux/plescripts/wiki/faileover)
+
   * reinstate, si le reinstate n'est pas possible le script `create_dataguard.sh`
   avec le paramètre `-create_primary_cfg=no` permet de recréer la standby.
-  * Convertion en physical vers snapshot et snapshot vers physical.
+
+  * Conversion en physical vers snapshot et snapshot vers physical.
+
+	Remarques :
+	 * Les services ayant le rôle 'primary' ne sont pas démarrés lors de la conversion
+	   de 'physical' vers 'snapshot'.
+
+	 * Les services ayant le rôle 'standby' sont bien démarrés lors de la conversion
+	   de 'snapshot' vers 'physical'
 
 --------------------------------------------------------------------------------
 
 #	Prochaine étape.
- * L'observer : sur K2 ??
+
+ * L'observer : sur K2 : pas assez de mémoire !
+
  * Tester si l'ajout d'un 3e standby peut se faire sans modification du script.
 
 --------------------------------------------------------------------------------

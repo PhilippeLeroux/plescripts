@@ -41,95 +41,123 @@ done
 
 typeset -i count_errors=0
 
-line_separator
-info -n "Test l'existence de '$HOME/plescripts' "
-if [ ! -d "$HOME/plescripts" ]
-then
-	info -f "[$KO]"
-	error "	Ce répertoire doit contenir tous les scripts récupérés depuis GitHub."
-	count_errors=count_errors+1
-else
-	info -f "[$OK]"
-fi
+function scripts_exist
+{
+	line_separator
+	info -n "Directory exist '$HOME/plescripts' "
+	if [ ! -d "$HOME/plescripts" ]
+	then
+		info -f "[$KO]"
+		error "	must contains all scripts."
+		count_errors=count_errors+1
+	else
+		info -f "[$OK]"
+	fi
+	LN
+}
 
-info -n "Test l'existence de '$HOME/$oracle_install/database/runInstaller' "
-if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
-then
-	info -f "[$KO]"
-	error "	Ce répertoire doit contenir les fichiers dézipés d'Oracle."
-	count_errors=count_errors+1
-else
-	info -f "[$OK]"
-fi
+function runInstaller_exist
+{
+	info -n "Exist '$HOME/$oracle_install/database/runInstaller' "
+	if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
+	then
+		info -f "[$KO]"
+		error " $HOME/$oracle_install/database must contains Oracle installer."
+		count_errors=count_errors+1
+	else
+		info -f "[$OK]"
+	fi
 
-info -n "Test l'existence de '$HOME/$oracle_install/grid/runInstaller' "
-if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
-then
-	info -f "[$KO]"
-	error "Ce répertoire doit contenir les fichiers dézipés du Grid."
-	count_errors=count_errors+1
-else
-	info -f "[$OK]"
-fi
-LN
+	info -n "Exist '$HOME/$oracle_install/grid/runInstaller' "
+	if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
+	then
+		info -f "[$KO]"
+		error " $HOME/$oracle_install/grid must contains Grid installer."
+		count_errors=count_errors+1
+	else
+		info -f "[$OK]"
+	fi
+	LN
+}
 
-info "$client_hostname doit exporter via NFS les répertoires :"
-info -n "	- $HOME/plescripts "
-grep "$HOME/plescripts" /etc/exports >/dev/null 2>&1
-if [ $? -ne 0 ]
-then
-	count_errors=count_errors+1
-	info -f "[$KO]"
-else
-	info -f "[$OK]"
-fi
+function _is_exported
+{
+	typeset -r	directory=$1
 
-info -n "	- $HOME/$oracle_install "
-grep "$HOME/$oracle_install" /etc/exports >/dev/null 2>&1
-if [ $? -ne 0 ]
-then
-	count_errors=count_errors+1
-	info -f "[$KO]"
-else
-	info -f "[$OK]"
-fi
-LN
+	info -n "	- $directory "
+	if grep -qE "${directory}\s*${infra_network}.0.*" /etc/exports
+	then
+		info -f "[$OK]"
+	else
+		count_errors=count_errors+1
+		info -f "[$KO]"
+	fi
+}
 
-line_separator
-info -n "Test l'existence de $full_linux_iso_name "
-if [ ! -f "$full_linux_iso_name" ]
-then
-	info -f "[$KO]"
-	error "L'ISO d'installation d'Oracle Linux 7 n'existe pas."
-	count_errors=count_errors+1
-else
-	info -f "[$OK]"
-fi
-LN
+function validate_NFS_exports
+{
+	info "Validate NFS exports from $client_hostname on network ${infra_network}.0 :"
+	_is_exported $HOME/plescripts
+	_is_exported $HOME/$oracle_install
+	_is_exported $iso_olinux_path
+	LN
+}
 
-line_separator
-info -n "Validation de resolv.conf "
-if  grep -q ${infra_ip} /etc/resolv.conf &&  grep -q "search\s*$domain_name" /etc/resolv.conf
-then
-	info -f "[$OK]"
-else
-	info -f "[$KO]"
-	count_errors=count_errors+1
-fi
-LN
+function ISO_OLinux7_exist
+{
+	line_separator
+	info -n "ISO Oracle Linux 7 exist $full_linux_iso_name "
+	if [ ! -f "$full_linux_iso_name" ]
+	then
+		info -f "[$KO]"
+		count_errors=count_errors+1
+	else
+		info -f "[$OK]"
+	fi
+	LN
+}
 
-line_separator
-info -n "~/plescripts/shell dans le path "
-if $(test_if_cmd_exists llog)
-then
-	info -f "[$OK]"
-else
-	info -f "[${BLUE}optional${NORM}] mais simplifie la vie."
-fi
-LN
+function validate_resolv_conf
+{
+	line_separator
+	info "Validate resolv.conf "
 
-line_separator
-function in_path
+	info -n " - Test : search $infra_domain "
+	if  grep -q "search\s*$infra_domain" /etc/resolv.conf
+	then
+		info -f "[$OK]"
+	else
+		info -f "[$KO]"
+		count_errors=count_errors+1
+	fi
+
+	info -n " - Test : nameserver $infra_ip "
+	if  grep -q ${infra_ip} /etc/resolv.conf 
+	then
+		info -f "[$OK]"
+	else
+		info -f "[$KO]"
+		count_errors=count_errors+1
+	fi
+
+	LN
+}
+
+function _shell_in_path
+{
+	line_separator
+	info -n "~/plescripts/shell in path "
+	if $(test_if_cmd_exists llog)
+	then
+		info -f "[$OK]"
+	else
+		info -f "[$KO]"
+		count_errors=count_errors+1
+	fi
+	LN
+}
+
+function _in_path
 {
 	typeset		option=no
 	if [ "$1" == "-o" ]
@@ -160,29 +188,41 @@ function in_path
 	fi
 }
 
-in_path VBoxManage	"Install VirtualVox"
-in_path nc			"Install nc"
-in_path ssh			"Install ssh"
-in_path -o git		"Install git"
-in_path -o tmux		"Install tmux"
-LN
+function test_tools
+{
+	_shell_in_path
+
+	_in_path VBoxManage	"Install VirtualVox"
+	_in_path nc			"Install nc"
+	_in_path ssh		"Install ssh"
+	_in_path -o git		"Install git"
+	_in_path -o tmux	"Install tmux"
+	LN
+}
+
+scripts_exist
+
+runInstaller_exist
+
+validate_NFS_exports
+
+ISO_OLinux7_exist
+
+validate_resolv_conf
+
+test_tools
 
 line_separator
 exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
-LN
 
 line_separator
-info -n "Script configure_global.cfg.sh exécuté "
+info -n "~/plescripts/configure_global.cfg.sh executed "
 hn=$(hostname -s)
 if [[ "$hn" == "$client_hostname" && "$USER" == "$common_user_name" ]]
 then
 	info -f "[$OK]"
 else
 	info -f "[$KO]"
-	if [ $count_errors -ne 0 ]
-	then
-		info "Corriger les erreurs précédentes avant d'exécuter configure_global.cfg.sh"
-	fi
 	count_errors=count_errors+1
 fi
 LN
@@ -190,10 +230,9 @@ LN
 line_separator
 if [ $count_errors -ne 0 ]
 then
-	warning "$count_errors erreurs."
-	info "Corriger les erreurs avant de continuer."
+	error "Configuration failed : $count_errors errors."
 	exit 1
 else
-	info "Configuration conforme."
+	info "Configuration [$OK]"
 	exit 0
 fi

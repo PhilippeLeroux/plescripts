@@ -13,7 +13,7 @@ script_banner $ME $*
 #Doit être exécuté sur le serveur d'infrastructure ou le master.
 
 line_separator
-info "Les logs de l'OS en US merci !"
+info "Setup english for OS logs"
 exec_cmd localectl set-locale LANG=en_US.UTF-8
 LN
 

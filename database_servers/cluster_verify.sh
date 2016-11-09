@@ -61,7 +61,7 @@ function run_cluvfy
 
 run_cluvfy "checks reachability between nodes" comp nodereach -n all
 run_cluvfy "checks node connectivity" comp nodecon
-if [ $rac_u01_fs == ocfs2 ]
+if [ $rac_orcl_fs == ocfs2 ]
 then
 	run_cluvfy "checks CFS integrity" comp cfs -n all -f $ORCL_DISK
 fi

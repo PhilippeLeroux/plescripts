@@ -595,33 +595,33 @@ from
 		if [ $create_primary_cfg == yes ]
 		then
 			info "Create stby service for pdb $pdbName on cdb $primary"
-			exec_cmd "$ROOT/db/create_srv_for_single_db.sh \
-					-db=$primary -pdbName=$pdbName \
-					-role=primary"
+			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
+						-db=$primary -pdbName=$pdbName				\
+						-role=primary"
 			LN
 
 			info "(1) Need to start stby services on primary $primary for a short time."
 			# Il est important de démarrer les services stby sinon le démarrage
 			# des services sur la standby échoura. (1)
-			exec_cmd "$ROOT/db/create_srv_for_single_db.sh \
-					-db=$primary -pdbName=$pdbName \
-					-role=physical_standby"
+			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
+						-db=$primary -pdbName=$pdbName				\
+						-role=physical_standby"
 			LN
 		fi
 
 		info "Create services for pdb $pdbName on cdb $standby"
-		exec_cmd "ssh -t -t $standby_host '. .profile; \
-				$ROOT/db/create_srv_for_single_db.sh \
-				-db=$standby -pdbName=$pdbName \
-				-role=primary -start=no'</dev/null"
+		exec_cmd "ssh -t -t $standby_host '. .profile;			\
+					~/plescripts/db/create_srv_for_single_db.sh	\
+						-db=$standby -pdbName=$pdbName			\
+						-role=primary -start=no'</dev/null"
 		LN
 
 		#	Ne pas démarrer les services stby sur la stdy sinon sa plante.
 		#	Le faire après la création du broker.
-		exec_cmd "ssh -t -t $standby_host '. .profile; \
-				$ROOT/db/create_srv_for_single_db.sh \
-				-db=$standby -pdbName=$pdbName \
-				-role=physical_standby -start=no'</dev/null"
+		exec_cmd "ssh -t -t $standby_host '. .profile;				\
+					~/plescripts/db/create_srv_for_single_db.sh		\
+						-db=$standby -pdbName=$pdbName				\
+						-role=physical_standby -start=no'</dev/null"
 		LN
 
 		if [ $create_primary_cfg == yes ]
@@ -652,7 +652,8 @@ function check_ssh_prereq_and_if_stby_exist
 	typeset errors=no
 
 	line_separator
-	exec_cmd -c "$ROOT/shell/test_ssh_equi.sh -user=oracle -server=$standby_host"
+	exec_cmd -c "~/plescripts/shell/test_ssh_equi.sh		\
+					-user=oracle -server=$standby_host"
 	if [ $? -ne 0 ]
 	then
 		line_separator
@@ -823,6 +824,6 @@ info "Copy glogin.sql"
 exec_cmd "scp $ORACLE_HOME/sqlplus/admin/glogin.sql $standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
 LN
 
-exec_cmd "$ROOT/db/stby/show_dataguard_cfg.sh"
+exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
 
 script_stop $ME

@@ -21,14 +21,14 @@ function master_ssh
 }
 
 line_separator
-info "Création des points de montage NFS :"
+info "Create NFS mount points"
 master_ssh "mkdir /mnt/plescripts"
 master_ssh "ln -s /mnt/plescripts ~/plescripts"
 master_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,_netdev,$nfs_options"
 master_ssh "mkdir -p ~/$oracle_install"
 LN
 
-info "Mise en place du fichier ~/.bashrc_extensions"
+info "Create file ~/.bashrc_extensions"
 master_ssh "cp ~/plescripts/myconfig/bashrc_extensions ~/.bashrc_extensions"
 
 line_separator
@@ -37,7 +37,7 @@ master_ssh "useradd -g users -M -N -u 1000 $common_user_name"
 LN
 
 line_separator
-info "Configuration du dépôt"
+info "Setup yum repository"
 # TODO rendre configurable le nom du fichier !
 master_ssh "cp -fp ~/plescripts/yum/public-yum-ol7.repo /etc/yum.repos.d/public-yum-ol7.repo"
 LN

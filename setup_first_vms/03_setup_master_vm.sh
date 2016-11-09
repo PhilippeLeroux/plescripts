@@ -26,11 +26,11 @@ then
 fi
 unset hn
 
-info "Montage des scripts plescripts de $client_hostname sur /mnt/plescripts"
+info "Mount /mnt/plescripts"
 exec_cmd -c "mount ${client_hostname}:/home/$common_user_name/plescripts /mnt/plescripts -t nfs -o rw,$nfs_options"
 
 line_separator
-info "Mise à jour de l'Iface $if_pub_name"
+info "Update Iface $if_pub_name"
 update_value BOOTPROTO	static			$if_pub_file
 update_value IPADDR		$master_ip 		$if_pub_file
 update_value DNS1		$dns_ip			$if_pub_file
@@ -44,7 +44,7 @@ update_value ZONE		trusted			$if_pub_file
 update_value GATEWAY 	$dns_ip			$if_pub_file
 LN
 
-info "Prise en compte de la nouvelle configuration."
+info "New configuration take effect."
 exec_cmd systemctl restart network
 LN
 

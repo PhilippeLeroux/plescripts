@@ -9,7 +9,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-device=<str>] Nom du disque à utiliser, par exemple sdb ou auto
+	[-device=<str>] Nom du disque à utiliser, par exemple sdb ou auto.
 	[-vg=<str>]     Nom du VG à créer, par exemple asm01.
 "
 
@@ -109,18 +109,20 @@ info "Create VG $vg on device $device"
 line_separator
 LN
 
-#	Test utile si device != auto
 exit_if_device_not_exists $device
 LN
 
-exit_if_vg_exists $vg
+info "Actual size :"
+exec_cmd "vgs $vg"
 LN
 
 exec_cmd "pvcreate /dev/$device"
 LN
 
-exec_cmd "vgcreate $vg /dev/$device"
+exec_cmd "vgextend $vg /dev/$device"
 LN
 
-exec_cmd "vgdisplay $vg"
+info "New size :"
+exec_cmd "vgs $vg"
 LN
+

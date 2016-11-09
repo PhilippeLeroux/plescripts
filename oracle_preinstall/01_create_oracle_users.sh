@@ -54,15 +54,15 @@ LN
 
 case $db_type in
 	rac)
-		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
-		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=/$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
 		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/$ORACLE_RELEASE/grid!\" ~/plescripts/oracle_preinstall/grid_env"
 		LN
 		;;
 
 	single|single_fs)
-		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
-		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=/$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
 		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/grid/$ORACLE_RELEASE!\" ~/plescripts/oracle_preinstall/grid_env"
 		LN
 		;;
@@ -127,12 +127,8 @@ LN
 line_separator
 info "remove $GRID_ROOT/"
 exec_cmd "rm -rf $GRID_ROOT/*"
-
-if [ "$GRID_ROOT" != "$ORCL_ROOT" ]
-then
-	info "remove $ORCL_ROOT/"
-	exec_cmd "rm -rf $ORCL_ROOT/*"
-fi
+info "remove $ORCL_ROOT/"
+exec_cmd "rm -rf $ORCL_ROOT/*"
 LN
 
 #	============================================================================

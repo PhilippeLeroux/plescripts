@@ -111,8 +111,8 @@ function create_response_file
 	update_value ORACLE_HOSTNAME					${node_names[0]}					$rsp_file
 	update_value UNIX_GROUP_NAME					oinstall							$rsp_file
 	update_value INVENTORY_LOCATION					$ORA_INVENTORY						$rsp_file
-	update_value ORACLE_HOME						$ORCL_DISK/app/oracle/$oracle_release/dbhome_1	$rsp_file
-	update_value ORACLE_BASE						$ORCL_DISK/app/oracle				$rsp_file
+	update_value ORACLE_HOME						/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1	$rsp_file
+	update_value ORACLE_BASE						/$ORCL_DISK/app/oracle				$rsp_file
 	update_value oracle.install.db.CLUSTER_NODES	empty								$rsp_file
 	update_value oracle.install.db.InstallEdition	EE									$rsp_file
 	update_value oracle.install.db.DBA_GROUP		dba									$rsp_file
@@ -170,7 +170,7 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	typeset  -ri inode=$1
 	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
 
-	typeset -r script_root_sh="$ORCL_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
+	typeset -r script_root_sh="/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
 	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C $script_root_sh\" </dev/null"
@@ -199,14 +199,14 @@ if [ $max_nodes -gt 1 ]
 then
 	info "==> clusterNodes  = $clusterNodes"
 
-	if [ $rac_u01_fs == ocfs2 ]
+	if [ $rac_orcl_fs == ocfs2 ]
 	then	#	oraInventory ne peut pas être sur un CFS.
-		ORA_INVENTORY=$GRID_DISK/app/oraInventory
+		ORA_INVENTORY=/$GRID_DISK/app/oraInventory
 	else
-		ORA_INVENTORY=$ORCL_DISK/app/oraInventory
+		ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
 	fi
 else
-	ORA_INVENTORY=$ORCL_DISK/app/oraInventory
+	ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
 fi
 LN
 

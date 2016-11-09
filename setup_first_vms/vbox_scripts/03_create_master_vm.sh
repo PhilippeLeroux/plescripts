@@ -69,16 +69,17 @@ function master_ssh
 typeset -r script_start_at=$SECONDS
 
 line_separator
-info "Ménage :"
+info "Cleanup :"
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
 LN
 
 line_separator
-#	Peut importe le rôle de la VM - standalone ou noeud RAC - ajout d'une 3ieme NIC.
-info "Ajout d'une carte pour l'interco RAC"
+#	Peut importe le rôle de la VM - standalone ou nœud RAC - ajout d'une 3ieme NIC.
+info "Add NIC for RAC interco :"
 exec_cmd VBoxManage modifyvm $master_name --nic3 intnet
 exec_cmd VBoxManage modifyvm $master_name --nictype3 virtio
+exec_cmd VBoxManage modifyvm $master_name --cableconnected3 on
 LN
 
 exec_cmd "$vm_scripts_path/start_vm $master_name"
@@ -91,7 +92,7 @@ exec_cmd ~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server
 LN
 
 line_separator
-info "Configuration du réseau."
+info "Network config :"
 master_ssh "echo DNS1=$infra_ip >> $if_pub_file"
 master_ssh "echo GATEWAY=$infra_ip >> $if_pub_file"
 master_ssh "systemctl restart network"
@@ -105,7 +106,7 @@ LN
 exec_cmd "$vm_scripts_path/stop_vm $master_name"
 LN
 
-info "Le serveur $master_name est prêt."
+info "Server $master_name ready."
 LN
 
 info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"

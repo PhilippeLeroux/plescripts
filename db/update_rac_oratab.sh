@@ -1,10 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -50,7 +48,7 @@ do
 	then
 		info "$INSTANCE present in /etc/oratab"
 	else
-		exec_cmd "echo \"${INSTANCE}:/u01/app/oracle/$oracle_release/dbhome_1:N	#added by bibi\" >> /etc/oratab"
+		exec_cmd "echo \"${INSTANCE}:/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1:N	#added by bibi\" >> /etc/oratab"
 	fi
 done
 

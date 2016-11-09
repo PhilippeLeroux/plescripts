@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -36,6 +35,7 @@ do
 	esac
 done
 
+if [ 0 -eq 1 ]; then
 typeset hostvm_type=undef
 info "Select hypervisor :"
 info "	1 : vbox for linux"
@@ -57,6 +57,12 @@ do
 	esac
 done
 LN
+else
+	hostvm_type=linux_virtualbox
+	client_h=$(hostname -s)
+	common_user_n=$USER
+	full_linux_iso_n="$HOME/ISO/oracle_linux_7/V100082-01.iso"
+fi # [ 0 -eq 1 ]; then
 
 #	$1 nom de la variable à renseigner
 #	$2 Message à afficher
@@ -83,7 +89,7 @@ function ask_for_variable
 }
 
 vm_p="$(VBoxManage list systemproperties | grep "Default machine folder:" | tr -s [:space:] | cut -d' ' -f4-)"
-ask_for_variable vm_p "Localisation des VMs :"
+ask_for_variable vm_p "VMs folder :"
 
 ask_for_variable full_linux_iso_n "Full path for Oracle Linux 7 ISO (...V100082-01.iso) :"
 
