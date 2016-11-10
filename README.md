@@ -64,7 +64,7 @@ SINGLE ou RAC se fait en 5 étapes :
 
 ### Création des serveurs de base de données Oracle.
 
-* Création du ou des serveurs : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers)
+* Création serveurs : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers)
 
 * Installation du Grid Infra & d'Oracle : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Installation-:-Grid-infra-&-Oracle)
 

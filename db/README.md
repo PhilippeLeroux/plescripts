@@ -80,7 +80,7 @@ configuration du poste client/host et des VMs master et K2.
 
 	Une fois le script terminé le statue de la base est affichée :
 
-	- exemple d'une base SINGLE :
+	- Base SINGLE :
 
 		```c
 		# ==============================================================================
@@ -125,7 +125,7 @@ configuration du poste client/host et des VMs master et K2.
 		MOUNTED  EXTERN  N         512   4096  1048576     32752    31117                0           31117              0             N  FRA/
 		````
 
-	- exemple d'une base RAC :
+	- Base en RAC :
 
 		```c
 		# ==============================================================================
@@ -181,12 +181,12 @@ configuration du poste client/host et des VMs master et K2.
 
 --------------------------------------------------------------------------------
 
-###	Description des scripts liées à la gestion des services.
+###	Description des scripts liées à la gestion des services et du TNS.
 
 #### Création de services et alias TNS
 
-2 types de services sont créés : un pour les connexions OCI et l'autre pour les
-connexions Java, pour les bases en dataguard 2 autres services sont nécessaires.
+2 types de services sont créés, un pour les connexions OCI et l'autre pour les
+connexions Java. Pour les bases en dataguard 2 autres services sont nécessaires.
 
 Pour chaque service OCI un alias TNS est créé localement.
 
@@ -196,13 +196,14 @@ Pour chaque service OCI un alias TNS est créé localement.
 
  * add_srv_for_dataguard.sh : crée des services pour une base en dataguard.
 
-	L'équivalence ssh entre les comptes oracle doit être faite.
+	L'équivalence ssh entre les comptes oracle des 2 serveurs doit être faite.
 
 	4 services sont créés sur les 2 bases du dataguard :
 	 * *_oci et *_java qui ont le rôle 'primary'
 	 * *_stby_oci et *_stby_java qui ont le rôle 'standby'
 
 #### Suppression de services et alias TNS
+
  * drop_all_services.sh : supprime tous les services existant et les alias TNS associées.
 
  * drop_all_services_for_pdb.sh : supprime tous les services d'un PDB et les alias TNS associées.
@@ -210,9 +211,12 @@ Pour chaque service OCI un alias TNS est créé localement.
  * drop_service.sh : supprime un service et son alias TNS s'il existe.
 
 #### Scripts pour la gestion des alias TNS
+
+Ces 2 scripts sont utilisés par les scripts de gestion des services.
+
  * add_tns_alias.sh
  * delete_tns_alias.sh
 
-Ces scripts sont utilisés par les scripts de gestion des services.
 
-[Exemples](https://github.com/PhilippeLeroux/plescripts/wiki/Création-d'un-PDB) d'utilisation lors de la création d'un noveau PDB.
+[Exemples](https://github.com/PhilippeLeroux/plescripts/wiki/Création-d'un-PDB)
+d'utilisation lors de la création d'un nouveau PDB.

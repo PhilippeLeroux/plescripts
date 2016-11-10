@@ -1,10 +1,5 @@
 #/bin/bash
-
-
 # vim: ts=4:sw=4
-
-#   Exécuter ce scripts après qu'un des noeuds ait exécuté :
-#		oracleasm_discovery_first_node.sh
 
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC

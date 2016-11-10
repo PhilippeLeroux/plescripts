@@ -1,13 +1,13 @@
 ### Objectif des scripts
 
-Le but de ces scripts et de créer une infrastructure complète avec un minimum
-d'interventions.
+Ces scripts permettent de créer et configurer des serveurs Oracle de base de données.
 
-Quand un script se termine sans erreurs, il affiche la prochaine commande à exécuter
-avec les paramètres nécessaires.
+Tous les scripts sont à exécuter depuis le client/serveur host.
 
-**Note** : Tous les scripts sont exécutés depuis le poste client/serveur host.
+--------------------------------------------------------------------------------
 
-* [Création de serveurs de base de données](https://github.com/PhilippeLeroux/plescripts)
+* Création serveurs : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers)
+
+* Installation du Grid Infra & d'Oracle : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Installation-:-Grid-infra-&-Oracle)
 
 * [Supprimer des serveurs](https://github.com/PhilippeLeroux/plescripts/wiki/Remove-server(s))

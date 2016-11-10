@@ -1,5 +1,6 @@
-Cette page décrit brièvement les scripts, pour avoir des informations _plus fonctionnelles_
-sur la façon de se servir des scripts :
+Cette page décrit brièvement les scripts, pour avoir des informations plus fonctionnelles
+sur leur utilisation :
+
 * [Ajout de disques](https://github.com/PhilippeLeroux/plescripts/wiki/01-Ajout-de-disques-sur-des-DGs-Oracle)
 * [Suppression de disques](https://github.com/PhilippeLeroux/plescripts/wiki/02-Suppression-de-disques-sur-des-DGs-Oracle)
 
@@ -11,11 +12,7 @@ Permet de gérer les disques d'un serveur de base de données.
 
 1. Ajouter des disques dans oracleasm.
 
-	Lorsque des disques sont ajoutés sur le SAN exécuter avec le compte root les 2 commandes :
-	`./create_partitions_on_new_disks.sh` : crée des partitions sur les nouveaux disques.
-	`./create_oracle_disk_on_new_part.sh` : crée des disques Oracle sur les nouvelles partitions.
-
-	Pour ajouter les disques dans ASM se connecter grid et aller dans le répertoire plescripts/dg.
+	* `./create_oracleasm_disks_on_new_disks.sh`
 
 2.	Scripts pouvant être utiles.
 
@@ -50,12 +47,6 @@ Permet de gérer les disques d'un serveur de base de données.
 		* Crée un LV lv_oradata
 		* Crée un FS sur le LV
 		* Monte /u01/app/oracle/oradata sur lv_oradata
-
-*	oracleasm_discovery_first_node.sh
-
-	Ce script est utilisé par `clone_master.sh`, il effectue toutes les actions
-	nécessaires pour créer les disques sur le premier nœud d'un RAC ou un serveur
-	standalone.
 
 *	oracleasm_discovery_other_nodes.sh
 
