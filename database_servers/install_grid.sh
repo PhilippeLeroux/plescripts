@@ -22,10 +22,13 @@ typeset -r str_usage=\
 	   -skip_configToolAllCommands
 	   -skip_create_dg
 
-	Le paramètre -no_hacks permet d'installer le grid sans toutes mes bidouilles.
-	Voir sur le wiki le mémo 'Configuration des huge pages' avant de l'utiliser.
-	L'option -force_MGMTDB force la création de la base MGMTDB sans l'utilisation
-	de -no_hacks
+	Par défaut des hacks sont fait pour diminuer la consommation mémoire :
+		* Réduction de la mémoire ASM
+		* Arrêt de certains services.
+		* Suppression de tfa
+		* La base MGMTDB n'est pas crées.
+	Le flag -no_hacks permet de ne pas mettre en œuvre ces hacks.
+	Le flag -force_MGMTDB force l'installation de la base en conservant les autres hacks.
 
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
 "
@@ -334,7 +337,7 @@ function run_post_install_root_scripts
 }
 
 # Création de la base : -MGMTDB pour un RAC, je ne sais pas ce qu'il fait d'autre.
-# Est ce qu'il ne serait pas mieux d'exécuter le script puis ensuite détruire la base ?
+# Est ce qu'il ne serait pas mieux d'exécuter le script puis détruire la base ?
 function runConfigToolAllCommands
 {
 	line_separator
