@@ -36,7 +36,7 @@ done
 LN
 info "Liste des actions effectuées :"
 info "	- démarre la VM master ${master_name}"
-info "	- se connecte est exécute yum -y update"
+info "	- se connecte et exécute yum -y update"
 info "	- stop la VM master ${master_name}."
 LN
 confirm_or_exit "Continuer"

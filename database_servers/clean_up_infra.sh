@@ -3,6 +3,7 @@
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -20,7 +21,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -45,57 +45,55 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
+cfg_exist $db
+
 typeset -r upper_db=$(to_upper $db)
 
-typeset -r cfg_path=~/plescripts/database_servers/$db
-
-if [ -d $cfg_path ]
+if [ $delete_vms == yes ]
 then
-	if [ $delete_vms == yes ]
-	then
-		line_separator
-		exec_cmd -c "~/plescripts/shell/delete_vm -db=$db -y"
-		LN
-	fi
+	line_separator
+	exec_cmd -c "~/plescripts/shell/delete_vm -db=$db -y"
+	LN
+fi
 
-	if [ -f ~/.ssh/known_hosts ]
-	then
-		typeset -ri count_nodes=$(ls -1 $cfg_path/node* | wc -l)
-
-		line_separator
-		for inode in $( seq 1 $count_nodes )
-		do
-			node_name=$( cat $cfg_path/node$inode | cut -d':' -f2 )
-			info "Supprime $node_name du fichier .ssh/known_hosts"
-			remove_from_known_hosts $node_name
-			LN
-		done
-	fi
+if [ -f ~/.ssh/known_hosts ]
+then
+	typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
 	line_separator
-	info "Mise à jour du dns :"
-	exec_cmd "ssh -t $dns_conn plescripts/dns/remove_db_from_dns.sh -db=$db"
-	LN
-
-	line_separator
-	info "Mise à jour des clefs"
-	exec_cmd "ssh -t $dns_conn plescripts/dns/clean_up_ssh_authorized_keys.sh"
-	LN
-
-	line_separator
-	info "Mise à jour du san :"
-	exec_cmd "ssh -t $san_conn plescripts/san/reset_all_for_db.sh -db=$db"
-	LN
-
-	line_separator
-	exec_cmd -c sudo systemctl restart nscd.service
-	LN
-else
-	warning "No servers for $db"
-	exit 1
+	for inode in $( seq $max_nodes )
+	do
+		cfg_load_node_info $db $inode
+		remove_from_known_hosts $cfg_server_name
+		if [[ $max_nodes -gt 1 && $inode -eq 1 ]]
+		then	# Supprime les scans.
+			remove_from_known_hosts ${cfg_server_name}-scan
+		fi
+	done
 fi
 
 line_separator
+info "Update DNS :"
+exec_cmd "ssh -t $dns_conn plescripts/dns/remove_db_from_dns.sh -db=$db"
+LN
+
+line_separator
+info "Remove keys from DNS"
+exec_cmd "ssh -t $dns_conn plescripts/dns/clean_up_ssh_authorized_keys.sh"
+LN
+
+line_separator
+info "Update SAN :"
+exec_cmd "ssh -t $san_conn plescripts/san/reset_all_for_db.sh -db=$db"
+LN
+
+line_separator
+info "Clean up local DNS cache :"
+exec_cmd -c sudo systemctl restart nscd.service
+LN
+
+line_separator
+cfg_path=$cfg_path_prefix/$db
 info "Remove $cfg_path"
 exec_cmd -c "rm -rf $cfg_path"
 LN

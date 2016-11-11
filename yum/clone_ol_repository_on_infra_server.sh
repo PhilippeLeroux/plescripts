@@ -45,7 +45,7 @@ fi
 if [ ! -f $iso_olinux_path/yum_repo.tar ]
 then
 	line_separator
-	info "Clone of OL7 repository on $infra_hostname"
+	info "Cloning OL7 repository on $infra_hostname"
 	exec_cmd "ssh -t $infra_conn '~/plescripts/yum/sync_oracle_repository.sh	\
 																-force_sync'"
 	LN
@@ -55,7 +55,7 @@ else	#	Duplication du backup du repo : gain en temps
 	exec_cmd scp $iso_olinux_path/yum_repo.tar ${infra_conn}:/
 	LN
 
-	info "Clone of OL7 repository on $infra_hostname"
+	info "Cloning OL7 repository on $infra_hostname"
 	exec_cmd "ssh -t $infra_conn	\
 				'~/plescripts/yum/sync_oracle_repository.sh	\
 								-force_sync					\

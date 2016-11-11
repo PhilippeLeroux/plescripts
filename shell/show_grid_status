@@ -21,7 +21,7 @@ typeset -r str_usage=\
 "
 
 typeset		db=undef
-typeset	-i	nr_node=1
+typeset	-i	nr_node=-1
 typeset		server_name=undef
 typeset	-i	wait_time_secs=10
 
@@ -73,8 +73,22 @@ then
 	exit_if_param_undef db "$str_usage"
 fi
 	
-[ $server_name == undef ] && server_name=$(printf "srv%s%02d" ${db} $nr_node)
-
+if [ $server_name == undef ]
+then
+	if [ $nr_node -eq -1 ]
+	then #	Test si une scan existe.
+		exec_cmd -c ping -c 1 $db-scan
+		if [ $? -eq 0 ]
+		then	# Oui : utilise l'adresse de scan
+			server_name=$db-scan
+		else	# Non : utilise le premier serveur.
+			server_name=$(printf "srv%s01" ${db})
+		fi
+		LN
+	else
+		server_name=$(printf "srv%s%02d" ${db} $nr_node)
+	fi
+fi
 
 wait_server $server_name
 [ $? -ne 0 ] && exit 1

@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
 EXEC_CMD_ACTION=EXEC
 
@@ -108,7 +109,7 @@ then
 fi
 rm -f /tmp/vc
 
-typeset -c	cfg_path=~/plescripts/database_servers/$db
+typeset -r	cfg_path=$cfg_path_prefix/$db
 
 function test_ip_node_used
 {
@@ -176,7 +177,18 @@ function normalyse_asm_disks
 		i_lun=4
 	fi
 
-	typeset	-ri	max_luns=$(( size_dg_gb / size_lun_gb ))
+	typeset	-i	max_luns=$(( size_dg_gb / size_lun_gb ))
+	typeset	-i	corrected_size_dg_gb=$(( size_lun_gb *  max_luns ))
+	if [ $corrected_size_dg_gb -lt $size_dg_gb ]
+	then
+		while [ $corrected_size_dg_gb -lt $size_dg_gb ]
+		do
+			corrected_size_dg_gb=$(( corrected_size_dg_gb + size_lun_gb ))
+		done
+		max_luns=$(( corrected_size_dg_gb / size_lun_gb ))
+		info "DG size will be $max_luns LUNs * ${size_lun_gb}Gb = ${corrected_size_dg_gb}Gb (greater than ${size_dg_gb}Gb requested)"
+		LN
+	fi
 
 	typeset		buffer="DATA:${size_lun_gb}:$i_lun:"
 	typeset	-i	last_lun=i_lun+max_luns-1
@@ -204,22 +216,28 @@ exec_cmd mkdir $cfg_path
 LN
 
 typeset -i ip_range=1
-[ $max_nodes -gt 1 ] && ip_range=max_nodes*2+3	# +3 adressse de scan
+[ $max_nodes -gt 1 ] && ip_range=max_nodes*2+3	# 2 IP / nodes, 3 SCAN IP
 [ $ip_node -eq -1 ] && ip_node=$(ssh $dns_conn "~/plescripts/dns/get_free_ip_node.sh -range=$ip_range")
 
-for i in $(seq 1 $max_nodes)
+for i in $(seq $max_nodes)
 do
 	normalyze_node $i
 done
 
 [ $db_type == rac ] && normalyze_scan
 
-typeset -i data_lun_count=$(( size_dg_gb /  size_lun_gb))
-if [ $data_lun_count -lt $default_minimum_lun ]
+#	La taille du DG doit être un multiple de la taille des LUNs.
+typeset -i dg_lun_count=$(( size_dg_gb /  size_lun_gb))
+if [ $dg_lun_count -lt $default_minimum_lun ]
 then
-	data_lun_count=$default_minimum_lun
-	size_dg_gb=$(( size_lun_gb *  data_lun_count ))
-	info "Adjust DGs sizes to ${size_dg_gb}Gb (min $default_minimum_lun disks/DG)"
+	dg_lun_count=$default_minimum_lun
+	typeset	-i corrected_size_dg_gb=$(( size_lun_gb *  dg_lun_count ))
+	while [ $corrected_size_dg_gb -lt $size_dg_gb ]
+	do
+		corrected_size_dg_gb=$(( corrected_size_dg_gb + size_lun_gb ))
+	done
+	size_dg_gb=$corrected_size_dg_gb
+	info "Adjust DG size to ${size_dg_gb}Gb : minimum $default_minimum_lun LUNs of ${size_lun_gb}Gb per DG"
 	LN
 fi
 

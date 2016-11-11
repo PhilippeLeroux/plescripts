@@ -70,8 +70,8 @@ typeset -r script_start_at=$SECONDS
 
 line_separator
 info "Cleanup :"
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -host=${master_name}
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh	\
+										-host=${master_name} -ip=${master_ip}
 LN
 
 line_separator
