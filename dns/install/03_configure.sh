@@ -108,5 +108,9 @@ replace REVERSED_NETWORK	$reversed_network	$reverse_domain
 replace DNS_IP_NODE			$dns_ip_node		$reverse_domain
 LN
 
+info "Stop IPV6 errors"
+exec_cmd sed -i '6i OPTIONS="-4"' /etc/sysconfig/named
+LN
+
 exec_cmd -c systemctl enable named
 exec_cmd -c systemctl restart named
