@@ -1,8 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-#	Le script n'a pas été testé depuis l'utilisation de gilib.sh
-
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
@@ -23,14 +21,14 @@ typeset -r str_usage=\
 	[[!] -disks]            : supprime les disques.
 	[[!] -revert_to_master] : repasse sur la config du master.
 
-	-type=ASM               : Si installation sur FS le préciser !
+	-storage=ASM            : Si installation sur FS le préciser !
 
 	Ajouter le flag '!' permet de ne pas effectuer une action avec le paramètre -all.
 "
 
 script_banner $ME $*
 
-typeset type=ASM
+typeset storage=ASM
 typeset action_list
 typeset -r all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_disks revert_to_master"
 
@@ -38,7 +36,7 @@ typeset not_flag=no
 #	Utiliser lors de l'évaluation de paramètres.
 #	Si $1 vaut yes met fin au script, c'est la contenu de la variable not_flag
 #	qui doit être passé en paramètre.
-function exit_if_yes
+function exit_if_not_flag_used
 {
 	if [ $1 == yes ]
 	then
@@ -57,26 +55,25 @@ do
 			;;
 
 		-emul)
-			exit_if_yes $not_flag -emul
+			exit_if_not_flag_used $not_flag -emul
 			EXEC_CMD_ACTION=NOP
 			arg1="-emul"
 			shift
 			;;
 
-		-type=*)
-			exit_if_yes $not_flag -all
-			type=${1##*=}
+		-storage=*)
+			storage=${1##*=}
 			shift
 			;;
 
 		-all)
-			exit_if_yes $not_flag -databases
+			exit_if_not_flag_used $not_flag -all
 			action_list=$all_actions
 			shift
 			;;
 
 		-databases)
-			exit_if_yes $not_flag -databases
+			exit_if_not_flag_used $not_flag -databases
 			action_list="$action_list delete_databases"
 			shift
 			;;
@@ -143,14 +140,7 @@ done
 
 [ $USER != root ] && error "Only root !" && exit 1
 
-exit_if_param_invalid type "FS ASM" "$str_usage"
-
-info "Actions : $action_list"
-if [ x"$action_list" == x ]
-then
-	info "$str_usage"
-	exit 1
-fi
+exit_if_param_invalid storage "FS ASM" "$str_usage"
 
 #	Exécute la commande "$@" en faisant un su - oracle -c
 #	Si le premier paramètre est -f l'exécution est forcée.
@@ -175,11 +165,10 @@ function delete_all_db
 {
 	line_separator
 	info "delete all DBs :"
-	cat /etc/oratab | grep -E "^[A-Z].*# line added by Agent" |\
 	while IFS=':' read OSID REM
 	do
-		suoracle "~/plescripts/db/delete_db.sh -db=$OSID"
-	done
+		exec_cmd ~/plescripts/db/remove_all_files_for_db.sh -db=$OSID
+	done<<<"$(cat /etc/oratab | grep -E "^[A-Z].*# line added by Agent")"
 	LN
 }
 
@@ -191,7 +180,7 @@ function deinstall_oracle
 	suoracle -f "~/plescripts/database_servers/uninstall_oracle.sh $arg1"
 
 	execute_on_all_nodes "rm -fr /opt/ORCLfmap"
-	execute_on_all_nodes "rm -fr /u01/app/oracle/audit"
+	execute_on_all_nodes "rm -fr /$ORCL_DISK/app/oracle/audit"
 	LN
 
 	typeset -r service_file=/usr/lib/systemd/system/oracledb.service
@@ -208,7 +197,7 @@ function deinstall_oracle
 function remove_vg
 {
 	line_separator
-	exec_cmd "umount /u01/app/oracle/oradata"
+	exec_cmd "umount /$ORCL_DISK/app/oracle/oradata"
 	exec_cmd "sed -i "/vg_oradata-lv_oradata/d" /etc/fstab"
 	fake_exec_cmd "vgremove vg_oradata<<<\"yy\""
 	if [ $? -eq 0 ]
@@ -256,13 +245,36 @@ function deinstall_grid
 	execute_on_all_nodes "rm -fr /etc/oratab"
 	LN
 
-	execute_on_all_nodes "rm -fr /u01/app/grid/log"
+	execute_on_all_nodes "rm -fr /$GRID_DISK/app/grid/log"
 	LN
 }
 
 #	============================================================================
 #	MAIN
 #	============================================================================
+if grep -q remove_oracle_binary <<< "$action_list"
+then
+	if ! grep -q delete_databases <<< "$action_list"
+	then
+		typeset	-r	db_present=$(cat /etc/oratab | grep -E "^[A-Z].*")
+		if [ x"$db_present" != x ]
+		then
+			info "Database active, add flag delete_databases"
+			action_list="delete_databases $action_list"
+		fi
+	fi
+fi
+
+line_separator
+info "Actions : $action_list"
+LN
+if [ x"$action_list" == x ]
+then
+	info "$str_usage"
+	LN
+	exit 1
+fi
+
 line_separator
 info "Remove components on : $gi_current_node $gi_node_list"
 line_separator
@@ -281,7 +293,7 @@ then
 	deinstall_oracle
 fi
 
-if [ $type != FS ]
+if [ $storage != FS ]
 then
 	if grep -q remove_grid_binary <<< "$action_list"
 	then
@@ -291,7 +303,7 @@ fi
 
 if grep -q remove_disks <<< "$action_list"
 then
-	[ $type == ASM ] && remove_disks || remove_vg
+	[ $storage == ASM ] && remove_disks || remove_vg
 fi
 
 exec_cmd -f -c "umount /mnt/oracle_install"

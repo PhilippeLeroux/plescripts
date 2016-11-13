@@ -200,7 +200,7 @@ function mount_oracle_install
 	LN
 }
 
-#	Création du point de montage /u01/app/oracle/oradata
+#	Création du point de montage /$ORCL_DISK/app/oracle/oradata
 #		* Recherche un disque disponible
 #		* Création du vg vgoradata et du lv lvoradate
 #		* Pour création d'un FS du type rdbms_fs_type (cf global.cfg)
@@ -209,8 +209,8 @@ function create_rdbms_fs
 	exec_cmd ssh -t root@${server_name} plescripts/disk/create_fs.sh		\
 										-type_fs=$rdbms_fs_type				\
 										-suffix_vglv=oradata				\
-										-mount_point=/u01/app/oracle/oradata
-	exec_cmd ssh -t root@${server_name} chown -R oracle:oinstall /u01/app/oracle
+										-mount_point=/$ORCL_DISK/app/oracle/oradata
+	exec_cmd ssh -t root@${server_name} chown -R oracle:oinstall /$ORCL_DISK/app/oracle
 	LN
 }
 

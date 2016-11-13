@@ -38,7 +38,7 @@ done
 exit_if_file_not_exist /mnt/oracle_install/database/runInstaller "$str_usage"
 
 info "deinstall oracle"
-fake_exec_cmd /mnt/oracle_install/database/runInstaller -deinstall -home $ORACLE_HOME
+fake_exec_cmd /mnt/oracle_install/database/runInstaller -deinstall -home $ORACLE_HOME CR CR y
 if [ $? -eq 0 ]
 then
 /mnt/oracle_install/database/runInstaller -deinstall -home $ORACLE_HOME<<EOS

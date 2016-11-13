@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -44,28 +45,25 @@ done
 
 exit_if_param_undef db		"$str_usage"
 
-typeset -r cfg_path=~/plescripts/database_servers/$db
-[ ! -d $cfg_path ] && error "Directory $cfg_path not exists." && exit 1
+cfg_exist $db
 
-typeset	-r	db_type=$(cat $cfg_path/node1 | cut -d: -f1)
-if [ $db_type == rac ]
+typeset	-ri	max_nodes=$(cfg_max_nodes $db)
+
+cfg_load_node_info $db 1
+first_vm=$cfg_server_name
+
+if [ $max_nodes -gt 1 ]
 then
-	typeset	-i	inode=0
-	for node_file in $cfg_path/node*
+	for inode in $( seq 2 $max_nodes )
 	do
-		if [ $inode -eq 0 ]
-		then
-			first_vm=$(cat $node_file | cut -d: -f2)
-		else
-			attach_to="$attach_to $(cat $node_file | cut -d: -f2)"
-		fi
-		inode=inode+1
+		cfg_load_node_info $db $inode
+		attach_to="$attach_to $cfg_server_name"
 	done
 else
-	first_vm=$(cat $cfg_path/node1 | cut -d: -f2)
 	typeset	-r	attach_to=no_attach
 fi
 
+typeset -r	cfg_disk=$cfg_path_prefix/$db/disks
 typeset	-i	ilun=1
 while IFS=: read dg_name size_gb first_no last_no
 do
@@ -82,4 +80,4 @@ do
 							-fixed_size
 		ilun=ilun+1
 	done
-done<$cfg_path/disks
+done<$cfg_disk

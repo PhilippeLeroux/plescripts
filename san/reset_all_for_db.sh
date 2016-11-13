@@ -1,11 +1,10 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
-EXEC_CMD_ACTION=EXEC
-
+. ~/plescripts/cfglib.sh
 . ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage="Usage : $ME -db=<str> [-count_nodes=<#>]
@@ -44,19 +43,19 @@ exit_if_param_undef db	"$str_usage"
 
 if [ $count_nodes -eq -1 ]
 then
-	typeset -r cfg_path=~/plescripts/database_servers/$db
-	if [ ! -d $cfg_path ] 
+	cfg_exist $db use_return_code
+	if [ $? -ne 0 ]
 	then
-		error "$db config files not exists !"
+		error "Configuration file not exists, use -db"
 		LN
 		info "$str_usage"
 		exit 1
 	fi
 
-	count_nodes=$(ls -1 $cfg_path/node* | wc -l)
+	count_nodes=$(cfg_max_nodes $db)
 fi
 
-for node in $( seq 1 $count_nodes )
+for node in $( seq $count_nodes )
 do
 	initiator_name=$(get_initiator_for $db $node)
 	~/plescripts/san/delete_initiator.sh -name=$initiator_name
@@ -73,5 +72,4 @@ exec_cmd -c ~/plescripts/san/remove_lv.sh -vg_name=asm01 -prefix=$db -all
 LN
 
 exec_cmd "~/plescripts/san/save_targetcli_config.sh -name=\"reset_all_$db\""
-
-
+LN

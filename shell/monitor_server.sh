@@ -1,6 +1,8 @@
 #/bin/bash
+# vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 EXEC_CMD_ACTION=EXEC
 
 #	Dimensiont du terminal
@@ -25,14 +27,15 @@ then
 	[ -f /tmp/id_db ] && ID_DB=$(cat /tmp/id_db)
 	[ -z $ID_DB ] && error "Erreur id_db attendu." && exit 1
 	db=$ID_DB
+
+	wait_server
 fi
 
-typeset -r dir_files=~/plescripts/database_servers/$db
-[ ! -d $dir_files ] && error "$dir_files not exists." && exit 1
+cfg_exists $db
 
-typeset -ri count_nodes=$(ls -1 $dir_files/node* | wc -l)
+typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
-if [ $count_nodes -eq 2 ]
+if [ $max_nodes -eq 2 ]
 then
 	xterm $xterm_static_options -geometry ${width_rac}x${height}$top_left \
 		-e "tmux_monitor_server.sh -node1=srv${db}01 -node2=srv${db}02" &

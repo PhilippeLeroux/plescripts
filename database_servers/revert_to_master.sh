@@ -86,7 +86,7 @@ info "Remove Oracle users."
 exec_cmd "~/plescripts/oracle_preinstall/remove_oracle_users_and_groups.sh"
 
 line_separator
-exec_cmd -c "rm -rf /u01"
+exec_cmd -c "rm -rf /$ORCL_DISK /$GRID_DISK"
 LN
 
 line_separator

@@ -1,10 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -58,3 +56,13 @@ exec_cmd "targetcli / saveconfig $targetcli_file"
 exec_cmd "targetcli / saveconfig"
 exec_cmd "chown $common_user_name:users $targetcli_file"
 LN
+
+typeset	-ri	count_backup_file=$(ls -l $targetcli_path/* | wc -l)
+typeset	-ri	count_file_to_keep=20
+typeset	-ri	counf_file_to_delele=$(( count_backup_file - count_file_to_keep ))
+if [ $counf_file_to_delele -gt 0 ]
+then
+	info "Remove $counf_file_to_delele old backup files."
+	exec_cmd "rm -f $(ls -1 $targetcli_path/* | head -$counf_file_to_delele | xargs)"
+	LN
+fi

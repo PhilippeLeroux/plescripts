@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -45,10 +46,9 @@ done
 [[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db	"$str_usage"
 
-#	Répertoire contenant le fichier de configuration de la db
-typeset -r cfg_path=~/plescripts/database_servers/$db
-[ ! -d $cfg_path ]	&& error "$cfg_path not exists." && exit 1
+cfg_exist $db
 
-typeset -r node_name1=$(cut -d: -f2<$cfg_path/node1)
-info "Check log on node $node_name1"
-exec_cmd "ssh oracle@${node_name1} 'grep -n \"Error Message\" /u01/app/oraInventory/logs/installActions*'"
+cfg_load_node_info $db 1
+
+info "Check log on node $cfg_server_name"
+exec_cmd "ssh oracle@${cfg_server_name} 'grep -n \"Error Message\" /$GRID_DISK/app/oraInventory/logs/installActions*'"

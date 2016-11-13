@@ -1,46 +1,80 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
-. ~/plescripts/global.cfg
+. ~/plescripts/cfglib.sh
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : $ME <oracle|grid|root|...> [-h|-v]
+
+First parameter must be user account.
+Second parameter :
+	* -h split horizontal
+	* -v split vertical   (default)
+"
 
 script_banner $ME $*
 
-typeset -r account=$1
+typeset	-i	count_errors=0
+typeset		split_flag=-v
+
+typeset	-r	account=$1
+if [ x"$account" == x ]
+then
+	error "account not specified."
+	count_errors=count_errors+1
+fi
+
+if [ $# -eq 2 ]
+then
+	case "$2" in
+		-h)	split_flag=-h
+			;;
+
+		-v)	split_flag=-v
+			;;
+
+		*)
+			error "Unknow arg '$2'"
+			count_errors=count_errors+1
+	esac
+fi
 
 if [[ -v ID_DB ]]
 then
 	db=$ID_DB
 else
-	error "use set_db before !"
+	error "Use set_db to define the identifiant."
+	count_errors=count_errors+1
+fi
+
+[ $count_errors -ne 0 ] && info "$str_usage" && exit 1
+
+cfg_exist $db
+
+typeset -ri max_nodes=$(cfg_max_nodes $db)
+
+if [ $max_nodes -ne 2 ]
+then
+	info "$db is not a RAC or to many nodes"
 	exit 1
 fi
 
-typeset -r cfg_path=~/plescripts/database_servers
-exit_if_dir_not_exist $cfg_path
+typeset -a node_list
 
-typeset -ri max_nodes=$(ls -1 $cfg_path/$db/node*|wc -l)
+for i in $( seq $max_nodes )
+do
+	node_list+=( $(printf "srv%s%02d" $db $i) )
+done
 
-if [ $max_nodes -gt 1 ]
-then
-	typeset -a node_list
+info "Wait servers : ${node_list[*]}"
+LN
+wait_server
 
-	for i in $( seq 0 $max_nodes )
-	do
-		node_list[$i]=$(printf "srv%s%02d" $db $((i+1)))
-	done
-
-	wait_server
-
-	tmux new -s "$db@${account}" "ssh -t ${account}@${node_list[0]}" \; \
-			split-window -h "ssh -t ${account}@${node_list[1]}"  \; \
-			selectp -t 0 
-else
-	info "TODO"
-fi
+tmux new -s "${account}@${db}"				\
+		"ssh ${account}@${node_list[0]}"	\;\
+		split-window $split_flag			\
+		"ssh ${account}@${node_list[1]}"	\;\
+		selectp -t 0 

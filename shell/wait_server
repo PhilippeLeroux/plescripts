@@ -1,8 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 
 typeset -r nc_installed=$(which nc)
 [ x"$nc_installed" = x ] && error "La commande nc n'est pas présente, installer le package netcat-openbsd ou nmap-ncat" && exit 1
@@ -101,12 +101,12 @@ then
 	if [[ -v ID_DB ]]
 	then
 		typeset -i	exit_code=0
-		typeset -r	cfg_path=~/plescripts/database_servers/$ID_DB
-		exit_if_dir_not_exist $cfg_path
-		for f in $(ls $cfg_path/node*)
+		cfg_exist $ID_DB
+		typeset	-ri max_nodes=$(cfg_max_nodes $ID_DB)
+		for i in $( seq $max_nodes )
 		do
-			node_name=$(cat $f | cut -d':' -f2)
-			wait_for $node_name
+			cfg_load_node_info $ID_DB $i
+			wait_for $cfg_server_name
 			[ $? -ne  0 ] && exit_code=1
 			LN
 		done

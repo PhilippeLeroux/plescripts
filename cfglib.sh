@@ -3,6 +3,7 @@
 typeset -r cfg_path_prefix=~/plescripts/database_servers
 
 #*> $1 db
+#*> $2 use_return_code : return 1 instead of exit 1
 function cfg_exist
 {
 	typeset	-r	db=$1
@@ -12,7 +13,7 @@ function cfg_exist
 	then
 		info -f "[$KO]"
 		LN
-		exit 1
+		[ "$2" == use_return_code ] && return 1 || exit 1
 	fi
 	info -f "[$OK]"
 	LN
@@ -28,7 +29,7 @@ function cfg_max_nodes
 }
 
 #*> $1 db
-#*> $2 #node 
+#*> $2 #node
 #*> Init variables :
 #*>		- cfg_db_type			std ou rac
 #*>		- cfg_server_name		nom du serveur
@@ -36,7 +37,7 @@ function cfg_max_nodes
 #*>		- cfg_server_vip		vip du serveur
 #*>		- cfg_iscsi_ip			ip des disques iscsi
 #*>		- cfg_luns_hosted_by	vbox|san
-function cfg_load_node_info 
+function cfg_load_node_info
 {
 	typeset -r	db=$(to_lower $1)
 	typeset -ri nr_node=$2

@@ -1,8 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -72,10 +72,7 @@ exit_if_param_undef db		"$str_usage"
 exit_if_param_undef lun		"$str_usage"
 exit_if_param_undef vg_name	"$str_usage"
 
-typeset	-r	cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exist "$cfg_path" "$str_usage"
-
-typeset -ri	count_nodes=$(ls -1 $cfg_path/node* | wc -l)
+cfg_exist $db
 
 function remove_lun_for_server
 {
@@ -91,9 +88,11 @@ function remove_lun_for_server
 	LN
 }
 
+typeset -ri	max_nodes=$(cfg_max_nodes $db)
+
 line_separator
 info "Delete $count LUNs start to LUN $lun"
-for inode in $( seq 1 $count_nodes )
+for inode in $( seq $max_nodes )
 do
 	for ilun in $( seq $lun $(( lun + count - 1 )) )
 	do

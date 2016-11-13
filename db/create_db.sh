@@ -359,8 +359,8 @@ function check_if_ASM_used
 			usefs=yes
 			if [[ "$data" == DATA && "$fra" == FRA ]]
 			then
-				data=/u01/app/oracle/oradata/data
-				fra=/u01/app/oracle/oradata/fra
+				data=/$ORCL_DISK/app/oracle/oradata/data
+				fra=/$ORCL_DISK/app/oracle/oradata/fra
 			fi
 		fi
 	fi

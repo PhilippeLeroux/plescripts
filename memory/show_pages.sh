@@ -1,11 +1,9 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/memory/memorylib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -83,7 +81,7 @@ function print_hpages_orcl_instance
 		else
 			typeset base=$(to_lower "${ORACLE_SID:0:${#ORACLE_SID}-1}")
 		fi
-		typeset -r alog="/u01/app/oracle/diag/rdbms/${base}*/$ORACLE_SID/trace/alert_$ORACLE_SID.log"
+		typeset -r alog="$ORACLE_BASE/diag/rdbms/${base}*/$ORACLE_SID/trace/alert_$ORACLE_SID.log"
 		read_hpages_from_alert_log $alog
 	else
 		warning "ORACLE_SID undef"

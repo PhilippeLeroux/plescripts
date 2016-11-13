@@ -47,6 +47,8 @@ exit_if_param_undef db	"$str_usage"
 
 cfg_exist $db
 
+typeset	-ri	max_nodes=$(cfg_max_nodes $db)
+
 typeset -r upper_db=$(to_upper $db)
 
 if [ $delete_vms == yes ]
@@ -58,8 +60,6 @@ fi
 
 if [ -f ~/.ssh/known_hosts ]
 then
-	typeset	-ri	max_nodes=$(cfg_max_nodes $db)
-
 	line_separator
 	for inode in $( seq $max_nodes )
 	do
@@ -69,8 +69,10 @@ then
 		then	# Supprime les scans.
 			remove_from_known_hosts ${cfg_server_name}-scan
 		fi
+		[ $delete_vms == yes ] && exec_cmd rm -rf "$vm_path/$cfg_server_name"
 	done
 fi
+LN
 
 line_separator
 info "Update DNS :"
@@ -93,7 +95,6 @@ exec_cmd -c sudo systemctl restart nscd.service
 LN
 
 line_separator
-cfg_path=$cfg_path_prefix/$db
-info "Remove $cfg_path"
-exec_cmd -c "rm -rf $cfg_path"
+info "Remove $cfg_path_prefix/$db"
+exec_cmd -c "rm -rf $cfg_path_prefix/$db"
 LN

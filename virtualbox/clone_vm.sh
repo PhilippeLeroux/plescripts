@@ -14,6 +14,7 @@ script_banner $ME $*
 
 typeset		db=undef
 typeset	-i	vm_memory_mb=-1
+typeset		vmGroup
 
 while [ $# -ne 0 ]
 do
@@ -106,14 +107,14 @@ do
 	LN
 
 	info "Move $vm_name to group $group_name"
-	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\" || true
+	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\"
 	LN
 
 	info "Create disk ${vm_name}_$GRID_DISK for mount point /$GRID_DISK for grid"
-	exec_cmd $vm_scripts_path/add_disk.sh						\
-							-vm_name="$vm_name"					\
-							-disk_name=${vm_name}_$GRID_DISK	\
-							-disk_mb=$((20*1024))				\
+	exec_cmd $vm_scripts_path/add_disk.sh								\
+							-vm_name="$vm_name"							\
+							-disk_name=${vm_name}_$GRID_DISK			\
+							-disk_mb=$(( GRID_DISK_SIZE_GB * 1024 ))	\
 							-fixed_size
 	LN
 
@@ -121,10 +122,10 @@ do
 	then # Si utilisation de ocfs2 les disques sont crées après la création de
 		 # tous les serveurs.
 		info "Create disk ${vm_name}_$ORCL_DISK for mount point /$ORCL_DISK for Oracle"
-		exec_cmd $vm_scripts_path/add_disk.sh						\
-								-vm_name="$vm_name"					\
-								-disk_name=${vm_name}_$ORCL_DISK	\
-								-disk_mb=$((20*1024))				\
+		exec_cmd $vm_scripts_path/add_disk.sh								\
+								-vm_name="$vm_name"							\
+								-disk_name=${vm_name}_$ORCL_DISK			\
+								-disk_mb=$(( ORCL_DISK_SIZE_GB * 1024 ))	\
 								-fixed_size
 		LN
 	fi
@@ -144,7 +145,7 @@ then # Avec ocfs2 le disque Oracle est partagé par tous les nœuds.
 	exec_cmd $vm_scripts_path/add_disk.sh									\
 								-vm_name="$cfg_server_name"					\
 								-disk_name=${cfg_server_name}_$ORCL_DISK	\
-								-disk_mb=$((20*1024))						\
+								-disk_mb=$(( ORCL_DISK_SIZE_GB * 1024 ))	\
 								-attach_to="'$node_list'"					\
 								-fixed_size
 	LN

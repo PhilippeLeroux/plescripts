@@ -1,9 +1,9 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
@@ -122,48 +122,49 @@ done
 
 exit_if_param_undef	db	"$str_usage"
 
-#	Répertoire contenant le fichier de configuration de la db
-typeset -r cfg_path=~/plescripts/database_servers/$db
-[ ! -d $cfg_path ]	&& error "$cfg_path not exists." && exit 1
+cfg_exist $db
+
+typeset -r db_cfg_path=$cfg_path_prefix/$db
 
 #	Nom du "fichier réponse" pour l'installation du grid
-typeset -r rsp_file=${cfg_path}/grid_$db.rsp
+typeset -r rsp_file=${db_cfg_path}/grid_$db.rsp
 
 #	Nom du  "fichier propriété" utilisé pour ConfigTool
-typeset -r prop_file=${cfg_path}/grid_$db.properties
+typeset -r prop_file=${db_cfg_path}/grid_$db.properties
 
 #
-typeset -a node_names
-typeset -a node_ips
-typeset -a node_vip_names
-typeset -a node_vips
-typeset -a node_priv_names
-typeset -a node_priv_ips
-typeset -i max_nodes=0
+typeset -a	node_names
+typeset -a	node_ips
+typeset -a	node_vip_names
+typeset -a	node_vips
+typeset -a	node_iscsi_names
+typeset -a	node_iscsi_ips
+typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
-function load_node_cfg # $1 node_file $2 idx
+
+function load_node_cfg # $1 inode
 {
-	typeset -r	file=$1
-	typeset -ri	idx=$2
+	typeset	-ri	inode=$1
 
-	info "Load node $(( $idx + 1 )) from $file"
-	exit_if_file_not_exist $file
-	while IFS=':' read db_type node_name node_ip node_vip_name node_vip node_priv_name node_priv_ip rem
-	do
-		if [ x"$clusterNodes" = x ]
-		then
-			clusterNodes=$node_name:$node_vip_name
-		else
-			clusterNodes=$clusterNodes,$node_name:$node_vip_name
-		fi
-		node_names[$idx]=$node_name
-		node_ips[$idx]=$node_ip
-		node_vip_names[$idx]=$node_vip_name
-		node_vips[$idx]=$node_vip
-		node_priv_names[$idx]=$node_priv_name
-		node_priv_ips[$idx]=$node_priv_ip
-	done < $file
-	info "Server name is ${node_names[$idx]}"
+	info "Load node $inode"
+	cfg_load_node_info $db $inode
+
+	if [ x"$clusterNodes" = x ]
+	then
+		clusterNodes=$cfg_server_name:${cfg_server_name}-vip
+	else
+		clusterNodes=$clusterNodes,$cfg_server_name:${cfg_server_name}-vip
+	fi
+
+	node_names+=( $cfg_server_name )
+	node_ips+=( $cfg_server_ip )
+	node_vip_names+=( ${cfg_server_name}-vip )
+	node_vips+=( $cfg_server_vip )
+	node_iscsi_names+=( ${cfg_server_vip}-priv )
+	node_iscsi_ips+=( $cfg_iscsi_ip )
+
+	info "Server name is ${cfg_server_name}"
+	LN
 }
 
 #	Fabrique oracle.install.asm.diskGroup.disks
@@ -265,9 +266,13 @@ function start_grid_installation
 						-showProgress							\
 						-waitforcompletion						\
 						-responseFile /home/grid/grid_$db.rsp\""
-	ret=$?
+	if [ $? -gt 250 ]
+	then
+		error "cd /mnt/oracle_install/grid"
+		error "Run : ./runcluvfy.sh stage -pre crsinst -fixup -n $(echo ${node_names[*]} | tr [:space:] ',')"
+		exit 1
+	fi
 	LN
-	[ $ret -gt 250 ] && exit 1
 }
 
 function run_post_install_root_scripts_on_node	# $1 server_name
@@ -288,8 +293,9 @@ function run_post_install_root_scripts_on_node	# $1 server_name
 
 function print_manual_workaround
 {
+	#	idxnode est déclaré dans la fonction appelante : run_post_install_root_scripts
 	info "Manual workaround"
-	info "> ssh root@${node_names[$inode]}"
+	info "> ssh root@${node_names[$idxnode]}"
 	info "> $ORACLE_HOME/root.sh"
 	info "if log ok : ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
 	info "if log ko : reboot servers, wait crs up and ./install_grid.sh -skip_grid_install"
@@ -298,18 +304,18 @@ function print_manual_workaround
 
 function run_post_install_root_scripts
 {
-	typeset -i inode=0
-	while [ $inode -lt $max_nodes ]
+	typeset -i idxnode=0
+	while [ $idxnode -lt $max_nodes ]
 	do
-		run_post_install_root_scripts_on_node ${node_names[$inode]}
+		run_post_install_root_scripts_on_node ${node_names[$idxnode]}
 		typeset -i ret=$?
 		LN
 
 		if [ $ret -ne 0 ]
 		then
-			error "root scripts on server ${node_names[$inode]} failed."
-			[ $inode -eq 0 ] && exit 1
-			
+			error "root scripts on server ${node_names[$idxnode]} failed."
+			[ $idxnode -eq 0 ] && exit 1
+
 			LN
 			warning "Workaround :"
 			LN
@@ -318,7 +324,7 @@ function run_post_install_root_scripts
 			LN
 			timing 10
 
-			run_post_install_root_scripts_on_node ${node_names[$inode]}
+			run_post_install_root_scripts_on_node ${node_names[$idxnode]}
 			typeset -i ret=$?
 			LN
 
@@ -331,8 +337,8 @@ function run_post_install_root_scripts
 			fi
 		fi
 
-		[[ $max_nodes -gt 1 && $inode -eq 0 ]] && timing 10
-		inode=inode+1
+		[[ $max_nodes -gt 1 && $idxnode -eq 0 ]] && timing 10
+		idxnode=idxnode+1
 	done
 }
 
@@ -352,7 +358,7 @@ function create_dg # $1 nom du DG
 	typeset -r	DG=$1
 
 	info "Create DG : $DG"
-	IFS=':' read dg_name size first last<<<"$(cat $cfg_path/disks | grep "^${DG}")"
+	IFS=':' read dg_name size first last<<<"$(cat $db_cfg_path/disks | grep "^${DG}")"
 	total_disks=$(( $last - $first + 1 ))
 	exec_cmd "ssh -t grid@${node_names[0]} \". .profile;	\
 		~/plescripts/dg/create_new_dg.sh -name=$DG -disks=$total_disks\""
@@ -404,7 +410,7 @@ function set_ASM_memory_target_low_and_restart_asm
 			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
 						crsctl stop cluster -all\""
 
-			timing 5 
+			timing 5
 
 			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
 						crsctl start cluster -all\""
@@ -412,7 +418,7 @@ function set_ASM_memory_target_low_and_restart_asm
 			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
 						srvctl stop asm -f\""
 
-			timing 5 
+			timing 5
 
 			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
 						srvctl start asm\""
@@ -440,22 +446,20 @@ function remove_tfa_on_all_nodes
 script_start
 
 line_separator
-for file in $cfg_path/node*
+for inode in $( seq $max_nodes )
 do
-	load_node_cfg $file $max_nodes
-	max_nodes=max_nodes+1
+	load_node_cfg $inode
 done
 
-info "Total nodes #${max_nodes}"
 if [ $max_nodes -gt 1 ]
 then
-	exit_if_file_not_exist $cfg_path/scanvips
-	typeset -r scan_name=$(cat $cfg_path/scanvips | cut -d':' -f1)
+	exit_if_file_not_exist $db_cfg_path/scanvips
+	typeset -r scan_name=$(cat $db_cfg_path/scanvips | cut -d':' -f1)
 
 	info "==> scan name     = $scan_name"
 	info "==> clusterNodes  = $clusterNodes"
+	LN
 fi
-LN
 
 if [ $oracle_home_for_test == no ]
 then
@@ -469,12 +473,13 @@ fi
 
 info "ORACLE_HOME = '$ORACLE_HOME'"
 info "ORACLE_BASE = '$ORACLE_BASE'"
+LN
 
 [ x"$ORACLE_HOME" == x ] && error "Can't read ORACLE_HOME for user grid on ${node_names[0]}" && exit 1
 
 if [ $skip_grid_install == no ]
 then
-	create_response_file $cfg_path/disks
+	create_response_file $db_cfg_path/disks
 	LN
 	create_property_file
 	LN
@@ -523,7 +528,7 @@ then
 		then
 			set_ASM_memory_target_low_and_restart_asm
 			#Pour être certain qu'ASM est démarré.
-			[ $max_nodes -eq 1 ] && timing 30
+			timing 30 "Wait grid"
 		fi
 	fi
 fi

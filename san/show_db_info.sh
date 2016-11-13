@@ -1,16 +1,16 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage="Usage : $ME -db=<str>
-	Permet de visualiser les LUNs associées à une base
-	et de voir si le serveur correspondant est connectée."
+
+Permet de visualiser les LUNs associées à une base
+et de voir si le serveur correspondant est connectée."
 
 typeset db=undef
 
@@ -39,22 +39,21 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
-typeset -r cfg_path=~/plescripts/database_servers/$db
-exit_if_dir_not_exist $cfg_path "-db=$db not exists !"
+cfg_exist $db
 
-typeset -ri count_nodes=$(ls -1 $cfg_path/node* | wc -l)
+typeset -ri max_nodes=$(cfg_max_nodes $db)
 
-if [ $count_nodes -eq 1 ]
+if [ $max_nodes -eq 1 ]
 then
 	info "Single serveur."
 else
 	info "RAC cluster $count_nodes nodes."
 fi
 
-for node_file in $cfg_path/node*
+for inode in $( seq $max_nodes )
 do
-	server_name=$(cut -d: -f2<$node_file)
-	exec_cmd "targetcli ls @$server_name"
+	cfg_load_node_info $db $inode
+	exec_cmd "targetcli ls @$cfg_server_name"
 	LN
 done
 
@@ -65,3 +64,4 @@ then
 else
 	info "Not connected !"
 fi
+LN

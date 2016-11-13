@@ -7,11 +7,12 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME
-Print last logs.
-"
+"Usage : $ME -user=name -server=name"
 
 script_banner $ME $*
+
+typeset user=undef
+typeset server=undef
 
 while [ $# -ne 0 ]
 do
@@ -19,6 +20,16 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
+			shift
+			;;
+
+		-user=*)
+			user=${1##*=}
+			shift
+			;;
+
+		-server=*)
+			server=${1##*=}
 			shift
 			;;
 
@@ -37,5 +48,12 @@ do
 	esac
 done
 
-last_path=$(ls -1td $PLELOG_ROOT/* | head -1)
-exec_cmd "ls -rtl $last_path"
+exit_if_param_undef user	"$str_usage"
+exit_if_param_undef server	"$str_usage"
+
+exec_cmd -c ssh -o BatchMode=yes $user@$server true
+if [ $? -ne 0 ]
+then
+	error "No ssh equi between $USER@$(hostname -s) & $user@$server"
+	exit 1
+fi

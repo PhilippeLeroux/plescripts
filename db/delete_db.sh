@@ -1,8 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-#	Le script n'a pas été testé depuis l'utilisation de gilib.sh
-
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
@@ -11,9 +9,12 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<str> Nom de la base à supprimer."
+	-db=<str> Nom de la base à supprimer.
+	-y        No confirmation.
+"
 
 typeset db=undef
+typeset	confirm=-confirm
 
 while [ $# -ne 0 ]
 do
@@ -25,6 +26,11 @@ do
 
 		-db=*)
 			db=$(to_upper ${1##*=})
+			shift
+			;;
+
+		-y)
+			confirm=""
 			shift
 			;;
 
@@ -68,7 +74,7 @@ add_dynamic_cmd_param "    -sourcedb       $db"
 add_dynamic_cmd_param "    -sysDBAUserName sys"
 add_dynamic_cmd_param "    -sysDBAPassword $oracle_password"
 add_dynamic_cmd_param "    -silent"
-exec_dynamic_cmd -confirm "dbca"
+exec_dynamic_cmd $confirm "dbca"
 LN
 
 typeset -r rm_1="rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*"

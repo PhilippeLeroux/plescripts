@@ -1,9 +1,9 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
@@ -58,12 +58,12 @@ done
 exit_if_param_undef		db						"$str_usage"
 exit_if_param_invalid	action "install config" "$str_usage"
 
+cfg_exist $db
 #	Répertoire contenant le fichiers de configuration de la db
-typeset -r dir_files=~/plescripts/database_servers/$db
-[ ! -d $dir_files ]	&& error "$dir_files not exists." && exit 1
+typeset -r db_cfg_path=$cfg_path_prefix/$db
 
 #	Nom du "fichier réponse" pour l'installation d'oracle
-typeset -r rsp_file=${dir_files}/oracle_$db.rsp
+typeset -r rsp_file=${db_cfg_path}/oracle_$db.rsp
 
 #
 typeset -a	node_names
@@ -72,31 +72,30 @@ typeset -a	node_vip_names
 typeset -a	node_vips
 typeset -a	node_priv_names
 typeset -a	node_priv_ips
-typeset -i	max_nodes=0
+typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
-function load_node_cfg # $1 node_file $2 idx
+function load_node_cfg # $1 inode
 {
-	typeset -r	file=$1
-	typeset -ri	idx=$2
+	typeset	-ri	inode=$1
 
-	info "Load node $(( $idx + 1 )) from $file"
-	exit_if_file_not_exist $file
-	while IFS=':' read db_type node_name node_ip node_vip_name node_vip node_priv_name node_priv_ip rem
-	do
-		if [ x"$clusterNodes" = x ]
-		then
-			clusterNodes=$node_name:$node_vip_name
-		else
-			clusterNodes=$clusterNodes,$node_name:$node_vip_name
-		fi
-		node_names[$idx]=$node_name
-		node_ips[$idx]=$node_ip
-		node_vip_names[$idx]=$node_vip_name
-		node_vips[$idx]=$node_vip
-		node_priv_names[$idx]=$node_priv_name
-		node_priv_ips[$idx]=$node_priv_ip
-	done < $file
-	info "Server name is ${node_names[$idx]}"
+	info "Load node $inode"
+	cfg_load_node_info $db $inode
+
+	if [ x"$clusterNodes" = x ]
+	then
+		clusterNodes=$cfg_server_name:${cfg_server_name}-vip
+	else
+		clusterNodes=$clusterNodes,$cfg_server_name:${cfg_server_name}-vip
+	fi
+
+	node_names+=( $cfg_server_name )
+	node_ips+=( $cfg_server_ip )
+	node_vip_names+=( ${cfg_server_name}-vip )
+	node_vips+=( $cfg_server_vip )
+	node_iscsi_names+=( ${cfg_server_vip}-priv )
+	node_iscsi_ips+=( $cfg_iscsi_ip )
+
+	info "Server name is ${cfg_server_name}"
 	LN
 }
 
@@ -106,28 +105,32 @@ function create_response_file
 	info "Create response file for the Oracle software."
 	exec_cmd cp -f template_oracle.rsp $rsp_file
 	LN
+ 
+	typeset	-r	O_BASE=/$ORCL_DISK/app/oracle
+	typeset	-r	O_HOME=$O_BASE/$oracle_release/dbhome_1
 
-	update_value oracle.install.option				INSTALL_DB_SWONLY					$rsp_file
-	update_value ORACLE_HOSTNAME					${node_names[0]}					$rsp_file
-	update_value UNIX_GROUP_NAME					oinstall							$rsp_file
-	update_value INVENTORY_LOCATION					$ORA_INVENTORY						$rsp_file
-	update_value ORACLE_HOME						/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1	$rsp_file
-	update_value ORACLE_BASE						/$ORCL_DISK/app/oracle				$rsp_file
-	update_value oracle.install.db.CLUSTER_NODES	empty								$rsp_file
-	update_value oracle.install.db.InstallEdition	EE									$rsp_file
-	update_value oracle.install.db.DBA_GROUP		dba									$rsp_file
-	update_value oracle.install.db.OPER_GROUP		oper								$rsp_file
-	update_value oracle.install.db.BACKUPDBA_GROUP	dba									$rsp_file
-	update_value oracle.install.db.DGDBA_GROUP		dba									$rsp_file
-	update_value oracle.install.db.KMDBA_GROUP		dba									$rsp_file
+	update_value oracle.install.option				INSTALL_DB_SWONLY	$rsp_file
+	update_value ORACLE_HOSTNAME					${node_names[0]}	$rsp_file
+	update_value UNIX_GROUP_NAME					oinstall			$rsp_file
+	update_value INVENTORY_LOCATION					$ORA_INVENTORY		$rsp_file
+	update_value ORACLE_HOME						$O_HOME				$rsp_file
+	update_value ORACLE_BASE						$O_BASE				$rsp_file
+	update_value oracle.install.db.CLUSTER_NODES	empty				$rsp_file
+	update_value oracle.install.db.InstallEdition	EE					$rsp_file
+	update_value oracle.install.db.DBA_GROUP		dba					$rsp_file
+	update_value oracle.install.db.OPER_GROUP		oper				$rsp_file
+	update_value oracle.install.db.BACKUPDBA_GROUP	dba					$rsp_file
+	update_value oracle.install.db.DGDBA_GROUP		dba					$rsp_file
+	update_value oracle.install.db.KMDBA_GROUP		dba					$rsp_file
 
 	if [ $max_nodes -gt 1 ]
 	then
 		server_list=${node_names[0]}
-		for inode in $( seq 1 $(( $max_nodes - 1 )) )
+		for idxnode in $( seq $max_nodes )
 		do
-			server_list=$server_list","${node_names[$inode]}
+			server_list=$server_list","${node_names[$idxnode]}
 		done
+
 		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
 	fi
 	LN
@@ -167,13 +170,13 @@ function start_oracle_installation
 
 function run_post_install_root_scripts_on_node	# $1 No node
 {
-	typeset  -ri inode=$1
+	typeset  -ri idxnode=$1
 	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
 
 	typeset -r script_root_sh="/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
-	exec_cmd "ssh -t -t root@${node_names[$inode]} \"LANG=C $script_root_sh\" </dev/null"
+	exec_cmd "ssh -t -t root@${node_names[$idxnode]} \"LANG=C $script_root_sh\" </dev/null"
 	LN
 
 	# Je viens de découvrir ça :
@@ -188,10 +191,9 @@ function run_post_install_root_scripts_on_node	# $1 No node
 script_start
 
 line_separator
-for file in $dir_files/node*
+for inode in $( seq $max_nodes )
 do
-	load_node_cfg $file $max_nodes
-	max_nodes=max_nodes+1
+	load_node_cfg $inode
 done
 
 info "Total nodes #${max_nodes}"
@@ -224,15 +226,15 @@ mount_install_directory
 
 start_oracle_installation
 
-typeset -i inode=0
-while [ $inode -lt $max_nodes ]
+typeset -i idxnode=0
+while [ $idxnode -lt $max_nodes ]
 do
-	run_post_install_root_scripts_on_node $inode
-	inode=inode+1
+	run_post_install_root_scripts_on_node $idxnode
+	idxnode=idxnode+1
 	LN
 done
 
-typeset -r type_disks=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
+typeset -r type_disks=$(cat $db_cfg_path/disks | tail -1 | cut -d: -f1)
 [ "$type_disks" == FS ] && exec_cmd "ssh -t root@${node_names[0]} \"~/plescripts/database_servers/create_systemd_service_oracledb.sh\""
 
 stats_tt stop oracle_installation

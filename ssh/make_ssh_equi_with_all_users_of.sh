@@ -16,7 +16,7 @@ function copy_public_key
 
 	typeset -r user_name=root
 
-	info "Copie la clef public de $user_name:$(hostname -s) sur $user_name@$server_name"
+	info "Copie la clef public de $USER:$(hostname -s) sur $user_name@$server_name"
 	exec_cmd "ssh-copy-id -i ~/.ssh/id_rsa.pub $user_name@$server_name"
 	LN
 
