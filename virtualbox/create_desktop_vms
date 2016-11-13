@@ -1,0 +1,94 @@
+#!/bin/bash
+
+. ~/plescripts/plelib.sh
+EXEC_CMD_ACTION=EXEC
+
+
+typeset	vm_name=undef
+typeset	os_type=undef
+
+typeset	memory=2048
+typeset	cpus=2
+
+typeset -r ME=$0
+typeset -r str_usage=\
+"Usage : $ME
+	<-vm_name=name -os_type=type>
+	[-memory=$memory]
+	[-cpus=$cpus]
+
+List os_type : VBoxManage list ostypes | grep -E \"^ID:\"  | grep -i open
+"
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			first_args=-emul
+			shift
+			;;
+
+		-vm_name=*)
+			vm_name=${1##*=}
+			shift
+			;;
+
+		-os_type=*)
+			os_type=${1##*=}
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
+
+exit_if_param_undef vm_name	"$str_usage"
+exit_if_param_undef os_type	"$str_usage"
+
+typeset -r	vm_path="/home/kangs/VirtualBox VMs"
+
+line_separator
+info "Create VM $vm_name"
+exec_cmd VBoxManage createvm	--name $vm_name --basefolder \"$vm_path\"	\
+								--groups \"/Desktop démo\"					\
+								--register
+LN
+
+line_separator
+info "Global config"
+exec_cmd VBoxManage modifyvm $vm_name --ostype $os_type
+exec_cmd VBoxManage modifyvm $vm_name --acpi on
+exec_cmd VBoxManage modifyvm $vm_name --ioapic on
+exec_cmd VBoxManage modifyvm $vm_name --memory $memory
+exec_cmd VBoxManage modifyvm $vm_name --vram 12
+exec_cmd VBoxManage modifyvm $vm_name --cpus $cpus
+exec_cmd VBoxManage modifyvm $vm_name --rtcuseutc on
+exec_cmd VBoxManage modifyvm $vm_name --largepages on
+LN
+
+line_separator
+info "Add Iface 1"
+exec_cmd VBoxManage modifyvm $vm_name --nic1 hostonly
+exec_cmd VBoxManage modifyvm $vm_name --hostonlyadapter1 vboxnet1
+exec_cmd VBoxManage modifyvm $vm_name --nictype1 virtio
+exec_cmd VBoxManage modifyvm $vm_name --cableconnected1 on
+LN
+
+line_separator
+info "Crée et attache le disque où sera installé l'OS."
+exec_cmd VBoxManage createhd --filename \"$vm_path/$vm_name/$vm_name.vdi\" --size 32768
+exec_cmd VBoxManage storagectl $vm_name --name SATA --add SATA --controller IntelAhci --portcount 1
+exec_cmd VBoxManage storageattach $vm_name --storagectl SATA --port 0 --device 0 --type hdd --medium \"$vm_path/$vm_name/$vm_name.vdi\"
+LN
