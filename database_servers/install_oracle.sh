@@ -103,7 +103,8 @@ function create_response_file
 {
 	line_separator
 	info "Create response file for the Oracle software."
-	exec_cmd cp -f template_oracle.rsp $rsp_file
+	exit_if_file_not_exist template_oracle_${oracle_release%.*.*}.rsp
+	exec_cmd cp -f template_oracle_${oracle_release%.*.*}.rsp $rsp_file
 	LN
  
 	typeset	-r	O_BASE=/$ORCL_DISK/app/oracle

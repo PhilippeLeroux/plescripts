@@ -194,7 +194,8 @@ function create_response_file	# $1 fichier décrivant les disques
 
 	line_separator
 	info "Create $rsp_file for grid installation."
-	exec_cmd cp -f template_grid.rsp $rsp_file
+	exit_if_file_not_exist template_grid_${oracle_release%.*.*}.rsp
+	exec_cmd cp -f template_grid_${oracle_release%.*.*}.rsp $rsp_file
 	LN
 
 	update_value ORACLE_HOSTNAME							${node_names[0]}	$rsp_file
