@@ -200,20 +200,6 @@ function mount_oracle_install
 	LN
 }
 
-#	Création du point de montage /$ORCL_DISK/app/oracle/oradata
-#		* Recherche un disque disponible
-#		* Création du vg vgoradata et du lv lvoradate
-#		* Pour création d'un FS du type rdbms_fs_type (cf global.cfg)
-function create_rdbms_fs
-{
-	exec_cmd ssh -t root@${server_name} plescripts/disk/create_fs.sh		\
-										-type_fs=$rdbms_fs_type				\
-										-suffix_vglv=oradata				\
-										-mount_point=/$ORCL_DISK/app/oracle/oradata
-	exec_cmd ssh -t root@${server_name} chown -R oracle:oinstall /$ORCL_DISK/app/oracle
-	LN
-}
-
 #	Sur le premier noeud les disques doivent être crées puis exportés.
 function create_san_LUNs_and_attach_to_node1
 {
@@ -223,12 +209,7 @@ function create_san_LUNs_and_attach_to_node1
 	LN
 
 	exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
-	if [ $disk_type != FS ]
-	then
-		exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
-	else
-		create_rdbms_fs
-	fi
+	exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
 }
 
 #	Dans le cas d'un RAC les autres noeuds vont se connecter au portail et
@@ -265,15 +246,28 @@ function make_ssh_equi_with_san
 
 #	Création des disques et points de montages pour l'installation des logiciels
 #	Oracle & Grid
+#	Note l'odre de création des FS est important, si OCFS2 est utilisé c'est le
+#	disque sdc qui est partagé, sdb ne l'est jamais.
 function create_disks_for_oracle_and_grid_softwares
 {
 	line_separator
-	info "Create mount point /$GRID_DISK for Grid"
-	exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh		\
-											-mount_point=/$GRID_DISK	\
-											-suffix_vglv=grid			\
-											-type_fs=xfs
-	LN
+
+	if [ $disk_type != FS ]
+	then
+		info "Create mount point /$GRID_DISK for Grid"
+		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh		\
+												-mount_point=/$GRID_DISK	\
+												-suffix_vglv=grid			\
+												-type_fs=xfs
+		LN
+	else
+		info "Create database FS"
+		exec_cmd ssh -t root@${server_name} plescripts/disk/create_fs.sh	\
+											-type_fs=$rdbms_fs_type			\
+											-suffix_vglv=oradata			\
+											-mount_point=/$GRID_DISK
+
+	fi
 
 	if [[ $max_nodes -eq 1 || $rac_orcl_fs == default ]]
 	then
@@ -426,7 +420,7 @@ case $cfg_luns_hosted_by in
 	san)
 		if [ $node -eq 1 ]
 		then
-			create_san_LUNs_and_attach_to_node1
+			[ "$disk_type" != FS ] && create_san_LUNs_and_attach_to_node1
 		else
 			attach_existing_LUNs_on_node
 		fi
@@ -438,8 +432,6 @@ case $cfg_luns_hosted_by in
 			if [ $disk_type != FS ]
 			then
 				exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
-			else
-				create_rdbms_fs
 			fi
 		else
 			exec_cmd "ssh -t root@${server_name} oracleasm scandisks"

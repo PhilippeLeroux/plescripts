@@ -197,7 +197,7 @@ function deinstall_oracle
 function remove_vg
 {
 	line_separator
-	exec_cmd "umount /$ORCL_DISK/app/oracle/oradata"
+	exec_cmd umount /$GRID_DISK
 	exec_cmd "sed -i "/vg_oradata-lv_oradata/d" /etc/fstab"
 	fake_exec_cmd "vgremove vg_oradata<<<\"yy\""
 	if [ $? -eq 0 ]

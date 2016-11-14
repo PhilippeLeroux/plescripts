@@ -49,20 +49,19 @@ typeset -r  bashrc_firstline="# .bashrc"
 typeset -r  bashrc_code_to_append="# Preco Oracle RAC\n[ -t 0 ] && stty intr ^C"
 
 info "Create grid profile."
-exec_cmd "cp ~/plescripts/oracle_preinstall/grid_env.template  ~/plescripts/oracle_preinstall/grid_env"
+exec_cmd "cp ~/plescripts/oracle_preinstall/grid_env.template ~/plescripts/oracle_preinstall/grid_env"
 LN
+
+exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=/$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
 
 case $db_type in
 	rac)
-		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=/$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
-		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
 		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/$ORACLE_RELEASE/grid!\" ~/plescripts/oracle_preinstall/grid_env"
 		LN
 		;;
 
 	single|single_fs)
-		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=/$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
-		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
 		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/grid/$ORACLE_RELEASE!\" ~/plescripts/oracle_preinstall/grid_env"
 		LN
 		;;
@@ -125,9 +124,7 @@ LN
 #	============================================================================
 #	Supprime les répertoires s'ils existent.
 line_separator
-info "remove $GRID_ROOT/"
 exec_cmd "rm -rf $GRID_ROOT/*"
-info "remove $ORCL_ROOT/"
 exec_cmd "rm -rf $ORCL_ROOT/*"
 LN
 
@@ -141,28 +138,38 @@ info "create users grid"
 exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper \
 			-s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
 
-exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
-exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/grid/rlwrap.alias
+if [ $db_type != single_fs ]
+then	# Pour un FS le compte grid existe pour que les autres scripts fonctionnent
+		# correctement.
+	exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
+	exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/grid/rlwrap.alias
 
-exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\"	\
-			./template_profile.grid |					\
-			sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/profile.grid"
+	exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\"	\
+				./template_profile.grid |					\
+				sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/grid/profile.grid"
 
-if [ $the_shell == ksh ]
-then
-	exec_cmd "echo \" \" >> /home/grid/.profile"
-	exec_cmd "echo \". /home/grid/profile.grid\" >> /home/grid/.profile"
-	exec_cmd cp template_kshrc /home/grid/.kshrc
-else
-	exec_cmd "echo \" \" >> /home/grid/.bash_profile"
-	exec_cmd "echo \". /home/grid/profile.grid\" >> /home/grid/.bash_profile"
-	# Permet aux scripts utilisant ssh de continuer à fonctionner.
-	exec_cmd "ln -s /home/grid/.bash_profile /home/grid/.profile"
-	exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /home/grid/.bashrc
+	if [ $the_shell == ksh ]
+	then
+		exec_cmd "echo \" \" >> /home/grid/.profile"
+		exec_cmd "echo \". /home/grid/profile.grid\" >> /home/grid/.profile"
+		exec_cmd cp template_kshrc /home/grid/.kshrc
+	else
+		exec_cmd "echo \" \" >> /home/grid/.bash_profile"
+		exec_cmd "echo \". /home/grid/profile.grid\" >> /home/grid/.bash_profile"
+		# Permet aux scripts utilisant ssh de continuer à fonctionner.
+		exec_cmd "ln -s /home/grid/.bash_profile /home/grid/.profile"
+		exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /home/grid/.bashrc
+	fi
+	make_vimrc_file "/home/grid"
+	exec_cmd chown -R grid:oinstall /home/grid
+	LN
+
+	info "grid directories"
+	exec_cmd mkdir -p $GRID_BASE
+	exec_cmd mkdir -p $GRID_HOME
+	exec_cmd chown -R grid:oinstall $GRID_ROOT
+	LN
 fi
-make_vimrc_file "/home/grid"
-exec_cmd chown -R grid:oinstall /home/grid
-LN
 
 #	============================================================================
 line_separator
@@ -194,14 +201,6 @@ LN
 
 #	============================================================================
 line_separator
-info "grid directories"
-exec_cmd mkdir -p $GRID_BASE
-exec_cmd mkdir -p $GRID_HOME
-exec_cmd chown -R grid:oinstall $GRID_ROOT
-LN
-
-#	============================================================================
-line_separator
 typeset -r profile_oracle=/tmp/profile_oracle
 exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/oracle/grid_env
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" \
@@ -211,19 +210,17 @@ LN
 
 . $profile_oracle
 
-info "oracle directories"
 exec_cmd mkdir -p $ORACLE_BASE
 exec_cmd mkdir -p $ORACLE_HOME
 exec_cmd chown -R oracle:oinstall $ORCL_ROOT
+[ $db_type == single_fs ] && exec_cmd chown -R oracle:oinstall $GRID_ROOT
 LN
 
 #	============================================================================
 line_separator
-info -n "set full permission for owner & group on $GRID_ROOT"
-[ "$GRID_ROOT" != "$ORCL_ROOT" ] && info -d " & $ORCL_ROOT"
-
+info -n "set full permission for owner & group on $GRID_ROOT & $ORCL_ROOT"
 exec_cmd chmod -R 775 $GRID_ROOT
-[ "$GRID_ROOT" != "$ORCL_ROOT" ] && exec_cmd chmod -R 775 $ORCL_ROOT
+exec_cmd chmod -R 775 $ORCL_ROOT
 LN
 
 #	============================================================================
@@ -254,7 +251,10 @@ fi
 line_separator
 info "set password for users oracle & grid"
 exec_cmd "printf \"oracle\noracle\n\" | passwd oracle >/dev/null 2>&1"
-exec_cmd "printf \"grid\ngrid\n\" | passwd grid >/dev/null 2>&1"
+if [ $db_type != single_fs ]
+then
+	exec_cmd "printf \"grid\ngrid\n\" | passwd grid >/dev/null 2>&1"
+fi
 LN
 
 line_separator

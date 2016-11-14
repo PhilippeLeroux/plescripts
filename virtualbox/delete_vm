@@ -75,10 +75,7 @@ info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
 [ $confirm == yes ] && confirm_or_exit "Delete them ?"
 
 info "Stop all VMs..."
-for vm in ${vm_list[*]}
-do
-	exec_cmd -c "VBoxManage controlvm $vm poweroff"
-done
+exec_cmd -c stop_vm $db -wait_os
 LN
 
 info "Delete all VMs.."

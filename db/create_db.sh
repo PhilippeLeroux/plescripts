@@ -304,8 +304,8 @@ function remove_all_log_and_db_fs_files
 
 		exec_cmd rm -rf "$data/$db"
 		exec_cmd rm -rf "$fra/$db"
-		[ ! -d $data ] && exec_cmd mkdir $data
-		[ ! -d $fra ] && exec_cmd mkdir $fra
+		[ ! -d $data ] && exec_cmd mkdir -p $data
+		[ ! -d $fra ] && exec_cmd mkdir -p $fra
 	fi
 
 	exec_cmd -c "rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*"
@@ -359,8 +359,8 @@ function check_if_ASM_used
 			usefs=yes
 			if [[ "$data" == DATA && "$fra" == FRA ]]
 			then
-				data=/$ORCL_DISK/app/oracle/oradata/data
-				fra=/$ORCL_DISK/app/oracle/oradata/fra
+				data=/$GRID_DISK/app/oracle/oradata/data
+				fra=/$GRID_DISK/app/oracle/oradata/fra
 			fi
 		fi
 	fi
@@ -506,6 +506,28 @@ remove_glogin
 
 [ $cdb == yes ] && [ $pdbName != undef ] && create_services_for_pdb
 
+if [ $usefs == yes ]
+then
+	line_separator
+	info "Enable auto start for database"
+	exec_cmd "sed \"s/^\(${db:0:8}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
+	exec_cmd "cat /tmp/ot > /etc/oratab"
+	exec_cmd "rm /tmp/ot"
+	LN
+
+	if [ $pdbName != undef ]
+	then
+		line_separator
+		warning "pdb $pdbName not open on startup, DIY."
+		line_separator
+		LN
+	fi
+
+	copy_glogin
+
+	exit 0	#	Pour les base sur FS le reste du script est incompatible.
+fi
+
 line_separator
 export ORACLE_DB=${db}
 unset ORACLE_SID
@@ -539,31 +561,13 @@ then
 	LN
 fi
 
-if [ $usefs == no ]
-then
-	line_separator
-	info "Database config :"
-	exec_cmd "srvctl config database -db $lower_db"
-	LN
-	line_separator
-	exec_cmd "crsctl stat res ora.$lower_db.db -t"
-	LN
-else
-	line_separator
-	info "Enable auto start for database"
-	exec_cmd "sed \"s/^\(${db:0:8}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
-	exec_cmd "cat /tmp/ot > /etc/oratab"
-	exec_cmd "rm /tmp/ot"
-	LN
-
-	if [ $pdbName != undef ]
-	then
-		line_separator
-		warning "pdb $pdbName not open on startup, DIY."
-		line_separator
-		LN
-	fi
-fi
+line_separator
+info "Database config :"
+exec_cmd "srvctl config database -db $lower_db"
+LN
+line_separator
+exec_cmd "crsctl stat res ora.$lower_db.db -t"
+LN
 
 copy_glogin
 

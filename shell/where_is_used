@@ -64,8 +64,15 @@ function trunc_line
 function search_in_dir
 {
 	typeset	-r	dir_name="$1"
-	typeset		find_cmd="find $dir_name -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.json\" ! -name \"*.swp\" ! -path \*/.\* -print0 | xargs -0"
-	#typeset		find_cmd="find $dir_name -type f ! -name \"*.rsp\" ! -name \"*.log\" ! -name \"*.json\" ! -name \"*.swp\" -print0 | xargs -0"
+	typeset		find_cmd="find $dir_name	-type f						\
+											! -name \"*.rsp\"			\
+											! -name \"*.log\"			\
+											! -name \"*.json\"			\
+											! -name \"*.swp\"			\
+											! -name \"*.png\"			\
+											! -name \"*.gz\"			\
+											! -path \*/.\*				\
+											-print0 | xargs -0"
 
 	if [ $strict == no ]
 	then
@@ -81,7 +88,12 @@ function search_in_dir
 		[ x"$file_name" == x ] && continue
 
 		# Affiche une seule fois le nom du fichier si $word est présent plusieurs fois.
-		[ "$prev_file_name" != "$file_name" ] && echo " " && info "$file_name" && count=count+1
+		if [ "$prev_file_name" != "$file_name" ]
+		then
+			echo " "
+			info "$file_name"
+			count=count+1
+		fi
 
 		# Affiche toutes les lignes ou apparait $word
 		echo $(trunc_line "$line")

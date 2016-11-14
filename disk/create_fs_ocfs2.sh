@@ -10,7 +10,7 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-mount_point=name
-	-device=/dev/xxx
+	-device=/dev/xxx|auto	auto incompatible with -action=add
 	-action=[create|add]
 "
 
@@ -72,8 +72,17 @@ exit_if_param_undef		mount_point			"$str_usage"
 exit_if_param_undef		device				"$str_usage"
 exit_if_param_invalid	action "create add"	"$str_usage"
 
-if [ "$device" == check ]
+if [ "$device" == auto ]
 then
+	if [ $action == add ]
+	then
+		error "Incompatible parameters : -device=auto -action=add"
+		LN
+		info "$str_usage"
+		LN
+		exit 1
+	fi
+
 	info "Search unused disk :"
 	device=$(get_unused_disks_without_partitions | head -1)
 	if [ x"$device" == x ]
