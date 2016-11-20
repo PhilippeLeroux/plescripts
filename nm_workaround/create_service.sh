@@ -46,6 +46,8 @@ do
 	esac
 done
 
+exit_if_param_invalid role "infra master" "$str_usage"
+
 cat <<EOS > /root/nm_workaround.sh
 #!/bin/bash
 
@@ -63,6 +65,11 @@ then
 	nmcli connection modify $if_rac_name connection.zone trusted ethernet.mtu 9000
 	exit 0 #	Si $if_rac_name n'existe pas le script ne termine pas en erreur.
 	EOS
+else
+	cat <<-EOS >> /root/nm_workaround.sh
+	echo "add $if_net_name to zone public"
+	nmcli connection modify $if_net_name connection.zone public
+	EOS
 fi
 
 exec_cmd cat /root/nm_workaround.sh
@@ -73,6 +80,7 @@ LN
 
 if [ -f /usr/lib/systemd/system/nm_workaround.service ]
 then
+	exec_cmd -c "systemctl stop nm_workaround"
 	exec_cmd -c "systemctl disable nm_workaround"
 	LN
 fi
@@ -97,5 +105,5 @@ EOS
 exec_cmd "systemctl enable nm_workaround"
 exec_cmd "systemctl start nm_workaround"
 timing 5 "Wait nm_workaround started"
-exec_cmd "systemctl status nm_workaround"
+exec_cmd "systemctl status nm_workaround -l"
 LN

@@ -23,7 +23,7 @@ fi
 
 line_separator
 info "Network Manager Workaround"
-exec_cmd "~/plescripts/nm_workaround/nm_workaround.sh -role=infra"
+exec_cmd "~/plescripts/nm_workaround/create_service.sh -role=infra"
 LN
 
 line_separator

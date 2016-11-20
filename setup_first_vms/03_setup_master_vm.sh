@@ -80,7 +80,7 @@ LN
 
 line_separator
 info "Network Manager Workaround"
-exec_cmd -c "~/plescripts/nm_workaround/nm_workaround.sh -role=master"
+exec_cmd -c "~/plescripts/nm_workaround/create_service.sh -role=master"
 #	Plante car $if_pub_name n'existe pas, existera au reboot.
 LN
 
