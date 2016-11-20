@@ -101,6 +101,5 @@ case $switch_to in
 		;;
 esac
 
-exec_cmd "sync"
-sleep 2
+exec_cmd "yum makecache"
 LN
