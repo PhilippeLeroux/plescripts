@@ -9,6 +9,9 @@
 #Logs
 logs/**
 
+#Fichiers temporaires
+tmp/**
+
 #Fichier LibreOffice
 *.odp#
 
