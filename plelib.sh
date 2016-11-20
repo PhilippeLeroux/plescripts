@@ -1086,12 +1086,34 @@ function script_start
 }
 
 #*> script_stop <nom du script>
-#*> $1 correspond à message
+#*> $1 est le nom du script
+#*> $@ les autres paramètres sont des messages
 #*> Affiche le temps écoulé depuis le dernier appel à script_start
 #*> Doit être appelé en fin de script
 function script_stop
 {
-	info "script ${1##*/} running time : ${BOLD}$(fmt_seconds $(( SECONDS - ple_start )) )${NORM}"
+	typeset	script_name=${1##*/}
+	shift
+	if [ $# -ne 0 ]
+	then
+		script_name="$script_name:$@"
+	else
+		script_name="$script_name:"
+	fi
+
+	typeset	-ri	total_seconds=$(( SECONDS - ple_start ))
+
+	info "script $script_name running time : ${BOLD}$(fmt_seconds $total_seconds)${NORM}"
+
+	[ ! -d ~/plescripts/tmp ] && mkdir ~/plescripts/tmp
+	if [ -d ~/plescripts/tmp ]
+	then	# Teste car si le mkdir du dessus échoue ne fait rien
+		if [ ! -f ~/plescripts/tmp/scripts_chrono.txt ]
+		then
+			echo "Timestamp:script:id:seconds:fmt_seconds" > ~/plescripts/tmp/scripts_chrono.txt
+		fi
+		echo "$(date +%Y%m%d%H%M):$script_name:$total_seconds:$(fmt_seconds $total_seconds)" >> ~/plescripts/tmp/scripts_chrono.txt
+	fi
 }
 
 PAUSE=OFF 
@@ -1330,11 +1352,13 @@ function test_if_rpm_update_available
 		1)
 			typeset -r server=$1
 
+			exec_cmd "ssh -t root@$server 'yum makecache'"
 			exec_cmd -c "ssh -t root@$server 'yum check-update >/dev/null 2>&1'"
 			[ $? -eq 100 ] && return 0 || return 1
 			;;
 
 		0)
+			exec_cmd "yum makecache"
 			exec_cmd -c "yum check-update >/dev/null 2>&1"
 			[ $? -eq 100 ] && return 0 || return 1
 			;;

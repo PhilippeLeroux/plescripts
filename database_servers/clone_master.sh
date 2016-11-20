@@ -345,6 +345,11 @@ function configure_server
 	make_ssh_equi_with_san
 	LN
 
+	#	Correction problèmes Network Manager
+	info "Remove bad ifaces."
+	exec_cmd "ssh -t root@$server_name plescripts/nm_workaround/rm_conn_without_device.sh"
+	LN
+
 	create_disks_for_oracle_and_grid_softwares
 }
 
@@ -459,7 +464,7 @@ then	# C'est le dernier nœud
 		LN
 	fi
 
-	script_stop $ME
+	script_stop $ME $db
 
 	if [ $disk_type == FS ]
 	then
@@ -472,7 +477,7 @@ then	# C'est le dernier nœud
 	LN
 elif [ $max_nodes -ne 1 ]
 then	# Ce n'est pas le dernier noeud et il y a plus de 1 noeud.
-	script_stop $ME
+	script_stop $ME $db
 
 	info "Run script :"
 	info "$ME -db=$db -node=$(( node + 1 ))"

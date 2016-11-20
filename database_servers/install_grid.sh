@@ -543,7 +543,7 @@ info "Installation status :"
 exec_cmd "ssh grid@${node_names[0]} \". .profile; crsctl stat res -t\""
 LN
 
-script_stop $ME
+script_stop $ME $db
 LN
 
 info "Oracle software can be installed."

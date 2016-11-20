@@ -826,4 +826,4 @@ LN
 
 exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
 
-script_stop $ME
+script_stop $ME $primary with $standby

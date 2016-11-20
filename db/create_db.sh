@@ -604,5 +604,5 @@ LN
 
 stats_tt stop create_$lower_db
 
-script_stop $ME
+script_stop $ME $lower_db
 LN

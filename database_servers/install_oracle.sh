@@ -240,7 +240,7 @@ typeset -r type_disks=$(cat $db_cfg_path/disks | tail -1 | cut -d: -f1)
 
 stats_tt stop oracle_installation
 
-script_stop $ME
+script_stop $ME $db
 LN
 
 line_separator
