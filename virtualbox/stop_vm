@@ -89,12 +89,12 @@ typeset -a vm_list	#	Contient le nom de toutes les VMs
 while read vm_name
 do
 	[ x"$vm_name" != x ] && vm_list+=( $vm_name )
-done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+done<<<"$(VBoxManage list runningvms | grep "$server" | cut -d\" -f2)"
 
 typeset -ri max_vms=${#vm_list[@]}
-info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
+info "$max_vms running VMs found for pattern $server : ${vm_list[@]}"
 LN
-[ $max_vms -eq 0 ] && exit 1
+[ $max_vms -eq 0 ] && exit 0
 
 #===============================================================================
 # Stop les VMs et mémorise leur nom dans vm_stopped_list
@@ -140,7 +140,7 @@ then	# Attend que toutes les VMs soient stoppée.
 		count=count+1
 	done
 	typeset -ri	duration=$(( SECONDS - stop_at ))
-	info "Total wait : $(fmt_seconds $duration)."
+	info "Total waiting : $(fmt_seconds $duration)"
 	timing 2
 fi
 
