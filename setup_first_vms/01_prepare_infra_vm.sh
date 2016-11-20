@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -23,7 +24,7 @@ line_separator
 info "Create NFS mount points."
 infra_ssh "mkdir /mnt/plescripts"
 infra_ssh "ln -s /mnt/plescripts ~/plescripts"
-infra_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,$nfs_options"
+infra_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o rw,$nfs_options"
 infra_ssh "mkdir -p ~/$oracle_install"
 LN
 

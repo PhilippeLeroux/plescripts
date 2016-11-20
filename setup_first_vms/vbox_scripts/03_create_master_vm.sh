@@ -66,7 +66,7 @@ function master_ssh
 	fi
 }
 
-typeset -r script_start_at=$SECONDS
+script_start
 
 line_separator
 info "Cleanup :"
@@ -93,6 +93,7 @@ LN
 
 line_separator
 info "Network config :"
+master_ssh "sed -i 's/^NAME=.*/NAME=$if_pub_name/' $if_pub_file"
 master_ssh "echo DNS1=$infra_ip >> $if_pub_file"
 master_ssh "echo GATEWAY=$infra_ip >> $if_pub_file"
 master_ssh "systemctl restart network"
@@ -109,4 +110,4 @@ LN
 info "Server $master_name ready."
 LN
 
-info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"
+script_stop $ME

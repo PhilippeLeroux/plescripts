@@ -37,7 +37,7 @@ do
 	esac
 done
 
-typeset -r script_start_at=$SECONDS
+script_start
 
 line_separator
 exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"
@@ -137,7 +137,7 @@ else
 fi
 LN
 
+script_stop $ME
+
 info "After install execute : ./02_create_infra_vm.sh"
 LN
-
-info "Script : $( fmt_seconds $(( SECONDS - script_start_at )) )"

@@ -14,9 +14,6 @@ Doit être exécuté sur le serveur master.
 
 script_banner $ME $*
 
-typeset argv
-[ "$DEBUG_MODE" == "ENABLE" ] && argv="-c"
-
 typeset hn="$(hostname -s)"
 if [ "$hn" != "$master_name" ]
 then
@@ -31,6 +28,8 @@ exec_cmd -c "mount ${client_hostname}:/home/$common_user_name/plescripts /mnt/pl
 
 line_separator
 info "Update Iface $if_pub_name"
+update_value NAME		$if_pub_name	$if_pub_file
+update_value DEVICE		$if_pub_name	$if_pub_file
 update_value BOOTPROTO	static			$if_pub_file
 update_value IPADDR		$master_ip 		$if_pub_file
 update_value DNS1		$dns_ip			$if_pub_file
@@ -59,17 +58,31 @@ exec_cmd "systemctl disable firewalld"
 exec_cmd "systemctl stop firewalld"
 LN
 
+test_if_rpm_update_available
+[ $? -eq 0 ] && exec_cmd yum -y update || true
+LN
+
 line_separator
 exec_cmd yum -y install nfs-utils iscsi-initiator-utils deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm
 
 line_separator
 exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
-exec_cmd $argv mount -a /mnt/plescripts
+exec_cmd mount -a /mnt/plescripts
 LN
 
 exec_cmd ~/plescripts/ntp/config_ntp.sh -role=master
 
 exec_cmd ~/plescripts/gadgets/install.sh master
+
+line_separator
+exec_cmd "~/plescripts/nm_workaround/rm_conn_without_device.sh"
+LN
+
+line_separator
+info "Network Manager Workaround"
+exec_cmd -c "~/plescripts/nm_workaround/nm_workaround.sh -role=master"
+#	Plante car $if_pub_name n'existe pas, existera au reboot.
+LN
 
 line_separator
 exec_cmd "~/plescripts/shell/set_plymouth_them"

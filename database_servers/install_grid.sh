@@ -299,7 +299,8 @@ function print_manual_workaround
 	info "> ssh root@${node_names[$idxnode]}"
 	info "> $ORACLE_HOME/root.sh"
 	info "if log ok : ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
-	info "if log ko : reboot servers, wait crs up and ./install_grid.sh -skip_grid_install"
+	info "if log ko : reboot servers, wait crs up and"
+	info "$ ./install_grid.sh -db=$db -skip_grid_install"
 	LN
 }
 

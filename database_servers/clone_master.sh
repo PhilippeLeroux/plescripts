@@ -82,7 +82,7 @@ exit_if_param_undef node	"$str_usage"
 cfg_load_node_info $db $node
 typeset -r server_name=$cfg_server_name
 
-typeset -r disk_type=$(cat ~/plescripts/database_servers/$db/disks | tail -1 | cut -d: -f1)
+typeset -r disk_type=$(cat $cfg_path_prefix/$db/disks | tail -1 | cut -d: -f1)
 
 typeset -r vg_name=asm01
 
@@ -191,7 +191,7 @@ function mount_oracle_install
 {
 	line_separator
 	info "Mount point for Oracle installation"
-	typeset fstab="$client_hostname:/home/$common_user_name/${oracle_install} /mnt/oracle_install nfs ro,$nfs_options,noauto"
+	typeset fstab="$client_hostname:/home/$common_user_name/${oracle_install} /mnt/oracle_install nfs ro,defaults,noauto"
 
 	exec_cmd "ssh -t root@${server_name} sed -i '/oracle_install/d' /etc/fstab"
 	exec_cmd "ssh -t root@${server_name} \"[ ! -d /mnt/oracle_install ] && mkdir /mnt/oracle_install || true\""

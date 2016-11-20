@@ -69,6 +69,8 @@ LN
 
 line_separator
 info "Configure interface $if_pub_name :"
+update_value NAME		$if_pub_name	$if_pub_file
+update_value DEVICE		$if_pub_name	$if_pub_file
 update_value BOOTPROTO	static			$if_pub_file
 update_value IPADDR		$cfg_server_ip 	$if_pub_file
 update_value DNS1		$dns_ip			$if_pub_file
@@ -85,6 +87,9 @@ LN
 
 line_separator
 info "Configure interface $if_iscsi_name :"
+exec_cmd "cp $if_pub_file $if_iscsi_file"
+update_value NAME		$if_iscsi_name		$if_iscsi_file
+update_value DEVICE		$if_iscsi_name		$if_iscsi_file
 update_value BOOTPROTO	static				$if_iscsi_file
 update_value IPADDR		$cfg_iscsi_ip		$if_iscsi_file
 update_value USERCTL	yes					$if_iscsi_file
@@ -107,9 +112,6 @@ then
 	# Pour l'IP RAC lecture du dernier n° de l'IP iSCSI.
 	typeset -r ip_rac=${if_rac_network}.${cfg_iscsi_ip##*.}
 	info "Configure interface $if_rac_name :"
-	#	Le fichier de configuration de l'interface n'existe pas car elle a été
-	#	ajoutée après l'installation de l'OS. Donc copie de la configuration d'une
-	#	interface existante et mise à jour.
 	exec_cmd "cp $if_iscsi_file $if_rac_file"
 	update_value NAME		$if_rac_name		$if_rac_file
 	update_value DEVICE		$if_rac_name		$if_rac_file

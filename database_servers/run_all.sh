@@ -102,6 +102,19 @@ function configure_server
 	LN
 }
 
+info "Validate params : $@"
+exec_cmd -c "~/plescripts/db/create_db.sh -validate_params -y -db=$db $@"
+if [ $? -ne 0 ]
+then
+	LN
+	error "Invalid parameter !"
+	LN
+	info "$str_usage"
+	LN
+	exit 1
+fi
+LN
+
 configure_server $db
 
 exec_cmd "ssh -t -t oracle@srv${db}01 \". .profile; ~/plescripts/db/create_db.sh -y -db=$db $@\""

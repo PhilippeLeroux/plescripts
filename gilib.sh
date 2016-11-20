@@ -41,3 +41,12 @@ function execute_on_all_nodes
 	execute_on_other_nodes "$cmd"
 }
 
+#	Exécute la commande "$@" sur tous les nœuds du cluster
+#	Source le fichier .bash_profile sur les autres nœuds.
+function execute_on_all_nodes_v2
+{
+	typeset -r cmd="$@"
+
+	exec_cmd "$cmd"
+	execute_on_other_nodes ". .bash_profile; $cmd"
+}

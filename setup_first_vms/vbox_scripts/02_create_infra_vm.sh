@@ -37,12 +37,9 @@ do
 	esac
 done
 
-line_separator
-info "Clean up know_host file from $client_hostname :"
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh		\
-									-host=${master_name}	\
-									-ip=${infra_ip}
+script_start
 
+line_separator
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh		\
 									-host=${infra_hostname}	\
 									-ip=${infra_ip}
@@ -96,7 +93,7 @@ info "Add disk for SAN storage (targetcli)"
 exec_cmd "$vm_scripts_path/add_disk.sh					\
 				-vm_name=$infra_hostname				\
 				-disk_name=asm01_disk01					\
-				-disk_mb=$(( 128 * 1024 ))" -fixed_size
+				-disk_mb=$(( $san_disk_size_g * 1024 ))" -fixed_size
 LN
 
 line_separator
@@ -116,6 +113,7 @@ LN
 #	La VM infra vient d'être clonée depuis le master, elle possède donc la
 #	configuration mimnimum du master : son nom et son adresse IP
 info "Equivalence ssh temporaire par rapport à l'IP du master."
+confirm_or_exit -reply_list=CR "root password will be asked. Press enter to continue."
 exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$master_ip"
 LN
 
@@ -123,18 +121,24 @@ line_separator
 typeset -r if_cfg_path=~/plescripts/setup_first_vms/ifcfg_infra_server
 line_separator
 info "Update public Iface : $if_pub_name"
+update_value NAME	$if_pub_name	$if_cfg_path/ifcfg-$if_pub_name
+update_value DEVICE	$if_pub_name	$if_cfg_path/ifcfg-$if_pub_name
 update_value IPADDR	$infra_ip		$if_cfg_path/ifcfg-$if_pub_name
 update_value PREFIX	$if_pub_prefix	$if_cfg_path/ifcfg-$if_pub_name
 update_value DNS1	$infra_ip		$if_cfg_path/ifcfg-$if_pub_name
 LN
 
 info "Update iSCSI Iface : $if_iscsi_name"
+update_value NAME	$if_iscsi_name							$if_cfg_path/ifcfg-$if_iscsi_name
+update_value DEVICE	$if_iscsi_name							$if_cfg_path/ifcfg-$if_iscsi_name
 update_value IPADDR	${if_iscsi_network}.${infra_ip_node}	$if_cfg_path/ifcfg-$if_iscsi_name
 update_value PREFIX	$if_iscsi_prefix						$if_cfg_path/ifcfg-$if_iscsi_name
 LN
 
 info "Update internet Iface : $if_net_name"
-update_value DNS1	$infra_ip	$if_cfg_path/ifcfg-$if_net_name
+update_value NAME	$if_net_name	$if_cfg_path/ifcfg-$if_net_name
+update_value DEVICE	$if_net_name	$if_cfg_path/ifcfg-$if_net_name
+update_value DNS1	$infra_ip		$if_cfg_path/ifcfg-$if_net_name
 LN
 
 info "Copy Ifaces files to $infra_hostname (Use IP $master_ip)"
@@ -149,6 +153,15 @@ exec_cmd wait_server $infra_ip
 
 line_separator
 exec_cmd "~/plescripts/setup_first_vms/01_prepare_infra_vm.sh"
+
+line_separator
+info "Create yum repository"
+exec_cmd "~/plescripts/yum/init_infra_repository.sh"
+exec_cmd "ssh -t root@$infra_ip \"~/plescripts/yum/add_local_repositories.sh -role=infra\""
+exec_cmd "ssh -t root@$infra_ip \"~/plescripts/yum/switch_repo_to.sh -local\""
+LN
+
+line_separator
 exec_cmd "ssh -t root@$infra_ip \"~/plescripts/setup_first_vms/02_update_config.sh\""
 exec_cmd "ssh -t root@$infra_ip \"~/plescripts/setup_first_vms/03_setup_infra_vm.sh\""
 LN
@@ -179,10 +192,7 @@ info "Setup ssh equivalence between $client_hostname and $infra_hostname"
 exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_hostname"
 LN
 
-line_separator
-info "Create yum repository"
-exec_cmd "~/plescripts/yum/clone_ol_repository_on_infra_server.sh"
-LN
+script_stop $ME
 
 info "Execute : ./03_create_master_vm.sh"
 LN

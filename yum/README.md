@@ -14,12 +14,16 @@
 		Teste si des mises à jour sont disponibles, si oui met à jour le serveur et
 		synchronise le dépôt.
 
-* clone_ol_repository_on_infra_server.sh
-  - Clone le repository OL7 sur K2.
+* init_infra_repository.sh
+  - Clone le dépôt OL7 sur K2 (ou restaure la sauvegarde locale)
   - Met à jour le master.
 
   **Note :** Ce script n'est pas lancé lors de la création du serveur K2, il faut le faire
   explicitement.
+
+* backup_infra_repository.sh
+
+  Sauvegarde le dépôt OL7 du serveur K2 en locale.
 
 * public-yum-ol7.repo
 	- Doit être déployé sur tous les serveurs.

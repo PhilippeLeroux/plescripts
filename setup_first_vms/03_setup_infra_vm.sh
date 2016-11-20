@@ -22,6 +22,11 @@ then
 fi
 
 line_separator
+info "Network Manager Workaround"
+exec_cmd "~/plescripts/nm_workaround/nm_workaround.sh -role=infra"
+LN
+
+line_separator
 info "Update OS"
 test_if_rpm_update_available
 [ $? -eq 0 ] && exec_cmd yum -y update || true
@@ -54,7 +59,7 @@ exec_cmd "firewall-cmd --reload"
 LN
 
 line_separator
-exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,async,comment=systemd.automount\"  >> /etc/fstab"
+exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,comment=systemd.automount\"  >> /etc/fstab"
 LN
 
 line_separator
@@ -79,3 +84,7 @@ exec_cmd "~/plescripts/dns/install/03_configure.sh"
 exec_cmd "~/plescripts/dns/add_server_2_dns.sh -name=$client_hostname -ip_node=1"
 exec_cmd "~/plescripts/dns/add_server_2_dns.sh -name=$master_name -ip_node=$master_ip_node"
 exec_cmd "~/plescripts/dns/show_dns.sh"
+
+line_separator
+exec_cmd "~/plescripts/nm_workaround/rm_conn_without_device.sh"
+LN

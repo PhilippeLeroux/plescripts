@@ -8,10 +8,11 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-force_sync]   Synchronise le dépôt locale même s'il n'y a pas de maj disponible.
-	[-use_tar=name] Utilise l'archive 'name' pour créer le dépôt
+	[-force_sync]   Sync local repository even without any new updates.
+	[-use_tar=name] Usage tar 'name' to create local repository.
+	[-check_only]   Test only if update available.
 
-Synchronise le dépôt Oracle Linux.
+Update OS & sync local repository
 "
 
 script_banner $ME $*
@@ -24,6 +25,7 @@ fi
 
 typeset	force_sync=no
 typeset	use_tar=none
+typeset	check_only=no
 
 while [ $# -ne 0 ]
 do
@@ -36,6 +38,11 @@ do
 
 		-force_sync)
 			force_sync=yes
+			shift
+			;;
+
+		-check_only)
+			check_only=yes
 			shift
 			;;
 
@@ -59,10 +66,13 @@ do
 	esac
 done
 
+typeset	-r repo_config_path=/etc/yum.repos.d
+typeset	-r repo_config_name=public-yum-ol7.repo
+
 function nfs_export_repo
 {
 	line_separator
-	info "Exporte sur le réseau $infra_network $infra_olinux_repository_path"
+	info "NFS export : $infra_network $infra_olinux_repository_path"
 	LN
 
 	exec_cmd -c "grep -q \"$infra_olinux_repository_path\" /etc/exports"
@@ -81,28 +91,6 @@ function nfs_export_repo
 	LN
 }
 
-function update_yum_repository_file
-{
-	typeset -r yum_file=~/plescripts/yum/public-yum-ol7.repo
-
-	line_separator
-	info "Mise à jour de $yum_file"
-	exec_cmd "sed -i \"s!^baseurl.*!baseurl=file:///mnt$infra_olinux_repository_path!g\" $yum_file"
-	LN
-}
-
-if [ $force_sync == no ]
-then
-	test_if_rpm_update_available
-	[ $? -ne 0 ] && exit 0
-	LN
-fi
-
-line_separator
-info "Update $(hostname -s)"
-exec_cmd yum -y update
-LN
-
 line_separator
 if [ ! -d $infra_olinux_repository_path ]
 then
@@ -119,29 +107,22 @@ then #	$use_tar contient le dépôt OL7 à partir de ol7, gains de temps dans le
 	exec_cmd mv "$use_tar"	"$root_dir"
 	fake_exec_cmd cd $root_dir
 	cd "$root_dir"
-	exec_cmd tar xf "${use_tar##*/}"
+	exec_cmd "gzip -dc \"${use_tar##*/}\" | tar xf -"
 	exec_cmd rm "${use_tar##*/}"
+	LN
+else
+	info "Sync local repository :"
+	exec_cmd -c reposync	--newest-only									\
+							--download_path=$infra_olinux_repository_path	\
+							--repoid=ol7_latest								\
+							--repoid=ol7_UEKR3								\
+							--repoid=ol7_UEKR4
 	LN
 fi
 
-info "Sync local repository :"
-exec_cmd -c reposync	--newest-only									\
-						--download_path=$infra_olinux_repository_path	\
-						--repoid=ol7_latest
-LN
-
-info "Load packages 2 remove."
-typeset -r packages_2_remove="$(repomanage --old $infra_olinux_repository_path)"
-if [ x"$packages_2_remove" == x ]
-then
-	info "no packages to remove."
-else
-	info "Remove old packages :"
-	exec_cmd rm $(repomanage --old $infra_olinux_repository_path)
-fi
-LN
-
 info "Update local repository :"
+test_if_cmd_exists createrepo
+[ $? -ne 0 ] && yum -y install createrepo
 exec_cmd createrepo --update $infra_olinux_repository_path
 LN
 
@@ -149,7 +130,19 @@ nfs_export_repo
 LN
 
 line_separator
+test_if_rpm_update_available
+if [ $? -eq 0 ]
+then
+	info "Update $(hostname -s)"
+	exec_cmd yum -y update
+	LN
+else
+	info "No update available."
+	LN
+fi
+
+line_separator
 info "Notes :"
-info " * yum/update_master.sh met à jour la VM master $master_name, à exécuter depuis $client_hostname"
-info " * yum/update_db_os.sh met à jour une VM de base de données, à exécuter sur le serveur."
+info " * yum/update_master.sh to upadte VM $master_name, execute from $client_hostname"
+info " * yum/update_db_os.sh to update VM with bdd, execute from the bdd server."
 LN

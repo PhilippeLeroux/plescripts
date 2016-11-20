@@ -37,6 +37,9 @@ typeset		enable_flashback=yes
 typeset		backup=yes
 typeset		confirm="-confirm"
 
+#	Permet au script database_severs/run_all.sh de valider les arguments.
+typeset		validate_params=no
+
 typeset		skip_db_create=no
 
 typeset -r str_usage=\
@@ -180,6 +183,11 @@ do
 
 		-skip_db_create)
 			skip_db_create=yes
+			shift
+			;;
+
+		-validate_params)
+			validate_params=yes
 			shift
 			;;
 
@@ -471,11 +479,14 @@ function copy_glogin
 #	============================================================================
 script_start
 
-check_rac_or_single
-check_if_ASM_used
-
 exit_if_param_undef		db							"$str_usage"
 exit_if_param_invalid	enable_flashback "yes no"	"$str_usage"
+
+if [ $validate_params == yes ]
+then
+	info "All params validates"
+	exit 0
+fi
 
 #	----------------------------------------------------------------------------
 #	Ajustement des paramètres
@@ -497,6 +508,10 @@ fi
 stats_tt start create_$lower_db
 
 typeset prefixInstance=${db:0:8}
+
+check_rac_or_single
+
+check_if_ASM_used
 
 remove_glogin
 

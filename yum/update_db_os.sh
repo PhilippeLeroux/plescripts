@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -40,68 +41,80 @@ done
 test_if_cmd_exists olsnodes
 if [ $? -ne 0 ]
 then
-	error "Ne fonctionne qu'avec le GI d'installé."
+	error "Work only with Grid Infra..."
 	exit 1
 fi
 
-typeset	-r	cur_hostname=$(hostname -s)
+typeset	-i	count_nodes=$(wc -w<<<"$gi_node_list")
+[ $count_nodes -eq 0 ] && count_nodes=1
 
-exec_cmd yum makecache
+execute_on_all_nodes_v2 yum makecache
 LN
 
 exec_cmd -ci "yum check-update >/dev/null 2>&1"
 check_update=$?
 if [ $check_update -eq 0 ]
 then
-	info "Par de mise à jour."
+	info "No update."
 	exit 0
 fi
 
 if [ $check_update -ne 100 ]
 then
-	error "Erreur lors du check..."
+	error "Check failed..."
 	exit 1
 fi
 
-typeset		node_list=$(olsnodes | xargs)
-typeset	-ri	count_nodes=$(wc -w<<<"$node_list")
-
-[ $count_nodes -eq 0 ] && node_list=$cur_hostname
-
-info "Nombre de serveur à mettre à jour : $count_nodes"
-info "    $node_list"
-
-line_separator
-if [ $count_nodes -gt 1 ]
-then	#	C'est un RAC
-	exec_cmd "crsctl stop cluster -all"
-	exec_cmd "crsctl stop crs"
+if [ $count_nodes -eq 1 ]
+then
+	info "Update : $gi_current_node"
 	LN
 
-	for node_name in $node_list
-	do
-		if [ $node_name != $cur_hostname ]
-		then
-			exec_cmd "ssh $node_name \". ./.bash_profile; crsctl stop crs\""
-			LN
-		fi
-	done
-else
+	line_separator
+	info "Stop Grid Infra :"
 	exec_cmd "crsctl stop has"
 	LN
+
+	line_separator
+	info "update :"
+	exec_cmd "yum -y update"
+	LN
+
+	line_separator
+	info "Configure oracleasm :"
+	exec_cmd "~/plescripts/oracle_preinstall/configure_oracleasm.sh"
+	LN
+
+	line_separator
+	info "Reboot"
+	exec_cmd -c systemctl reboot
+	LN
+else
+	info "Update : $gi_current_node $gi_node_list"
+	LN
+
+	line_separator
+	info "Stop cluster :"
+	exec_cmd "crsctl stop cluster -all"
+	execute_on_all_nodes_v2 "crsctl stop crs"
+	LN
+
+	line_separator
+	info "update :"
+	execute_on_all_nodes_v2 "yum -y update"
+	LN
+
+	line_separator
+	info "Configure oracleasm :"
+	execute_on_all_nodes_v2 "~/plescripts/oracle_preinstall/configure_oracleasm.sh"
+	LN
+
+	line_separator
+	info "Reboot"
+	for node_name in ${gi_node_list[*]}
+	do
+		exec_cmd -c "ssh $node_name \"systemctl reboot\""
+	done
+	exec_cmd -c systemctl reboot
+	LN
 fi
-
-line_separator
-for node_name in $node_list
-do
-	if [ $node_name != $cur_hostname ]
-	then
-		exec_cmd "ssh -t $node_name \"yum -y update\""
-		[ $? -eq 0 ] && exec_cmd -c "ssh $node_name \"systemctl reboot\""
-		LN
-	fi
-done
-
-line_separator
-exec_cmd "yum -y update"
-[ $? -eq 0 ] && exec_cmd -c "systemctl reboot" || false

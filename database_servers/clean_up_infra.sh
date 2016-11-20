@@ -69,7 +69,7 @@ then
 		then	# Supprime les scans.
 			remove_from_known_hosts ${cfg_server_name}-scan
 		fi
-		[ $delete_vms == yes ] && exec_cmd rm -rf "$vm_path/$cfg_server_name"
+		[ $delete_vms == yes ] && exec_cmd rm -rf \"$vm_path/$cfg_server_name\"
 	done
 fi
 LN

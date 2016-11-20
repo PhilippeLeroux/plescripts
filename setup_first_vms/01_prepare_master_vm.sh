@@ -38,10 +38,13 @@ LN
 
 line_separator
 info "Setup yum repository"
-# TODO rendre configurable le nom du fichier !
-master_ssh "cp -fp ~/plescripts/yum/public-yum-ol7.repo /etc/yum.repos.d/public-yum-ol7.repo"
-LN
 master_ssh "mkdir -p /mnt$infra_olinux_repository_path"
-master_ssh "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux_repository_path nfs ro,$nfs_options 0 0\" >> /etc/fstab"
+master_ssh "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux_repository_path nfs ro,defaults,comment=systemd.automount 0 0\" >> /etc/fstab"
 master_ssh mount /mnt$infra_olinux_repository_path
 LN
+
+info "Add local repository"
+master_ssh "~/plescripts/yum/add_local_repositories.sh -role=master"
+master_ssh "~/plescripts/yum/switch_repo_to.sh -local"
+LN
+

@@ -472,7 +472,7 @@ function fake_exec_cmd
 			;;
 
 		EXEC)
-			my_echo "${YELLOW}" "${INVERT}$(date +"%Hh%M")>${NORM} " "$@"
+			my_echo "${YELLOW}" "${STRIKE}$(date +"%Hh%M")>${NORM} " "$@"
 			return 0
 	esac
 }
@@ -994,13 +994,13 @@ function fill
 
 #*>	Temporisation pendant $1 secondes
 #*>	$1 temps en secondes
-#*>	$2 msg par défaut le message est "Be patient..."
+#*>	$2 msg par défaut pas de message.
 function timing
 {
 	typeset -ri secs=$1
-	[ $# -eq 1 ] && typeset msg="Be patient..." || typeset msg="$2"
+	[ $# -eq 1 ] && typeset msg="" || typeset msg="$2 : "
 		
-	info -n "$msg : "; pause_in_secs $secs; LN; LN
+	info -n "$msg"; pause_in_secs $secs; LN; LN
 }
 
 #*> pause_in_secs <seconds>
