@@ -48,21 +48,11 @@ fi
 typeset	-i	count_nodes=$(wc -w<<<"$gi_node_list")
 [ $count_nodes -eq 0 ] && count_nodes=1
 
-execute_on_all_nodes_v2 yum makecache
-LN
-
-exec_cmd -ci "yum check-update >/dev/null 2>&1"
-check_update=$?
-if [ $check_update -eq 0 ]
+test_if_rpm_update_available
+if [ $? -ne 0 ]
 then
 	info "No update."
 	exit 0
-fi
-
-if [ $check_update -ne 100 ]
-then
-	error "Check failed..."
-	exit 1
 fi
 
 if [ $count_nodes -eq 1 ]
@@ -101,6 +91,8 @@ else
 
 	line_separator
 	info "update :"
+	#	test_if_rpm_update_available a mis à jour le cache sur le nœud courant.
+	execute_on_other_nodes yum makecache
 	execute_on_all_nodes_v2 "yum -y update"
 	LN
 
@@ -111,10 +103,7 @@ else
 
 	line_separator
 	info "Reboot"
-	for node_name in ${gi_node_list[*]}
-	do
-		exec_cmd -c "ssh $node_name \"systemctl reboot\""
-	done
+	execute_on_other_nodes_v2 -c "systemctl reboot"
 	exec_cmd -c systemctl reboot
 	LN
 fi

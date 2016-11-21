@@ -309,7 +309,9 @@ function configure_server
 		else
 			typeset -r vm_memory=$vm_memory_mb_for_rac_db
 		fi
-		exec_cmd "$vm_scripts_path/clone_vm.sh -db=$db -vm_memory_mb=$vm_memory -vmGroup=\"$vmGroup\""
+		exec_cmd "$vm_scripts_path/clone_vm.sh	-db=$db						\
+												-vm_memory_mb=$vm_memory	\
+												-vmGroup=\"$vmGroup\""
 	fi
 
 	#	-wait_os=no car le nom du serveur n'a pas encore été changé.
@@ -321,10 +323,6 @@ function configure_server
 	#	La VM a été clonée mais sa configuration réseau correspond toujours à
 	#	celle du master, il faut donc régénérer la clef public.
 	add_2_know_hosts $master_name
-
-	line_separator
-	test_if_rpm_update_available $master_name
-	[ $? -eq 0 ] && exec_cmd "ssh -t root@$master_name \"yum -y update\""
 	LN
 
 	line_separator
@@ -348,6 +346,11 @@ function configure_server
 	#	Correction problèmes Network Manager
 	info "Remove bad ifaces."
 	exec_cmd "ssh -t root@$server_name plescripts/nm_workaround/rm_conn_without_device.sh"
+	LN
+
+	line_separator
+	test_if_rpm_update_available $server_name
+	[ $? -eq 0 ] && exec_cmd "ssh -t root@$server_name \"yum -y update\""
 	LN
 
 	create_disks_for_oracle_and_grid_softwares

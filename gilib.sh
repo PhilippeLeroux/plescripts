@@ -22,29 +22,56 @@ typeset -r gi_node_list=$(get_other_nodes)
 typeset -r gi_current_node=$(hostname -s)
 
 #	Exécute la commande "$@" sur tous les autres nœuds du cluster
+#	if $1 == -c script not interupted on error.
 function execute_on_other_nodes
 {
+	if [ "$1" == "-c" ]
+	then
+		typeset -r first_arg="-c"
+		shift
+	else
+		typeset -r first_arg
+	fi
+
 	typeset -r cmd=$(escape_2xquotes "$@")
 
 	for node in $gi_node_list
 	do
-		exec_cmd "ssh -t -t $node \"$cmd\"</dev/null"
+		exec_cmd $first_arg "ssh -t -t $node \"$cmd\"</dev/null"
 	done
 }
 
 #	Exécute la commande "$@" sur tous les nœuds du cluster
+#	if $1 == -c script not interupted on error.
 function execute_on_all_nodes
 {
+	if [ "$1" == "-c" ]
+	then
+		typeset -r first_arg="-c"
+		shift
+	else
+		typeset -r first_arg
+	fi
+
 	typeset -r cmd="$@"
 
-	exec_cmd "$cmd"
-	execute_on_other_nodes "$cmd"
+	exec_cmd $first_arg "$cmd"
+	execute_on_other_nodes $first_arg "$cmd"
 }
 
 #	Exécute la commande "$@" sur tous les nœuds du cluster
 #	Source le fichier .bash_profile sur les autres nœuds.
+#	if $1 == -c script not interupted on error.
 function execute_on_all_nodes_v2
 {
+	if [ "$1" == "-c" ]
+	then
+		typeset -r first_arg="-c"
+		shift
+	else
+		typeset -r first_arg
+	fi
+
 	typeset -r cmd="$@"
 
 	exec_cmd "$cmd"

@@ -10,7 +10,7 @@ typeset -r ME=$0
 script_banner $ME $*
 
 typeset switch_to=undef
-typeset	release=R4
+typeset	release=$default_yum_repository_release
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -101,5 +101,5 @@ case $switch_to in
 		;;
 esac
 
-exec_cmd "yum makecache"
+exec_cmd ~/plescripts/yum/clean_cache.sh
 LN

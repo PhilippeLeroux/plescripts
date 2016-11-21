@@ -1092,13 +1092,13 @@ function script_start
 #*> Doit être appelé en fin de script
 function script_stop
 {
-	typeset	script_name=${1##*/}
+	typeset	-r script_name=${1##*/}
 	shift
 	if [ $# -ne 0 ]
 	then
-		script_name="$script_name:$@"
+		typeset -r msg="$script_name:$@"
 	else
-		script_name="$script_name:"
+		typeset -r msg="$script_name:"
 	fi
 
 	typeset	-ri	total_seconds=$(( SECONDS - ple_start ))
@@ -1112,7 +1112,7 @@ function script_stop
 		then
 			echo "Timestamp:script:id:seconds:fmt_seconds" > ~/plescripts/tmp/scripts_chrono.txt
 		fi
-		echo "$(date +%Y%m%d%H%M):$script_name:$total_seconds:$(fmt_seconds $total_seconds)" >> ~/plescripts/tmp/scripts_chrono.txt
+		echo "$(date +%Y%m%d%H%M):$msg:$total_seconds:$(fmt_seconds $total_seconds)" >> ~/plescripts/tmp/scripts_chrono.txt
 	fi
 }
 
@@ -1135,7 +1135,7 @@ function test_pause # $1 message
 
 #*> Eval an arithmetic expression
 #*> Flags
-#*>    -l[#] : use real numbers with # number decimals
+#*>    -l# : use real numbers with # number decimals
 #*>    -i : remove all decimals
 function compute
 {
@@ -1353,13 +1353,13 @@ function test_if_rpm_update_available
 			typeset -r server=$1
 
 			exec_cmd "ssh -t root@$server 'yum makecache'"
-			exec_cmd -c "ssh -t root@$server 'yum check-update >/dev/null 2>&1'"
+			exec_cmd -c "ssh -t root@$server 'yum check-update'" >/dev/null 2>&1
 			[ $? -eq 100 ] && return 0 || return 1
 			;;
 
 		0)
 			exec_cmd "yum makecache"
-			exec_cmd -c "yum check-update >/dev/null 2>&1"
+			exec_cmd -c "yum check-update" >/dev/null 2>&1
 			[ $? -eq 100 ] && return 0 || return 1
 			;;
 

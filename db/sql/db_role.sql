@@ -1,7 +1,7 @@
 -- vim: ts=4:sw=4
 set lines 130
 col	name			for a10		head 'DB name'
-col	db_unique_name	for a10		head 'U name'
+col	db_unique_name	for a10		head 'UQ name'
 col	open_mode		for a10		head 'Open mode'
 col	database_role				head 'DB role'
 col	dataguard_broker			head 'Broker'
