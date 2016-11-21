@@ -32,7 +32,7 @@ function restart_target
 	exec_cmd -c systemctl status target -l
 	LN
 	
-	exec_cmd systemctl start target
+	exec_cmd -c systemctl stop target
 	LN
 	
 	exec_cmd systemctl start target
@@ -45,6 +45,7 @@ function restart_target
 typeset -i lv_errors=$(count_lv_errors)
 if [ $lv_errors -ne 0 ]
 then
+	info "target [$KO]"
 	error "LV errors : $lv_errors"
 	LN
 
@@ -61,8 +62,12 @@ then
 		LN
 		cmd_remove_lv
 		LN
+		info "target [$KO]"
 		exit 1
 	fi
 else
+	exec_cmd -c "systemctl status target" >/dev/null 2>&1
+	[ $? -ne 0 ] && restart_target || true
+	info "target [$OK]"
 	exit 0
 fi

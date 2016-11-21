@@ -78,14 +78,20 @@ typeset -i nr_vm_started=0
 for vm in ${vm_list[*]}
 do
 
-	line_separator
-	exec_cmd -c "VBoxManage startvm $vm --type headless"
-	if [ $? -eq 0 ]
+	if [ "$vm" == "$infra_hostname" ]
 	then
+		exec_cmd "~/plescripts/virtualbox/start_vm_infra"
 		nr_vm_started=nr_vm_started+1
-		[ $wait_os == yes ] && exec_cmd wait_server $vm && LN || true
 	else
-		error "Failed to start $vm" 
+		line_separator
+		exec_cmd -c "VBoxManage startvm $vm --type headless"
+		if [ $? -eq 0 ]
+		then
+			nr_vm_started=nr_vm_started+1
+			[ $wait_os == yes ] && exec_cmd wait_server $vm && LN || true
+		else
+			error "Failed to start $vm" 
+		fi
 	fi
 
 done
