@@ -78,7 +78,7 @@ typeset -i nr_vm_started=0
 for vm in ${vm_list[*]}
 do
 
-	if [ "$vm" == "$infra_hostname" ]
+	if [[ "$INSTALLING_INFRA" == yes && "$vm" == "$infra_hostname" ]]
 	then
 		exec_cmd "~/plescripts/virtualbox/start_vm_infra"
 		nr_vm_started=nr_vm_started+1

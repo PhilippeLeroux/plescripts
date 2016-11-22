@@ -3,6 +3,7 @@
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -43,6 +44,11 @@ line_separator
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh		\
 									-host=${infra_hostname}	\
 									-ip=${infra_ip}
+LN
+
+line_separator
+info "Flush DNS cache, usefull during tests..."
+exec_cmd -ci "systemctl restart nscd.service"
 LN
 
 line_separator
@@ -101,6 +107,9 @@ info "Move $infra_hostname to group Infra"
 exec_cmd VBoxManage modifyvm "$infra_hostname" --groups "/Infra"
 LN
 
+#	Le script start_vm ignore les actions spécifique du serveur d'infra.
+INSTALLING_INFRA=yes
+
 line_separator
 info "Start VM $infra_hostname"
 exec_cmd "$vm_scripts_path/start_vm $infra_hostname -wait_os=no"
@@ -152,13 +161,16 @@ exec_cmd wait_server $infra_ip
 [ $? -ne 0 ] && exit 1
 
 line_separator
+info "Temporaire : ajout de l'IP $infra_ip dans le know_host local."
+add_2_know_hosts $infra_ip
+LN
+
+line_separator
 exec_cmd "~/plescripts/setup_first_vms/01_prepare_infra_vm.sh"
 
 line_separator
 info "Create yum repository"
 exec_cmd "~/plescripts/yum/init_infra_repository.sh"
-exec_cmd "ssh -t root@$infra_ip \"~/plescripts/yum/add_local_repositories.sh -role=infra\""
-exec_cmd "ssh -t root@$infra_ip \"~/plescripts/yum/switch_repo_to.sh -local\""
 LN
 
 line_separator

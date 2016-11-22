@@ -49,20 +49,20 @@ if [ ! -f $full_backup_name ]
 then
 	line_separator
 	info "Cloning OL7 repository on $infra_hostname"
-	exec_cmd "ssh -t $infra_conn '~/plescripts/yum/sync_oracle_repository.sh	\
+	exec_cmd "ssh -t root@$infra_ip '~/plescripts/yum/sync_oracle_repository.sh	\
 																-force_sync'"
 	LN
 else	#	Duplication du backup du repo : gain en temps
 	line_separator
-	exec_cmd "ssh -t $infra_conn \"[ -d /repo ] && rm -rf /repo || true\""
+	exec_cmd "ssh -t root@$infra_ip \"[ -d /repo ] && rm -rf /repo || true\""
 	LN
 
-	info "Copy repository backup to ${infra_conn}"
-	exec_cmd scp $full_backup_name ${infra_conn}:/
+	info "Copy repository backup to ${infra_ip}"
+	exec_cmd scp $full_backup_name root@${infra_ip}:/
 	LN
 
 	info "Restore OL7 repository on $infra_hostname"
-	exec_cmd "ssh -t $infra_conn	\
+	exec_cmd "ssh -t root@$infra_ip	\
 				'~/plescripts/yum/sync_oracle_repository.sh	\
 								-force_sync					\
 								-use_tar=/$backup_name'"

@@ -110,6 +110,9 @@ then #	$use_tar contient le dépôt OL7 à partir de ol7, gains de temps dans le
 	exec_cmd "gzip -dc \"${use_tar##*/}\" | tar xf -"
 	exec_cmd rm "${use_tar##*/}"
 	LN
+	exec_cmd "~/plescripts/yum/add_local_repositories.sh -role=infra"
+	exec_cmd "~/plescripts/yum/switch_repo_to.sh -local"
+	LN
 else
 	info "Sync local repository :"
 	exec_cmd -c reposync	--newest-only									\
@@ -122,7 +125,7 @@ fi
 
 info "Update local repository :"
 test_if_cmd_exists createrepo
-[ $? -ne 0 ] && yum -y install createrepo
+[ $? -ne 0 ] && exec_cmd yum -y install createrepo
 exec_cmd createrepo --update $infra_olinux_repository_path
 LN
 

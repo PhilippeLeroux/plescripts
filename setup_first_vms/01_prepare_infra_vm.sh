@@ -20,7 +20,6 @@ function infra_ssh
 	exec_cmd $argv "ssh root@${infra_ip} \"$*\""
 }
 
-line_separator
 info "Create NFS mount points."
 infra_ssh "mkdir /mnt/plescripts"
 infra_ssh "ln -s /mnt/plescripts ~/plescripts"

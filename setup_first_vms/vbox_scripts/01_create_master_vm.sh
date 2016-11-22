@@ -111,11 +111,16 @@ exec_cmd VBoxManage storagectl $master_name	\
 LN
 
 line_separator
+#	Changement de comportement ente la version 5.1.6 et 5.1.8 de VBox
+#		5.1.6 : lors du clonage on avait un disque de taille fixe.
+#		5.1.8 : lors du clonage l'attribut 'taille fixe' est perdu
+#	Régression ??
+#	Je supprime le paramètre -fixed_size et passe la taille du disque de 16 à 24
 info "Create and attach OS disk :"
 exec_cmd "$vm_scripts_path/add_disk.sh					\
 				-vm_name=$master_name					\
 				-disk_name=\"$master_name\"				\
-				-disk_mb=$(( 16 * 1024 ))" -fixed_size
+				-disk_mb=$(( 24 * 1024 ))"
 LN
 
 line_separator
