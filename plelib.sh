@@ -152,8 +152,8 @@ fi
 #	============================================================================
 
 if [ ! -z PLE_SHOW_EXECUTION_TIME_AFTER ]
-then	# Temps en secondes, le temps d'exécution des commandes est affiché
-		# s'il est supérieur à cette variable
+then	# Temps en secondes, le temps d'exécution des commandes est affiché s'il
+		# est supérieur à cette variable
 	typeset -i PLE_SHOW_EXECUTION_TIME_AFTER=60
 fi
 
@@ -508,7 +508,7 @@ function get_cmd_name
 		return 0
 	fi
 
-	# Passe tous les arguments de ssh
+	# Passe tous les arguments de ssh : tout ce qui commence par un -
 	typeset -i argc=1
 	while [ $argc -ne $size ]
 	do
@@ -528,10 +528,19 @@ function get_cmd_name
 
 	typeset cmd=${argv[argc+1]}
 
-	# Si la commande débute par une double quote (") elle est supprimée.
-	[ "${cmd:0:1}" = \" ] && cmd=${cmd:1} || true
-	# Si la commande termine par une double quote (") elle est supprimée.
-	[ "${cmd:${#cmd}-1:1}" = \" ] && cmd=${cmd:0:${#cmd}-1} || true
+	# Si la commande débute par une simple ou double quote elle est supprimée.
+	case "${cmd:0:1}" in
+		"'"|"\"")
+			cmd=${cmd:1}
+			;;
+	esac
+
+	# Si la commande débute par une simple ou double quote elle est supprimée.
+	case "${cmd:${#cmd}-1:1}" in
+		"'"|"\"")
+			cmd=${cmd:0:${#cmd}-1}
+			;;
+	esac
 
 	#	TODO : ne plus mémoriser la commande mais la position !
 
