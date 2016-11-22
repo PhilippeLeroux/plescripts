@@ -18,6 +18,5 @@ case $1 in
 	;;
 esac
 
-cat /var/named/named.orcl | grep -E "^[a-z].*\.$1$"
-[ $? -eq 0 ] && exit 1
-exit 0
+cat /var/named/named.orcl | grep -Eq "^[a-z].*\.$1$"
+[ $? -eq 0 ] && exit 1 || exit 0

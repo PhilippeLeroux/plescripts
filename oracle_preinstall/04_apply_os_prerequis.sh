@@ -37,6 +37,13 @@ done
 
 exit_if_param_undef db_type	"$str_usage"
 
+# $1 size in Kb
+function fmt_kb2mb
+{
+	typeset -ri kb=$1
+	echo "$(fmt_number $(to_mb ${kb}K) )Mb"
+}
+
 function set_limit
 {
 	typeset -r domain=$1

@@ -5,12 +5,16 @@
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
 
+#	Toutes les IPs en dessous de 100 sont réservées.
+typeset	-ri	min_ip_node=100
+
+
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME retourne la première 'IP node' non utilisée.
 	[-range=<#>] Indique le nombre d'IP nodes non utilisées consécutives souhaité.
 
-La première 'IP node' non utilisée sera au minimum 10, les 'IP nodes' inférieur
+La première 'IP node' non utilisée sera au minimum $min_ip_node, les 'IP nodes' inférieur
 étant réservées à d'autre usage que des serveurs Oracle.
 "
 
@@ -44,9 +48,6 @@ do
 			;;
 	esac
 done
-
-#	Toutes les IPs en dessous de 10 sont réservées.
-typeset	-ri	min_ip_node=10
 
 typeset -i	prev_ip_node=0
 typeset	-i	ip_found=0
@@ -89,8 +90,8 @@ done<<<"$(cat /var/named/reverse.orcl	|\
 debug "ip_found     = $ip_found"
 debug "prev_ip_node = $prev_ip_node"
 if [[ $ip_found -eq 0 && $prev_ip_node -eq 0 ]]
-then # Pas d'IP utilisée à partir de 10
-	ip_found=10
+then # Pas d'IP utilisée à partir de $min_ip_node
+	ip_found=$min_ip_node
 fi
 [ $ip_found -eq 0 ] && ip_found=prev_ip_node+1
 #[ $ip_found -lt $min_ip_node ] && ip_found=$min_ip_node

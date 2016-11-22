@@ -1220,15 +1220,6 @@ function fmt_number
 	echo $formatted
 }
 
-#*> fmt_kb2mb <size>
-#*>	convert <size> in Kb to Mb and format.
-function fmt_kb2mb
-{
-	typeset -ri kb=$1
-	typeset -ri mb=kb/1024
-	echo "$(fmt_number $mb)Mb"
-}
-
 #*> to_mb string_size
 #*> Convert string_size in Mb
 #*>		Last digits is the unit : G, Gb, M, Mb, Kb or K
@@ -1345,22 +1336,36 @@ function get_initiator_for
 }
 
 #*> return 0 if rpm update available else return 1
-#*> check update on server $1 (optional)
+#*> check update on server $1 or local server if server name is missing.
 function test_if_rpm_update_available
 {
 	case $# in
 		1)
 			typeset -r server=$1
 
-			exec_cmd "ssh -t root@$server 'yum makecache'"
-			exec_cmd -c "ssh -t root@$server 'yum check-update'" >/dev/null 2>&1
-			[ $? -eq 100 ] && return 0 || return 1
+			exec_cmd -hf "ssh -t root@$server 'yum makecache >/dev/null 2>&1'"
+			exec_cmd -c -hf "ssh -t root@$server 'yum check-update >/dev/null 2>&1'"
+			if [ $? -eq 100 ]
+			then
+				info "$server update available."
+				return 0
+			else
+				info "$server up to date."
+				return 1
+			fi
 			;;
 
 		0)
-			exec_cmd "yum makecache"
-			exec_cmd -c "yum check-update" >/dev/null 2>&1
-			[ $? -eq 100 ] && return 0 || return 1
+			exec_cmd -hf "yum makecache" >/dev/null 2>&1
+			exec_cmd -c -hf "yum check-update >/dev/null 2>&1"
+			if [ $? -eq 100 ]
+			then
+				info "$(hostname -s) update available."
+				return 0
+			else
+				info "$(hostname -s) up to date."
+				return 1
+			fi
 			;;
 
 		*)

@@ -51,9 +51,13 @@ done
 exit_if_param_undef user	"$str_usage"
 exit_if_param_undef server	"$str_usage"
 
+#	BatchMode=yes : ne pose pas de question si l'équivalence n'existe pas.
 exec_cmd -c ssh -o BatchMode=yes $user@$server true
-if [ $? -ne 0 ]
+if [ $? -eq 0 ]
 then
-	error "No ssh equi between $USER@$(hostname -s) & $user@$server"
+	info "ssh equi between $USER@$(hostname -s) & $user@$server : [$OK]"
+	exit 0
+else
+	error "ssh equi between $USER@$(hostname -s) & $user@$server : [$KO]"
 	exit 1
 fi

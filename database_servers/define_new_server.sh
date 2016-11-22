@@ -100,16 +100,20 @@ exit_if_param_undef db	"$str_usage"
 
 [ $db_type == rac ] && [ $usefs == yes ] && error "RAC on FS not supported." && exit 1
 
-exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"
-if [ $? -ne 0 ]
-then
-	cat /tmp/vc
-	rm -f /tmp/vc
-	exit 1
-fi
-rm -f /tmp/vc
-
 typeset -r	cfg_path=$cfg_path_prefix/$db
+
+function validate_config
+{
+	exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"
+	if [ $? -ne 0 ]
+	then
+		cat /tmp/vc
+		rm -f /tmp/vc
+		exit 1
+	fi
+	rm -f /tmp/vc
+	LN
+}
 
 function test_ip_node_used
 {
@@ -205,6 +209,8 @@ function normalyse_fs_disks
 {
 	echo "FS:$size_dg_gb:1:1" > $cfg_path/disks
 }
+
+validate_config
 
 line_separator
 if [ -d $cfg_path ]

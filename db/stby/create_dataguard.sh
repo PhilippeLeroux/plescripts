@@ -16,8 +16,8 @@ typeset -r str_usage=\
 	[-create_primary_cfg=yes] Mettre 'no' si la configuration à déjà été faite.
 	[-no_backup]              Ne pas faire de backup.
 
-	Le script doit être exécuté sur la base primaire et l'envirronement de la base
-	primaire chargé.
+	Le script doit être exécuté sur le serveur de la base primaire et
+	l'environnement de la base primaire doit être chargé.
 
 	Flags de debug :
 		setup_network : configuration des tns et listeners des 2 serveurs.
@@ -429,11 +429,11 @@ function dgmgrl_remove_standby
 {
 	line_separator
 	info "Dataguard : remove standby $standby if exist."
-dgmgrl -silent -echo<<EOS | tee -a $PLELIB_LOG_FILE
-connect sys/$oracle_password
-remove database $standby
-EOS
-LN
+	dgmgrl -silent -echo<<-EOS | tee -a $PLELIB_LOG_FILE
+	connect sys/$oracle_password
+	remove database $standby
+	EOS
+	LN
 }
 
 #	Applique l'ensemble des paramètres nécessaires pour une base primaire et pour
@@ -488,6 +488,7 @@ function duplicate
 
 	line_separator
 	run_duplicate
+	LN
 }
 
 function sqlcmd_mount_db_and_start_recover
@@ -512,14 +513,15 @@ function register_standby_to_GI
 
 	line_separator
 	info "GI : register standby database on $standby_host :"
-	exec_cmd "ssh -t $standby_host \". .profile; srvctl add database	\
-		-db $standby													\
-		-oraclehome $ORACLE_HOME										\
-		-spfile $ORACLE_HOME/dbs/spfile${standby}.ora					\
-		-role physical_standby											\
-		-dbname $primary												\
-		-diskgroup DATA,FRA												\
-		-verbose\""
+	exec_cmd "ssh -t $standby_host \". .profile;					\
+				srvctl add database									\
+					-db $standby									\
+					-oraclehome $ORACLE_HOME						\
+					-spfile $ORACLE_HOME/dbs/spfile${standby}.ora	\
+					-role physical_standby							\
+					-dbname $primary								\
+					-diskgroup DATA,FRA								\
+					-verbose\""
 	LN
 
 	info "$standby : mount & start recover :"
@@ -529,24 +531,24 @@ function register_standby_to_GI
 
 function create_dataguard_config
 {
-info "Create data guard configuration."
-timing 10 "Wait data guard broker"
-dgmgrl -silent -echo sys/$oracle_password<<EOS | tee -a $PLELIB_LOG_FILE
-create configuration 'DGCONF' as primary database is $primary connect identifier is $primary;
-enable configuration;
-EOS
-LN
-LN
+	info "Create data guard configuration."
+	timing 10 "Wait data guard broker"
+	dgmgrl -silent -echo sys/$oracle_password<<-EOS | tee -a $PLELIB_LOG_FILE
+	create configuration 'DGCONF' as primary database is $primary connect identifier is $primary;
+	enable configuration;
+	EOS
+	LN
+	LN
 }
 
 function add_standby_to_dataguard_config
 {
-info "Add standby $standby to data guard configuration."
-dgmgrl -silent -echo sys/$oracle_password<<EOS | tee -a $PLELIB_LOG_FILE
-add database $standby as connect identifier is $standby maintained as physical;
-enable database $standby;
-EOS
-LN
+	info "Add standby $standby to data guard configuration."
+	dgmgrl -silent -echo sys/$oracle_password<<-EOS | tee -a $PLELIB_LOG_FILE
+	add database $standby as connect identifier is $standby maintained as physical;
+	enable database $standby;
+	EOS
+	LN
 }
 
 #	Configure et démarre le broker dataguard.
@@ -654,27 +656,26 @@ function check_ssh_prereq_and_if_stby_exist
 	line_separator
 	exec_cmd -c "~/plescripts/shell/test_ssh_equi.sh		\
 					-user=oracle -server=$standby_host"
-	if [ $? -ne 0 ]
+	ret=$?
+	LN
+
+	if [ $ret -ne 0 ]
 	then
-		line_separator
-		info "From $client_hostname :"
+		info "From server $client_hostname :"
 		info "$ cd ~/plescripts/ssh"
 		info "$ ./setup_ssh_equivalence.sh -user1=oracle -server1=$primary_host -server2=$standby_host"
 		LN
 		errors=yes
 	else
-		info "ssh equi : [$OK]"
-		LN
-
+		# L'equivalence existe, teste si la base standby existe sur le serveur.
 		line_separator
 		exec_cmd -c ssh $standby_host "ps -ef | grep -qE 'ora_pmon_[${standby:0:1}]${standby:1}'"
 		if [ $? -eq 0 ]
 		then
-			info "Standby not exist : [$KO]"
-			error "Standby $standby exist on $standby_host"
+			error "$standby exist on $standby_host"
 			errors=yes
 		else
-			info "Standby not exist : [$OK]"
+			info "$standby not exist on $standby_host : [$OK]"
 		fi
 		LN
 	fi

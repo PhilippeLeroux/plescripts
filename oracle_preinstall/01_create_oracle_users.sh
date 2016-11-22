@@ -218,7 +218,7 @@ LN
 
 #	============================================================================
 line_separator
-info -n "set full permission for owner & group on $GRID_ROOT & $ORCL_ROOT"
+info "set full permission for owner & group on $GRID_ROOT & $ORCL_ROOT"
 exec_cmd chmod -R 775 $GRID_ROOT
 exec_cmd chmod -R 775 $ORCL_ROOT
 LN
