@@ -17,12 +17,35 @@ function show_lv_errors
 #./remove_lv.sh -vg_name=asm01 -prefix=testsan -first_no=18
 function cmd_remove_lv
 {
-	echo "cd ~/san"
+	echo "    $ ssh root@K2"
+	echo "    $ cd ~/san"
 	while read lv_name vg_name rem
 	do
 		read prefix name no <<<"$(echo $lv_name|sed "s/\(..\)\(.*\)\([0-9].\)$/\1 \2 \3/")"
-		echo "./remove_lv.sh -vg_name=$vg_name -prefix=$name -first_no=$no"
+		echo "    $ ./remove_lv.sh -vg_name=$vg_name -prefix=$name -first_no=$no"
 	done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
+}
+
+function cmd_restore_vg_link
+{
+	echo "    $ ssh root@K2"
+	echo "    $ cd ~/scan"
+	echo "    $ ./restore_vg_links.sh -vg_name=$vg_name"
+}
+
+function print_error_help
+{
+	echo "Solutions :"
+	echo "1 : reboot server $(hostname -s)"
+	echo "From host :"
+	echo "    $ reboot $(hostname -s)"
+	echo
+	echo "2 : restore links"
+	cmd_restore_vg_link
+	echo
+	echo "3 : remove lv"
+	cmd_remove_lv
+	echo
 }
 
 function restart_target
@@ -55,12 +78,12 @@ then
 	if [ $lv_errors -ne 0 ]
 	then
 		error "$lv_errors LV(s) errors"
-		error "LV orphaned or bug ??"
+		error "LV orphaned, missing link or bug ??"
 		LN
 
 		show_lv_errors
 		LN
-		cmd_remove_lv
+		print_error_help
 		LN
 		info "target [$KO]"
 		exit 1
