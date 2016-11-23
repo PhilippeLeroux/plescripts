@@ -258,7 +258,7 @@ function create_disks_for_oracle_and_grid_softwares
 		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh		\
 												-mount_point=/$GRID_DISK	\
 												-suffix_vglv=grid			\
-												-type_fs=xfs
+												-type_fs=$rdbms_fs_type
 		LN
 	else
 		info "Create database FS"
@@ -275,7 +275,7 @@ function create_disks_for_oracle_and_grid_softwares
 		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh		\
 												-mount_point=/$ORCL_DISK	\
 												-suffix_vglv=orcl			\
-												-type_fs=xfs
+												-type_fs=$rdbms_fs_type
 		LN
 	else
 		info "Install ocfs2"
