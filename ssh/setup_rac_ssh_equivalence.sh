@@ -57,6 +57,8 @@ done
 exit_if_param_undef server1	"$str_usage"
 exit_if_param_undef server2	"$str_usage"
 
+must_be_executed_on_server "$client_hostname"
+
 typeset	-r	user_list="root grid oracle"
 
 for user in $user_list

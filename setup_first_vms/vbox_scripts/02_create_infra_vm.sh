@@ -87,13 +87,6 @@ line_separator
 info "Settup 2 cpus"
 exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
 
-if [ 0 -eq 1 ]; then
-line_separator
-exec_cmd VBoxManage modifymedium \
-	disk \"$vm_path/$infra_hostname/$infra_hostname.vdi\" --resize $(( 32 * 1024 ))
-LN
-fi # [ 0 -eq 1 ]; then
-
 line_separator
 info "Add disk for SAN storage (targetcli)"
 exec_cmd "$vm_scripts_path/add_disk.sh					\

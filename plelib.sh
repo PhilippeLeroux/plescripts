@@ -221,6 +221,20 @@ trap ctrl_c INT
 #	Fonctions d'affichages
 ################################################################################
 
+#*> $1 server name
+#*> exit 1 if server name is different.
+#*> Variable $ME must be initialised with $0 (name of the script)
+function must_be_executed_on_server
+{
+	typeset	-r on_host="$1"
+	if [ $(hostname -s) != "$on_host" ]
+	then
+		error "Script ${ME##*/} must be executed on server $on_host"
+		error "Current server is $(hostname -s)"
+		exit 1
+	fi
+}
+
 #*> Idéalement tous les scripts doivent appeler cette fonction.
 #*> script_banner $ME $*
 function script_banner

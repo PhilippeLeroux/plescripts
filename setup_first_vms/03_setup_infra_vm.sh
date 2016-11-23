@@ -14,12 +14,7 @@ Doit être exécuté sur le serveur d'infrastructure : $infra_hostname
 
 script_banner $ME $*
 
-typeset -r hn=$(hostname -s)
-if [ "$hn" != "$infra_hostname" ]
-then
-	error "hostname is $hn, want $infra_hostname"
-	exit 1
-fi
+must_be_executed_on_server "$infra_hostname"
 
 line_separator
 info "Network Manager Workaround"

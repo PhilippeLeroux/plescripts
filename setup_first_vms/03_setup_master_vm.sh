@@ -14,14 +14,7 @@ Doit être exécuté sur le serveur master.
 
 script_banner $ME $*
 
-typeset hn="$(hostname -s)"
-if [ "$hn" != "$master_name" ]
-then
-	error "server is $hn, want $master_name"
-	info "$str_usage"
-	exit 1
-fi
-unset hn
+must_be_executed_on_server "$master_name"
 
 info "Mount /mnt/plescripts"
 exec_cmd -c "mount ${client_hostname}:/home/$common_user_name/plescripts /mnt/plescripts -t nfs -o rw,$nfs_options"

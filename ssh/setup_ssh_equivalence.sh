@@ -121,11 +121,7 @@ function gen_and_copy_user_pub_key
 	LN
 }
 
-if [ $(hostname -s) != "$client_hostname" ]
-then
-	error "A exécuter depuis $client_hostname et pas $(hostname -s)"
-	exit 1
-fi
+must_be_executed_on_server "$client_hostname"
 
 line_separator
 typeset -i	nr_server_down=0
