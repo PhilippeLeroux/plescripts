@@ -134,6 +134,15 @@ function update_isolinux_cfg	# $1 dest
 	info "Update isolinux.cfg to load kickstart file."
 	exec_cmd "sed -i 's,quiet,ks=cdrom:/ks.cfg quiet,g' $isolinux_cfg"
 	LN
+
+	info "set timout 1"
+	sed -i "s/timeout 600/timeout 1/" $isolinux_cfg
+	LN
+
+	info "Change default menu"
+	sed -i "/menu default/d" $isolinux_cfg
+	sed -i "/  menu label ^Install Oracle Linux 7.2/a \ \ menu default" $isolinux_cfg
+	LN
 }
 
 function setup_ks_file
