@@ -45,13 +45,11 @@ typeset -r current_host=$(hostname -s)
 info "ssh connection $USER@$current_host / $user@$server"
 if [ ! -f ~/.ssh/id_rsa.pub ]
 then
-	info "Génération des clefs"
-	exec_cmd "[ ! -f ~/.ssh/id_rsa ] && ssh-keygen -t rsa -N \"\" -f ~/.ssh/id_rsa || true"
-else
-	info "Les clefs existent."
+	info "Génération des clefs pour $USER@$current_host"
+	exec_cmd "ssh-keygen -t rsa -N \"\" -f ~/.ssh/id_rsa"
 fi
 LN
 
-info "Copy de la clef public"
+info "Copy de la clef public sur ${user}@${server}"
 exec_cmd "ssh-copy-id -i ~/.ssh/id_rsa.pub ${user}@${server}"
 LN
