@@ -106,7 +106,7 @@ function print_hpages_mgmtdb
 		info "-MGMTDB HugePages :"
 		read_hpages_from_alert_log "$alog"
 	else
-		info "Pas d'instance -MGMTDB sur ce nœud."
+		info "No -MGMTDB instance."
 		LN
 	fi
 }

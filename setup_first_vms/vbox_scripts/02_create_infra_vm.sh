@@ -101,7 +101,7 @@ exec_cmd VBoxManage modifyvm "$infra_hostname" --groups "/Infra"
 LN
 
 #	Le script start_vm ignore les actions spécifique du serveur d'infra.
-INSTALLING_INFRA=yes
+export INSTALLING_INFRA=yes
 
 line_separator
 info "Start VM $infra_hostname"

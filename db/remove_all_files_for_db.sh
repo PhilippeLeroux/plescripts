@@ -74,10 +74,10 @@ fi
 LN
 
 line_separator
-oracle_rm_1="su - oracle -c \"rm -rf \$ORACLE_BASE/cfgtoollogs/dbca/${db}*\""
-oracle_rm_2="su - oracle -c \"rm -rf \$ORACLE_BASE/diag/rdbms/$lower_db\""
-oracle_rm_3="su - oracle -c \"rm -rf \$ORACLE_HOME/dbs/*${db}*\""
-oracle_rm_4="su - oracle -c \"rm -rf \$ORACLE_BASE/admin/$db\""
+oracle_rm_1="su - oracle -c \"rm -rf \\\$ORACLE_BASE/cfgtoollogs/dbca/${db}*\""
+oracle_rm_2="su - oracle -c \"rm -rf \\\$ORACLE_BASE/diag/rdbms/$lower_db\""
+oracle_rm_3="su - oracle -c \"rm -rf \\\$ORACLE_HOME/dbs/*${db}*\""
+oracle_rm_4="su - oracle -c \"rm -rf \\\$ORACLE_BASE/admin/$db\""
 
 clean_oratab_cmd1="sed  \"/$db[_|0-9].*/d\" /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"

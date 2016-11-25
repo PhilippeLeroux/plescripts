@@ -222,7 +222,7 @@ trap ctrl_c INT
 ################################################################################
 
 #*> $1 server name
-#*> exit 1 if server name is different.
+#*> exit 1 if curent server name is different.
 #*> Variable $ME must be initialised with $0 (name of the script)
 function must_be_executed_on_server
 {
@@ -231,6 +231,20 @@ function must_be_executed_on_server
 	then
 		error "Script ${ME##*/} must be executed on server $on_host"
 		error "Current server is $(hostname -s)"
+		exit 1
+	fi
+}
+
+#*> $1 user list (separator space) Ex : "root" or "root or grid"
+#*> exit 1 if curent user name is different.
+#*> Variable $ME must be initialised with $0 (name of the script)
+function must_be_user
+{
+	typeset	-r	list_user="$1"
+	if ! grep -qE "$list_user"<<<"$USER"
+	then
+		error "Script ${ME##*/} must be executed by user $list_user"
+		error "Current user is $USER"
 		exit 1
 	fi
 }
@@ -752,10 +766,10 @@ function exec_dynamic_cmd
 	fake_exec_cmd "$(echo "$c\\\\")"
 
 	#	Affiche les paramètres de la commande :
-	for i in $( seq ${#ple_dyn_param_cmd[@]} )
+	for i in $( seq 0 $(( ${#ple_dyn_param_cmd[@]} - 1 )) )
 	do
-		[ $i -gt 1 ] && info -f "\\\\"
-		info -f -n "$(printf "%${ple_param_margin}s%-${ple_dyn_param_max_len}s" " " "${ple_dyn_param_cmd[$i-1]}")"
+		[ $i -ne 0 ] && info -f "\\\\"	# Affiche \ à la fin de la ligne précédente.
+		info -f -n "$(printf "%${ple_param_margin}s%-${ple_dyn_param_max_len}s" " " "${ple_dyn_param_cmd[$i]}")"
 	done
 	LN
 
@@ -953,25 +967,25 @@ function exit_if_param_invalid
 #*> Double symbol % from $@.
 function double_symbol_percent
 {
-	sed "s/%/%%/g" <<< "$@"
+	echo "${@//\%/%%}"
 }
 
 #*> Escape " from $@
 function escape_2xquotes
 {
-	sed 's/"/\\\"/g' <<< "$@"
+	echo ${@//\"/\\\"}
 }
 
 #*> Escape / from $@
 function escape_slash
 {
-	sed "s/\//\\\\\//g" <<< "$@"
+	echo ${@//\//\\/}
 }
 
 #*> Escape \ from $@
 function escape_anti_slash
 {
-	sed 's/\\/\\\\/g' <<<"$@"
+	echo ${@//\\/\\\\}
 }
 
 #*> Upper case "$@"
@@ -1022,7 +1036,7 @@ function timing
 {
 	typeset -ri secs=$1
 	[ $# -eq 1 ] && typeset msg="" || typeset msg="$2 : "
-		
+
 	info -n "$msg"; pause_in_secs $secs; LN; LN
 }
 
@@ -1139,7 +1153,7 @@ function script_stop
 	fi
 }
 
-PAUSE=OFF 
+PAUSE=OFF
 #*< Sert pour le debuggage.
 #*< Si des paramètres sont passés il sont affiché comme un message.
 #*< Pour que la fonction soit active il faut positionner la variable PAUSE à ON

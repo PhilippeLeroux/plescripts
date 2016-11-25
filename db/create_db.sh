@@ -42,40 +42,77 @@ typeset		validate_params=no
 
 typeset		skip_db_create=no
 
+typeset	-a	parameter_desc_list
+typeset	-i	max_len_parameter_desc=0
+typeset	-a	parameter_help_list
+
+function add_help_param
+{
+	typeset	-r	parameter_desc="$1"
+	typeset	-ri	len=${#parameter_desc}
+
+	parameter_desc_list+=( $parameter_desc )
+	[ $len -gt $max_len_parameter_desc ] && max_len_parameter_desc=$len || true
+	if [ $# -eq 2 ]
+	then
+		parameter_help_list+=( "$2" )
+	else
+		parameter_help_list+=( "none" )
+	fi
+}
+
+function print_all_parameters
+{
+	for i in $( seq 0 $(( ${#parameter_desc_list[@]} - 1 )) )
+	do
+		printf "\t%-${max_len_parameter_desc}s" ${parameter_desc_list[$i]}
+		if [ "${parameter_help_list[$i]}" == "none" ]
+		then
+			echo
+		else
+			echo " ${parameter_help_list[$i]}"
+		fi
+	done
+}
+
+add_help_param "<-db=name>"								"Database name"
+add_help_param "[-lang=$lang]"							"Language"
+add_help_param "[-sysPassword=$sysPassword]"
+add_help_param "[-totalMemory=$totalMemory]"			"Unit Mb"
+add_help_param "[-shared_pool_size=<str>]"				"Préciser l'unité, par défaut 256M"
+add_help_param "[-cdb=$cdb]"							"(yes/no) (1)"
+add_help_param "[-pdbName=<str>]"						"(2)"
+add_help_param "[-data=$data]"
+add_help_param "[-fra=$fra]"
+add_help_param "[-templateName=$templateName]"
+add_help_param "[-db_type=SINGLE|RAC|RACONENODE]"		"(3)"
+add_help_param "[-policyManaged]"						"Créer une base en 'Policy Managed' (4)"
+add_help_param "[-serverPoolName=<str>]"				"Nom du pool à utiliser. (5)"
+add_help_param "[-enable_flashback=$enable_flashback]"	"yes|no"
+add_help_param "[-no_backup]"							"Pas de backup après création de la base."
+
 typeset -r str_usage=\
-"Usage : $ME
-	-db=<str>
-	[-lang=$lang]
-	[-sysPassword=$sysPassword]
-	[-totalMemory=$totalMemory] Unit Mb
-	[-shared_pool_size=<str>]	Préciser l'unité, par défaut 256M
-	[-cdb=$cdb]	(yes/no)	(1)
-	[-pdbName=<str>]	(2)
-	[-data=$data]
-	[-fra=$fra]
-	[-templateName=$templateName]
-	[-db_type=SINGLE|RAC|RACONENODE]	(3)
-	[-policyManaged]  : créer une base en 'Policy Managed'	(4)
-	[-serverPoolName=<str>] : nom du pool à utiliser, s'il n'existe pas il sera créée. (5)
-	[-enable_flashback=$enable_flashback] : yes|no
-	[-no_backup]      : Pas de backup après création de la base.
+"Usage :
+$ME
+$(print_all_parameters)
 
 	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == db || 01
 	    Le service de la pdb sera : pdb || db || 01
-		Pour ne pas créer de pdb utiliser -pdbName=no
+	    Pour ne pas créer de pdb utiliser -pdbName=no
 
 	2 : Si -pdbName est précisé -cdb vaut automatiquement yes
 
 	3 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
 	    de nœuds, si 1 seul nœud c'est SINGLE sinon c'est RAC.
-	    Donc pour créer un RAC One Node database il faut impérativement le préciser !
-		Pour un One Node est ron_<nom_du_serveur ou est crée la base>
+	    Donc pour créer un RAC One Node préciser : -db_type=RACONENODE
+	    Le service Rac One Node sera ron_$(hostname -s)
 
-	4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera crée
-	    si -serverPollName n'est pas précisé.
+	4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera
+	    crée si -serverPollName n'est pas précisé.
 
 	5 : Active le flag -policyManaged
 
+	Debug flag :
 	[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
 	les scripts post installations.
 "
@@ -485,6 +522,7 @@ exit_if_param_invalid	enable_flashback "yes no"	"$str_usage"
 if [ $validate_params == yes ]
 then
 	info "All params validates"
+	rm -rf $PLELIB_LOG_FILE
 	exit 0
 fi
 

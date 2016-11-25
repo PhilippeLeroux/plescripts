@@ -1,5 +1,1 @@
-Seul le script `show_pages.sh` est fiable.
-
-Tous les autres scripts sont des tests et ne fonctionnent pas/plus.
-
-Ne pas utiliser ces scripts, ils sont à usage perso.
+Description [ici](https://github.com/PhilippeLeroux/plescripts/wiki/00-configuration_des_hpages)

@@ -30,7 +30,7 @@ function cmd_restore_vg_link
 {
 	echo "    $ ssh root@K2"
 	echo "    $ cd ~/scan"
-	echo "    $ ./restore_vg_links.sh -vg_name=$vg_name"
+	echo "    $ ./restore_vg_links.sh -vg_name='vg name'"
 }
 
 function print_error_help
@@ -38,7 +38,7 @@ function print_error_help
 	echo "Solutions :"
 	echo "1 : reboot server $(hostname -s)"
 	echo "From host :"
-	echo "    $ reboot $(hostname -s)"
+	echo "    $ reboot_vm $(hostname -s)"
 	echo
 	echo "2 : restore links"
 	cmd_restore_vg_link

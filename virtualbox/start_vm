@@ -78,10 +78,10 @@ typeset -i nr_vm_started=0
 for vm in ${vm_list[*]}
 do
 
-	if [[ "$INSTALLING_INFRA" == yes && "$vm" == "$infra_hostname" ]]
+	if [[ "$vm" == "$infra_hostname" && "$INSTALLING_INFRA" != yes ]]
 	then
-		exec_cmd "~/plescripts/virtualbox/start_vm_infra"
-		nr_vm_started=nr_vm_started+1
+		exec_cmd -c "~/plescripts/virtualbox/start_vm_infra"
+		[ $? -eq 0 ] && nr_vm_started=nr_vm_started+1
 	else
 		line_separator
 		exec_cmd -c "VBoxManage startvm $vm --type headless"
