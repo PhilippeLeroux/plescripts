@@ -3,6 +3,7 @@
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -87,8 +88,15 @@ LN
 wait_server ${infra_network}.${master_ip_node}
 LN
 
-confirm_or_exit -reply_list=CR "root password will be asked. Press enter to continue."
-exec_cmd ~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=${master_name}
+line_separator
+add_2_know_hosts $master_name
+exec_cmd -c ~/plescripts/ssh/test_ssh_equi.sh -user=root -server=$master_name
+if [ $? -ne 0 ]
+then
+	confirm_or_exit -reply_list=CR "root password for VM $master_name will be asked. Press enter to continue."
+	exec_cmd ~/plescripts/ssh/make_ssh_user_equivalence_with.sh	\
+											-user=root -server=$master_name
+fi
 LN
 
 line_separator

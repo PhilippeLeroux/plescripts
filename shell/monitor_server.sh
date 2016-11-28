@@ -31,7 +31,7 @@ then
 	wait_server
 fi
 
-cfg_exists $db
+cfg_exist $db
 
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 

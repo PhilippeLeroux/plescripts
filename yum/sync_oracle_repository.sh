@@ -8,41 +8,22 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-force_sync]   Sync local repository even without any new updates.
-	[-use_tar=name] Usage tar 'name' to create local repository.
-	[-check_only]   Test only if update available.
+\t[-use_tar=name] Usage tar 'name' to create local repository.
 
 Update OS & sync local repository
 "
 
 script_banner $ME $*
 
-if [ "$(hostname -s)" != "$infra_hostname" ]
-then
-	error "Only on $infra_hostname"
-	exit 1
-fi
+must_be_executed_on_server "$infra_hostname"
 
-typeset	force_sync=no
 typeset	use_tar=none
-typeset	check_only=no
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
-			shift
-			;;
-
-		-force_sync)
-			force_sync=yes
-			shift
-			;;
-
-		-check_only)
-			check_only=yes
 			shift
 			;;
 
@@ -91,6 +72,8 @@ function nfs_export_repo
 	LN
 }
 
+must_be_executed_on_server "$infra_hostname"
+
 line_separator
 if [ ! -d $infra_olinux_repository_path ]
 then
@@ -110,16 +93,19 @@ then #	$use_tar contient le dépôt OL7 à partir de ol7, gains de temps dans le
 	exec_cmd "gzip -dc \"${use_tar##*/}\" | tar xf -"
 	exec_cmd rm "${use_tar##*/}"
 	LN
-	exec_cmd "~/plescripts/yum/add_local_repositories.sh -role=infra"
-	exec_cmd "~/plescripts/yum/switch_repo_to.sh -local"
-	LN
 else
 	info "Sync local repository :"
-	exec_cmd -c reposync	--newest-only									\
-							--download_path=$infra_olinux_repository_path	\
-							--repoid=ol7_latest								\
-							--repoid=ol7_UEKR3								\
-							--repoid=ol7_UEKR4
+	repoid_list="--repoid=ol7_latest"
+	case $release in
+		R3|R4)
+			repoid_list="$repoid_list --repoid=ol7_UEK$default_yum_repository_release"
+			;;
+	esac
+
+	exec_cmd -c reposync													\
+					--newest-only											\
+					--download_path=$infra_olinux_repository_path			\
+					$repoid_list
 	LN
 fi
 
@@ -130,6 +116,11 @@ exec_cmd createrepo --update $infra_olinux_repository_path
 LN
 
 nfs_export_repo
+LN
+
+line_separator
+exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=infra
+exec_cmd ~/plescripts/yum/switch_repo_to.sh -local
 LN
 
 line_separator

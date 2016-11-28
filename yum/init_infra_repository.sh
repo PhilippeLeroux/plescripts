@@ -1,13 +1,14 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
+PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : $ME"
 
 script_banner $ME $*
 
@@ -16,7 +17,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -35,12 +35,7 @@ do
 	esac
 done
 
-if [ "$(hostname -s)" != "$client_hostname" ]
-then
-	error "Must be executed from $client_hostname"
-	LN
-	exit 1
-fi
+must_be_executed_on_server "$client_hostname"
 
 typeset -r backup_name="yum_repo.tar.gz"
 typeset -r full_backup_name="$iso_olinux_path/$backup_name"
@@ -49,8 +44,7 @@ if [ ! -f $full_backup_name ]
 then
 	line_separator
 	info "Cloning OL7 repository on $infra_hostname"
-	exec_cmd "ssh -t root@$infra_ip '~/plescripts/yum/sync_oracle_repository.sh	\
-																-force_sync'"
+	exec_cmd "ssh -t root@$infra_ip '~/plescripts/yum/sync_oracle_repository.sh'"
 	LN
 else	#	Duplication du backup du repo : gain en temps
 	line_separator
@@ -64,6 +58,5 @@ else	#	Duplication du backup du repo : gain en temps
 	info "Restore OL7 repository on $infra_hostname"
 	exec_cmd "ssh -t root@$infra_ip	\
 				'~/plescripts/yum/sync_oracle_repository.sh	\
-								-force_sync					\
 								-use_tar=/$backup_name'"
 fi

@@ -96,25 +96,25 @@ typeset -r str_usage=\
 $ME
 $(print_all_parameters)
 
-	1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == db || 01
-	    Le service de la pdb sera : pdb || db || 01
-	    Pour ne pas créer de pdb utiliser -pdbName=no
+\t1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == db || 01
+\t    Le service de la pdb sera : pdb || db || 01
+\t    Pour ne pas créer de pdb utiliser -pdbName=no
 
-	2 : Si -pdbName est précisé -cdb vaut automatiquement yes
+\t2 : Si -pdbName est précisé -cdb vaut automatiquement yes
 
-	3 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
-	    de nœuds, si 1 seul nœud c'est SINGLE sinon c'est RAC.
-	    Donc pour créer un RAC One Node préciser : -db_type=RACONENODE
-	    Le service Rac One Node sera ron_$(hostname -s)
+\t3 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
+\t    de nœuds, si 1 seul nœud c'est SINGLE sinon c'est RAC.
+\t    Donc pour créer un RAC One Node préciser : -db_type=RACONENODE
+\t    Le service Rac One Node sera ron_$(hostname -s)
 
-	4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera
-	    crée si -serverPollName n'est pas précisé.
+\t4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera
+\t    crée si -serverPollName n'est pas précisé.
 
-	5 : Active le flag -policyManaged
+\t5 : Active le flag -policyManaged
 
-	Debug flag :
-	[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
-	les scripts post installations.
+\tDebug flag :
+\t[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
+\tles scripts post installations.
 "
 
 script_banner $ME $*
@@ -246,7 +246,7 @@ done
 
 typeset		usefs=no
 
-typeset -r redoLogFileSizeMb=128
+typeset -r	redoLogFileSizeMb=128
 
 #	============================================================================
 
@@ -276,6 +276,7 @@ function make_dbca_args
 
 	add_dynamic_cmd_param "-gdbName $db"
 	add_dynamic_cmd_param "-characterSet AL32UTF8"
+
 	if [ "$usefs" = "no" ]
 	then
 		add_dynamic_cmd_param "-storageType ASM"
@@ -285,7 +286,9 @@ function make_dbca_args
 		add_dynamic_cmd_param "-datafileDestination     $data"
 		add_dynamic_cmd_param "-recoveryAreaDestination $fra"
 	fi
+
 	add_dynamic_cmd_param "-templateName $templateName"
+
 	if [ "$cdb" = yes ]
 	then
 		add_dynamic_cmd_param "-createAsContainerDatabase true"
@@ -298,6 +301,7 @@ function make_dbca_args
 	else
 		add_dynamic_cmd_param "-createAsContainerDatabase false"
 	fi
+
 	add_dynamic_cmd_param "-sysPassword    $sysPassword"
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
 	add_dynamic_cmd_param "-redoLogFileSize $redoLogFileSizeMb"
@@ -315,6 +319,7 @@ function make_dbca_args
 			initParams="$initParams,nls_language=FRENCH,NLS_TERRITORY=FRANCE"
 			;;
 	esac
+
 	if [ $shared_pool_size == default ]
 	then
 		initParams="$initParams,shared_pool_size=256M"
@@ -511,13 +516,33 @@ function copy_glogin
 	LN
 }
 
+function setup_fs_database
+{
+	line_separator
+	info "Enable auto start for database"
+	exec_cmd "sed \"s/^\(${db:0:8}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
+	exec_cmd "cat /tmp/ot > /etc/oratab"
+	exec_cmd "rm /tmp/ot"
+	LN
+
+	if [ $pdbName != undef ]
+	then
+		line_separator
+		warning "pdb $pdbName not open on startup, DIY."
+		line_separator
+		LN
+	fi
+
+	copy_glogin
+}
+
 #	============================================================================
 #	MAIN
 #	============================================================================
 script_start
 
-exit_if_param_undef		db							"$str_usage"
-exit_if_param_invalid	enable_flashback "yes no"	"$str_usage"
+exit_if_param_undef		db									"$str_usage"
+exit_if_param_invalid	enable_flashback "yes no"			"$str_usage"
 
 if [ $validate_params == yes ]
 then
@@ -561,22 +586,7 @@ remove_glogin
 
 if [ $usefs == yes ]
 then
-	line_separator
-	info "Enable auto start for database"
-	exec_cmd "sed \"s/^\(${db:0:8}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
-	exec_cmd "cat /tmp/ot > /etc/oratab"
-	exec_cmd "rm /tmp/ot"
-	LN
-
-	if [ $pdbName != undef ]
-	then
-		line_separator
-		warning "pdb $pdbName not open on startup, DIY."
-		line_separator
-		LN
-	fi
-
-	copy_glogin
+	setup_fs_database
 
 	exit 0	#	Pour les base sur FS le reste du script est incompatible.
 fi

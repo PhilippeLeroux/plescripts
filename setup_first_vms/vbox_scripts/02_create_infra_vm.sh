@@ -48,7 +48,7 @@ LN
 
 line_separator
 info "Flush DNS cache, usefull during tests..."
-exec_cmd -ci "systemctl restart nscd.service"
+exec_cmd -ci "sudo systemctl restart nscd.service"
 LN
 
 line_separator
@@ -62,12 +62,31 @@ fi
 rm -f /tmp/vc
 
 #===============================================================================
-line_separator
-info "Stop VM $master_name"
-#	Normallement la VM est démarrée, si ce n'est pas le cas erreur mais continue.
-exec_cmd -c $vm_scripts_path/stop_vm -server=$master_name
-[ $? -eq 0 ] && timing 20 "Attend l'arrêt complet"
-LN
+function master_ip_is_pingable
+{
+	ping -c 1 $master_ip > /dev/null 2>&1
+}
+
+master_ip_is_pingable
+if [ $? -eq 0 ]
+then
+	line_separator
+	confirm_or_exit -reply_list=CR "root password for VM $master_name will be asked. Press enter to continue."
+	exec_cmd "make_ssh_user_equivalence_with.sh -user=root -server=$master_ip"
+
+	info "Stop VM $master_name"
+	#	Normallement la VM est démarrée, si ce n'est pas le cas erreur mais continue.
+	exec_cmd -c $vm_scripts_path/stop_vm -server=$master_name
+	[ $? -eq 0 ] && timing 20 "Attend l'arrêt complet"
+	LN
+else
+	start_vm $master_name
+	timing 30 "Waiting server $master_name"
+	add_2_know_hosts $master_ip
+	exec_cmd -c $vm_scripts_path/stop_vm -server=$master_name
+	[ $? -eq 0 ] && timing 20 "Attend l'arrêt complet"
+	LN
+fi
 
 line_separator
 info "Clone VM master"
@@ -112,13 +131,6 @@ LN
 exec_cmd wait_server $master_ip
 LN
 
-#	La VM infra vient d'être clonée depuis le master, elle possède donc la
-#	configuration mimnimum du master : son nom et son adresse IP
-info "Equivalence ssh temporaire par rapport à l'IP du master."
-confirm_or_exit -reply_list=CR "root password will be asked. Press enter to continue."
-exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$master_ip"
-LN
-
 line_separator
 typeset -r if_cfg_path=~/plescripts/setup_first_vms/ifcfg_infra_server
 line_separator
@@ -154,7 +166,7 @@ exec_cmd wait_server $infra_ip
 [ $? -ne 0 ] && exit 1
 
 line_separator
-info "Temporaire : ajout de l'IP $infra_ip dans le know_host local."
+info "Add IP $infra_ip ($infra_hostname) into local know_host."
 add_2_know_hosts $infra_ip
 LN
 
@@ -199,5 +211,5 @@ LN
 
 script_stop $ME
 
-info "Execute : ./03_create_master_vm.sh"
+info "Execute : ./03_install_vm_master.sh"
 LN

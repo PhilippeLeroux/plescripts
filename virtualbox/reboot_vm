@@ -19,6 +19,57 @@ then
 	exit 1
 fi
 
+typeset	-a	running_vm_list
+
+function make_running_vm_list
+{
+	while read vm_name rem
+	do
+		if [ x"$vm_name" != x ]
+		then
+			vm_name=$(cut -d\" -f2<<<"$vm_name") 
+			if [ ${vm_name:0:3} == "srv" ]
+			then
+				id=$(sed "s/srv\(.*\)..$/\1/"<<<"$vm_name")
+				if ! grep -q $id <<<"${running_vm_list[*]}"
+				then
+					running_vm_list+=( $id )
+				fi
+			fi
+		fi
+	done<<<"$(VBoxManage list runningvms)"
+
+	return ${#running_vm_list[@]}
+}
+
+if [ "$server" == "$infra_hostname" ]
+then
+	make_running_vm_list
+	typeset	-ri	nr_running_vm=$?
+	if [ $nr_running_vm -ne 0 ]
+	then
+		info "VMs running : ${running_vm_list[*]}"
+		confirm_or_exit "Stop them"
+
+		for vm in ${running_vm_list[*]}
+		do
+			exec_cmd "stop_vm -server=$vm -wait_os"
+		done
+		LN
+	fi
+fi
+
 exec_cmd "stop_vm -server=$server -wait_os"
 LN
+
 exec_cmd "start_vm $server -wait_os=no"
+LN
+
+if [ ${#running_vm_list[@]} -ne 0 ]
+then
+	for vm in ${running_vm_list[*]}
+	do
+		exec_cmd "start_vm -server=$vm -wait_os=no"
+	done
+	LN
+fi

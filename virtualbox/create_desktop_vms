@@ -1,8 +1,8 @@
 #!/bin/bash
+# vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
-
 
 typeset	vm_name=undef
 typeset	os_type=undef
@@ -76,6 +76,7 @@ exec_cmd VBoxManage modifyvm $vm_name --vram 12
 exec_cmd VBoxManage modifyvm $vm_name --cpus $cpus
 exec_cmd VBoxManage modifyvm $vm_name --rtcuseutc on
 exec_cmd VBoxManage modifyvm $vm_name --largepages on
+exec_cmd VBoxManage modifyvm $vm_name --hpet on
 LN
 
 line_separator

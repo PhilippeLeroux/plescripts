@@ -242,5 +242,5 @@ line_separator
 info "ISO $iso_ks_olinux_path/${iso_name} [$OK]"
 LN
 
-info "Execute : ./01_create_master_vm.sh"
+info "Execute : ./01_create_vm_and_install_ol7.sh"
 LN

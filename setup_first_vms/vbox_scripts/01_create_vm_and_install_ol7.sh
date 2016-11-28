@@ -101,7 +101,7 @@ info "Attach ISO : Oracle Linux"
 exec_cmd VBoxManage storagectl $master_name --name IDE --add IDE --controller PIIX4
 
 exec_cmd VBoxManage storageattach $master_name --storagectl IDE	\
-						 --port 0 --device 0 --type dvddrive --medium \"$use_iso\"
+						--port 0 --device 0 --type dvddrive --medium \"$use_iso\"
 LN
 
 line_separator

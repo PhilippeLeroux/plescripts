@@ -44,35 +44,36 @@ done
 
 exit_if_param_invalid role "master infra" "$str_usage"
 
+#	Supprime le ss-répertoire x86_64
 if [ $role == master ]
 then
-	url_is="baseurl=file:///mnt$infra_olinux_repository_path"
+	url_is="baseurl=file:///mnt${infra_olinux_repository_path%/*}"
 else
-	url_is="baseurl=file://$infra_olinux_repository_path"
+	url_is="baseurl=file://${infra_olinux_repository_path%/*}"
 fi
 
 if ! grep -q ol7_local /etc/yum.repos.d/public-yum-ol7.repo
 then
-	info "Add repo local_ol7_latest & local_ol7_UEKR4"
+	info "Add repo local_ol7_latest, local_ol7_UEKR3 & local_ol7_UEKR4"
 	cat <<-EOS >>/etc/yum.repos.d/public-yum-ol7.repo
 
 	[local_ol7_latest]
 	name=Oracle Linux \$releasever Latest (\$basearch)
-	$url_is
+	$url_is/\$basearch/
 	gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 	gpgcheck=1
 	enabled=0
 
 	[local_ol7_UEKR3]
 	name=Latest Unbreakable Enterprise Kernel Release 3 for Oracle Linux \$releasever (\$basearch)
-	$url_is
+	$url_is/\$basearch/
 	gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 	gpgcheck=1
 	enabled=0
 
 	[local_ol7_UEKR4]
 	name=Latest Unbreakable Enterprise Kernel Release 4 for Oracle Linux \$releasever (\$basearch)
-	$url_is
+	$url_is/\$basearch/
 	gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 	gpgcheck=1
 	enabled=0

@@ -7,7 +7,7 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : $ME"
 
 script_banner $ME $*
 
@@ -16,7 +16,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -35,15 +34,11 @@ do
 	esac
 done
 
-if [ "$(hostname -s)" != "$client_hostname" ]
-then
-	error "must be executed from $client_hostname."
-	exit 1
-fi
+must_be_executed_on_server "$client_hostname"
 
 typeset -r backup_name="yum_repo.tar.gz"
 typeset -r full_backup_name="$iso_olinux_path/$backup_name"
-[ -f "$full_backup_name" ] && confirm_or_exit "Backup exit. Remove"
+[ -f "$full_backup_name" ] && confirm_or_exit "Backup exists. Remove"
 
 exec_cmd "ssh ${infra_conn} \"cd /repo; tar cf - ol7 | gzip -c > $backup_name\""
 exec_cmd "scp ${infra_conn}:/repo/$backup_name $full_backup_name"

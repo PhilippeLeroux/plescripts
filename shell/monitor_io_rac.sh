@@ -20,5 +20,3 @@ typeset -r xterm_static_options="-fa 'Monospace' -fs 14 +sb -rv"
 
 xterm $xterm_static_options -geometry ${width_rac}x${height}$top_left \
 		-e "tmux_io_rac.sh" &
-
-wait

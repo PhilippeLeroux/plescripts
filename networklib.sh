@@ -139,6 +139,11 @@ function add_2_know_hosts
 	LN
 
 	typeset -r server_keyscan=$(get_public_key_for $srv_name)
+	if [ x"$server_keyscan" == x ]
+	then
+		error "Can't obtain public key for $srve_name"
+		exit 1
+	fi
 	exec_cmd "echo \"$server_keyscan\" >> ~/.ssh/known_hosts"
 	LN
 }
