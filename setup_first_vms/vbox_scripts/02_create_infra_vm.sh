@@ -108,10 +108,11 @@ exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
 
 line_separator
 info "Add disk for SAN storage (targetcli)"
-exec_cmd "$vm_scripts_path/add_disk.sh					\
+exec_cmd $vm_scripts_path/add_disk.sh					\
 				-vm_name=$infra_hostname				\
 				-disk_name=asm01_disk01					\
-				-disk_mb=$(( $san_disk_size_g * 1024 ))" -fixed_size
+				-disk_mb=$(( $san_disk_size_g * 1024 ))	\
+				-fixed_size
 LN
 
 line_separator
