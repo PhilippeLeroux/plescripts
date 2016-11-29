@@ -11,12 +11,14 @@ typeset	keymap=fr
 typeset	locale=fr_FR.UTF-8
 typeset	timezone="Europe/Paris"
 typeset	keep_iso_copy=no
+typeset	crypt_root_password=yes
 
 typeset -r str_usage=\
 "Usage : $ME
 	[-keymap=$keymap]             Keyboard mapping.
 	[-locale=$locale]    Locale.
 	[-timezone=$timezone] Timezone.
+	[-do_not_crypt_root_password]
 
 	Debug flags :
 	[-keep_iso_copy]    Don't remove ISO copy.
@@ -29,6 +31,11 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-do_not_crypt_root_password)
+			crypt_root_password=no
 			shift
 			;;
 
@@ -168,7 +175,15 @@ function setup_ks_file
 	LN
 
 	info " * update root password"
-	exec_cmd "sed -i 's/^rootpw.*$/rootpw \"$root_password\"/' $ks_cfg"
+	if [ $crypt_root_password == yes ]
+	then
+		python_cmd="import crypt; print crypt.crypt( \"$root_password\", '\$6\$saltsalt\$' )"
+		pass=$(echo "$python_cmd" | python -)
+		root_password_crypted=$(escape_slash $pass)
+		exec_cmd "sed -i 's/^rootpw.*$/rootpw --iscrypted $root_password_crypted/' $ks_cfg"
+	else
+		exec_cmd "sed -i 's/^rootpw.*$/rootpw $root_password/' $ks_cfg"
+	fi
 	LN
 
 	info " * update timezone to $timezone"
