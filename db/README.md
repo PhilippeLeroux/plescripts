@@ -11,18 +11,18 @@ Table of Contents
 
 ### Création d'une base de donnée.
 
-Remarque : si le master et K2 viennent d'être créés il est préférable d'installer
-un serveur standalone ce qui permet de rapidement valider l'installation et la
-configuration du poste client/host et des VMs master et K2.
+Remarque : si les serveurs `orclmaster` et `K2` viennent d'être créés il est
+préférable d'installer un serveur standalone pour valider rapidement la configuration
+du `virtual-host` et des VMs `orclmaster` et `K2`.
 
 1. Se connecter sur le serveur : `ssh oracle@srvdaisy01`
 
-	Les connexions root, oracle et grid ne nécessitent pas de mot de passe, les
+	Les connexions `root`, `oracle` et `grid` ne nécessitent pas de mot de passe, les
 	clefs du poste client ayant été déployées sur tous les comptes.
 
-2. Se déplacer dans le répertoire plescripts/db : `cd plescripts/db`
+2. Se déplacer dans le répertoire `plescripts/db` : `cd plescripts/db`
 
-3. Exécution du script create_db.sh :
+3. Exécution du script `create_db.sh` :
 
 	```
 	oracle@srvdaisy01:NOSID:db> ./create_db.sh -db=daisy
@@ -76,7 +76,7 @@ configuration du poste client/host et des VMs master et K2.
 
 	   L'utilisation de ce paramètre active automatiquement `-policyManaged`
 
-	Une sauvegarde est lancée avec rman une fois la base créée.
+	Une sauvegarde est lancée avec `rman` une fois la base créée.
 
 	Une fois le script terminé le statue de la base est affichée :
 
@@ -190,13 +190,13 @@ connexions Java. Pour les bases en dataguard 2 autres services sont nécessaires
 
 Pour chaque service OCI un alias TNS est créé localement.
 
- * create_srv_for_rac_db.sh : crée des services pour un RAC
+ * `create_srv_for_rac_db.sh` : crée des services pour un RAC
 
- * create_srv_for_single_db.sh : crée des services pour une mono instance.
+ * `create_srv_for_single_db.sh` : crée des services pour une mono instance.
 
- * add_srv_for_dataguard.sh : crée des services pour une base en dataguard.
+ * `add_srv_for_dataguard.sh` : crée des services pour une base en dataguard.
 
-	L'équivalence ssh entre les comptes oracle des 2 serveurs doit être faite.
+	L'équivalence ssh entre les comptes `oracle` des 2 serveurs doit être faite.
 
 	4 services sont créés sur les 2 bases du dataguard :
 	 * *_oci et *_java qui ont le rôle 'primary'
@@ -204,19 +204,18 @@ Pour chaque service OCI un alias TNS est créé localement.
 
 #### Suppression de services et alias TNS
 
- * drop_all_services.sh : supprime tous les services existant et les alias TNS associées.
+ * `drop_all_services.sh` : supprime tous les services existant et les alias TNS associées.
 
- * drop_all_services_for_pdb.sh : supprime tous les services d'un PDB et les alias TNS associées.
+ * `drop_all_services_for_pdb.sh` : supprime tous les services d'un PDB et les alias TNS associées.
 
- * drop_service.sh : supprime un service et son alias TNS s'il existe.
+ * `drop_service.sh` : supprime un service et son alias TNS s'il existe.
 
 #### Scripts pour la gestion des alias TNS
 
 Ces 2 scripts sont utilisés par les scripts de gestion des services.
 
- * add_tns_alias.sh
- * delete_tns_alias.sh
-
+ * `add_tns_alias.sh`
+ * `delete_tns_alias.sh`
 
 [Exemples](https://github.com/PhilippeLeroux/plescripts/wiki/Création-d'un-PDB)
 d'utilisation lors de la création d'un nouveau PDB.
