@@ -70,21 +70,24 @@ function master_ip_is_pingable
 master_ip_is_pingable
 if [ $? -eq 0 ]
 then
+	#	La VM master vient d'être créée, elle est démarrée.
 	line_separator
 	confirm_or_exit -reply_list=CR "root password for VM $master_name will be asked. Press enter to continue."
 	exec_cmd "make_ssh_user_equivalence_with.sh -user=root -server=$master_ip"
 
 	info "Stop VM $master_name"
-	#	Normallement la VM est démarrée, si ce n'est pas le cas erreur mais continue.
-	exec_cmd -c $vm_scripts_path/stop_vm -server=$master_name
-	[ $? -eq 0 ] && timing 20 "Attend l'arrêt complet"
+	#	Normalement la VM est démarrée, si ce n'est pas le cas erreur mais continue.
+	exec_cmd $vm_scripts_path/stop_vm -server=$master_name
+	timing 10 "Attend l'arrêt complet"
 	LN
 else
-	start_vm $master_name
-	timing 30 "Waiting server $master_name"
+	#	Je considère que l'équivalence est faite et que je recommence un test de
+	#	création de la VM d'infra.
+	exec_cmd start_vm $master_name -wait_os=no
+	exec_cmd wait_server $master_ip
 	add_2_know_hosts $master_ip
-	exec_cmd -c $vm_scripts_path/stop_vm -server=$master_name
-	[ $? -eq 0 ] && timing 20 "Attend l'arrêt complet"
+	exec_cmd $vm_scripts_path/stop_vm -server=$master_name
+	timing 10 "Attend l'arrêt complet"
 	LN
 fi
 
@@ -103,7 +106,7 @@ exec_cmd VBoxManage modifyvm $infra_hostname --cableconnected3 on
 LN
 
 line_separator
-info "Settup 2 cpus"
+info "Set 2 cpus"
 exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
 
 line_separator
@@ -160,19 +163,25 @@ info "Copy Ifaces files to $infra_hostname (Use IP $master_ip)"
 exec_cmd "scp ~/plescripts/setup_first_vms/ifcfg_infra_server/* root@${master_ip}:/etc/sysconfig/network-scripts/"
 LN
 
+#	Il faut rebooter la VM à cause du changement d'IP.
 info "Restart VM $infra_hostname, new network config take effect."
 exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"
 LN
 exec_cmd wait_server $infra_ip
-[ $? -ne 0 ] && exit 1
 
 line_separator
 info "Add IP $infra_ip ($infra_hostname) into local know_host."
 add_2_know_hosts $infra_ip
 LN
 
+info "Create NFS mount points."
+exec_cmd "ssh -t root@$infra_ip \"mkdir /mnt/plescripts\""
+exec_cmd "ssh -t root@$infra_ip \"ln -s /mnt/plescripts ~/plescripts\""
+exec_cmd "ssh -t root@$infra_ip \"mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o rw,$nfs_options\""
+LN
+
 line_separator
-exec_cmd "~/plescripts/setup_first_vms/01_prepare_infra_vm.sh"
+exec_cmd "ssh -t root@$infra_ip \"~/plescripts/setup_first_vms/01_prepare_infra_vm.sh\""
 
 line_separator
 info "Create yum repository"
@@ -211,6 +220,7 @@ exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -serve
 LN
 
 script_stop $ME
+LN
 
 info "Execute : ./03_install_vm_master.sh"
 LN

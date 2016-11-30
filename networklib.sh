@@ -131,7 +131,6 @@ function add_2_know_hosts
 {
 	typeset -r srv_name=$1
 
-	line_separator
 	info "Add to $HOME/.ssh/know_hosts server : $srv_name"
 	LN
 

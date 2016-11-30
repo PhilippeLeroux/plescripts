@@ -6,45 +6,72 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME ...."
 
 script_banner $ME $*
 
-typeset argv
-[ "$DEBUG_MODE" == ENABLE ] && argv="-c"
+must_be_executed_on_server "$master_name"
 
-function master_ssh
-{
-	debug "ssh connection from $(hostname -s) to $master_ip"
-	exec_cmd $argv "ssh root@${master_ip} \"$*\""
-}
+#	Ce script doit être exécuté uniquement si le serveur d'infra existe.
 
 line_separator
-info "Create NFS mount points"
-master_ssh "mkdir /mnt/plescripts"
-master_ssh "ln -s /mnt/plescripts ~/plescripts"
-master_ssh "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o ro,_netdev,$nfs_options"
-master_ssh "mkdir -p ~/$oracle_install"
+info "Network config :"
+update_value NAME		$if_pub_name	$if_pub_file
+update_value DEVICE		$if_pub_name	$if_pub_file
+update_value BOOTPROTO	static			$if_pub_file
+update_value IPADDR		$master_ip 		$if_pub_file
+update_value DNS1		$dns_ip			$if_pub_file
+update_value USERCTL	no				$if_pub_file
+update_value ONBOOT		yes 			$if_pub_file
+update_value PREFIX		$if_pub_prefix	$if_pub_file
+remove_value NETMASK					$if_pub_file
+remove_value HWADDR						$if_pub_file
+remove_value UUID						$if_pub_file
+update_value ZONE		trusted			$if_pub_file
+#update_value GATEWAY 	$dns_ip			$if_pub_file
 LN
-
-info "Create file ~/.bashrc_extensions"
-master_ssh "cp ~/plescripts/myconfig/bashrc_extensions ~/.bashrc_extensions"
-
-line_separator
-info "Create user $common_user_name"
-master_ssh "useradd -g users -M -N -u 1000 $common_user_name"
+exec_cmd systemctl restart network
 LN
 
 line_separator
-info "Setup yum repository"
-master_ssh "mkdir -p /mnt$infra_olinux_repository_path"
-master_ssh "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux_repository_path nfs ro,defaults,comment=systemd.automount 0 0\" >> /etc/fstab"
-master_ssh mount /mnt$infra_olinux_repository_path
+#	D'après la doc Oracle ASM fonctionne avec SELinux activé.
+#	Mais dans les faits ca ne marche pas lors de l'installation d'ASM, une fois
+#	ASM installé SELinux peut être activé et ASM fonctionnera.
+info "Disable selinux"
+update_value SELINUX disabled /etc/selinux/config
 LN
 
-info "Add local repository"
-master_ssh "~/plescripts/yum/add_local_repositories.sh -role=master"
-master_ssh "~/plescripts/yum/switch_repo_to.sh -local"
+line_separator
+info "Disable firewall"
+exec_cmd "systemctl disable firewalld"
+exec_cmd "systemctl stop firewalld"
 LN
 
+line_separator
+info "Setup yum repositories"
+exec_cmd mkdir -p /mnt$infra_olinux_repository_path
+exec_cmd "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux_repository_path nfs ro,defaults,comment=systemd.automount 0 0\" >> /etc/fstab"
+exec_cmd mount /mnt$infra_olinux_repository_path
+LN
+
+info "Add local repositories"
+exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=master
+exec_cmd ~/plescripts/yum/switch_repo_to.sh -local
+LN
+
+exec_cmd ~/plescripts/setup_first_vms/02_update_config.sh
+
+exec_cmd ~/plescripts/ntp/config_ntp.sh -role=master
+
+exec_cmd ~/plescripts/gadgets/customize_logon.sh -name=$master_name
+
+line_separator
+info "Network Manager Workaround"
+exec_cmd ~/plescripts/nm_workaround/rm_conn_without_device.sh
+LN
+exec_cmd -c ~/plescripts/nm_workaround/create_service.sh -role=master
+#	Plante car $if_pub_name n'existe pas, existera au reboot.
+LN
+
+line_separator
+exec_cmd ~/plescripts/shell/set_plymouth_them
+LN

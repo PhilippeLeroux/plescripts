@@ -361,7 +361,7 @@ function configure_oracle_accounts
 {
 	run_oracle_preinstall
 
-	exec_cmd "ssh -t root@$server_name plescripts/gadgets/install.sh"
+	exec_cmd "ssh -t root@$server_name plescripts/gadgets/customize_logon.sh"
 	LN
 }
 
@@ -419,6 +419,11 @@ configure_oracle_accounts
 #	Permet depuis le poste client/serveur host de se connecter sans mot de passe
 #	avec les comptes root, grid et oracle.
 exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$server_name"
+
+info "Install VIM plugins."
+exec_cmd "ssh grid@$server_name \"[ ! -d ~/.vim ] && (gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf -) || true\""
+exec_cmd "ssh oracle@$server_name \"[ ! -d ~/.vim ] && (gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf -) || true\""
+LN
 
 copy_color_file
 

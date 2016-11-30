@@ -50,7 +50,7 @@ export ID_DB=undef
 
 function set_db
 {
-	export ID_DB=$1
+	export ID_DB=$(tr [:upper:] [:lower:] <<< "$1")
 	if [ x"$ID_DB" = x ] || [ "$ID_DB" = undef ]
 	then
 		export ID_DB=undef
@@ -59,6 +59,11 @@ function set_db
 	fi
 
 	echo "$ID_DB" > $file_id_db
+
+	if [ ! -d ~/plescripts/database_servers/$ID_DB ]
+	then
+		echo "Server id $ID_DB not exists"
+	fi
 }
 
 [ -f $file_id_db ] && ID_DB=$(cat $file_id_db)
@@ -79,3 +84,5 @@ export EDITOR=vi
 alias root='with root'
 alias grid='with grid'
 alias oracle='with oracle'
+
+alias empty_swap='sudo swapoff -a; sudo swapon -a'

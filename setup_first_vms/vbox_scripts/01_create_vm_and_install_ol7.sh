@@ -9,7 +9,11 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 
 typeset -r str_usage=\
-"Usage : $ME [-emul]"
+"Usage : $ME [-emul]
+
+Création d'une VM avec une configuration minimal et installation de l'OS.
+Après l'installation la VM aura l'IP et le nom de la VM master.
+"
 
 script_banner $ME $*
 

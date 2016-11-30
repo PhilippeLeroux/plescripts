@@ -46,8 +46,6 @@ do
 		1)	LN
 			info "==> VirtualBox for Linux"
 			hostvm_type=linux_virtualbox
-			client_h=$(hostname -s)
-			common_user_n=$USER
 			full_linux_iso_n="$HOME/ISO/oracle_linux_7/V100082-01.iso"
 			break
 			;;
@@ -59,8 +57,6 @@ done
 LN
 else
 	hostvm_type=linux_virtualbox
-	client_h=$(hostname -s)
-	common_user_n=$USER
 	full_linux_iso_n="$HOME/ISO/oracle_linux_7/V100082-01.iso"
 fi # [ 0 -eq 1 ]; then
 
@@ -97,10 +93,11 @@ line_separator
 exec_cmd "sed -i 's/hostvm=.*$/hostvm=$hostvm_type/g' ~/plescripts/global.cfg"
 LN
 
-exec_cmd "sed -i 's/client_hostname=.*/client_hostname=$client_h/g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's/client_hostname=.*/client_hostname=$(hostname -s)/g' ~/plescripts/global.cfg"
 LN
 
-exec_cmd "sed -i 's/common_user_name=.*/common_user_name=$common_user_n/g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's/common_user_name=.*/common_user_name=$USER/g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's/common_uid=.*/common_uid=$UID/g' ~/plescripts/global.cfg"
 LN
 
 exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"$vm_p\"~g' ~/plescripts/global.cfg"

@@ -22,16 +22,7 @@ exec_cmd "~/plescripts/nm_workaround/create_service.sh -role=infra"
 LN
 
 line_separator
-info "Update OS"
-test_if_rpm_update_available
-[ $? -eq 0 ] && exec_cmd yum -y update || true
-LN
-
-line_separator
-exec_cmd yum -y install nfs-utils git targetcli deltarpm chrony wget net-tools vim-enhanced unzip tmux deltarpm createrepo psmisc
-LN
-
-line_separator
+#	Le serveur sert de gateway sur internet.
 exec_cmd "sysctl -w net.ipv4.ip_forward=1"
 exec_cmd "echo \"net.ipv4.ip_forward = 1\" >> /etc/sysctl.d/ip_forward.conf"
 exec_cmd "firewall-cmd --permanent --direct --passthrough ipv4 -t nat -I POSTROUTING -o $if_net_name -j MASQUERADE -s ${infra_network}.0/24"
@@ -69,7 +60,7 @@ LN
 
 exec_cmd ~/plescripts/ntp/config_ntp.sh -role=infra
 
-exec_cmd ~/plescripts/gadgets/install.sh infra
+exec_cmd ~/plescripts/gadgets/customize_logon.sh -name=$infra_hostname
 
 line_separator
 info "Configure DNS"

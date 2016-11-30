@@ -1,24 +1,18 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage="Usage : $ME [-emul]"
-
-typeset action=real
-EXEC_CMD_ACTION=EXEC
-
-PLELIB_OUTPUT=FILE
-PLELIB_LOG_FILE=configure.log
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
-			action=emul
+			EXEC_CMD_ACTION=NOP
 			shift
 			;;
 
@@ -48,8 +42,8 @@ function copy
 	exec_cmd "chmod u=rw,g=rw,o=r $2"
 }
 
-case $action in
-	emul)
+case $EXEC_CMD_ACTION in
+	NOP)
 		etc_path=etc
 		var_named_path=var/named
 		[ ! -d $etc_path ] && exec_cmd mkdir $etc_path

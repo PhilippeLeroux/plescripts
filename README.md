@@ -55,9 +55,9 @@ SINGLE ou RAC se fait en 5 étapes :
 
 --------------------------------------------------------------------------------
 
-### Création des VMs nfsorclmaster et K2.
+### Création des VMs orclmaster et K2.
 2 VMs sont nécessaires pour commencer : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Création-des-VMs-orclmaster-et-K2)
- - nfsorclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
+ - orclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
  - K2 qui est le serveur d'infrastructure (DNS, SAN, Gateway, NTP server, ...)
 
 --------------------------------------------------------------------------------
@@ -111,6 +111,33 @@ Par exemple : `./run_all.sh -db=RAC2N -max_nodes=2 -policyManaged`
 Le paramètre `-policyManaged` est passé au script `create_db.sh`
 
 Si l'un des paramètres est invalide, le script create_db.sh plantera.
+
+##	Temps de références
+### Création d'un dataguard (Base single)
+
+script				|	id					|	temps
+--------------------|:---------------------:|-------------:
+clone_master.sh		|	pluton				|	   3mn17s
+install_grid.sh		|	pluton				|	   7mn10s
+install_oracle.sh	|	pluton				|	   3mn46s
+create_db.sh		|	pluton				|	 19mn58s
+clone_master.sh		|	neptune				|	   3mn40s
+install_grid.sh		|	neptune				|	   7mn34s
+install_oracle.sh	|	neptune				|	   4mn14s
+create_dataguard.sh	|	PLUTON with NEPTUNE	|	  11mn12s
+run_all.sh			|	pluton				|	1h01mn04s
+
+###	Création d'un RAC
+
+script				|	id					|	temps
+--------------------|:---------------------:|-------------:
+clone_master.sh		|	daisy				|	4mn15s
+clone_master.sh		|	daisy				|	3mn37s
+install_grid.sh		|	daisy				|	31mn46s
+install_oracle.sh	|	daisy				|	13mn13s
+create_db.sh		|	daisy				|	54mn29s
+run_all.sh			|	daisy				|	1h47mn26s
+
 
 --------------------------------------------------------------------------------
 [Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)

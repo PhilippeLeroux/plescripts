@@ -45,10 +45,10 @@ do
 	esac
 done
 
-[ "$name" = auto ] && name=$(hostname -s) || true
+[ "$name" == auto ] && name=$(hostname -s) || true
 
 line_separator
-[ ${name:0:3} = srv ] && name=$(initcap "$(echo $name | sed 's/...\(.*\)\(..\)/\1 \2/')")
+[ ${name:0:3} == srv ] && name=$(initcap "$(echo $name | sed 's/...\(.*\)\(..\)/\1 \2/')")
 exec_cmd "figlet -c \"$name\" > /tmp/ascii"
 LN
 
@@ -64,4 +64,3 @@ LN
 
 exec_cmd -c rm /tmp/ascii
 LN
-

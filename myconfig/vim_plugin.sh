@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -15,7 +14,7 @@ typeset -r str_usage=\
 	-show              : Affiche l'ensemble des plugins installés.
 	-del=<plugin name> : Supprime un plugin
 	-init              : Réinitialise tous les plugins.
-	-backup            : backup .vim dans le répertoire gadget.
+	-backup            : backup le répertoire .vim.
 
 Pour l'initialisation (-init) les plugins à installer sont lues dans le fichier :
 	$plugin_list
@@ -29,7 +28,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -85,7 +83,7 @@ function exit_if_pathogen_not_installed
 	fi
 }
 
-function clean_tod_vim
+function backup_and_remove_tod_vim
 {
 	typeset -r backup="~/vim_$(date +"%Y%m%d_%Hh%M")"
 
@@ -158,7 +156,7 @@ function install_all
 {
 	exit_if_file_not_exist $plugin_list
 
-	clean_tod_vim
+	backup_and_remove_tod_vim
 	LN
 
 	install_pathogen
@@ -191,11 +189,16 @@ function install_all
 #	======================================================================
 
 #	Si aucun argument l'action par défaut est -show
-[ $action == undef ] && action=show && info "$str_usage" && LN
+if [ $action == undef ]
+then
+	action=show
+	info "$str_usage"
+	LN
+fi
 
 case $action in
 	backup)
-		exec_cmd "tar cf - .vim -C ~/ | gzip -c > ~/plescripts/gadgets/vim.tar.gz"
+		exec_cmd "tar cf - .vim -C ~/ | gzip -c > ~/plescripts/myconfig/vim.tar.gz"
 		LN
 		;;
 

@@ -10,7 +10,10 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 
 typeset -r str_usage=\
-"Usage : $ME [-emul]"
+"Usage : $ME [-emul]
+
+Ce script doit être exécuté uniquement lorsque la VM d'infra est prête.
+"
 
 script_banner $ME $*
 
@@ -76,7 +79,7 @@ exec_cmd ~/plescripts/shell/remove_from_known_host.sh	\
 LN
 
 line_separator
-#	Peut importe le rôle de la VM - standalone ou nœud RAC - ajout d'une 3ieme NIC.
+#	Peu importe le rôle de la VM - standalone ou nœud RAC - ajout d'une 3e NIC.
 info "Add NIC for RAC interco :"
 exec_cmd VBoxManage modifyvm $master_name --nic3 intnet
 exec_cmd VBoxManage modifyvm $master_name --nictype3 virtio
@@ -85,7 +88,7 @@ LN
 
 exec_cmd "$vm_scripts_path/start_vm $master_name"
 LN
-wait_server ${infra_network}.${master_ip_node}
+wait_server $master_ip
 LN
 
 line_separator
@@ -100,22 +103,33 @@ fi
 LN
 
 line_separator
-info "Network config :"
-master_ssh "sed -i 's/^NAME=.*/NAME=$if_pub_name/' $if_pub_file"
-master_ssh "echo DNS1=$infra_ip >> $if_pub_file"
-master_ssh "echo GATEWAY=$infra_ip >> $if_pub_file"
+#	Ajoute le DNS ce qui permet de monter le répertoire plescripts depuis le
+#	virtual-host.
+info "Add DNS"
+master_ssh "echo \"DNS1=$dns_ip\" >> $if_pub_file"
 master_ssh "systemctl restart network"
 LN
 
-exec_cmd "~/plescripts/setup_first_vms/01_prepare_master_vm.sh"
-master_ssh "~/plescripts/setup_first_vms/02_update_config.sh"
-master_ssh "~/plescripts/setup_first_vms/03_setup_master_vm.sh"
+line_separator
+#	Le DNS étant accessible, le montage peut être fait.
+info "Mount plescripts from $client_hostname on /mnt/plescripts."
+master_ssh mkdir /mnt/plescripts
+master_ssh "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
+master_ssh mount /mnt/plescripts
+master_ssh "ln -s /mnt/plescripts ~/plescripts"
+LN
+
+#	Le montage étant fait les scripts sont disponibles.
+master_ssh "~/plescripts/setup_first_vms/01_prepare_master_vm.sh"
 LN
 
 exec_cmd "$vm_scripts_path/stop_vm $master_name"
 LN
 
 info "Server $master_name ready."
+LN
+
+info "Create BDD server : https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers"
 LN
 
 script_stop $ME

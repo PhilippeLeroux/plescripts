@@ -447,7 +447,11 @@ function ask_for
 		read keyboard</dev/tty
 		info "$keyboard"	# Affiche la touche pressée.
 		typeset -i diff_s=$(( SECONDS - start_s ))
-		[ $diff_s -gt 60 ] && info "Idle time $(fmt_seconds $diff_s)"
+		if [ $diff_s -gt 60 ]
+		then
+			info "Idle time $(fmt_seconds $diff_s)"
+			LN
+		fi
 
 		case "$keyboard" in
 			'')
