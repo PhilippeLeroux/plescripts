@@ -20,7 +20,13 @@
 	*	Les 2 terminaux du haut affichent l'alerte de l'agent.
 	*	Les 2 terminaux du bas affichent l'alerte ASM.
 
-	[screen]([[https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/grid_logs.png)
+	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/grid_logs.png)
+
+- oracle_logs -db=<str>	ou base définie par set_db
+
+	Afficher le ou les fichiers d'alertlog Oracle.
+
+	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/oracle_logs.png)
 
 - llog
 
@@ -28,22 +34,27 @@
 
 - monitor_san.sh [db] ou base définie par set_db
 
-	Affiche les IOs disques correspondant à une base RAC ou SINGLE.
+	Affiche les IOs disques correspondant à une base RAC ou SINGLE depuis le serveur d'infra.
 
 - monitor_server.sh [db]  ou base définie par set_db
 
-	Exécute le script tmux_monitor_server.sh avec le/les noms de serveur(s)
-	correspondant à une base dans un xterm en plein écran.
+	Exécute le script tmux_monitor_server.sh avec le/les noms de serveur(s)	correspondant à une base dans un xterm en plein écran.
+	
+	Pour un RAC 2 nœuds lance vmstat et top dans 4 terminaux multiplexés.
+	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/tmux_monitor_server_rac.png)
+	
+	Pour un Single affiche les IOs puis vmstat et top.
+	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/tmux_monitor_server_single.png)
 
-- oracle_logs -db=<str>	ou base définie par set_db
-
-	Afficher les fichiers d'alerte d'une base en RAC.
-
-	[screen]([[https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/oracle_logs.png)
-
+- monitor_io_rac.sh ne prend pas de paramètre, se base uniquement sur set_db
+	
+	Exécute le script tmux_io_rac.sh qui affiche les IOs des 2 serveurs.
+	
+	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/monitor_io_rac.png)
+	
 - show_grid_status -db=<str> ou base définie par set_db
 
-	Appel de crsclt stat res -t sur le premièr serveur.
+	Appel de crsclt stat res -t, dans le cas d'un RAC utilise l'adresse de SCAN.
 
 - start_vm [vm_name] ou serveur(s) de base définie par set_db
 
@@ -52,12 +63,6 @@
 - stop_vm [vm_name]  ou serveur(s) de base définie par set_db
 
 	Stop la VM vm_name, le nom peut être incomplet.
-
-- tmux_monitor_server.sh
-
-	Lance vmstat et top dans 2 terminaux multiplexés, il y en a 4 pour un RAC 2 noeuds.
-
-	[screen]([[https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/tmux_monitor_server.png)
 
 - where_is_used
 
