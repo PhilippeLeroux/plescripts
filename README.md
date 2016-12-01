@@ -141,7 +141,7 @@ run_all.sh			|	daisy				|	1h47mn26s
 --------------------------------------------------------------------------------
 ## Screen final :
 
-[[https://github.com/PhilippeLeroux/plescripts/wiki/virtualbox_manager.png|alt=virtualbox_manager.png]]
+[[https://github.com/PhilippeLeroux/plescripts/wiki/virtualbox_manager|alt=virtualbox_manager]]
 
 --------------------------------------------------------------------------------
 [Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)
