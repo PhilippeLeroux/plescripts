@@ -117,15 +117,15 @@ Si l'un des paramètres est invalide, le script create_db.sh plantera.
 
 script				|	id					|	temps
 --------------------|:---------------------:|-------------:
-clone_master.sh		|	pluton				|	   3mn17s
-install_grid.sh		|	pluton				|	   7mn10s
-install_oracle.sh	|	pluton				|	   3mn46s
-create_db.sh		|	pluton				|	 19mn58s
-clone_master.sh		|	neptune				|	   3mn40s
-install_grid.sh		|	neptune				|	   7mn34s
-install_oracle.sh	|	neptune				|	   4mn14s
-create_dataguard.sh	|	PLUTON with NEPTUNE	|	  11mn12s
-run_all.sh			|	pluton				|	1h01mn04s
+clone_master.sh		|	venus				|	   3mn17s
+install_grid.sh		|	venus				|	   7mn10s
+install_oracle.sh	|	venus				|	   3mn46s
+create_db.sh		|	venus				|	 19mn58s
+clone_master.sh		|	saturne				|	   3mn40s
+install_grid.sh		|	saturne				|	   7mn34s
+install_oracle.sh	|	saturne				|	   4mn14s
+create_dataguard.sh	|	VENUS with SATURNE	|	  11mn12s
+run_all.sh			|	venus				|	1h01mn04s
 
 ###	Création d'un RAC
 
@@ -138,6 +138,10 @@ install_oracle.sh	|	daisy				|	13mn13s
 create_db.sh		|	daisy				|	54mn29s
 run_all.sh			|	daisy				|	1h47mn26s
 
+--------------------------------------------------------------------------------
+## Screen final :
+
+[[https://github.com/PhilippeLeroux/plescripts/wiki/virtualbox_manager.png|alt=virtualbox_manager.png]]
 
 --------------------------------------------------------------------------------
 [Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)
