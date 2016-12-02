@@ -127,7 +127,7 @@ function get_public_key_for
 }
 
 #*> Ajoute le serveur $1 au fichier ~/.ssh/known_hosts
-function add_2_know_hosts
+function add_to_known_hosts
 {
 	typeset -r srv_name=$1
 
@@ -140,7 +140,7 @@ function add_2_know_hosts
 	typeset -r server_keyscan=$(get_public_key_for $srv_name)
 	if [ x"$server_keyscan" == x ]
 	then
-		error "Can't obtain public key for $srve_name"
+		error "Can't obtain public key for $srv_name"
 		exit 1
 	fi
 	exec_cmd "echo \"$server_keyscan\" >> ~/.ssh/known_hosts"

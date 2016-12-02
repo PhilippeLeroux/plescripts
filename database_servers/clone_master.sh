@@ -322,7 +322,7 @@ function configure_server
 	#	************************************************************************
 	#	La VM a été clonée mais sa configuration réseau correspond toujours à
 	#	celle du master, il faut donc régénérer la clef public.
-	add_2_know_hosts $master_name
+	add_to_known_hosts $master_name
 	LN
 
 	line_separator
@@ -336,7 +336,7 @@ function configure_server
 
 	#	************************************************************************
 	#	Le serveur a sa configuration réseau définitive : $server_name.
-	add_2_know_hosts $server_name
+	add_to_known_hosts $server_name
 	LN
 
 	line_separator

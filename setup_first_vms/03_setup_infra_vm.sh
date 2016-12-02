@@ -70,7 +70,11 @@ exec_cmd "~/plescripts/dns/install/03_configure.sh"
 exec_cmd "~/plescripts/dns/add_server_2_dns.sh -name=$client_hostname -ip_node=1"
 exec_cmd "~/plescripts/dns/add_server_2_dns.sh -name=$master_name -ip_node=$master_ip_node"
 exec_cmd "~/plescripts/dns/show_dns.sh"
+LN
 
 line_separator
 exec_cmd "~/plescripts/nm_workaround/rm_conn_without_device.sh"
+update_value UUID	$(uuidgen $if_pub_name)		$if_pub_file
+update_value UUID	$(uuidgen $if_iscsi_name)	$if_iscsi_file
+update_value UUID	$(uuidgen $if_net_name)		$if_net_file
 LN

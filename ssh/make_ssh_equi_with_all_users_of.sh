@@ -70,7 +70,7 @@ done
 
 exit_if_param_undef remote_server	"$str_usage"
 
-add_2_know_hosts $remote_server
+add_to_known_hosts $remote_server
 LN
 
 copy_public_key $remote_server

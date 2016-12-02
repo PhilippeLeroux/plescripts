@@ -85,7 +85,7 @@ else
 	#	création de la VM d'infra.
 	exec_cmd start_vm $master_name -wait_os=no
 	exec_cmd wait_server $master_ip
-	add_2_know_hosts $master_ip
+	add_to_known_hosts $master_ip
 	exec_cmd $vm_scripts_path/stop_vm -server=$master_name
 	timing 10 "Attend l'arrêt complet"
 	LN
@@ -171,7 +171,7 @@ exec_cmd wait_server $infra_ip
 
 line_separator
 info "Add IP $infra_ip ($infra_hostname) into local know_host."
-add_2_know_hosts $infra_ip
+add_to_known_hosts $infra_ip
 LN
 
 info "Create NFS mount points."

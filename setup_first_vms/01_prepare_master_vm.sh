@@ -25,7 +25,8 @@ update_value ONBOOT		yes 			$if_pub_file
 update_value PREFIX		$if_pub_prefix	$if_pub_file
 remove_value NETMASK					$if_pub_file
 remove_value HWADDR						$if_pub_file
-remove_value UUID						$if_pub_file
+if_uuid=$(uuidgen $if_pub_name)
+update_value UUID		$if_uuid		$if_pub_file
 update_value ZONE		trusted			$if_pub_file
 #update_value GATEWAY 	$dns_ip			$if_pub_file
 LN

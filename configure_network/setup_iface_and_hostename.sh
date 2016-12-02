@@ -99,6 +99,8 @@ update_value MTU		9000				$if_iscsi_file
 remove_value NETMASK						$if_iscsi_file
 if_hwaddr=$(get_if_hwaddr $if_iscsi_name)
 update_value HWADDR		$if_hwaddr			$if_iscsi_file
+if_uuid=$(uuidgen $if_iscsi_name)
+update_value UUID		$if_uuid			$if_iscsi_file
 update_value ZONE		trusted				$if_iscsi_file
 # Effectue la commande 2 fois car la première insère et ne met pas de double quotes
 # le seconde update met les double quotes ????
@@ -125,6 +127,8 @@ then
 	if_hwaddr=$(get_if_hwaddr $if_rac_name)
 	update_value HWADDR		$if_hwaddr			$if_rac_file
 	update_value ZONE		trusted				$if_rac_file
+	if_uuid=$(uuidgen $if_rac_name)
+	update_value UUID		$if_uuid			$if_rac_file
 	# Effectue la commande 2 fois car la première insert et ne met pas de double quote
 	# alors que la seconde update et met les double quote.
 	update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_rac_file

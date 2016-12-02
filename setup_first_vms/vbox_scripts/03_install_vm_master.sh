@@ -92,7 +92,7 @@ wait_server $master_ip
 LN
 
 line_separator
-add_2_know_hosts $master_name
+add_to_known_hosts $master_name
 exec_cmd -c ~/plescripts/ssh/test_ssh_equi.sh -user=root -server=$master_name
 if [ $? -ne 0 ]
 then

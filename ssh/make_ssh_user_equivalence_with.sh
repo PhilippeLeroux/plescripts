@@ -37,7 +37,7 @@ done
 exit_if_param_undef user	$str_usage
 exit_if_param_undef server	$str_usage
 
-add_2_know_hosts $server
+add_to_known_hosts $server
 LN
 
 typeset -r current_host=$(hostname -s)
