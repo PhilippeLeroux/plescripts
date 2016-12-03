@@ -3,23 +3,10 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
+. ~/plescripts/stats/statslib.sh
 EXEC_CMD_ACTION=EXEC
 
-. ~/plescripts/stats/statslib.sh
-
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME
-		[-node=<#>]
-		[-no_loop]
-		[-title=<str>]
-		[-date=<YYYY-MM-DD>] not set, search last date.
-		[-time=<HHhMM>]      not set, search last time.
-		[-server=<name>]     can be omitted with only one server.
-		[-start_at=HHhMM]    skip tt before HHhMM
-		[-show_log_only]     show log files.
-
-Display files produced by ifstats.sh with gnuplot"
 
 typeset node=-1
 typeset	loop=yes
@@ -28,7 +15,26 @@ typeset time=undef
 typeset server=""
 typeset title=""
 typeset show_log_only=no
-typeset if_name=undef
+typeset ifname=undef
+typeset	clear_log=no
+typeset	range_mn=5
+
+typeset -r str_usage=\
+"Usage : $ME
+		[-node=<#>]
+		[-range_mn=$range_mn]
+		[-no_loop]
+		[-title=<str>]
+		[-date=<YYYY-MM-DD>] not set, search last date.
+		[-time=<HHhMM>]      not set, search last time.
+		[-server=<name>]     can be omitted with only one server.
+		[-start_at=HHhMM]    skip tt before HHhMM
+		[-show_log_only]     show log files.
+		[-clear_log]         remove log files.
+
+
+Display files produced by ifstats.sh with gnuplot"
+
 
 while [ $# -ne 0 ]
 do
@@ -44,8 +50,13 @@ do
 			shift
 			;;
 
-		-if_name=*)
-			if_name=${1##*=}
+		-range_mn=*)
+			range_mn=${1##*=}
+			shift
+			;;
+
+		-ifname=*)
+			ifname=${1##*=}
 			shift
 			;;
 
@@ -79,6 +90,11 @@ do
 			shift
 			;;
 
+		-clear_log)
+			clear_log=yes
+			shift
+			;;
+
 		*)
 			error "Arg '$1' invalid."
 			LN
@@ -88,7 +104,7 @@ do
 	esac
 done
 
-exit_if_param_undef if_name "-if_name obligatoire"
+exit_if_param_undef ifname "-ifname obligatoire"
 
 # HH:MM:SS
 function time_to_secs
@@ -110,7 +126,7 @@ function set_to_last_date
 
 function show_formatted_logs
 {
-	typeset log_if=${PLESTATS_PATH}/*${server}${title}${if_name}.log
+	typeset log_if=${PLESTATS_PATH}/*${server}${title}${ifname}.log
 	for f in $log_if
 	do
 		IFS='_' read log_time srvname title1 rem<<<"${f##*/}"
@@ -143,8 +159,8 @@ function make_log_names
 
 	if [ $time == undef ]
 	then
-		debug "ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}${if_name}.log"
-		log_if=$(ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}${if_name}.log | tail -1 2>/dev/null)
+		debug "ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}${ifname}.log"
+		log_if=$(ls -rt ${PLELOG_ROOT}/$date/stats/*${server}*${title}${ifname}.log | tail -1 2>/dev/null)
 		[ x"${log_if}" = x ] && error "File not found in ${PLELOG_ROOT}/$date/stats" && exit 1
 
 		IFS=_ read time server title rem<<<${log_if##*/}
@@ -157,6 +173,13 @@ function make_log_names
 	[ x"$server" == x ] && server=$(cut -d_ -f2 <<< $log_mem)
 
 	exit_if_file_not_exist ${log_if}
+
+	if [ $clear_log == yes ]
+	then
+		info "Clear logs :"
+		exec_cmd "> $log_if"
+		timing 10
+	fi
 }
 
 #	============================================================================
@@ -192,17 +215,18 @@ typeset		refresh_rate=$(compute \
 
 # boxes lines linespoints points impulses histeps
 # ok : points, histeps, linespoints
-typeset -r with="linespoints pointinterval $(( (5*60) / refresh_rate ))"
+#typeset -r with="linespoints pointinterval $(( (5*60) / refresh_rate ))"
+typeset -r with="histeps"
 
 typeset	-r	fmt_time="%H:%M:%S"
 
-typeset plot_cmds=/tmp/memory.plot.$$
+typeset plot_cmds=/tmp/${ifname}.plot.$$
 #https://www2.uni-hamburg.de/Wiss/FB/15/Sustainability/schneider/gnuplot/colors.htm
 
 typeset -i line_to_skip=1
 
 typeset graph_title=$title
-[ "${graph_title%_}" == "global" ] && graph_title="$if_name : start at $time (Points interval : 5mn)"
+[ "${graph_title%_}" == "global" ] && graph_title="$ifname : start at $time (Points interval : 5mn)"
 
 typeset -r stats_info=${PLELOG_ROOT}/$date/stats/stats_info.txt
 if [ $loop == yes ]
@@ -235,6 +259,8 @@ then
 	done<$stats_markers
 fi
 
+typeset	-r	range_max_lines=$(( (range_mn * 60) / refresh_rate ))
+
 cat << EOS > $plot_cmds
 set key autotitle columnhead
 set grid
@@ -245,14 +271,15 @@ set format x '$fmt_time'
 set timefmt '$fmt_time'
 set xdata time
 set xlabel 'Time'
-set xtic rotate by -45
-set ylabel 'bytes'
+set xtic rotate by -90
+set ylabel 'Kb'
 $labels
 plot	\
-	"${log_if}"	using 1:2 title 'Rx bytes'	with ${with}	lt rgb "red",	\
-	"${log_if}"	using 1:4 title 'Tx bytes'	with ${with}	lt rgb "orange"
+	"< tail -n$range_max_lines ${log_if}"	using 1:2 title 'Rx Kb'	with ${with}	lt rgb "blue",		\
+	"< tail -n$range_max_lines ${log_if}"	using 1:4 title 'Tx Kb'	with ${with}	lt rgb "green"
 $cmds
 EOS
+#"${log_if}"	using 1:(\$2+\$4) title 'S Kb'	with ${with}	lt rgb "blue"
 
 line_separator
 cat $plot_cmds
@@ -260,9 +287,8 @@ LN
 
 line_separator
 info "Refresh rate $(fmt_seconds $refresh_rate)"
+info "Range : ( ${range_mn}mn * 60 ) / ${refresh_rate}s = ${range_max_lines} last lines read from input file."
 LN
-
-line_separator
 info "Load file    ${log_if}"
 LN
 

@@ -28,13 +28,12 @@ do
 	esac
 done
 
-typeset -r service_name=plestatistics
+typeset -r service_name=pleifracstats
 typeset -r service_file=/usr/lib/systemd/system/$service_name.service
 
 if [ -f $service_file ]
 then
 	info "$service_name service exists."
-	exec_cmd "systemctl status $service_name -l"
 	exit 0
 fi
 
@@ -42,14 +41,14 @@ info "Create systemd service $service_name"
 
 cat <<EOS > $service_file
 [Unit]
-Description=PLE Statistics Service
+Description=PLE Interco RAC Statistics
 Wants=nfs.target
 After=nfs.target
 
 [Service]
 Type=simple
-ExecStart=/root/plescripts/stats/memstats.sh -title=global
-ExecStop=/root/plescripts/stats/memstats.sh -stop -title=global
+ExecStart=/root/plescripts/stats/ifstats.sh -title=$(hostname -s) -ifname=$if_rac_name
+ExecStop=/root/plescripts/stats/ifstats.sh -stop -title=$(hostname -s) -ifname=$if_rac_name
 TimeoutStopSec=5
 
 [Install]

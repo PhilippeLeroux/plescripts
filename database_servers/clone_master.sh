@@ -460,8 +460,21 @@ info "Plymouth theme."
 exec_cmd -c "ssh -t root@$server_name plescripts/shell/set_plymouth_them"
 LN
 
-info "Enable stats."
-exec_cmd "ssh -t root@${server_name} plescripts/stats/create_systemd_service_stats.sh"
+info -n "Create services stats"
+case $PLESTATISTICS in
+	*)
+		info -f ", services not enabled."
+		;;
+
+	ENABLE)
+		info -f " and enable them."
+esac
+exec_cmd "ssh -t root@${server_name} plescripts/stats/create_service_memory_stats.sh"
+exec_cmd "ssh -t root@${server_name} plescripts/stats/create_service_ifiscsi_stats.sh"
+if [ $max_nodes -gt 1 ]
+then
+	exec_cmd "ssh -t root@${server_name} plescripts/stats/create_service_ifrac_stats.sh"
+fi
 LN
 
 if [ $node -eq $max_nodes ]

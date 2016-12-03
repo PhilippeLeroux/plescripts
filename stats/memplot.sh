@@ -8,9 +8,21 @@ EXEC_CMD_ACTION=EXEC
 . ~/plescripts/stats/statslib.sh
 
 typeset -r ME=$0
+
+typeset node=-1
+typeset	loop=yes
+typeset date=undef
+typeset time=undef
+typeset server=""
+typeset title=""
+typeset show_log_only=no
+typeset	clear_log=no
+typeset	range_mn=5
+
 typeset -r str_usage=\
 "Usage : $ME
 		[-node=<#>]
+		[-range_mn=$range_mn]
 		[-no_loop]
 		[-title=<str>]
 		[-date=<YYYY-MM-DD>] not set, search last date.
@@ -21,15 +33,6 @@ typeset -r str_usage=\
 		[-clear_log]         remove log files.
 
 Display files produced by memstats.sh with gnuplot"
-
-typeset node=-1
-typeset	loop=yes
-typeset date=undef
-typeset time=undef
-typeset server=""
-typeset title=""
-typeset show_log_only=no
-typeset	clear_log=no
 
 while [ $# -ne 0 ]
 do
@@ -42,6 +45,11 @@ do
 
 		-node=*)
 			node=${1##*=}
+			shift
+			;;
+
+		-range_mn=*)
+			range_mn=${1##*=}
 			shift
 			;;
 
@@ -258,6 +266,8 @@ then
 	done<$stats_markers
 fi
 
+typeset	-r	range_max_lines=$(( (range_mn * 60) / refresh_rate ))
+
 cat << EOS > $plot_cmds
 set key autotitle columnhead
 set grid
@@ -272,13 +282,13 @@ set xtic rotate by -45
 set ylabel 'Mega bytes (Mb)'
 $labels
 plot	\
-	"$log_mem"	using 1:2 title 'Mem Max'	with lines		lt rgb "red",	\
-	"$log_mem"	using 1:3 title 'Mem Used'	with ${with}	lt rgb "orange",\
+	"< tail -n$range_max_lines $log_mem"	using 1:2 title 'Mem Max'	with lines		lt rgb "red",	\
+	"< tail -n$range_max_lines $log_mem"	using 1:3 title 'Mem Used'	with ${with}	lt rgb "orange",\
 \
-	"$log_shm"	using 1:2 title 'SHM Max'	with lines		lt rgb "brown",	\
-	"$log_shm"	using 1:3 title 'SHM Used'	with ${with}	lt rgb "green",	\
+	"< tail -n$range_max_lines $log_shm"	using 1:2 title 'SHM Max'	with lines		lt rgb "brown",	\
+	"< tail -n$range_max_lines $log_shm"	using 1:3 title 'SHM Used'	with ${with}	lt rgb "green",	\
 \
-	"$log_swap"	using 1:3 title 'Swap Used'	with ${with}	lt rgb "blue"
+	"< tail -n$range_max_lines $log_swap"	using 1:3 title 'Swap Used'	with ${with}	lt rgb "blue"
 $cmds
 EOS
 
@@ -288,9 +298,9 @@ LN
 
 line_separator
 info "Refresh rate $(fmt_seconds $refresh_rate)"
+info "Range : ( ${range_mn}mn * 60 ) / ${refresh_rate}s = ${range_max_lines} last lines read from input file."
 LN
 
-line_separator
 info "Load file    $log_shm"
 info "Load file    $log_mem"
 info "Load file    $log_swap"

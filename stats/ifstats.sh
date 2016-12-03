@@ -1,26 +1,22 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-EXEC_CMD_ACTION=EXEC
-
 . ~/plescripts/stats/statslib.sh
+EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-title=<str>     titre du jeu de statistiques.
+	-ifname=<str>    nom de l'interface.
 	[-stop]          stop la capture des statistiques.
 	[-count=<#>]     nombre maximal de mesures à prendre, par défaut pas de limite.
 	[-pause=1]       pause en secondes entre 2 mesures.
 
-	Statistiques sur le début des cartes réseaux.
+	Statistiques sur le débit des cartes réseaux en Kb.
 	Utiliser ifplot.sh pour affichage graphique de la sortie.
-
-	BUG Pour le moment sélectionne les if eth0 et eth1, faire évoluer pour utiliser
-	if_pub_name et if_iscsi_name
 "
 
 
@@ -30,7 +26,7 @@ typeset -i	max_count=0
 typeset -i	pause_of_secs=1
 typeset		action=start
 typeset		title=undef
-typeset		if_name=undef
+typeset		ifname=undef
 
 while [ $# -ne 0 ]
 do
@@ -41,8 +37,8 @@ do
 			shift
 			;;
 
-		-if_name=*)
-			if_name=${1##*=}
+		-ifname=*)
+			ifname=${1##*=}
 			shift
 			;;
 
@@ -76,9 +72,9 @@ do
 done
 
 exit_if_param_undef title "$str_usage"
-exit_if_param_undef if_name "$str_usage"
+exit_if_param_undef ifname "$str_usage"
 
-typeset	-r	if_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}${if_name}.log
+typeset	-r	if_file=$PLESTATS_PATH/$(date +"%Hh%M")_$(hostname -s)_${title}${ifname}.log
 
 typeset	-i prev_rx_b=-1
 typeset	-i prev_rx_packets
@@ -87,7 +83,7 @@ typeset	-i prev_tx_packets
 
 function write_headers
 {
-	echo "$(date +"%Y:%m:%d") rx_b rx_packets tx_b tx_packets" > $if_file
+	echo "$(date +"%Y:%m:%d") rx_kb rx_packets tx_kb tx_packets" > $if_file
 	chmod ug=rw $if_file
 	chgrp users $if_file
 }
@@ -102,10 +98,10 @@ function write_stats
 	fi
 
 	typeset -i if_num=0
-	read iface_name rx_b rx_packets f1 f2 f3 f4 f5 f6 tx_b tx_packets rem<<<"$(cat /proc/net/dev | grep -E "eth[0-1]" | tr -s [:space:])"
+	read iface_name rx_b rx_packets f1 f2 f3 f4 f5 f6 tx_b tx_packets rem<<<"$(cat /proc/net/dev | grep -E "$ifname" | tr -s [:space:])"
 	if [ ${prev_rx_b} -ne -1 ]
 	then	# After first line
-		echo "$timestamp $(( (rx_b - prev_rx_b) )) $(( rx_packets - prev_rx_packets )) $(( (tx_b - prev_tx_b) )) $(( tx_packets - prev_tx_packets ))" >> $if_file
+		echo "$timestamp $(( (rx_b - prev_rx_b) / 1024 )) $(( rx_packets - prev_rx_packets )) $(( (tx_b - prev_tx_b) / 1024 )) $(( tx_packets - prev_tx_packets ))" >> $if_file
 	fi
 	prev_rx_b=$rx_b
 	prev_rx_packets=$rx_packets
@@ -120,7 +116,7 @@ function remove_pid_file
 
 function get_pid_file_suffix
 {
-	echo "$(hostname -s)_${title}running_${if_name}.pid"
+	echo "$(hostname -s)_${title}running_${ifname}.pid"
 }
 
 function main
