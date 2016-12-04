@@ -137,6 +137,6 @@ fi
 
 line_separator
 info "Notes :"
-info " * yum/update_master.sh to upadte VM $master_name, execute from $client_hostname"
+info " * yum/update_master.sh to upadte VM $master_hostname, execute from $client_hostname"
 info " * yum/update_db_os.sh to update VM with bdd, execute from the bdd server."
 LN

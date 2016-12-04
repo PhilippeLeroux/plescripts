@@ -82,7 +82,7 @@ LN
 line_separator
 info "Add Iface 1"
 exec_cmd VBoxManage modifyvm $vm_name --nic1 hostonly
-exec_cmd VBoxManage modifyvm $vm_name --hostonlyadapter1 vboxnet1
+exec_cmd VBoxManage modifyvm $vm_name --hostonlyadapter1 $hostifname
 exec_cmd VBoxManage modifyvm $vm_name --nictype1 virtio
 exec_cmd VBoxManage modifyvm $vm_name --cableconnected1 on
 LN

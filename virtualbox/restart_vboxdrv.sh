@@ -100,7 +100,7 @@ info -n "Tempo : "; pause_in_secs 2; LN
 LN
 
 line_separator
-exec_cmd "~/plescripts/virtualbox/create_iface.sh -force_iface_name=vboxnet1"
+exec_cmd "~/plescripts/virtualbox/create_iface.sh -force_iface_name=$hostifname"
 LN
 
 line_separator

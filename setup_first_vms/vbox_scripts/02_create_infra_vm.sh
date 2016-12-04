@@ -72,28 +72,28 @@ if [ $? -eq 0 ]
 then
 	#	La VM master vient d'être créée, elle est démarrée.
 	line_separator
-	confirm_or_exit -reply_list=CR "root password for VM $master_name will be asked. Press enter to continue."
+	confirm_or_exit -reply_list=CR "root password for VM $master_hostname will be asked. Press enter to continue."
 	exec_cmd "make_ssh_user_equivalence_with.sh -user=root -server=$master_ip"
 
-	info "Stop VM $master_name"
+	info "Stop VM $master_hostname"
 	#	Normalement la VM est démarrée, si ce n'est pas le cas erreur mais continue.
-	exec_cmd $vm_scripts_path/stop_vm -server=$master_name
+	exec_cmd $vm_scripts_path/stop_vm -server=$master_hostname
 	timing 10 "Attend l'arrêt complet"
 	LN
 else
 	#	Je considère que l'équivalence est faite et que je recommence un test de
 	#	création de la VM d'infra.
-	exec_cmd start_vm $master_name -wait_os=no
+	exec_cmd start_vm $master_hostname -wait_os=no
 	exec_cmd wait_server $master_ip
 	add_to_known_hosts $master_ip
-	exec_cmd $vm_scripts_path/stop_vm -server=$master_name
+	exec_cmd $vm_scripts_path/stop_vm -server=$master_hostname
 	timing 10 "Attend l'arrêt complet"
 	LN
 fi
 
 line_separator
 info "Clone VM master"
-exec_cmd VBoxManage clonevm $master_name --name $infra_hostname			\
+exec_cmd VBoxManage clonevm $master_hostname --name $infra_hostname			\
 							--basefolder \"$vm_path\" --register
 LN
 

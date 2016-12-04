@@ -195,7 +195,7 @@ function setup_ks_file
 	typeset -r mask=$(convert_net_prefix_2_net_mask $if_pub_prefix)
 	exec_cmd "sed -i \"s/network  --bootproto=static .*/network  --bootproto=static --device=$if_pub_name --ip=$master_ip --netmask=${mask}.0 --ipv6=auto --activate/\" $ks_cfg"
 	LN
-	exec_cmd "sed -i \"s/network  --hostname=.*/network  --hostname=${master_name}.${infra_domain}/\" $ks_cfg"
+	exec_cmd "sed -i \"s/network  --hostname=.*/network  --hostname=${master_hostname}.${infra_domain}/\" $ks_cfg"
 	LN
 }
 

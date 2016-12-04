@@ -75,30 +75,30 @@ script_start
 line_separator
 info "Cleanup :"
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh	\
-										-host=${master_name} -ip=${master_ip}
+								-host=${master_hostname} -ip=${master_ip}
 LN
 
 line_separator
 #	Peu importe le rôle de la VM - standalone ou nœud RAC - ajout d'une 3e NIC.
 info "Add NIC for RAC interco :"
-exec_cmd VBoxManage modifyvm $master_name --nic3 intnet
-exec_cmd VBoxManage modifyvm $master_name --nictype3 virtio
-exec_cmd VBoxManage modifyvm $master_name --cableconnected3 on
+exec_cmd VBoxManage modifyvm $master_hostname --nic3 intnet
+exec_cmd VBoxManage modifyvm $master_hostname --nictype3 virtio
+exec_cmd VBoxManage modifyvm $master_hostname --cableconnected3 on
 LN
 
-exec_cmd "$vm_scripts_path/start_vm $master_name"
+exec_cmd "$vm_scripts_path/start_vm $master_hostname"
 LN
 wait_server $master_ip
 LN
 
 line_separator
-add_to_known_hosts $master_name
-exec_cmd -c ~/plescripts/ssh/test_ssh_equi.sh -user=root -server=$master_name
+add_to_known_hosts $master_hostname
+exec_cmd -c ~/plescripts/ssh/test_ssh_equi.sh -user=root -server=$master_hostname
 if [ $? -ne 0 ]
 then
-	confirm_or_exit -reply_list=CR "root password for VM $master_name will be asked. Press enter to continue."
+	confirm_or_exit -reply_list=CR "root password for VM $master_hostname will be asked. Press enter to continue."
 	exec_cmd ~/plescripts/ssh/make_ssh_user_equivalence_with.sh	\
-											-user=root -server=$master_name
+											-user=root -server=$master_hostname
 fi
 LN
 
@@ -123,10 +123,10 @@ LN
 master_ssh "~/plescripts/setup_first_vms/01_prepare_master_vm.sh"
 LN
 
-exec_cmd "$vm_scripts_path/stop_vm $master_name"
+exec_cmd "$vm_scripts_path/stop_vm $master_hostname"
 LN
 
-info "Server $master_name ready."
+info "Server $master_hostname ready."
 LN
 
 info "Create BDD server : https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers"

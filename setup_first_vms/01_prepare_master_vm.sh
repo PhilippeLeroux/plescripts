@@ -9,7 +9,7 @@ typeset -r ME=$0
 
 script_banner $ME $*
 
-must_be_executed_on_server "$master_name"
+must_be_executed_on_server "$master_hostname"
 
 #	Ce script doit être exécuté uniquement si le serveur d'infra existe.
 
@@ -63,7 +63,7 @@ exec_cmd ~/plescripts/setup_first_vms/02_update_config.sh
 
 exec_cmd ~/plescripts/ntp/config_ntp.sh -role=master
 
-exec_cmd ~/plescripts/gadgets/customize_logon.sh -name=$master_name
+exec_cmd ~/plescripts/gadgets/customize_logon.sh -name=$master_hostname
 
 line_separator
 info "Network Manager Workaround"

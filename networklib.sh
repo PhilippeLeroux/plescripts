@@ -24,27 +24,6 @@ function convert_net_prefix_2_net_mask
 	echo $mask
 }
 
-#*> Retourne le chemin contenant les fichiers de configuration des
-#*> interfaces réseaux.
-function get_if_path
-{
-	typeset	-r	id=$(grep "^ID=" /etc/os-release | cut -d= -f2)
-	case $id in
-		\"ol\")
-			echo "/etc/sysconfig/network-scripts"
-			;;
-
-		opensuse|suse)
-			echo "/etc/sysconfig/network"
-			;;
-
-		*)
-			error "Unknow ID=$id"
-			return 1
-	esac
-	return 0
-}
-
 #*>	Retourne l'adresse mac de l'Iface $1
 function get_if_hwaddr
 {

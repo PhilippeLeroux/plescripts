@@ -90,11 +90,11 @@ do
 		[ x"$node_list" == x ] && node_list=$vm_name || node_list="$node_list $vm_name"
 	fi
 
-	info "Clone $vm_name from $master_name"
-	exec_cmd VBoxManage clonevm "$master_name"		\
-						--name "$vm_name"			\
-						--basefolder \"$vm_path\"	\
-						--register
+	info "Clone $vm_name from $master_hostname"
+	exec_cmd VBoxManage clonevm "$master_hostname"		\
+							--name "$vm_name"			\
+							--basefolder \"$vm_path\"	\
+							--register
 	LN
 
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb

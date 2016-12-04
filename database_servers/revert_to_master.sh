@@ -12,7 +12,7 @@ typeset -r str_usage=\
 	Le GI et le logiciel Oracle doivent avoir été désinstallés.
 
 	- Supprime les comptes oracle & grid.
-	- Renomme le serveur en $master_name
+	- Renomme le serveur en $master_hostname
 	- Positionne l'IP ${if_pub_network}.${master_ip_node} sur $if_pub_name
 	- Supprime de /etc/fstab : /mnt/oracle_install
 
@@ -99,13 +99,13 @@ info "Set master config"
 update_value IPADDR ${if_pub_network}.${master_ip_node}	$if_pub_file
 LN
 
-exec_cmd "echo ${master_name}.${infra_domain} > /etc/hostname"
+exec_cmd "echo ${master_hostname}.${infra_domain} > /etc/hostname"
 LN
 
 exec_cmd "sed -i '/\/mnt\/oracle_install/d' /etc/fstab"
 LN
 
-exec_cmd "~/plescripts/gadgets/customize_logon.sh -name=$master_name"
+exec_cmd "~/plescripts/gadgets/customize_logon.sh -name=$master_hostname"
 LN
 
 exec_cmd "rm -rf /tmp/*"

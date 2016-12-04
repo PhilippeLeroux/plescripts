@@ -34,16 +34,13 @@ done
 
 LN
 info "Liste des actions effectuées :"
-info "	- démarre la VM master ${master_name}"
+info "	- démarre la VM master ${master_hostname}"
 info "	- se connecte et exécute yum -y update"
-info "	- stop la VM master ${master_name}."
+info "	- stop la VM master ${master_hostname}."
 LN
 confirm_or_exit "Continuer"
 
-exec_cmd start_vm $master_name
-[ $? -ne 0 ] && exit 1
-exec_cmd wait_server $master_name
-[ $? -ne 0 ] && exit 1
-exec_cmd "ssh root@${master_name} \"yum makecache; yum -y update\""
+exec_cmd start_vm $master_hostname
+exec_cmd "ssh root@${master_hostname} \"yum makecache; yum -y update\""
 LN
-exec_cmd stop_vm $master_name
+exec_cmd stop_vm $master_hostname

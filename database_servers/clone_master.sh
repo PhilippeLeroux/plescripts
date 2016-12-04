@@ -140,7 +140,7 @@ function loop_wait_server
 
 	while [ 1 -eq 1 ]	# forever
 	do
-		~/plescripts/shell/wait_server $server
+		wait_server $server
 		if [ $? -ne 0 ]
 		then
 			error "Cannot contact $server"
@@ -182,7 +182,7 @@ function setup_iscsi_inititiator
 {
 	info "Setup initiator name :"
 	iscsi_initiator=$(get_initiator_for $db $node)
-	exec_cmd "ssh -t root@$master_name \"echo InitiatorName=$iscsi_initiator > /etc/iscsi/initiatorname.iscsi\""
+	exec_cmd "ssh -t root@$master_hostname \"echo InitiatorName=$iscsi_initiator > /etc/iscsi/initiatorname.iscsi\""
 	LN
 }
 
@@ -222,14 +222,6 @@ function attach_existing_LUNs_on_node
 
 	exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
 	exec_cmd "ssh -t root@${server_name} oracleasm scandisks"
-	LN
-}
-
-#	Attend que le serveur master soit actif.
-function wait_master
-{
-	~/plescripts/shell/wait_server $master_name
-	[ $? -ne 0 ] && exit 1
 	LN
 }
 
@@ -317,12 +309,12 @@ function configure_server
 	#	-wait_os=no car le nom du serveur n'a pas encore été changé.
 	exec_cmd "$vm_scripts_path/start_vm $server_name -wait_os=no"
 	LN
-	exec_cmd "wait_server $master_name"
+	exec_cmd "wait_server $master_hostname"
 
 	#	************************************************************************
 	#	La VM a été clonée mais sa configuration réseau correspond toujours à
 	#	celle du master, il faut donc régénérer la clef public.
-	add_to_known_hosts $master_name
+	add_to_known_hosts $master_hostname
 	LN
 
 	line_separator

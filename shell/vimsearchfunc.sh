@@ -8,7 +8,17 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : $ME
+	-script=script_name	script ou chercher la fonction.
+	-funcName=func_name nom de la fonction à chercher.
+
+Recherche dans les scripts de type lib inclues dans 'script_name' la fonction 'func_bame'.
+Un script de type lib est de la forme : . .*lib.sh
+
+Si la fonction est trouvée affiche sur la sortie standard le n° de ligne suivit
+du nom du script.
+Sinon affiche le message : not found
+"
 
 typeset script=undef
 typeset funcName=undef
