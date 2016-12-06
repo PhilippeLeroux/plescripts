@@ -126,6 +126,11 @@ function create_tuned_profiles
 	exec_cmd "~/plescripts/oracle_preinstall/create_tuned_profiles.sh"
 }
 
+function setup_ssh_config
+{
+	exec_cmd "sed -i 's/.*LoginGraceTime.*/LoginGraceTime 0/' /etc/ssh/sshd_config"
+}
+
 line_separator
 memory_setting
 LN
@@ -136,4 +141,8 @@ LN
 
 line_separator
 dev_shm_setting
+LN
+
+line_separator
+setup_ssh_config
 LN

@@ -149,5 +149,5 @@ LN
 
 script_stop $ME
 
-info "After install execute : ./02_create_infra_vm.sh"
+info "After install execute : ./02_install_vm_infra.sh"
 LN

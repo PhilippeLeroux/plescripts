@@ -67,6 +67,24 @@ function master_ip_is_pingable
 	ping -c 1 $master_ip > /dev/null 2>&1
 }
 
+function exec_ssh
+{
+	typeset	-r	conn="$1"
+	shift
+
+	exec_cmd "ssh -t $conn \"$@\""
+}
+
+function ssh_master
+{
+	exec_ssh root@${master_ip} "$@"
+}
+
+function ssh_infra
+{
+	exec_ssh root@${infra_ip} "$@"
+}
+
 master_ip_is_pingable
 if [ $? -eq 0 ]
 then
@@ -77,8 +95,7 @@ then
 
 	info "Stop VM $master_hostname"
 	#	Normalement la VM est démarrée, si ce n'est pas le cas erreur mais continue.
-	exec_cmd $vm_scripts_path/stop_vm -server=$master_hostname
-	timing 10 "Attend l'arrêt complet"
+	exec_cmd stop_vm -server=$master_hostname -wait_os
 	LN
 else
 	#	Je considère que l'équivalence est faite et que je recommence un test de
@@ -86,8 +103,7 @@ else
 	exec_cmd start_vm $master_hostname -wait_os=no
 	exec_cmd wait_server $master_ip
 	add_to_known_hosts $master_ip
-	exec_cmd $vm_scripts_path/stop_vm -server=$master_hostname
-	timing 10 "Attend l'arrêt complet"
+	exec_cmd stop_vm -server=$master_hostname -wait_os
 	LN
 fi
 
@@ -108,6 +124,7 @@ LN
 line_separator
 info "Set 2 cpus"
 exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
+LN
 
 line_separator
 info "Add disk for SAN storage (targetcli)"
@@ -136,31 +153,14 @@ exec_cmd wait_server $master_ip
 LN
 
 line_separator
-typeset -r if_cfg_path=~/plescripts/setup_first_vms/ifcfg_infra_server
-line_separator
-info "Update public Iface : $if_pub_name"
-update_value NAME	$if_pub_name	$if_cfg_path/ifcfg-$if_pub_name
-update_value DEVICE	$if_pub_name	$if_cfg_path/ifcfg-$if_pub_name
-update_value IPADDR	$infra_ip		$if_cfg_path/ifcfg-$if_pub_name
-update_value PREFIX	$if_pub_prefix	$if_cfg_path/ifcfg-$if_pub_name
-update_value DNS1	$infra_ip		$if_cfg_path/ifcfg-$if_pub_name
-LN
-
-info "Update iSCSI Iface : $if_iscsi_name"
-update_value NAME	$if_iscsi_name							$if_cfg_path/ifcfg-$if_iscsi_name
-update_value DEVICE	$if_iscsi_name							$if_cfg_path/ifcfg-$if_iscsi_name
-update_value IPADDR	${if_iscsi_network}.${infra_ip_node}	$if_cfg_path/ifcfg-$if_iscsi_name
-update_value PREFIX	$if_iscsi_prefix						$if_cfg_path/ifcfg-$if_iscsi_name
-LN
-
-info "Update internet Iface : $if_net_name"
-update_value NAME	$if_net_name	$if_cfg_path/ifcfg-$if_net_name
-update_value DEVICE	$if_net_name	$if_cfg_path/ifcfg-$if_net_name
-update_value DNS1	$infra_ip		$if_cfg_path/ifcfg-$if_net_name
-LN
-
-info "Copy Ifaces files to $infra_hostname (Use IP $master_ip)"
-exec_cmd "scp ~/plescripts/setup_first_vms/ifcfg_infra_server/* root@${master_ip}:/etc/sysconfig/network-scripts/"
+info "Add public Iface $if_pub_name, change ip to $infra_ip"
+ssh_master	nmcli connection modify			System\\\ $if_pub_name		\
+					ipv4.addresses			$infra_ip/$if_pub_prefix	\
+					ipv4.dns				$dns_ip						\
+					connection.zone			trusted						\
+					connection.autoconnect	yes
+ssh_master "sed -i 's/^NAME=.*/NAME=$if_pub_name/' $network_scripts/ifcfg-$if_pub_name"
+ssh_master "cat $network_scripts/ifcfg-$if_pub_name"
 LN
 
 #	Il faut rebooter la VM à cause du changement d'IP.
@@ -175,13 +175,13 @@ add_to_known_hosts $infra_ip
 LN
 
 info "Create NFS mount points."
-exec_cmd "ssh -t root@$infra_ip \"mkdir /mnt/plescripts\""
-exec_cmd "ssh -t root@$infra_ip \"ln -s /mnt/plescripts ~/plescripts\""
-exec_cmd "ssh -t root@$infra_ip \"mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o rw,$nfs_options\""
+ssh_infra "mkdir /mnt/plescripts"
+ssh_infra "ln -s /mnt/plescripts ~/plescripts"
+ssh_infra "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o rw,$nfs_options"
 LN
 
 line_separator
-exec_cmd "ssh -t root@$infra_ip \"~/plescripts/setup_first_vms/01_prepare_infra_vm.sh\""
+ssh_infra "~/plescripts/setup_first_vms/01_prepare_infra_vm.sh"
 
 line_separator
 info "Create yum repository"
@@ -189,13 +189,13 @@ exec_cmd "~/plescripts/yum/init_infra_repository.sh"
 LN
 
 line_separator
-exec_cmd "ssh -t root@$infra_ip \"~/plescripts/setup_first_vms/02_update_config.sh\""
-exec_cmd "ssh -t root@$infra_ip \"~/plescripts/setup_first_vms/03_setup_infra_vm.sh\""
+ssh_infra "~/plescripts/setup_first_vms/02_update_config.sh"
+ssh_infra "~/plescripts/setup_first_vms/03_setup_infra_vm.sh"
 LN
 
 line_separator
 info "Stop VM $infra_hostname to adjust RAM"
-exec_cmd "$vm_scripts_path/stop_vm -server=$infra_hostname -wait_os"
+exec_cmd "stop_vm -server=$infra_hostname -wait_os"
 LN
 
 line_separator
@@ -205,18 +205,27 @@ LN
 
 line_separator
 info "Start VM."
-exec_cmd "$vm_scripts_path/start_vm $infra_hostname"
-exec_cmd wait_server $infra_hostname
-
-line_separator
-info "Remove IP $master_ip & $infra_ip from known_host file of $client_name"
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${master_ip}
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh -ip=${infra_ip}
+exec_cmd "start_vm $infra_hostname -wait_os=no"
+exec_cmd wait_server $infra_ip
 LN
 
 line_separator
-info "Setup ssh equivalence between $client_hostname and $infra_hostname"
-exec_cmd "~/plescripts/shell/make_ssh_user_equivalence_with.sh -user=root -server=$infra_hostname"
+info "Remove IP $master_ip & $infra_ip from known_host file of $client_hostname"
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh	-ip=${master_ip}		\
+														-host=$master_hostname
+
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh	-ip=${infra_ip}			\
+														-host=$infra_hostname
+LN
+
+line_separator
+#	L'équivalence ssh existe déjà.
+add_to_known_hosts $infra_hostname
+LN
+
+line_separator
+info "Check target"
+exec_cmd "ssh $infra_conn \"san/check_target.sh\""
 LN
 
 script_stop $ME

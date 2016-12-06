@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -14,22 +15,18 @@ must_be_executed_on_server "$master_hostname"
 #	Ce script doit être exécuté uniquement si le serveur d'infra existe.
 
 line_separator
-info "Network config :"
-update_value NAME		$if_pub_name	$if_pub_file
-update_value DEVICE		$if_pub_name	$if_pub_file
-update_value BOOTPROTO	static			$if_pub_file
-update_value IPADDR		$master_ip 		$if_pub_file
-update_value DNS1		$dns_ip			$if_pub_file
-update_value USERCTL	no				$if_pub_file
-update_value ONBOOT		yes 			$if_pub_file
-update_value PREFIX		$if_pub_prefix	$if_pub_file
-remove_value NETMASK					$if_pub_file
-remove_value HWADDR						$if_pub_file
-if_uuid=$(uuidgen $if_pub_name)
-update_value UUID		$if_uuid		$if_pub_file
-update_value ZONE		trusted			$if_pub_file
-#update_value GATEWAY 	$dns_ip			$if_pub_file
+info "Update Iface $if_pub_name :"
+#	Le serveur sera cloné, il ne faut donc pas d'adresse mac ou d'uuid de définie.
+exec_cmd nmcli connection modify		System\\\ $if_pub_name		\
+				ipv4.method				manual						\
+				ipv4.addresses			$master_ip/$if_pub_prefix	\
+				ipv4.dns				$dns_ip						\
+				connection.zone			trusted						\
+				connection.autoconnect	yes
 LN
+exec_cmd "sed -i 's/^NAME=.*/NAME=$if_pub_name/' $network_scripts/ifcfg-$if_pub_name"
+exec_cmd "sed -i '/^UUID=/d' $network_scripts/ifcfg-$if_pub_name"
+exec_cmd "cat $network_scripts/ifcfg-$if_pub_name"
 exec_cmd systemctl restart network
 LN
 
@@ -64,14 +61,6 @@ exec_cmd ~/plescripts/setup_first_vms/02_update_config.sh
 exec_cmd ~/plescripts/ntp/config_ntp.sh -role=master
 
 exec_cmd ~/plescripts/gadgets/customize_logon.sh -name=$master_hostname
-
-line_separator
-info "Network Manager Workaround"
-exec_cmd ~/plescripts/nm_workaround/rm_conn_without_device.sh
-LN
-exec_cmd -c ~/plescripts/nm_workaround/create_service.sh -role=master
-#	Plante car $if_pub_name n'existe pas, existera au reboot.
-LN
 
 line_separator
 exec_cmd ~/plescripts/shell/set_plymouth_them

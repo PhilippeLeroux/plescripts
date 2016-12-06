@@ -68,44 +68,31 @@ exec_cmd "echo \"$cfg_server_name.${infra_domain}\" > /etc/hostname"
 LN
 
 line_separator
-info "Configure interface $if_pub_name :"
-update_value NAME		$if_pub_name	$if_pub_file
-update_value DEVICE		$if_pub_name	$if_pub_file
-update_value BOOTPROTO	static			$if_pub_file
-update_value IPADDR		$cfg_server_ip 	$if_pub_file
-update_value DNS1		$dns_ip			$if_pub_file
-update_value USERCTL	yes				$if_pub_file
-update_value ONBOOT		yes 			$if_pub_file
-update_value PREFIX		$if_pub_prefix	$if_pub_file
-remove_value NETMASK					$if_pub_file
+info "Update Iface $if_pub_name :"
 if_hwaddr=$(get_if_hwaddr $if_pub_name)
-update_value HWADDR		$if_hwaddr		$if_pub_file
-update_value ZONE		trusted			$if_pub_file
-#	Pas d'accès internet.
-remove_value GATEWAY					$if_pub_file
+exec_cmd nmcli connection modify		$if_pub_name					\
+				ipv4.method				manual							\
+				ipv4.addresses			$cfg_server_ip/$if_pub_prefix	\
+				ipv4.dns				$dns_ip							\
+				connection.zone			trusted							\
+				ethernet.mac-address	$if_hwaddr						\
+				connection.autoconnect	yes
+LN
+update_value UUID	$(uuidgen $if_pub_name)	$if_pub_file
 LN
 
 line_separator
-info "Configure interface $if_iscsi_name :"
-exec_cmd "cp $if_pub_file $if_iscsi_file"
-update_value NAME		$if_iscsi_name		$if_iscsi_file
-update_value DEVICE		$if_iscsi_name		$if_iscsi_file
-update_value BOOTPROTO	static				$if_iscsi_file
-update_value IPADDR		$cfg_iscsi_ip		$if_iscsi_file
-update_value USERCTL	yes					$if_iscsi_file
-update_value ONBOOT		yes 				$if_iscsi_file
-update_value PREFIX		$if_iscsi_prefix	$if_iscsi_file
-update_value MTU		9000				$if_iscsi_file
-remove_value NETMASK						$if_iscsi_file
+info "Update Iface $if_iscsi_name :"
 if_hwaddr=$(get_if_hwaddr $if_iscsi_name)
-update_value HWADDR		$if_hwaddr			$if_iscsi_file
-if_uuid=$(uuidgen $if_iscsi_name)
-update_value UUID		$if_uuid			$if_iscsi_file
-update_value ZONE		trusted				$if_iscsi_file
-# Effectue la commande 2 fois car la première insère et ne met pas de double quotes
-# le seconde update met les double quotes ????
-update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_iscsi_file
-update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_iscsi_file
+exec_cmd nmcli connection modify		$if_iscsi_name					\
+				ipv4.method				manual							\
+				ipv4.addresses			$cfg_iscsi_ip/$if_iscsi_prefix	\
+				ethernet.mtu			9000							\
+				connection.zone			trusted							\
+				ethernet.mac-address	$if_hwaddr						\
+				connection.autoconnect	yes
+LN
+update_value UUID	$(uuidgen $if_iscsi_name)	$if_iscsi_file
 LN
 
 if [ $max_nodes -gt 1 ]
@@ -113,26 +100,22 @@ then
 	line_separator
 	# Pour l'IP RAC lecture du dernier n° de l'IP iSCSI.
 	typeset -r ip_rac=${if_rac_network}.${cfg_iscsi_ip##*.}
-	info "Configure interface $if_rac_name :"
-	exec_cmd "cp $if_iscsi_file $if_rac_file"
-	update_value NAME		$if_rac_name		$if_rac_file
-	update_value DEVICE		$if_rac_name		$if_rac_file
-	update_value BOOTPROTO	static				$if_rac_file
-	update_value IPADDR		$ip_rac				$if_rac_file
-	update_value USERCTL	yes					$if_rac_file
-	update_value ONBOOT		yes 				$if_rac_file
-	update_value PREFIX		$if_rac_prefix		$if_rac_file
-	update_value MTU		9000				$if_rac_file
-	remove_value NETMASK						$if_rac_file
+	info "Update Iface $if_rac_name :"
+	exec_cmd nmcli connection add	con-name	$if_rac_name		\
+									ifname		$if_rac_name		\
+									type		ethernet
+	LN
+
 	if_hwaddr=$(get_if_hwaddr $if_rac_name)
-	update_value HWADDR		$if_hwaddr			$if_rac_file
-	update_value ZONE		trusted				$if_rac_file
-	if_uuid=$(uuidgen $if_rac_name)
-	update_value UUID		$if_uuid			$if_rac_file
-	# Effectue la commande 2 fois car la première insert et ne met pas de double quote
-	# alors que la seconde update et met les double quote.
-	update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_rac_file
-	update_value ETHTOOL_OPTS "\"speed 1000 duplex full autoneg off\"" $if_rac_file
+	exec_cmd nmcli connection modify		$if_rac_name			\
+					ipv4.method				manual					\
+					ipv4.addresses			$ip_rac/$if_rac_prefix	\
+					ethernet.mtu			9000					\
+					connection.zone			trusted					\
+					ethernet.mac-address	$if_hwaddr				\
+					connection.autoconnect	yes
+	LN
+	update_value UUID	$(uuidgen $if_rac_name)	$if_rac_file
 	LN
 fi
 

@@ -48,6 +48,18 @@ done
 
 exit_if_param_invalid role "infra master" "$str_usage"
 
+if [ -f /usr/lib/systemd/system/nm_workaround.service ]
+then
+	warning "File /usr/lib/systemd/system/nm_workaround.service exists."
+	LN
+	info "remove service :"
+	exec_cmd -c systemctl disable nm_workaround
+	exec_cmd -c systemctl stop nm_workaround
+	exec_cmd -c rm -f /usr/lib/systemd/system/nm_workaround.service
+	LN
+fi
+
+info "Create script /root/nm_workaround.sh"
 cat <<EOS > /root/nm_workaround.sh
 #!/bin/bash
 
@@ -72,20 +84,20 @@ else
 	EOS
 fi
 
+cat <<EOS >> /root/nm_workaround.sh
+
+echo
+echo "Remove ifcfg-eth*old"
+rm -f $network_scripts/ifcfg-eth*old
+EOS
+
 exec_cmd cat /root/nm_workaround.sh
 LN
 
 exec_cmd "chmod u+x /root/nm_workaround.sh"
 LN
 
-if [ -f /usr/lib/systemd/system/nm_workaround.service ]
-then
-	exec_cmd -c "systemctl stop nm_workaround"
-	exec_cmd -c "systemctl disable nm_workaround"
-	LN
-fi
-
-fake_exec_cmd make /usr/lib/systemd/system/nm_workaround.service[...]
+info "Create service nm_workaround"
 LN
 cat <<EOS >/usr/lib/systemd/system/nm_workaround.service
 [Unit]

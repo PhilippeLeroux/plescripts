@@ -170,7 +170,7 @@ function reboot_server
 function configure_ifaces_hostname_and_reboot
 {
 	info "Configure network..."
-	exec_cmd "ssh -t $master_conn plescripts/configure_network/setup_iface_and_hostename.sh -db=$db -node=$node"
+	exec_cmd "ssh -t $master_conn \"~/plescripts/configure_network/setup_iface_and_hostename.sh -db=$db -node=$node\""
 	LN
 
 	#	Le reboot est nécessaire à cause du changement du nom du serveur.
@@ -333,11 +333,6 @@ function configure_server
 
 	line_separator
 	make_ssh_equi_with_san
-	LN
-
-	#	Correction problèmes Network Manager
-	info "Remove bad ifaces."
-	exec_cmd "ssh -t root@$server_name plescripts/nm_workaround/rm_conn_without_device.sh"
 	LN
 
 	line_separator

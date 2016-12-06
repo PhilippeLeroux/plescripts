@@ -17,11 +17,6 @@ script_banner $ME $*
 must_be_executed_on_server "$infra_hostname"
 
 line_separator
-info "Network Manager Workaround"
-exec_cmd "~/plescripts/nm_workaround/create_service.sh -role=infra"
-LN
-
-line_separator
 #	Le serveur sert de gateway sur internet.
 exec_cmd "sysctl -w net.ipv4.ip_forward=1"
 exec_cmd "echo \"net.ipv4.ip_forward = 1\" >> /etc/sysctl.d/ip_forward.conf"
@@ -76,9 +71,8 @@ exec_cmd ~/plescripts/dns/add_server_2_dns.sh	-name=$master_hostname		\
 exec_cmd ~/plescripts/dns/show_dns.sh
 LN
 
-line_separator
-exec_cmd "~/plescripts/nm_workaround/rm_conn_without_device.sh"
-update_value UUID	$(uuidgen $if_pub_name)		$if_pub_file
-update_value UUID	$(uuidgen $if_iscsi_name)	$if_iscsi_file
-update_value UUID	$(uuidgen $if_net_name)		$if_net_file
+exec_cmd ~/plescripts/nm_workaround/create_service.sh -role=infra
+LN
+
+exec_cmd ~/plescripts/shell/set_plymouth_them
 LN
