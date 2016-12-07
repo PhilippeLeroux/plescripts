@@ -1,6 +1,7 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
+PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
@@ -45,9 +46,6 @@ then
 	exit 1
 fi
 
-typeset	-i	count_nodes=$(wc -w<<<"$gi_node_list")
-[ $count_nodes -eq 0 ] && count_nodes=1
-
 test_if_rpm_update_available
 if [ $? -ne 0 ]
 then
@@ -55,7 +53,7 @@ then
 	exit 0
 fi
 
-if [ $count_nodes -eq 1 ]
+if [ $gi_count_nodes -eq 1 ]
 then
 	info "Update : $gi_current_node"
 	LN
@@ -84,6 +82,14 @@ else
 	LN
 
 	line_separator
+	info "Stop databases :"
+	while IFS='.' read prefix dbname suffix
+	do
+		exec_cmd -c srvctl stop database -db $dbname
+	done<<<"$(crsctl stat res -t | grep -E '^ora\..*\.db')"
+	LN
+
+	line_separator
 	info "Stop cluster :"
 	exec_cmd "crsctl stop cluster -all"
 	execute_on_all_nodes_v2 "crsctl stop crs"
@@ -103,7 +109,7 @@ else
 
 	line_separator
 	info "Reboot"
-	execute_on_other_nodes_v2 -c "systemctl reboot"
+	execute_on_other_nodes -c "systemctl reboot"
 	exec_cmd -c systemctl reboot
 	LN
 fi

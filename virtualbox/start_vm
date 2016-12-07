@@ -62,6 +62,7 @@ exit_if_param_undef server	"$str_usage"
 
 exit_if_param_invalid wait_os "yes no" "$str_usage"
 
+#	============================================================================
 #	Mémorise le nom des VMs correspondant au pattern $server
 typeset -a vm_list
 while read vm_name
@@ -73,8 +74,11 @@ info "${#vm_list[@]} server(s) found for pattern $server : ${vm_list[*]}"
 LN
 [ ${#vm_list[@]} -eq 0 ] && exit 1
 
+#	============================================================================
 #	Démarre les VMs :
 typeset -i nr_vm_started=0
+typeset	-a vm_started_list
+
 for vm in ${vm_list[*]}
 do
 
@@ -83,19 +87,31 @@ do
 		exec_cmd -c "~/plescripts/virtualbox/start_vm_infra"
 		[ $? -eq 0 ] && nr_vm_started=nr_vm_started+1
 	else
-		line_separator
 		exec_cmd -c "VBoxManage startvm $vm --type headless"
 		if [ $? -eq 0 ]
 		then
 			nr_vm_started=nr_vm_started+1
-			[ $wait_os == yes ] && exec_cmd wait_server $vm && LN || true
+			vm_started_list+=( $vm )
 		else
 			error "Failed to start $vm" 
 		fi
+		LN
 	fi
 
 done
 
+#	============================================================================
+if [ $wait_os == yes ]
+then
+	line_separator
+	for vm in ${vm_started_list[*]}
+	do
+		exec_cmd wait_server $vm
+		LN
+	done
+fi
+
+#	============================================================================
 if [ $nr_vm_started -eq ${#vm_list[@]} ]
 then
 	exit 0	# Toutes les VMs ont démarrés.

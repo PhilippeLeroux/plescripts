@@ -6,7 +6,7 @@
 
 #	Retourne tous les nœuds du cluster moins le nœud courant.
 #	Si le serveur courant n'appartient pas à un cluster la fonction ne retourne rien.
-function get_other_nodes
+function _get_other_nodes
 {
 	if $(test_if_cmd_exists olsnodes)
 	then
@@ -18,8 +18,9 @@ function get_other_nodes
 	fi
 }
 
-typeset -r gi_node_list=$(get_other_nodes)
-typeset -r gi_current_node=$(hostname -s)
+typeset -r	gi_node_list=$(_get_other_nodes)
+typeset -r	gi_current_node=$(hostname -s)
+typeset	-ri	gi_count_nodes=$(( $(wc -w<<<"$gi_node_list") + 1 ))
 
 #	Exécute la commande "$@" sur tous les autres nœuds du cluster
 #	if $1 == -c script not interupted on error.
