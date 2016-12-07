@@ -84,8 +84,15 @@ function ask_for_variable
 	eval "$var_name=$(echo -E '$var_value')"
 }
 
-vm_p="$(VBoxManage list systemproperties | grep "Default machine folder:" | tr -s [:space:] | cut -d' ' -f4-)"
-ask_for_variable vm_p "VMs folder :"
+test_if_cmd_exists VBoxManage
+if [ $? -eq 0 ]
+then
+	vm_p="$(VBoxManage list systemproperties | grep "Default machine folder:" | tr -s [:space:] | cut -d' ' -f4-)"
+	ask_for_variable vm_p "VMs folder :"
+else
+	error "VBox n'est pas installé ou VBoxManage n'est pas dans le PATH"
+	LN
+fi
 
 ask_for_variable full_linux_iso_n "Full path for Oracle Linux 7 ISO (...V100082-01.iso) :"
 

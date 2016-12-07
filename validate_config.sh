@@ -41,10 +41,10 @@ done
 
 typeset -i count_errors=0
 
-function scripts_exist
+function scripts_exists
 {
 	line_separator
-	info -n "Directory exist '$HOME/plescripts' "
+	info -n "Directory exists '$HOME/plescripts' "
 	if [ ! -d "$HOME/plescripts" ]
 	then
 		info -f "[$KO]"
@@ -56,7 +56,7 @@ function scripts_exist
 	LN
 }
 
-function runInstaller_exist
+function runInstaller_exists
 {
 	info -n "Exist '$HOME/$oracle_install/database/runInstaller' "
 	if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
@@ -103,10 +103,10 @@ function validate_NFS_exports
 	LN
 }
 
-function ISO_OLinux7_exist
+function ISO_OLinux7_exists
 {
 	line_separator
-	info -n "ISO Oracle Linux 7 exist $full_linux_iso_name "
+	info -n "ISO Oracle Linux 7 exists $full_linux_iso_name "
 	if [ ! -f "$full_linux_iso_name" ]
 	then
 		info -f "[$KO]"
@@ -200,13 +200,13 @@ function test_tools
 	LN
 }
 
-scripts_exist
+scripts_exists
 
-runInstaller_exist
+runInstaller_exists
 
 validate_NFS_exports
 
-ISO_OLinux7_exist
+ISO_OLinux7_exists
 
 validate_resolv_conf
 
@@ -218,7 +218,7 @@ exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
 line_separator
 info -n "~/plescripts/configure_global.cfg.sh executed "
 hn=$(hostname -s)
-if [[ "$hn" == "$client_hostname" && "$USER" == "$common_user_name" ]]
+if [[ "$hn" == "$client_hostname" && "$USER" == "$common_user_name" && x"$vm_path" != x ]]
 then
 	info -f "[$OK]"
 else
