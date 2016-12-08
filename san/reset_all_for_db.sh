@@ -46,7 +46,7 @@ then
 	cfg_exist $db use_return_code
 	if [ $? -ne 0 ]
 	then
-		error "Configuration file not exists, use -db"
+		error "Configuration file not exists, use -count_nodes"
 		LN
 		info "$str_usage"
 		exit 1
