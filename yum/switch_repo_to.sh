@@ -15,7 +15,12 @@ typeset	release=$default_yum_repository_release
 typeset -r str_usage=\
 "Usage : $ME
 	-local|-internet
-	[-release=$release]	latest|R3|R4
+	[-release=$default_yum_repository_release]	latest|R3|R4
+
+Permet d'activer des dépôts, il est fortement
+recommandé d'utiliser le dépôt $default_yum_repository_release.
+
+Le flag -internet ne sert que pour des serveurs de tests.
 "
 
 while [ $# -ne 0 ]
@@ -57,7 +62,7 @@ do
 done
 
 exit_if_param_invalid switch_to "local internet"	"$str_usage"
-exit_if_param_invalid release "latest R3 R4" "$str_usage"
+exit_if_param_invalid release "latest R3 R4"		"$str_usage"
 
 function switch_local_repository
 {
@@ -102,7 +107,7 @@ function switch_internet_repository
 
 		R3)
 			exec_cmd "yum-config-manager --disable ol7_UEKR4 >/dev/null"
-			exec_cmd "yum-config-manager --enable _ol7_UEKR3 >/dev/null"
+			exec_cmd "yum-config-manager --enable ol7_UEKR3 >/dev/null"
 			;;
 
 		R4)

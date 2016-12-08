@@ -1,30 +1,55 @@
-* sync_oracle_repository.sh ne doit être exécuté que sur le serveur d'infra.
+* Dépôts par défaut.
 
-	* -copy_iso :
+	Pour le serveur d'infra il est impératif que seul le dépôt `latest` soit
+	activer.
 
-		Duplique le CD Oracle Linux, le synchronise puis export NFS du dépôt sur
-		le réseau public des VMs.
+	Avec les dépôts `R3` ou `R4`, `target` fonctionne vraiment très mal et est
+	inutilisable. Toutes les BDD seront corrompus.
 
-	* -update_repository_file_only :
+	Je n'ai pas testé l'activation des dépôts `R3` ou `R4` uniquement pour les
+	serveurs de BDD.
 
-		Met à jour le fichier public-yum-ol7.repo qui est à utiliser sur les VMs.
+	Pour que le dépôt `R3` ou `R4` soit disponible pour les serveurs de BDD il
+	faut les télécharger sur le serveur d'infra :
+	```
+	ssh root@K2
+	cd ~/plescripts/yum
+	./sync_oracle_repository.sh -release=R3
+	```
 
-	* Pas de paramètre :
+	Ensuite se connecter sur le serveur de BDD :
+	```
+	cd ~/plescripts/yum
+	switch_repo_to.sh -local -release=R3
+	yum update -y
+	```
 
-		Teste si des mises à jour sont disponibles, si oui met à jour le serveur et
-		synchronise le dépôt.
+* Description des dépôts OL7
+
+	[Documentation](https://docs.oracle.com/cd/E52668_01/E60259/html/ol7-install.html)
+
+* sync_oracle_repository.sh
+
+	Ne doit être exécuté que sur le serveur d'infra.
+
+	Synchronise le dépôt local ol7 avec le dépôt internet.
+
+	Avec le paramètre -use_tar=name.tar.gz, extrait le dépôt contenu dans l'archive.
+
+	Teste si des mises à jour sont disponibles, si oui synchronise le dépôt et
+	met à jour le serveur.
+
+	Tous les serveurs du réseau virtuelle utilise le dépôt du serveur d'infra
+	pour se mettre à jour.
 
 * init_infra_repository.sh
-  - Clone le dépôt OL7 sur K2 (ou restaure la sauvegarde locale)
-  - Met à jour le master.
 
-  **Note :** Ce script n'est pas lancé lors de la création du serveur K2, il faut le faire
-  explicitement.
+	Doit être exécuté sur le virtual-host.
+
+	Clone le dépôt OL7 sur K2, ou restaure la sauvegarde locale.
 
 * backup_infra_repository.sh
 
-  Sauvegarde le dépôt OL7 du serveur K2 en locale.
+	Doit être exécuté sur le virtual-host.
 
-* public-yum-ol7.repo
-	- Doit être déployé sur tous les serveurs.
-	- Tous les serveurs doivent monter l'export sur /mnt
+	Sauvegarde le dépôt OL7 du serveur K2 en locale.

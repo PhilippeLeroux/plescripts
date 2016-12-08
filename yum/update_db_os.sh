@@ -102,9 +102,7 @@ else
 	execute_on_all_nodes_v2 "yum -y update"
 	LN
 
-	line_separator
-	info "Configure oracleasm :"
-	execute_on_all_nodes_v2 "~/plescripts/oracle_preinstall/configure_oracleasm.sh"
+	info "Si des FS du type OCFS2 sont utilisés, mettre à jour la configuration."
 	LN
 
 	line_separator

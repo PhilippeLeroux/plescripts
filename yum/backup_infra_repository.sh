@@ -7,7 +7,10 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME"
+"Usage : $ME
+
+Effectue une sauvegarde locale du dépôt yum de $infra_hostname.
+Doit être exécuté sur $client_hostname."
 
 script_banner $ME $*
 

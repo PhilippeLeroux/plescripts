@@ -8,7 +8,10 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME"
+"Usage : $ME
+
+Initialise le dépôt yum sur le serveur $infra_hostname.
+Doit être exécuté depuis $client_hostname."
 
 script_banner $ME $*
 

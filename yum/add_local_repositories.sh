@@ -7,7 +7,11 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -role=master|infra" 
+"Usage : $ME -role=master|infra
+Créé les dépôts locaux yum. Les dépôts sont hébergés par $infra_hostname.
+	-role=master sur le serveur $master_hostname.
+	-role=infra sur le serveur $infra_hostname.
+" 
 
 script_banner $ME $*
 
@@ -52,8 +56,13 @@ else
 	url_is="baseurl=file://${infra_olinux_repository_path%/*}"
 fi
 
-if ! grep -q ol7_local /etc/yum.repos.d/public-yum-ol7.repo
+if ! grep -q local_ol7_latest /etc/yum.repos.d/public-yum-ol7.repo
 then
+	info "Update recent public-yum-ol7.repo"
+	exec_cmd mv /etc/yum.repos.d/public-yum-ol7.repo /etc/yum.repos.d/public-yum-ol7.repo.bck
+	exec_cmd wget -O /etc/yum.repos.d/public-yum-ol7.repo http://public-yum.oracle.com/public-yum-ol7.repo
+	LN
+
 	info "Add repo local_ol7_latest, local_ol7_UEKR3 & local_ol7_UEKR4"
 	cat <<-EOS >>/etc/yum.repos.d/public-yum-ol7.repo
 

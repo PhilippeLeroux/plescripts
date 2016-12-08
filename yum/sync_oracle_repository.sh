@@ -9,6 +9,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 \t[-use_tar=name] Usage tar 'name' to create local repository.
+\t[-release=$default_yum_repository_release]	latest|R3|R4
 
 Update OS & sync local repository
 "
@@ -18,6 +19,7 @@ script_banner $ME $*
 must_be_executed_on_server "$infra_hostname"
 
 typeset	use_tar=none
+typeset	release=$default_yum_repository_release
 
 while [ $# -ne 0 ]
 do
@@ -29,6 +31,11 @@ do
 
 		-use_tar=*)
 			use_tar=${1##*=}
+			shift
+			;;
+
+		-release=*)
+			release=${1##*=}
 			shift
 			;;
 
@@ -46,6 +53,8 @@ do
 			;;
 	esac
 done
+
+exit_if_param_invalid	release	"latest R3 R4"	"$str_usage"
 
 typeset	-r repo_config_path=/etc/yum.repos.d
 typeset	-r repo_config_name=public-yum-ol7.repo
@@ -98,7 +107,7 @@ else
 	repoid_list="--repoid=ol7_latest"
 	case $release in
 		R3|R4)
-			repoid_list="$repoid_list --repoid=ol7_UEK$default_yum_repository_release"
+			repoid_list="$repoid_list --repoid=ol7_UEK$release"
 			;;
 	esac
 
@@ -120,6 +129,8 @@ LN
 
 line_separator
 exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=infra
+#	Pour le serveur d'infra les dépôts R3 ou R4 ne doivent pas être activés, trop
+#	de problème avec target.
 exec_cmd ~/plescripts/yum/switch_repo_to.sh -local
 LN
 
