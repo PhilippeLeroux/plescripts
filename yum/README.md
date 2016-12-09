@@ -1,28 +1,12 @@
 * Dépôts par défaut.
 
-	Pour le serveur d'infra il est impératif que seul le dépôt `latest` soit
-	activer.
+	Le dépôt R3 est activé sur tous les serveurs.
 
-	Avec les dépôts `R3` ou `R4`, `target` fonctionne vraiment très mal et est
-	inutilisable. Toutes les BDD seront corrompus.
-
-	Je n'ai pas testé l'activation des dépôts `R3` ou `R4` uniquement pour les
-	serveurs de BDD.
-
-	Pour que le dépôt `R3` ou `R4` soit disponible pour les serveurs de BDD il
-	faut les télécharger sur le serveur d'infra :
-	```
-	ssh root@K2
-	cd ~/plescripts/yum
-	./sync_oracle_repository.sh -release=R3
-	```
-
-	Ensuite se connecter sur le serveur de BDD :
-	```
-	cd ~/plescripts/yum
-	switch_repo_to.sh -local -release=R3
-	yum update -y
-	```
+	Fonctionnement dès dépôts :
+	* Le répertoire commun à tous les dépôts est : /repo/OracleLinux
+	* Chaque dépôt a un ss-répertoire dans : /repo/OracleLinux
+	* Le createrepo doit se faire sur chaque ss-répertoire et non pas sur le
+	répertoire /repo/OracleLinux
 
 * Description des dépôts OL7
 

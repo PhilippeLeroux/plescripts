@@ -81,6 +81,31 @@ function nfs_export_repo
 	LN
 }
 
+#	Le répertoire commun à tous les dépôts est : $infra_olinux_repository_path
+#	Chaque dépôt a un ss-répertoire dans : $infra_olinux_repository_path
+#	Le createrepo doit se faire sur chaque ss-répertoire et non pas sur le
+#	répertoire $infra_olinux_repository_path
+function sync_repo
+{
+	typeset -r repo_name="$1"
+
+	info "Sync repository : $repo_name"
+	if [ ! -d $infra_olinux_repository_path/$repo_name ]
+	then
+		exec_cmd mkdir -p $infra_olinux_repository_path/$repo_name
+	fi
+	exec_cmd reposync	--newest-only									\
+						--download_path=$infra_olinux_repository_path	\
+						--repoid=$repo_name
+	LN
+
+	info "Update repository : $repo_name"
+	test_if_cmd_exists createrepo
+	[ $? -ne 0 ] && exec_cmd yum -y install createrepo
+	exec_cmd createrepo --update $infra_olinux_repository_path/$repo_name
+	LN
+}
+
 must_be_executed_on_server "$infra_hostname"
 
 line_separator
@@ -103,26 +128,14 @@ then #	$use_tar contient le dépôt OL7 à partir de ol7, gains de temps dans le
 	exec_cmd rm "${use_tar##*/}"
 	LN
 else
-	info "Sync local repository :"
-	repoid_list="--repoid=ol7_latest"
+	sync_repo ol7_latest
+
 	case $release in
 		R3|R4)
-			repoid_list="$repoid_list --repoid=ol7_UEK$release"
+			sync_repo ol7_UEK$release
 			;;
 	esac
-
-	exec_cmd -c reposync													\
-					--newest-only											\
-					--download_path=$infra_olinux_repository_path			\
-					$repoid_list
-	LN
 fi
-
-info "Update local repository :"
-test_if_cmd_exists createrepo
-[ $? -ne 0 ] && exec_cmd yum -y install createrepo
-exec_cmd createrepo --update $infra_olinux_repository_path
-LN
 
 nfs_export_repo
 LN

@@ -130,3 +130,6 @@ esac
 
 exec_cmd ~/plescripts/yum/clean_cache.sh
 LN
+
+exec_cmd yum repolist
+LN

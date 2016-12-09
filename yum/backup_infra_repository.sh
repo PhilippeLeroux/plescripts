@@ -43,7 +43,7 @@ typeset -r backup_name="yum_repo.tar.gz"
 typeset -r full_backup_name="$iso_olinux_path/$backup_name"
 [ -f "$full_backup_name" ] && confirm_or_exit "Backup exists. Remove"
 
-exec_cmd "ssh ${infra_conn} \"cd /repo; tar cf - ol7 | gzip -c > $backup_name\""
+exec_cmd "ssh ${infra_conn} \"cd /repo; tar cf - OracleLinux | gzip -c > $backup_name\""
 exec_cmd "scp ${infra_conn}:/repo/$backup_name $full_backup_name"
 exec_cmd "ssh ${infra_conn} \"rm -rf /repo/$backup_name\""
 LN

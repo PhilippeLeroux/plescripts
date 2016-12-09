@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -75,17 +76,14 @@ if [ $server_name == undef ]
 then
 	if [ $nr_node -eq -1 ]
 	then #	Test si une scan existe.
-		exec_cmd -c ping -c 1 $db-scan
+		cfg_exist $db use_return_code
 		if [ $? -eq 0 ]
-		then	# Oui : utilise l'adresse de scan
-			server_name=$db-scan
-		else	# Non : utilise le premier serveur.
-			server_name=$(printf "srv%s01" ${db})
+		then
+			typeset -ri max_nodes=$(cfg_max_nodes $db)
+			[ $max_nodes -gt 1 ] && server_name=$db-scan || true
 		fi
-		LN
-	else
-		server_name=$(printf "srv%s%02d" ${db} $nr_node)
 	fi
+	[ $server_name == undef ] && server_name=$(printf "srv%s01" ${db}) || true
 fi
 
 wait_server $server_name
