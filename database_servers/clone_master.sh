@@ -336,6 +336,11 @@ function configure_server
 	LN
 
 	line_separator
+	#	Si depuis la création du master le dépôt par défaut a changé, permet
+	#	de basculer sur le bon dépôt.
+	exec_cmd "ssh -t root@$server_name \". .bash_profile;	\
+					~/plescripts/yum/switch_repo_to.sh -local\""
+
 	test_if_rpm_update_available $server_name
 	[ $? -eq 0 ] && exec_cmd "ssh -t root@$server_name \"yum -y update\""
 	LN

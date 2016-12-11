@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -8,14 +7,13 @@ EXEC_CMD_ACTION=EXEC
 #	Toutes les IPs en dessous de 100 sont réservées.
 typeset	-ri	min_ip_node=100
 
-
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME retourne la première 'IP node' non utilisée.
 	[-range=<#>] Indique le nombre d'IP nodes non utilisées consécutives souhaité.
 
-La première 'IP node' non utilisée sera au minimum $min_ip_node, les 'IP nodes' inférieur
-étant réservées à d'autre usage que des serveurs Oracle.
+La première 'IP node' non utilisée sera au minimum $min_ip_node, les 'IP nodes'
+inférieur étant réservées à d'autres usages que des serveurs Oracle.
 "
 
 typeset range=1
@@ -56,44 +54,58 @@ while read ip_node rem
 do
 	[ $ip_node -lt $min_ip_node ] && continue
 
-	debug "Last used ip_node == $ip_node, range == $range, prev_ip_node == $prev_ip_node"
-
+	debug "IP used is $ip_node"
 	if [ $prev_ip_node -eq 0 ]
-	then	# Pas d'IP inférieur utilisée.
-		debug -n "Test : ip_node - range -ge min_ip_node == $(( ip_node - range )) -ge $min_ip_node : "
-		if [ $(( ip_node - range )) -ge $min_ip_node ]
+	then	# On vient de lire la première IP, vérifie si min_ip_node est utilisée.
+		debug "Case 1 : First IP found is ip_node($ip_node)"
+		if [ $ip_node -gt $min_ip_node ]
 		then
-			debug -f "$OK step 1"
-			ip_found=$(( ip_node - range ))
-			break
+			debug "\tTest if ip_node($ip_node) - min_ip_nod($min_ip_node) >= range($range) :"
+			if [ $(( ip_node - min_ip_node )) -ge $range ]
+			then
+				debug "\t\t$OK min_ip_node($min_ip_node) unused"
+				ip_found=$min_ip_node
+				break	# exit while
+			else
+				debug "\t\t$KO continue."
+			fi
 		else
-			debug -f "$KO"
+			debug "\tcontinue min_ip_node($min_ip_node) is used."
 		fi
-	else	# Il faut que l'écart entre les IPs soit gt range
-		debug -n "Test : ip_node - prev_ip_node -gt range == $(( ip_node - prev_ip_node )) -gt $range : "
+	else
+		debug "Case 2 : prev_ip_node == $prev_ip_node, ip_node == $ip_node"
+		debug "\tTest if ip_node($ip_node) - prev_ip_node($prev_ip_node) > range($range) :"
 		if [ $(( ip_node - prev_ip_node )) -gt $range ]
 		then
-			debug -f "$OK step 2"
-			ip_found=$(( prev_ip_node + 1 ))
-			break
+			debug "\t\t$OK ip_found = $ip_node - $range"
+			ip_found=$(( ip_node - range ))
+			break	# exit while
 		else
-			debug -f "$KO"
+			debug "\t\t$KO do nothing."
 		fi
 	fi
-	prev_ip_node=ip_node
-	[ "$DEBUG_FUNC" == enable ] && LN
+
+	prev_ip_node=$ip_node
+
+	[ "$DEBUG_MODE" == ENABLE ] && LN
 done<<<"$(cat /var/named/reverse.orcl	|\
 				grep "^[0-9]"			|\
 				grep -v arpa			|\
 				sort -n)"
 
+[ "$DEBUG_MODE" == ENABLE ] && LN
+
 debug "ip_found     = $ip_found"
 debug "prev_ip_node = $prev_ip_node"
-if [[ $ip_found -eq 0 && $prev_ip_node -eq 0 ]]
-then # Pas d'IP utilisée à partir de $min_ip_node
-	ip_found=$min_ip_node
-fi
-[ $ip_found -eq 0 ] && ip_found=prev_ip_node+1
-#[ $ip_found -lt $min_ip_node ] && ip_found=$min_ip_node
 
+if [ $prev_ip_node -eq 0 ]
+then #	Si prev_ip_node == 0 alors il n'y a pas d'IPs utilisées à partir de min_ip_node
+	ip_found=$min_ip_node
+elif [ $ip_found -eq 0 ]
+then #	Si ip_found == 0 alors pas d'IP trouvée, on prend donc la dernière IP + 1
+	ip_found=prev_ip_node+1
+fi
+
+debug "IPs free : [$ip_found,$(( ip_found + range - 1 ))] range of $range IPs."
+debug "return $ip_found"
 echo $ip_found

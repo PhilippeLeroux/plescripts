@@ -39,6 +39,16 @@ do
 	esac
 done
 
+#	Lors d'une mise à jour la configuration d'oracleasm a été perdu.
+#	Donc elle est refaite par précaution.
+function update_oracle_asm_configuration
+{
+	line_separator
+	info "Configure oracleasm :"
+	exec_cmd "~/plescripts/oracle_preinstall/configure_oracleasm.sh"
+	LN
+}
+
 test_if_cmd_exists olsnodes
 if [ $? -ne 0 ]
 then
@@ -68,10 +78,7 @@ then
 	exec_cmd "yum -y update"
 	LN
 
-	line_separator
-	info "Configure oracleasm :"
-	exec_cmd "~/plescripts/oracle_preinstall/configure_oracleasm.sh"
-	LN
+	update_oracle_asm_configuration
 
 	line_separator
 	info "Reboot"
@@ -82,32 +89,32 @@ else
 	LN
 
 	line_separator
-	info "Stop databases :"
+	info "Stop instances :"
 	while IFS='.' read prefix dbname suffix
 	do
-		exec_cmd -c srvctl stop database -db $dbname
+		exec_cmd -c srvctl stop instance -db $dbname -node $gi_current_node
 	done<<<"$(crsctl stat res -t | grep -E '^ora\..*\.db')"
 	LN
 
 	line_separator
-	info "Stop cluster :"
-	exec_cmd "crsctl stop cluster -all"
-	execute_on_all_nodes_v2 "crsctl stop crs"
+	info "Stop crs on node $gi_current_node :"
+	exec_cmd "crsctl stop crs"
 	LN
 
 	line_separator
-	info "update :"
-	#	test_if_rpm_update_available a mis à jour le cache sur le nœud courant.
-	execute_on_other_nodes yum makecache
-	execute_on_all_nodes_v2 "yum -y update"
+	exec_cmd "yum -y update"
 	LN
 
+	update_oracle_asm_configuration
+
+	line_separator
 	info "Si des FS du type OCFS2 sont utilisés, mettre à jour la configuration."
+	LN
+	info "Mettre à jour les noeuds $gi_node_list"
 	LN
 
 	line_separator
 	info "Reboot"
-	execute_on_other_nodes -c "systemctl reboot"
 	exec_cmd -c systemctl reboot
 	LN
 fi
