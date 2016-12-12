@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 
 EXEC_CMD_ACTION=EXEC
@@ -53,7 +54,7 @@ typeset	backup=todo
 
 if [ $time_server != internet ]
 then
-	backup=done
+	backup=is_done
 	info "Config $chrony_conf"
 	exec_cmd "cp $chrony_conf ${chrony_conf}.backup"
 	exec_cmd "sed -i '/^server.*iburst$/d' $chrony_conf"
@@ -64,7 +65,9 @@ fi
 if [ $role == infra ]
 then
 	[ $backup == todo ] && exec_cmd "cp $chrony_conf ${chrony_conf}.backup"
-	exec_cmd "sed -i 's/.*allow .*/allow ${infra_network}.0\/$if_pub_prefix/g' $chrony_conf"
+
+	typeset	-r network=$(right_pad_ip $infra_network)
+	exec_cmd "sed -i 's/.*allow .*/allow ${network}\/$if_pub_prefix/g' $chrony_conf"
 	info "Config firewall"
 	exec_cmd "firewall-cmd --add-service=ntp --permanent --zone=trusted"
 	exec_cmd "firewall-cmd --reload"

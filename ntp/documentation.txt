@@ -1,5 +1,0 @@
-chronyc sources
-chronyc tracking
-chronyc sourcestats
-
-chronyc -a makestep

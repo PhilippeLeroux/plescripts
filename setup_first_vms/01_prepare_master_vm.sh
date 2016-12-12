@@ -56,12 +56,21 @@ exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=master
 exec_cmd ~/plescripts/yum/switch_repo_to.sh -local
 LN
 
-exec_cmd ~/plescripts/setup_first_vms/02_update_config.sh
+exec_cmd "~/plescripts/setup_first_vms/02_update_config.sh"
 
-exec_cmd ~/plescripts/ntp/config_ntp.sh -role=master
+case $ntp_tool in
+	chrony)
+		exec_cmd ~/plescripts/ntp/configure_chrony.sh -role=master
+		;;
+
+	ntp)
+		exec_cmd ~/plescripts/ntp/configure_ntp.sh -role=master
+		;;
+esac
 
 exec_cmd ~/plescripts/gadgets/customize_logon.sh -name=$master_hostname
 
 line_separator
+#	N'a pas d'effet si le kernel est mis à jour.
 exec_cmd ~/plescripts/shell/set_plymouth_them
 LN

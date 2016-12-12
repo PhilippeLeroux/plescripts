@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -68,7 +69,8 @@ function nfs_export_repo
 	exec_cmd -c "grep -q \"$infra_olinux_repository_path\" /etc/exports"
 	if [ $? -ne 0 ]
 	then
-		exec_cmd "echo \"$infra_olinux_repository_path ${infra_network}.0/${if_pub_prefix}(ro,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
+		typeset	-r network=$(right_pad_ip $infra_network)
+		exec_cmd "echo \"$infra_olinux_repository_path $network/${if_pub_prefix}(ro,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
 		exec_cmd exportfs -ua
 		exec_cmd exportfs -a
 		LN

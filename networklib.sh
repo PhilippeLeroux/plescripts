@@ -1,18 +1,33 @@
 # vim: ts=4:sw=4
 
+#*>	pad ip $1 with .0
+#*> Ex : 192.250.240 ==> 192.250.240.0
+function right_pad_ip
+{
+	typeset	ip2pad="$1"
+
+	typeset -ri count_zeros=3-$(grep -o "\."<<<"$ip2pad"|wc -l)
+	for i in $( seq $count_zeros )
+	do
+		ip2pad=${ip2pad}.0
+	done
+
+	echo "$ip2pad"
+}
+
 #*> Convert net prefix to net mask
 #*>	$1 net prefix
 #*> return net mask
 function convert_net_prefix_2_net_mask
 {
-	typeset -i net_prefix=$1
+	typeset -i	net_prefix=$1
+	typeset		mask
 
 	while [ $net_prefix -ne 0 ]
 	do
 		if [ $net_prefix -lt 8 ]
 		then
-			binary=$(fill 1 $net_prefix)
-			typeset -i decimal=2#$binary
+			typeset -i	decimal=2#$(fill 1 $net_prefix)
 			[ x"$mask" == x ] && mask=$decimal || mask="${mask}.$decimal"
 			net_prefix=0
 		else
@@ -21,7 +36,7 @@ function convert_net_prefix_2_net_mask
 		fi
 	done
 
-	echo $mask
+	right_pad_ip "$mask"
 }
 
 #*>	Retourne l'adresse mac de l'Iface $1

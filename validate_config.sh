@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -85,7 +86,8 @@ function _is_exported
 	typeset -r	directory=$1
 
 	info -n "	- $directory "
-	if grep -qE "${directory}\s*${infra_network}.0.*" /etc/exports
+	typeset	-r	network=$(right_pad_ip $infra_network)
+	if grep -qE "${directory}\s*${network}.*" /etc/exports
 	then
 		info -f "[$OK]"
 	else
@@ -96,7 +98,8 @@ function _is_exported
 
 function validate_NFS_exports
 {
-	info "Validate NFS exports from $client_hostname on network ${infra_network}.0 :"
+	typeset	-r	network=$(right_pad_ip $infra_network)
+	info "Validate NFS exports from $client_hostname on network ${network} :"
 	_is_exported $HOME/plescripts
 	_is_exported $HOME/$oracle_install
 	_is_exported $iso_olinux_path

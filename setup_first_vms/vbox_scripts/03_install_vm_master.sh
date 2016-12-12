@@ -72,6 +72,9 @@ function master_ssh
 
 script_start
 
+#	La VM ne doit pas être démarrée.
+stop_vm $master_hostname -wait_os >/dev/null 2>&1
+
 line_separator
 info "Cleanup :"
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh	\
