@@ -87,13 +87,15 @@ typeset -r	iso_name=${full_linux_iso_name##*/}
 typeset	-r	iso_copy=COPY_OF_${iso_name}
 typeset	-r	ks_cfg="$iso_olinux_path/ks.cfg"
 
-function copy_iso_2_dir	# $1 destination
+#	Copie le contenu de l'ISO dans $1
+function copy_iso_2_dir
 {
 	typeset -r	dest=$1
 
 	if [ -d $dest ]
 	then
 		info "directory '$dest' exist, copy skipped."
+		LN
 		return 0
 	fi
 
@@ -133,7 +135,7 @@ function copy_ks_file
 
 #	$1 : répertoire contenant l'ISO dupliqué.
 #	Le fichier kickstart sera chargé au boot.
-function update_isolinux_cfg	# $1 dest
+function update_isolinux_cfg
 {
 	typeset -r	isolinux_cfg=$1/isolinux/isolinux.cfg
 
@@ -154,6 +156,8 @@ function update_isolinux_cfg	# $1 dest
 
 function setup_ks_file
 {
+	info "Configure kickstart file."
+
 	info -n "Define root password for VM : "
 	read root_password
 	if [ x"$root_password" == x ]
@@ -163,7 +167,12 @@ function setup_ks_file
 	fi
 	LN
 
-	info "Update ks file :"
+	#	Le fichier de référence $master_ks_cfg et copié au niveu de l'ISO sous le
+	#	nom de $ks_cfs. C'est le fichier $ks_cfg qui est customisé.
+	exec_cmd "cp $master_ks_cfg $ks_cfg"
+	LN
+
+	info "Update kickstart file :"
 	LN
 
 	info " * update keymap to $keymap"
@@ -172,6 +181,12 @@ function setup_ks_file
 
 	info " * update lang to $locale"
 	exec_cmd "sed -i \"s/^lang.*$/lang $locale/\" $ks_cfg"
+	LN
+
+	#	L'objectif est que l'utilisateur ne clic par partout et fasse planter
+	#	l'installation en pensant qu'il doivent saisir dès informations.
+	info "Cmdline install"
+	exec_cmd "sed -i 's/graphical/cmdline/g' $ks_cfg"
 	LN
 
 	info " * update root password"
@@ -191,7 +206,6 @@ function setup_ks_file
 	LN
 
 	info "Update network"
-	LN
 	typeset -r mask=$(convert_net_prefix_2_net_mask $if_pub_prefix)
 	exec_cmd "sed -i \"s/network  --bootproto=static .*/network  --bootproto=static --device=$if_pub_name --ip=$master_ip --netmask=${mask} --ipv6=auto --activate/\" $ks_cfg"
 	LN
@@ -210,7 +224,6 @@ fi
 rm -f /tmp/vc
 
 line_separator
-exec_cmd "cp $master_ks_cfg $ks_cfg"
 setup_ks_file
 LANG=C
 
@@ -236,6 +249,7 @@ update_isolinux_cfg ./$iso_copy
 test_pause "Setup ISO copy done."
 
 info "Create bootable ISO ${iso_name} from $iso_copy"
+add_dynamic_cmd_param "-quiet"
 add_dynamic_cmd_param '-r -V "OL-7.2 Server.x86_64" -cache-inodes -J -l'
 add_dynamic_cmd_param '-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot'
 add_dynamic_cmd_param "-boot-load-size 4 -boot-info-table -o ${iso_name} $iso_copy/"

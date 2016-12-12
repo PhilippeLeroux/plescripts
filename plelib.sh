@@ -513,7 +513,7 @@ function fake_exec_cmd
 #*< Si la première commande est ssh alors recherche la commande exécutée par ssh
 function get_cmd_name
 {
-    typeset	-a	argv
+	typeset	-a	argv
 	read -a argv <<<"$@"
 
 	typeset -ri size=${#argv[@]}
@@ -727,7 +727,7 @@ function add_dynamic_cmd_param
 {
 	typeset -r	param="$1"
 	typeset -ri	len=${#param}
-	ple_dyn_param_cmd[${#ple_dyn_param_cmd[@]}]="$param"
+	ple_dyn_param_cmd+=( "$param" )
 
 	if [[ $len -gt $ple_dyn_param_max_len && $(( len + ple_param_margin )) -lt $(term_cols) ]]
 	then
