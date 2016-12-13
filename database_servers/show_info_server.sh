@@ -33,7 +33,7 @@ done
 [[ $db == undef && x"$ID_DB" == x ]] && db=$ID_DB
 exit_if_param_undef db
 
-cfg_exist $db
+cfg_exists $db
 
 typeset -ri max_nodes=$(cfg_max_nodes $db)
 
@@ -89,7 +89,7 @@ function print_scan
 function print_disks
 {
 	typeset -r	file=$1
-	exit_if_file_not_exist $file
+	exit_if_file_not_exists $file
 
 	typeset -r upper_db=$(to_upper $db)
 	typeset -i no_first_disk

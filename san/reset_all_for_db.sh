@@ -43,7 +43,7 @@ exit_if_param_undef db	"$str_usage"
 
 if [ $count_nodes -eq -1 ]
 then
-	cfg_exist $db use_return_code
+	cfg_exists $db use_return_code
 	if [ $? -ne 0 ]
 	then
 		error "Configuration file not exists, use -count_nodes"

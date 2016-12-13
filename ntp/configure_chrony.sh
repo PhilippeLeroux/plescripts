@@ -46,7 +46,7 @@ done
 exit_if_param_invalid role "master infra" "$str_usage"
 
 typeset -r chrony_conf=/etc/chrony.conf
-exit_if_file_not_exist $chrony_conf
+exit_if_file_not_exists $chrony_conf
 
 [ $role == master ] && time_server=$infra_hostname || time_server=$master_time_server
 
@@ -68,9 +68,6 @@ then
 
 	typeset	-r network=$(right_pad_ip $infra_network)
 	exec_cmd "sed -i 's/.*allow .*/allow ${network}\/$if_pub_prefix/g' $chrony_conf"
-	info "Config firewall"
-	exec_cmd "firewall-cmd --add-service=ntp --permanent --zone=trusted"
-	exec_cmd "firewall-cmd --reload"
 	LN
 fi
 

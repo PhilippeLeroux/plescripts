@@ -50,7 +50,7 @@ done
 
 exit_if_param_undef	db					"$str_usage"
 
-cfg_exist $db
+cfg_exists $db
 
 # firewall-cmd --zone=zone --add-port=7777/tcp --add-port=7777/udp
 # firewall-cmd --permanent --zone=zone --add-port=7777/tcp --add-port=7777/udp

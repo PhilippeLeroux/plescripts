@@ -48,7 +48,7 @@ exit_if_param_invalid role "master infra" "$str_usage"
 typeset -r ntp_conf=/etc/ntp.conf
 typeset	-r sysconfig_ntpd=/etc/sysconfig/ntpd
 
-exit_if_file_not_exist $ntp_conf
+exit_if_file_not_exists $ntp_conf
 
 [ $role == master ] && time_server=$infra_hostname || time_server=$master_time_server
 
@@ -106,9 +106,6 @@ then
 
 	typeset	-r network=$(right_pad_ip $infra_network)
 	exec_cmd "sed -i 's/.*allow .*/allow ${network}\/$if_pub_prefix/g' $ntp_conf"
-#	info "Config firewall"
-#	exec_cmd "firewall-cmd --add-service=ntp --permanent --zone=trusted"
-#	exec_cmd "firewall-cmd --reload"
 	LN
 
 	exec_cmd "systemctl enable ntpdate"
@@ -122,5 +119,6 @@ info "Enabled & start ntpd"
 exec_cmd "systemctl enable ntpd"
 exec_cmd "systemctl start ntpd"
 LN
+
 exec_cmd "ntpq -p"
 LN

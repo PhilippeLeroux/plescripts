@@ -122,7 +122,7 @@ done
 
 exit_if_param_undef	db	"$str_usage"
 
-cfg_exist $db
+cfg_exists $db
 
 typeset -r db_cfg_path=$cfg_path_prefix/$db
 
@@ -194,7 +194,7 @@ function create_response_file	# $1 fichier décrivant les disques
 
 	line_separator
 	info "Create $rsp_file for grid installation."
-	exit_if_file_not_exist template_grid_${oracle_release%.*.*}.rsp
+	exit_if_file_not_exists template_grid_${oracle_release%.*.*}.rsp
 	exec_cmd cp -f template_grid_${oracle_release%.*.*}.rsp $rsp_file
 	LN
 
@@ -444,6 +444,22 @@ function remove_tfa_on_all_nodes
 	done
 }
 
+function add_scan_to_local_known_hosts
+{
+	typeset	-r scan_cfg="$cfg_path_prefix/$db/scanvips"
+	typeset	scan
+	typeset	vip1
+	typeset	vip2
+	typeset	vip3
+	IFS=':' read scan vip1 vip2 vip3<<<"$(cat $scan_cfg)"
+
+	typeset -r pub_key=$(ssh-keyscan -t ecdsa $scan | cut -d\  -f2-)
+	
+	exec_cmd "sed -i '/$scan/d' ~/.ssh/known_hosts"
+	exec_cmd "echo '$scan,$vip1,$vip2,$vip3 $pub_key' >> ~/.ssh/known_hosts"
+	LN
+}
+
 #	======================================================================
 #	MAIN
 #	======================================================================
@@ -457,7 +473,7 @@ done
 
 if [ $max_nodes -gt 1 ]
 then
-	exit_if_file_not_exist $db_cfg_path/scanvips
+	exit_if_file_not_exists $db_cfg_path/scanvips
 	typeset -r scan_name=$(cat $db_cfg_path/scanvips | cut -d':' -f1)
 
 	info "==> scan name     = $scan_name"
@@ -520,7 +536,7 @@ then
 			LN
 			set_ASM_memory_target_low_and_restart_asm
 			LN
-			[ $force_MGMTDB == no ] && info "La base -MGMTDB n'est pas créée."
+			[ $force_MGMTDB == no ] && info "La base -MGMTDB n'est pas créée." && LN
 		else
 			runConfigToolAllCommands
 		fi
@@ -538,6 +554,8 @@ then
 fi
 
 [ $skip_create_dg == no ] && create_all_dgs || true
+
+[ $max_nodes -gt 1 ] && add_scan_to_local_known_hosts || true
 
 stats_tt stop grid_installation
 

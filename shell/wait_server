@@ -101,7 +101,7 @@ then
 	if [[ -v ID_DB ]]
 	then
 		typeset -i	exit_code=0
-		cfg_exist $ID_DB
+		cfg_exists $ID_DB
 		typeset	-ri max_nodes=$(cfg_max_nodes $ID_DB)
 		for i in $( seq $max_nodes )
 		do

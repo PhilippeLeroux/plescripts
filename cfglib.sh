@@ -4,7 +4,7 @@ typeset -r cfg_path_prefix=~/plescripts/database_servers
 
 #*> $1 db
 #*> $2 use_return_code : return 1 instead of exit 1
-function cfg_exist
+function cfg_exists
 {
 	typeset	-r	db=$1
 

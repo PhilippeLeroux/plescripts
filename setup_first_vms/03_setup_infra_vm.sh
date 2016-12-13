@@ -19,11 +19,20 @@ must_be_executed_on_server "$infra_hostname"
 
 line_separator
 #	Le serveur sert de gateway sur internet.
+#	https://www.centos.org/forums/viewtopic.php?t=53819
 exec_cmd "sysctl -w net.ipv4.ip_forward=1"
 exec_cmd "echo \"net.ipv4.ip_forward = 1\" >> /etc/sysctl.d/ip_forward.conf"
-typeset	-r network=$(right_pad_ip $infra_network)
-exec_cmd "firewall-cmd --permanent --direct --passthrough ipv4 -t nat -I POSTROUTING -o $if_net_name -j MASQUERADE -s $network/$if_net_prefix"
-exec_cmd "firewall-cmd --reload"
+exec_cmd firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0	\
+					-o $if_net_name -j MASQUERADE
+
+exec_cmd firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0		\
+					-i $if_pub_name -o $if_net_name -j ACCEPT
+
+exec_cmd firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0		\
+					-i $if_net_name -o $if_pub_name -m state					\
+					--state RELATED,ESTABLISHED -j ACCEPT
+
+exec_cmd firewall-cmd --reload
 LN
 
 line_separator

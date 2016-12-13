@@ -80,8 +80,8 @@ do
 	esac
 done
 
-exit_if_dir_not_exist $iso_olinux_path
-exit_if_file_not_exist $master_ks_cfg
+exit_if_dir_not_exists $iso_olinux_path
+exit_if_file_not_exists $master_ks_cfg
 
 typeset -r	iso_name=${full_linux_iso_name##*/}
 typeset	-r	iso_copy=COPY_OF_${iso_name}

@@ -73,7 +73,7 @@ done
 
 exit_if_param_undef db 		"$str_usage"
 
-cfg_exist $db
+cfg_exists $db
 
 typeset -ri max_nodes=$(cfg_max_nodes $db)
 [ $node -eq -1 ] && [ $max_nodes -eq 1 ] && node=1
@@ -85,6 +85,26 @@ typeset -r server_name=$cfg_server_name
 typeset -r disk_type=$(cat $cfg_path_prefix/$db/disks | tail -1 | cut -d: -f1)
 
 typeset -r vg_name=asm01
+
+#	Exécute, via ssh, la commande '$@' sur le master
+function ssh_master
+{
+	exec_cmd "ssh -t root@$master_hostname '$@'"
+}
+
+#	Exécute, via ssh, la commande '$@' sur le serveur de BDD
+function ssh_server
+{
+	if [ "$1" == "-c" ]
+	then
+		typeset	-r farg="-c"
+		shift
+	else
+		typeset	-r farg
+	fi
+
+	exec_cmd $farg "ssh -t root@$server_name '$@'"
+}
 
 function register_server_2_dns
 {
@@ -107,27 +127,27 @@ function run_oracle_preinstall
 	#	Source .bash_profile pour éviter les erreurs du script oracle_preinstall/02_install_some_rpms.sh
 	#	Voir dans le script la section "NFS problem workaround"
 	#	Note je ne sais pas si c'est efficace, c'est un teste.
-	exec_cmd "ssh -t root@$server_name \". .bash_profile; plescripts/oracle_preinstall/run_all.sh $db_type\""
+	ssh_server ". .bash_profile; plescripts/oracle_preinstall/run_all.sh $db_type"
 	LN
 
 	line_separator
 	info "Create link for root user."
-	exec_cmd "ssh -t root@$server_name 'ln -s plescripts/disk ~/disk'"
-	exec_cmd "ssh -t root@$server_name 'ln -s plescripts/yum ~/yum'"
+	ssh_server "ln -s plescripts/disk ~/disk"
+	ssh_server "ln -s plescripts/yum ~/yum"
 	LN
 
 	info "Create link for grid user."
-	exec_cmd "ssh -t root@$server_name ln -s /mnt/plescripts /home/grid/plescripts"
-	exec_cmd "ssh -t root@$server_name ln -s /home/grid/plescripts/dg /home/grid/dg"
+	ssh_server "ln -s /mnt/plescripts /home/grid/plescripts"
+	ssh_server "ln -s /home/grid/plescripts/dg /home/grid/dg"
 	LN
 
 	info "Create link for Oracle user."
-	exec_cmd "ssh -t root@$server_name ln -s /mnt/plescripts /home/oracle/plescripts"
-	exec_cmd "ssh -t root@$server_name ln -s /home/oracle/plescripts/db /home/oracle/db"
+	ssh_server "ln -s /mnt/plescripts /home/oracle/plescripts"
+	ssh_server "ln -s /home/oracle/plescripts/db /home/oracle/db"
 	LN
 
 	info "Add grid & oracle accounts to group users (to read NFS mount points)."
-	exec_cmd "ssh -t root@$server_name plescripts/database_servers/add_oracle_grid_into_group_users.sh"
+	ssh_server "~/plescripts/database_servers/add_oracle_grid_into_group_users.sh"
 	LN
 }
 
@@ -170,10 +190,11 @@ function reboot_server
 function configure_ifaces_hostname_and_reboot
 {
 	info "Configure network..."
-	exec_cmd "ssh -t $master_conn \"~/plescripts/configure_network/setup_iface_and_hostename.sh -db=$db -node=$node\""
+	ssh_master "~/plescripts/configure_network/setup_iface_and_hostename.sh	\
+															-db=$db -node=$node"
 	LN
 
-	#	Le reboot est nécessaire à cause du changement du nom du serveur.
+	# Le reboot est nécessaire à cause du changement du nom du serveur et de son IP.
 	reboot_server $server_name
 }
 
@@ -182,7 +203,7 @@ function setup_iscsi_inititiator
 {
 	info "Setup initiator name :"
 	iscsi_initiator=$(get_initiator_for $db $node)
-	exec_cmd "ssh -t root@$master_hostname \"echo InitiatorName=$iscsi_initiator > /etc/iscsi/initiatorname.iscsi\""
+	ssh_master "echo InitiatorName=$iscsi_initiator > /etc/iscsi/initiatorname.iscsi"
 	LN
 }
 
@@ -191,12 +212,13 @@ function mount_oracle_install
 {
 	line_separator
 	info "Mount point for Oracle installation"
-	typeset fstab="$client_hostname:/home/$common_user_name/${oracle_install} /mnt/oracle_install nfs ro,defaults,noauto"
+	typeset fstab="$client_hostname:/home/$common_user_name/${oracle_install}	\
+									/mnt/oracle_install nfs ro,defaults,noauto"
 
-	exec_cmd "ssh -t root@${server_name} sed -i '/oracle_install/d' /etc/fstab"
-	exec_cmd "ssh -t root@${server_name} \"[ ! -d /mnt/oracle_install ] && mkdir /mnt/oracle_install || true\""
-	exec_cmd "ssh -t root@${server_name} \"echo $fstab >> /etc/fstab\""
-	exec_cmd "ssh -t root@${server_name} mount /mnt/oracle_install"
+	ssh_server "sed -i '/oracle_install/d' /etc/fstab"
+	ssh_server "[ ! -d /mnt/oracle_install ] &&	mkdir /mnt/oracle_install || true"
+	ssh_server "echo '$fstab' >> /etc/fstab"
+	ssh_server "mount /mnt/oracle_install"
 	LN
 }
 
@@ -205,11 +227,20 @@ function create_san_LUNs_and_attach_to_node1
 {
 	line_separator
 	info "Setup SAN"
-	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -create_lv -vg_name=$vg_name -db=${db} -node=$node"
+
+	exec_cmd "ssh -t $san_conn											\
+						plescripts/san/create_lun_for_db.sh				\
+													-create_lv			\
+													-vg_name=$vg_name	\
+													-db=${db}			\
+													-node=$node"
 	LN
 
-	exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
-	exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
+	ssh_server "plescripts/disk/discovery_target.sh"
+	LN
+
+	ssh_server "plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
+	LN
 }
 
 #	Dans le cas d'un RAC les autres noeuds vont se connecter au portail et
@@ -218,10 +249,11 @@ function attach_existing_LUNs_on_node
 {
 	line_separator
 	info "Setup SAN"
-	exec_cmd "ssh -t $san_conn plescripts/san/create_lun_for_db.sh -vg_name=$vg_name -db=${db} -node=$node"
+	exec_cmd "ssh -t $san_conn	\
+		plescripts/san/create_lun_for_db.sh -vg_name=$vg_name -db=${db} -node=$node"
 
-	exec_cmd "ssh -t root@${server_name} plescripts/disk/discovery_target.sh"
-	exec_cmd "ssh -t root@${server_name} oracleasm scandisks"
+	ssh_server "plescripts/disk/discovery_target.sh"
+	ssh_server "oracleasm scandisks"
 	LN
 }
 
@@ -247,45 +279,43 @@ function create_disks_for_oracle_and_grid_softwares
 	if [ $disk_type != FS ]
 	then
 		info "Create mount point /$GRID_DISK for Grid"
-		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh		\
-												-mount_point=/$GRID_DISK	\
-												-suffix_vglv=grid			\
-												-type_fs=$rdbms_fs_type
+		ssh_server plescripts/disk/create_fs.sh		\
+						-mount_point=/$GRID_DISK	\
+						-suffix_vglv=grid			\
+						-type_fs=$rdbms_fs_type
 		LN
 	else
 		info "Create database FS"
-		exec_cmd ssh -t root@${server_name} plescripts/disk/create_fs.sh	\
-											-type_fs=$rdbms_fs_type			\
-											-suffix_vglv=oradata			\
-											-mount_point=/$GRID_DISK
+		ssh_server plescripts/disk/create_fs.sh		\
+					-type_fs=$rdbms_fs_type			\
+					-suffix_vglv=oradata			\
+					-mount_point=/$GRID_DISK
 
 	fi
 
 	if [[ $max_nodes -eq 1 || $rac_orcl_fs == default ]]
 	then
 		info "Create mount point /$ORCL_DISK for Oracle"
-		exec_cmd ssh -t root@$server_name plescripts/disk/create_fs.sh		\
-												-mount_point=/$ORCL_DISK	\
-												-suffix_vglv=orcl			\
-												-type_fs=$rdbms_fs_type
+		ssh_server	plescripts/disk/create_fs.sh		\
+							-mount_point=/$ORCL_DISK	\
+							-suffix_vglv=orcl			\
+							-type_fs=$rdbms_fs_type
 		LN
 	else
 		info "Install ocfs2"
-		exec_cmd  "ssh -t root@$server_name \"yum -y install ocfs2-tools\""
+		ssh_server "yum -y install ocfs2-tools"
 		LN
 
-		exec_cmd ssh -t root@$server_name	\
-						plescripts/disk/create_cluster_ocfs2.sh -db=$db
+		ssh_server "~/plescripts/disk/create_cluster_ocfs2.sh -db=$db"
 		LN
 
 		typeset action=create
 		[ $node -ne 1 ] && action=add
-		exec_cmd ssh -t root@$server_name	\
-						plescripts/disk/create_fs_ocfs2.sh	\
-								-db=$db						\
-								-mount_point=/$ORCL_DISK	\
-								-device=/dev/sdc			\
-								-action=$action
+		ssh_server	plescripts/disk/create_fs_ocfs2.sh	\
+							-db=$db						\
+							-mount_point=/$ORCL_DISK	\
+							-device=/dev/sdc			\
+							-action=$action
 		LN
 	fi
 }
@@ -338,11 +368,10 @@ function configure_server
 	line_separator
 	#	Si depuis la création du master le dépôt par défaut a changé, permet
 	#	de basculer sur le bon dépôt.
-	exec_cmd "ssh -t root@$server_name \". .bash_profile;	\
-					~/plescripts/yum/switch_repo_to.sh -local\""
+	ssh_server ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"
 
 	test_if_rpm_update_available $server_name
-	[ $? -eq 0 ] && exec_cmd "ssh -t root@$server_name \"yum -y update\""
+	[ $? -eq 0 ] && ssh_server "yum -y update"
 	LN
 
 	create_disks_for_oracle_and_grid_softwares
@@ -353,7 +382,7 @@ function configure_oracle_accounts
 {
 	run_oracle_preinstall
 
-	exec_cmd "ssh -t root@$server_name plescripts/gadgets/customize_logon.sh"
+	ssh_server "plescripts/gadgets/customize_logon.sh"
 	LN
 }
 
@@ -396,6 +425,43 @@ function test_if_other_nodes_up
 	[ $check_ok == no ] && exit 1 || true
 }
 
+function install_vim_plugin
+{
+	info "Install VIM plugins."
+
+	exec_cmd "ssh grid@$server_name \
+		\"[ ! -d ~/.vim ]	\
+			&& (gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf -) || true\""
+
+	exec_cmd "ssh oracle@$server_name	\
+		\"[ ! -d ~/.vim ]	\
+			&& (gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf -) || true\""
+	LN
+}
+
+function create_stats_services
+{
+	info -n "Create services stats"
+	case $PLESTATISTICS in
+		*)
+			info -f ", services not enabled."
+			;;
+
+		ENABLE)
+			info -f " and enable them."
+	esac
+
+	ssh_server "plescripts/stats/create_service_memory_stats.sh"
+
+	ssh_server "plescripts/stats/create_service_ifiscsi_stats.sh"
+
+	if [ $max_nodes -gt 1 ]
+	then
+		ssh_server "plescripts/stats/create_service_ifrac_stats.sh"
+	fi
+	LN
+}
+
 #	============================================================================
 #	MAIN
 #	============================================================================
@@ -410,12 +476,11 @@ configure_oracle_accounts
 #	Equivalence entre le poste client/serveur host et le serveur de bdd
 #	Permet depuis le poste client/serveur host de se connecter sans mot de passe
 #	avec les comptes root, grid et oracle.
-exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$server_name"
-
-info "Install VIM plugins."
-exec_cmd "ssh grid@$server_name \"[ ! -d ~/.vim ] && (gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf -) || true\""
-exec_cmd "ssh oracle@$server_name \"[ ! -d ~/.vim ] && (gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf -) || true\""
+exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh	\
+													-remote_server=$server_name"
 LN
+
+install_vim_plugin
 
 copy_color_file
 
@@ -436,10 +501,10 @@ case $cfg_luns_hosted_by in
 		then
 			if [ $disk_type != FS ]
 			then
-				exec_cmd "ssh -t root@${server_name} plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
+				ssh_server "plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
 			fi
 		else
-			exec_cmd "ssh -t root@${server_name} oracleasm scandisks"
+			ssh_server "oracleasm scandisks"
 		fi
 	;;
 
@@ -449,25 +514,10 @@ case $cfg_luns_hosted_by in
 esac
 
 info "Plymouth theme."
-exec_cmd -c "ssh -t root@$server_name plescripts/shell/set_plymouth_them"
+ssh_server -c "plescripts/shell/set_plymouth_them"
 LN
 
-info -n "Create services stats"
-case $PLESTATISTICS in
-	*)
-		info -f ", services not enabled."
-		;;
-
-	ENABLE)
-		info -f " and enable them."
-esac
-exec_cmd "ssh -t root@${server_name} plescripts/stats/create_service_memory_stats.sh"
-exec_cmd "ssh -t root@${server_name} plescripts/stats/create_service_ifiscsi_stats.sh"
-if [ $max_nodes -gt 1 ]
-then
-	exec_cmd "ssh -t root@${server_name} plescripts/stats/create_service_ifrac_stats.sh"
-fi
-LN
+create_stats_services
 
 if [ $node -eq $max_nodes ]
 then	# C'est le dernier nœud

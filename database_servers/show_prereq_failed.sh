@@ -46,7 +46,7 @@ done
 [[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db	"$str_usage"
 
-cfg_exist $db
+cfg_exists $db
 
 cfg_load_node_info $db 1
 

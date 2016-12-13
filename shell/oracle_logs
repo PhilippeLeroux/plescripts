@@ -50,7 +50,7 @@ exit_if_param_undef db	"$str_usage"
 
 typeset -r	upper_db=$(to_upper $db)
 
-cfg_exist $db
+cfg_exists $db
 
 typeset -r	max_nodes=$(cfg_max_nodes $db)
 

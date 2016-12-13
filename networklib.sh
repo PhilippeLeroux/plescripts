@@ -112,12 +112,13 @@ function remove_from_known_hosts
 
 #*>	$1 server name.
 #*>	return public key for server $1
-function get_public_key_for
+function get_server_public_key
 {
 	typeset -r srv_name=$1
 	typeset -r server_ip=$(get_ip_for_host $srv_name)
 
-	ssh-keyscan -t ecdsa $srv_name | tail -1 | sed "s/$srv_name/$srv_name,$server_ip/"
+	ssh-keyscan -t ecdsa $srv_name | tail -1	|\
+									sed "s/$srv_name/$srv_name,$server_ip/"
 }
 
 #*> Ajoute le serveur $1 au fichier ~/.ssh/known_hosts
@@ -131,7 +132,7 @@ function add_to_known_hosts
 	exec_cmd -c "sed -i '/^$srv_name.*/d' ~/.ssh/known_hosts 1>/dev/null"
 	LN
 
-	typeset -r server_keyscan=$(get_public_key_for $srv_name)
+	typeset -r server_keyscan=$(get_server_public_key $srv_name)
 	if [ x"$server_keyscan" == x ]
 	then
 		error "Can't obtain public key for $srv_name"

@@ -72,7 +72,7 @@ exit_if_param_undef db		"$str_usage"
 exit_if_param_undef lun		"$str_usage"
 exit_if_param_undef vg_name	"$str_usage"
 
-cfg_exist $db
+cfg_exists $db
 
 function remove_lun_for_server
 {

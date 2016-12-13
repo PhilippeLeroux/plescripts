@@ -53,7 +53,7 @@ done
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef node	"$str_usage"
 
-cfg_exist $db
+cfg_exists $db
 
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 

@@ -57,7 +57,7 @@ done
 [[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db	"$str_usage"
 
-cfg_exist  $db
+cfg_exists  $db
 
 typeset -ri	max_nodes=$(cfg_max_nodes $db)
 for inode in $( seq $max_nodes )

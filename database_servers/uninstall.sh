@@ -138,7 +138,7 @@ do
 	esac
 done
 
-[ $USER != root ] && error "Only root !" && exit 1
+must_be_user root
 
 exit_if_param_invalid storage "FS ASM" "$str_usage"
 
@@ -236,6 +236,9 @@ function remove_disks
 function deinstall_grid
 {
 	line_separator
+	warning "You must answer the questions, and follow instructions !"
+	LN
+
 	sugrid "/mnt/oracle_install/grid/runInstaller -deinstall -home \\\$ORACLE_HOME"
 	LN
 
@@ -252,6 +255,8 @@ function deinstall_grid
 #	============================================================================
 #	MAIN
 #	============================================================================
+script_start
+
 if grep -q remove_oracle_binary <<< "$action_list"
 then
 	if ! grep -q delete_databases <<< "$action_list"
@@ -315,5 +320,7 @@ then
 	execute_on_other_nodes "plescripts/database_servers/revert_to_master.sh -doit; poweroff"
 	exec_cmd "./revert_to_master.sh -doit"
 	exec_cmd "poweroff"
+	LN
 fi
-LN
+
+script_stop $ME

@@ -37,7 +37,7 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
-[ "$USER" != "root" ] && error "Only root can execute this script" && exit 1
+must_be_user root
 
 typeset -r lower_db=$(to_lower $db)
 

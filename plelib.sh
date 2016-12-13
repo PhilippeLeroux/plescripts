@@ -567,7 +567,7 @@ function get_cmd_name
 			;;
 	esac
 
-	# Si la commande débute par une simple ou double quote elle est supprimée.
+	# Si la commande set termine par une simple ou double quote elle est supprimée.
 	case "${cmd:${#cmd}-1:1}" in
 		"'"|"\"")
 			cmd=${cmd:0:${#cmd}-1}
@@ -600,11 +600,19 @@ function get_cmd_name
 #*> Parameters:
 #*>		-f  EXEC_CMD_ACTION is ignored.
 #*>		-c  continue on error.
-#*>		-ci like -c but not print error message.
+#*>		-ci like -c but not print error message. BUG : ne fonctionne plus
 #*>		-h  hide command except on error.
-#*>		-hf hide command even on error.
+#*>		-hf hide command even on error.  BUG : ne fonctionne plus
 #*>
 #*> Show execution time after PLE_SHOW_EXECUTION_TIME_AFTER seconds
+#*>
+#*> Les paramètres -ci et -hf ne sont plus pris en compte (je ne sais pas pourquoi)
+#*> mais ils sont encore utilisés dans plusieurs scripts. Leur effet étaient
+#*> uniquement sur l'affichage.
+#*> En regardant l'historique git, les actions de ces paramètres ont disparus il
+#*> 4 mois (date du reset du repository) donc je ne sais pas vraiment ce qui
+#*> c'est passé avec ces paramètres.
+#*> Morale de l'histoire ne jamais faire de reset de dépôt :(
 function exec_cmd
 {
 	# Mémo : ne jamais utiliser $1 $2 ... mais uniquement $*
@@ -800,10 +808,10 @@ function exec_dynamic_cmd
 #	Fonctions agissant sur les fichiers ou répertoires.
 ################################################################################
 
-#*> exit_if_file_not_exist <name> [message]
+#*> exit_if_file_not_exists <name> [message]
 #*> if file <name> not exists, script aborted.
 #*> Print [message] if specified.
-function exit_if_file_not_exist
+function exit_if_file_not_exists
 {
 	if [ ! -f "$1" ]
 	then
@@ -818,10 +826,10 @@ function exit_if_file_not_exist
 	fi
 }
 
-#*> exit_if_dir_not_exist <name> [message]
+#*> exit_if_dir_not_exists <name> [message]
 #*> if directory <name> not exits, script aborted.
 #*> Print [message] if specified.
-function exit_if_dir_not_exist
+function exit_if_dir_not_exists
 {
 	if [ ! -d $1 ]
 	then
@@ -881,7 +889,7 @@ function add_value
 #*> If file doesn't exist script aborted.
 function update_value
 {
-	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exist "$3" "Call function update_value"
+	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exists "$3" "Call function update_value"
 
 	typeset -r var_name="$1"
 	typeset -r var_value="$2"
@@ -904,7 +912,7 @@ function update_value
 #*> If file doesn't exist script aborted.
 function remove_value
 {
-	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exist "$2" "Call function remove_value"
+	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exists "$2" "Call function remove_value"
 
 	typeset -r var_name=$(escape_slash "$1")
 	typeset -r file="$2"

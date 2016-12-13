@@ -87,7 +87,7 @@ function gen_and_copy_server_pub_key
 	typeset	-r	from=$1
 	typeset	-r	to=$2
 
-	typeset -r public_key=$(get_public_key_for $from)
+	typeset -r public_key=$(get_server_public_key $from)
 	info "Copy la clef public de $from dans le known_hosts de $to"
 	exec_cmd -c "ssh -t $user1@$to sed -i '/${from}/d' .ssh/known_hosts"
 	exec_cmd "ssh -t $user1@$to \"echo \\\"$public_key\\\" >> .ssh/known_hosts\""

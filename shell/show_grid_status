@@ -76,7 +76,7 @@ if [ $server_name == undef ]
 then
 	if [ $nr_node -eq -1 ]
 	then #	Test si une scan existe.
-		cfg_exist $db use_return_code
+		cfg_exists $db use_return_code
 		if [ $? -eq 0 ]
 		then
 			typeset -ri max_nodes=$(cfg_max_nodes $db)
