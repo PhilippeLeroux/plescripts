@@ -111,6 +111,9 @@ then
 	exec_cmd "systemctl enable ntpdate"
 	exec_cmd "systemctl start ntpdate"
 	LN
+
+	exec_cmd "ntpdate $infra_hostname"
+	LN
 fi
 
 [ $role == master ] && configure_ntpdate || true

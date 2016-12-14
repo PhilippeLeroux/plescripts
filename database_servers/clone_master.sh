@@ -320,6 +320,23 @@ function create_disks_for_oracle_and_grid_softwares
 	fi
 }
 
+function synch_ntp
+{
+	line_separator
+	info "Synch time."
+	ssh_server systemctl stop ntpd
+	LN
+
+	for i in $( seq 3 )
+	do
+		ssh_server ntpdate $infra_hostname
+	done
+	LN
+
+	ssh_server systemctl start ntpd
+	LN
+}
+
 #	Configure le master cloné
 function configure_server
 {
@@ -375,6 +392,8 @@ function configure_server
 	LN
 
 	create_disks_for_oracle_and_grid_softwares
+
+	[ $ntp_tool == ntp ] && synch_ntp
 }
 
 #	Met en place tous les pré requis Oracle
