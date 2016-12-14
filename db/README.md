@@ -11,9 +11,7 @@ Table of Contents
 
 ### Création d'une base de donnée.
 
-Remarque : si les serveurs `orclmaster` et `K2` viennent d'être créés il est
-préférable d'installer un serveur standalone pour valider rapidement la configuration
-du `virtual-host` et des VMs `orclmaster` et `K2`.
+Les serveurs doivent avoir été créés, instructions [ici](https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers)
 
 1. Se connecter sur le serveur : `ssh oracle@srvdaisy01`
 
