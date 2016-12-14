@@ -22,5 +22,36 @@ A la création du serveur sont créés 2 ou 3 services pour mesurer des statisti
 * plememstats		stats sur l'ocuppation mémoire.
 * pleiscsistats		stats sur l'interco iSCSI.
 * pleifracstats		stats sur l'interco RAC.
-Les services sont activés si la variable PLESTATISTICS, de global.cfg, vaut ENABLE
-par défaut elle vaut DISABLE.
+
+Par défaut les services ne sont pas activés.
+
+Pour démarrer un service, se connecter `root` sur le serveur et exécuter la
+commande :
+```
+systemctl start plememstats
+```
+Changer le nom du service pour démarrer les autres services.
+
+Pour activer un service au démarrag, se connecter `root` sur le serveur et
+exécuter la commande :
+```
+systemctl enable plememstats
+```
+Changer le nom du service pour démarrer les autres services.
+
+La variable `PLESTATISTICS` du fichier `global.cfg` permet de définir les services
+à activer durant l'installation.
+
+Si la variable `PLE_STATISTICS` est exportée avant l'exécution du script de clonage
+elle prévaut sur la variable `PLESTATISTICS`.
+
+Les valeurs possibles sont :
+*	DISABLE	les services ne sont pas activés.
+*	IFISCSI	statistiques sur l'interco iSCSI.
+*	IFRAC   statistiques sur l'interco RAC.
+*	MEMORY  statistiques sur la consomation mémoire.
+
+Pour activer toutes les statistiques :
+```
+export PLE_STATISTICS="IFISCSI IFRAC MEMORY"
+```

@@ -225,8 +225,7 @@ typeset plot_cmds=/tmp/${ifname}.plot.$$
 
 typeset -i line_to_skip=1
 
-typeset graph_title=$title
-[ "${graph_title%_}" == "global" ] && graph_title="$ifname : start at $time (Points interval : 5mn)"
+typeset graph_title="$server : $ifname"
 
 typeset -r stats_info=${PLELOG_ROOT}/$date/stats/stats_info.txt
 if [ $loop == yes ]
@@ -265,8 +264,8 @@ cat << EOS > $plot_cmds
 set key autotitle columnhead
 set grid
 set datafile separator " "
-set term qt title '${server%_} : ${graph_title}' size 944,512
-set title '${server%_} : ${graph_title}'
+set term qt title '${graph_title}' size 944,512
+set title '${graph_title}'
 set format x '$fmt_time'
 set timefmt '$fmt_time'
 set xdata time

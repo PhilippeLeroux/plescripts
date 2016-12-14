@@ -65,7 +65,9 @@ info "$service_file created."
 exec_cmd "cat $service_file"
 LN
 
-if [ "$PLESTATISTICS" == ENABLE ]
+[ x"$PLE_STATISTICS" == x ] && PLE_STATISTICS=$PLESTATISTICS || true
+
+if grep -q MEMORY <<< "$PLE_STATISTICS"
 then
 	info "Enable service"
 	exec_cmd "systemctl enable $service_name"

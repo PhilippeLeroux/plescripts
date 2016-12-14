@@ -1,10 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -16,7 +14,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -35,5 +32,7 @@ do
 	esac
 done
 
-exec_cmd plymouth-set-default-theme details
-[ $? -ne 0 ] && error "Failed" || exec_cmd dracut -f
+if [ $plymouth_theme != default ]
+then
+	exec_cmd plymouth-set-default-theme $plymouth_theme --rebuild-initrd
+fi

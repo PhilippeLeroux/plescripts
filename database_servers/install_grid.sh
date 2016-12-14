@@ -399,7 +399,7 @@ function stop_and_disable_unwanted_grid_ressources
 	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl disable oc4j"
 }
 
-function set_ASM_memory_target_low_and_restart_asm
+function set_ASM_memory_target_low_and_restart_ASM
 {
 	if [ $hack_asm_memory != "0" ]
 	then
@@ -534,7 +534,7 @@ then
 			LN
 			stop_and_disable_unwanted_grid_ressources
 			LN
-			set_ASM_memory_target_low_and_restart_asm
+			set_ASM_memory_target_low_and_restart_ASM
 			LN
 			[ $force_MGMTDB == no ] && info "La base -MGMTDB n'est pas créée." && LN
 		else
@@ -546,7 +546,7 @@ then
 
 		if [ $do_hacks == yes ]
 		then
-			set_ASM_memory_target_low_and_restart_asm
+			set_ASM_memory_target_low_and_restart_ASM
 			#Pour être certain qu'ASM est démarré.
 			timing 30 "Wait grid"
 		fi

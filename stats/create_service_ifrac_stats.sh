@@ -34,7 +34,9 @@ typeset -r service_file=/usr/lib/systemd/system/$service_name.service
 if [ -f $service_file ]
 then
 	info "$service_name service exists."
-	exit 0
+	exec_cmd systemctl stop $service_name
+	exec_cmd systemctl disable $service_name
+	exec_cmd rm -f $service_file
 fi
 
 info "Create systemd service $service_name"
@@ -65,7 +67,9 @@ info "$service_file created."
 exec_cmd "cat $service_file"
 LN
 
-if [ "$PLESTATISTICS" == ENABLE ]
+[ x"$PLE_STATISTICS" == x ] && PLE_STATISTICS=$PLESTATISTICS || true
+
+if grep -q IFRAC <<< "$PLE_STATISTICS"
 then
 	info "Enable service"
 	exec_cmd "systemctl enable $service_name"
