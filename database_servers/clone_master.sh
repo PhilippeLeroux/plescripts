@@ -351,6 +351,10 @@ function configure_server
 		exec_cmd "$vm_scripts_path/clone_vm.sh	-db=$db						\
 												-vm_memory_mb=$vm_memory	\
 												-vmGroup=\"$vmGroup\""
+		LN
+		# VirtualBox Manager se met mal à jour, s'il est démarré je le relance.
+		exec_cmd "restart_vboxmanager.sh"
+		LN
 	fi
 
 	#	-wait_os=no car le nom du serveur n'a pas encore été changé.
