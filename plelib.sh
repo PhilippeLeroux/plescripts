@@ -774,8 +774,7 @@ function exec_dynamic_cmd
 	#              -x=42    \
 	#			   -t
 	typeset	-ri	l=ple_dyn_param_max_len+4
-	typeset		c=$(printf "%-${l}s" "${cmd_name##* }")
-	fake_exec_cmd "$(echo "$c\\\\")"
+	fake_exec_cmd "$(printf "%-${l}s%s\n" "$cmd_name" "\\\\")"
 
 	#	Affiche les paramètres de la commande :
 	for i in $( seq 0 $(( ${#ple_dyn_param_cmd[@]} - 1 )) )

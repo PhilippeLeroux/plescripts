@@ -108,7 +108,7 @@ $(print_all_parameters)
 \t    Le service Rac One Node sera ron_$(hostname -s)
 
 \t4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera
-\t    crée si -serverPollName n'est pas précisé.
+\t    crée si -serverPoolName n'est pas précisé.
 
 \t5 : Active le flag -policyManaged
 
@@ -424,7 +424,7 @@ function create_database
 
 	make_dbca_args
 
-	exec_dynamic_cmd $confirm -ci dbca
+	exec_dynamic_cmd $confirm dbca
 	typeset -ri	dbca_return=$?
 	if [ $dbca_return -eq 0 ]
 	then
