@@ -91,6 +91,7 @@ must_be_user oracle
 [ "$service_name" == auto ] && service_name=$(make_oci_service_name_for $pdb_name)
 
 typeset	-r	account_tbs=${account_name}_tbs
+typeset	-r	dbfs_name=staging_area
 
 exit_if_service_not_running $db_name $pdb_name $service_name
 
@@ -105,20 +106,22 @@ LN
 
 fake_exec_cmd sqlplus -s $account_name/$account_password@${service_name}
 sqlplus -s $account_name/$account_password@${service_name}<<EOSQL
-prompt create filesystem staging_area on tablespace $account_tbs
-@?/rdbms/admin/dbfs_create_filesystem.sql $account_tbs staging_area
+prompt create filesystem $dbfs_name on tablespace $account_tbs
+@?/rdbms/admin/dbfs_create_filesystem.sql $account_tbs $dbfs_name
 EOSQL
 LN
 
-info "Save account info to account.txt"
-exec_cmd "echo 'service=$service_name' > account.txt"
-exec_cmd "echo 'dbfs_user=$account_name' >> account.txt"
-exec_cmd "echo 'dbfs_password=$account_password' >> account.txt"
-exec_cmd "echo 'dbfs_tbs=$account_tbs' >> account.txt"
+typeset	-r	dbfs_info=~/${pdb_name}_infra
+info "Save account info to $dbfs_info"
+exec_cmd "echo 'service=$service_name' > $dbfs_info"
+exec_cmd "echo 'dbfs_user=$account_name' >> $dbfs_info"
+exec_cmd "echo 'dbfs_password=$account_password' >> $dbfs_info"
+exec_cmd "echo 'dbfs_tbs=$account_tbs' >> $dbfs_info"
+exec_cmd "echo 'dbfs_name=$dbfs_name' >> $dbfs_info"
 LN
 
-info "Save $account_name to pass file."
-exec_cmd "echo '$account_password' > pass"
+info "Save $account_name to ~/${pdb_name}_pass file."
+exec_cmd "echo '$account_password' > ~/${pdb_name}_pass"
 LN
 
 if [ $load_data == yes ]
@@ -127,12 +130,12 @@ then
 	info "Tests :"
 	typeset	-r connect_string=$account_name@$service_name
 
-	exec_cmd "dbfs_client $connect_string --command ls dbfs:/staging_area/ < pass"
+	exec_cmd "dbfs_client $connect_string --command ls dbfs:/$dbfs_name/ < ~/${pdb_name}_pass"
 	LN
 
-	exec_cmd "dbfs_client $connect_string --command cp -pR ./* dbfs:/staging_area/ < pass"
+	exec_cmd "dbfs_client $connect_string --command cp -pR ./* dbfs:/$dbfs_name/ < ~/${pdb_name}_pass"
 	LN
 
-	exec_cmd "dbfs_client $connect_string --command ls dbfs:/staging_area/ < pass"
+	exec_cmd "dbfs_client $connect_string --command ls dbfs:/$dbfs_name/ < ~/${pdb_name}_pass"
 	LN
 fi

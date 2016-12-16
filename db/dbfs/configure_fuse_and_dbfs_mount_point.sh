@@ -64,6 +64,8 @@ exit_if_param_undef dbfs_password	"$str_usage"
 
 must_be_user root
 
+typeset	-r	pdb_name=$(sed 's/pdb\(.*\)_oci/\1/'<<<$service_name)
+
 typeset	ORACLE_HOME=undef
 typeset	DBNAME=undef
 IFS=':' read DBNAME ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent" /etc/oratab)"
@@ -111,7 +113,7 @@ exec_cmd "ldconfig -p | grep -E 'fuse|12.1'"
 LN
 
 line_separator
-info "Add oracle & grid to group fuse"
+info "Add oracle to group fuse"
 exec_cmd usermod -a -G fuse oracle
 info "Add grid to group fuse"
 exec_cmd usermod -a -G fuse grid
@@ -134,13 +136,19 @@ exec_cmd ls -l /sbin/mount.dbfs
 LN
 
 line_separator
-info "Create mount point /mnt/dbfs"
+info "Create mount point /mnt/$pdb_name"
 fake_exec_cmd cd /mnt
 cd /mnt
-[ -d dbfs ] && exec_cmd "rmdir dbfs" || true
-exec_cmd mkdir dbfs 
-exec_cmd chown oracle.oinstall dbfs
-exec_cmd ls -ld dbfs
+[ -d $pdb_name ] && exec_cmd "rmdir $pdb_name" || true
+exec_cmd mkdir $pdb_name 
+exec_cmd chown oracle.oinstall $pdb_name
+exec_cmd ls -ld $pdb_name
+LN
+
+line_separator
+info "Configure fuse : grid & oracle can mount and rw."
+exec_cmd "sed -i '/user_allow_other/d' /etc/fuse.conf"
+exec_cmd "echo 'user_allow_other' >> /etc/fuse.conf"
 LN
 
 line_separator
@@ -150,5 +158,5 @@ then
 	info "Remove existing mount point"
 	exec_cmd "sed -i '/#$dbfs_user@$service_name/d' /etc/fstab"
 fi
-exec_cmd "echo '/sbin/mount.dbfs#$dbfs_user@$service_name /mnt/dbfs fuse rw,user,noauto,default 0 0' >> /etc/fstab"
+exec_cmd "echo '/sbin/mount.dbfs#$dbfs_user@$service_name /mnt/$pdb_name fuse rw,user,allow_other,noauto,default 0 0' >> /etc/fstab"
 LN
