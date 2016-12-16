@@ -31,7 +31,7 @@ Le FS créé se nomme `staging_area`, à ce stade son contenu n'est accessible q
 la commande oracle `dbfs_client`, exemples :
 
 ```
-oracle@srvbabar01:BABAR:dbfs> dbfs_client dbfsadm@pdbBABAR01_oci --command ls dbfs:/staging_area/ < babar01_pass
+oracle@srvbabar01:BABAR:dbfs> dbfs_client dbfsadm@pdbBABAR01_oci --command ls dbfs:/staging_area/ < ~/babar01_pass
 Password:
 dbfs:/staging_area/create_crs_resource_for_dbfs.sh
 dbfs:/staging_area/create_dbfs.sql
