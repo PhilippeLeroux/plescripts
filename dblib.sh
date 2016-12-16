@@ -96,3 +96,57 @@ function sqlplus_print_query
 		sqlplus -s sys/$oracle_password as sysdba
 	LN
 }
+
+#*> $1	db name
+#*> $2	pdb name
+#*> $3	service name
+#*>
+#*> exit if service name not running else return 0
+function exit_if_service_not_running
+{
+	typeset	-r	db_name="$1"
+	typeset	-r	pdb_name="$2"
+	typeset	-r	service_name="$3"
+
+	info -n "Database $db_name, pdb $pdb_name : service $service_name running "
+	if grep -iqE "Service $service_name is running.*"<<<"$(srvctl status service -db $db_name)"
+	then
+		info -f "$OK"
+		LN
+		return 0
+	else
+		info -f "$KO"
+		LN
+		info "$str_usage"
+		LN
+		exit 1
+	fi
+}
+
+#*> $1 pdb name
+#*>
+#*> return db name
+function extract_db_name_from
+{
+	typeset	-r pdb_name="$1"
+	to_upper $(sed "s/\([a-z]*\)[0-9]*/\1/" <<<$pdb_name)
+}
+
+#*>	$1 pdb name
+#*>
+#*> return associate oci service name
+function make_oci_service_name_for
+{
+	typeset	-r pdb_name=$(to_upper "$1")
+	echo pdb${pdb_name}_oci
+}
+
+#*>	$1 pdb name
+#*>
+#*> return associate java service name
+function make_java_service_name_for
+{
+	typeset	-r pdb_name=$(to_upper "$1")
+	echo pdb${pdb_name}_java
+}
+

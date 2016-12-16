@@ -35,3 +35,7 @@ afiedt.buf
 database_servers/**/
 #sqlplus
 afiedt.buf
+
+#	Fichier de configuration DBFS
+db/dbfs/account.txt
+db/dbfs/pass
