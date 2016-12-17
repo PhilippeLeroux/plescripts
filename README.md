@@ -1,3 +1,5 @@
+[English translation](https://github.com/PhilippeLeroux/plescripts/wiki/english)
+
 ### Objectifs :
 
 Automatiser l'installation et la création de base de données Oracle, que ce soit
