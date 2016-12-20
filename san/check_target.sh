@@ -23,6 +23,7 @@ function cmd_remove_lv
 	do
 		read prefix name no <<<"$(echo $lv_name|sed "s/\(..\)\(.*\)\([0-9].\)$/\1 \2 \3/")"
 		echo "    $ ./remove_lv.sh -vg_name=$vg_name -prefix=$name -first_no=$no"
+		echo "    # (if VM $name not exists)"
 	done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
 }
 

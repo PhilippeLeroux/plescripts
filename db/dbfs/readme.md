@@ -1,38 +1,37 @@
 ###	Création d'un FS de type DBFS
 
-[Documentation Oracle 12cR1](http://docs.oracle.com/database/121/ADLOB/adlob_client.htm#ADLOB45997)
+[Documentation DBFS](http://docs.oracle.com/database/121/ADLOB/adlob_client.htm#ADLOB45997)
 
-* Nom du CDC : BABAR
-* Nom de la PDB : BABAR01
-* Nom du service : pdbBABAR01_oci
+[Clusterware Administration](https://docs.oracle.com/database/121/CWADD/crschp.htm#CWADD91277)
 
-Le PDB contiendra un FS nommé `staging_area` qui sera visible de l'OS depuis le
-point de montage `/mnt/babar01` (`babar01` étant le nom de la PDB)
+* Nom du CDC : `BABAR`
+* Nom de la PDB : `BABAR01`
+* Nom du service : `pdbBABAR01_oci`
+* Point de montage : `/mnt/babar01`
 
-Le DBFS devra être démarré automatiquent avec la base.
+La PDB contiendra un FS nommé `staging_area` qui sera visible de l'OS depuis le
+point de montage `/mnt/babar01`. Le point de montage sera monté automatiquement à
+l'ouverture de la PDB et démonté à la fermeture de la base.
 
-#### Création du FS `DBFS`
+Pour ne pas avoir à saisir de mot de passe, 'Wallet Manager' est utilisé.
+
+#### Création du FS `staging_area` dans la PDB
 
 Avec le compte `oracle` exécuter le script `create_dbfs.sh` :
 
 ```
 cd ~/plescripts/db/dbfs
-./create_dbfs.sh -pdb_name=babar01 -account_name=dbfsadm -account_password=dbfs \
--load_data
+./create_dbfs.sh -pdb_name=babar01 -load_data
 ```
 
-Le flag `-load_data` copie le contenu du répertoire courant, sert pour valider
-le bon fonctionnement de `DBFS`.
-
-Le mot de passe du compte est mémorisé dans le fichier `~/babar01_pass`, il sera utilisé
-pour transmettre le mot de passe à `dbfs_client`.
+Le flag `-load_data` copie le contenu du répertoire courant sur le FS `staging_area`,
+ca permet de valider son bon fonctionnement.
 
 Le FS créé se nomme `staging_area`, à ce stade son contenu n'est accessible qu'avec
-la commande oracle `dbfs_client`, exemples :
+la commande oracle `dbfs_client`, exemple :
 
 ```
-oracle@srvbabar01:BABAR:dbfs> dbfs_client dbfsadm@pdbBABAR01_oci --command ls dbfs:/staging_area/ < ~/babar01_pass
-Password:
+oracle@srvbabar01:BABAR:dbfs> dbfs_client /@pdbBABAR01_oci --command ls dbfs:/staging_area/
 dbfs:/staging_area/create_crs_resource_for_dbfs.sh
 dbfs:/staging_area/create_dbfs.sql
 dbfs:/staging_area/create_user_dbfs.sql
@@ -49,80 +48,69 @@ oracle@srvbabar01:BABAR:dbfs>
 Ne pas ajouter `*` pour lister le répertoire, la syntaxe `dbfs:/staging_area/*`
 ne fonctionne pas.
 
-Le fichier `~/babar01_info` contiendra toutes les informations pour supprimer le
-compte avec le script `drop_all.sh`
+Le fichier `~/babar01_dbfs.cfg` contient toutes les informations sur le compte
+gérant le `DBFS` dans la base.
+Ce fichier est utilisé par les autres scripts pour éviter de ressaisir les mêmes
+informations.
 
 #### Rendre visible le FS `staging_area` depuis l'OS
-
-Le but est de pouvoir accéder à `staging_area` depuis l'OS, pour notamment
-pouvoir copier les fichiers à charger en base.
 
 Avec le compte `root` exécuter le script `configure_fuse_and_dbfs_mount_point.sh` :
 
 ```
 [root@srvbabar01 ~]# cd ~/plescripts/db/dbfs
-[root@srvbabar01 dbfs]# ./configure_fuse_and_dbfs_mount_point.sh	\
--service_name=pdbbabar01_oci -dbfs_user=dbfsadm -dbfs_password=dbfs
+[root@srvbabar01 dbfs]# ./configure_fuse_and_dbfs_mount_point.sh -service_name=pdbbabar01_oci
 ```
 
 Le script créé le point de montage `/mnt/babar01` qui contiendra le FS `staging_area`
 créé avec le script `oracle`.
 
-**Remarque** Après l'exécution du script, il faut se déconnecter du compte `oracle`
-pour exécuter les commandes `mount` ou `automount_dbfs.sh` la configuration des
-compte `oracle` et `grid` étant modifiée.
+**Notes :**
+* Exécuter le script sur tous les nœuds d'un RAC ou d'un dataguard.
+* Après l'exécution du script, il faut se déconnecter du compte `oracle` pour
+exécuter la commande `mount /mnt/babar01` la configuration du compte étant
+modifiée.
 
-L'entrée dans `/etc/fstab` permet de monter le fs avec la commande `mount /mnt/babar01`
-avec le compte `oracle`. Mais ce n'est pas pratique, il faut saisir le mot de
-passe et la commande ne rend pas la main, il faut donc faire :
-```
-nohup mount /mnt/babar01 < ~/babar01_pass &
-```
+Une entrée est ajoutée dans `/etc/fstab` qui permet au compte Oracle de monter
+et démonter le FS.
+* fstab : `/sbin/mount.dbfs#/@pdbbabar01_oci /mnt/babar01 fuse wallet,rw,user,allow_other,direct_io,noauto,default 0 0`
+* Monter le FS : `mount /mnt/babar01`
+* Démonter le FS : `fusermount -u /mnt/babar01`
 
-Le script `automount_dbfs.sh` permet de lancer la commande en nohup, exemple :
-```
-oracle@srvbabar01:BABAR:dbfs> ./automount_dbfs.sh babar01
-# Running : ./automount_dbfs.sh babar01
-
-nohup: redirecting stderr to stdout
-oracle@srvbabar01:BABAR:dbfs> cd /mnt/babar01/staging_area/
-oracle@srvbabar01:BABAR:staging_area> ll
-total 21
--rwxr-xr-- 1 kangs users  481 Dec 16 19:49 automount_dbfs.sh
--rwxrwxr-- 1 kangs users 3691 Dec 16 19:49 configure_fuse_and_dbfs_mount_point.sh
--rwxr-xr-- 1 kangs users 3901 Dec 16 19:49 create_crs_resource_for_dbfs.sh
--rwxrwxr-- 1 kangs users 2973 Dec 16 19:49 create_dbfs.sh
--rw-r--r-- 1 kangs users   77 Dec 16 19:49 create_dbfs.sql
--rw-rw-r-- 1 kangs users  408 Dec 16 19:49 create_user_dbfs.sql
--rwxr-xr-- 1 kangs users 1003 Dec 16 19:49 drop_all.sh
--rw-r--r-- 1 kangs users   64 Dec 16 19:49 drop_dbfs.sql
--rw-rw-r-- 1 kangs users 6173 Dec 16 19:49 readme.md
-```
-
-Ce script sera utilisé par le service du `CRS` qui aura en charge de démarrer le
-FS.
-
-Les erreurs de ce script sont loggées dans le fichier `/home/oracle/automount_babar01.nohup`
-
-Pour démonter le FS : `fusermount -u /mnt/babar01`
+Actuellement l'option `automount` n'est pas supportée par `fuse`.
 
 #### Monter automatiquement le FS au démarrage de la base
 
+Le point de montage `/mnt/babar01` doit être démonté sur tous les nœuds sinon
+le script échouera.
+
 Avec le compte `grid` exécuter le script `create_crs_resource_for_dbfs.sh`
+
 ```
 grid@srvbabar01:+ASM:~> cd plescripts/db/dbfs/
 grid@srvbabar01:+ASM:dbfs> ./create_crs_resource_for_dbfs.sh -pdb_name=babar01
 [...]
-17h21> crsctl stat res srv01.pdbbabar01.dbfs -t
 --------------------------------------------------------------------------------
-Name           Target  State        Server                   State details
+Name           Target  State        Server                   State details       
 --------------------------------------------------------------------------------
-Cluster Resources
+Local Resources
 --------------------------------------------------------------------------------
-srv01.pdbbabar01.dbfs
-      1        ONLINE  ONLINE       srvbabar01               STABLE
+pdb.babar01.dbfs
+               ONLINE  ONLINE       srvbabar01               STABLE
+               ONLINE  ONLINE       srvbabar02               STABLE
 --------------------------------------------------------------------------------
 ```
+
+La ressource `pdb.babar01.dbfs` se base sur le script `~/mount-dbfs-babar01` pour
+gérer le FS.
+
+Avec des ressources de type locale il n'est pas possible de passer des paramètres
+au script ou bien d'utiliser dès variables d'environnement. Le suffix `babar01`
+permet donc au script de connaître le nom du point de montage.
+
+Chaque PDB contenant un DBFS aura donc son script.
+
+### Gestion du point de montage depuis le compte `oracle`
 
 Le contenu du répertoire est maintenant visible :
 
@@ -141,13 +129,4 @@ total 20
 -rw-rw-r-- 1 kangs users  841 Dec 16 17:15 todo.txt
 ```
 
-### BUGS
 
-* Il n'est plus possible d'arrêter le service de la PDB associée au FS, même
-avec l'option `-force`
-
-* L'arrêt de la base n'est possible qu'avec l'option `-force`
-
-* Le service du DBFS ne démarre pas après un arrêt démarrage de la base.
-
-En gros je dois potasser la gestion du service avec le `CRS` :(

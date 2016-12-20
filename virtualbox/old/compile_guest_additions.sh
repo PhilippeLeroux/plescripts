@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -62,7 +61,9 @@ fi
 info "Le module des 'Guest Additions' n'est pas à jour sur $host"
 LN
 
-ssh -t root@${host}<<EOS
+typeset -r script=/tmp/install_guest.$$
+
+cat <<EOS >$script
 KV=\$(uname -r)
 if echo "$KV" | grep -q "uek"
 then
@@ -74,15 +75,20 @@ echo "yum -y install deltarpm gcc \$rpm_kernel"
 yum -y install deltarpm gcc \$rpm_kernel
 
 [ ! -d /media/cdrom ] && mkdir /media/cdrom || true
-
 echo "mount /dev/cdrom /media/cdrom"
 mount /dev/cdrom /media/cdrom
+echo
 
 echo "cd /media/cdrom && ./VBoxLinuxAdditions.run"
 cd /media/cdrom && ./VBoxLinuxAdditions.run
 EOS
-[ $? -ne 0 ] && exit 1 || true
+
+exec_cmd chmod u+x $script
+exec_cmd scp $script root@$host:/tmp/install_guest.sh
+exec_cmd rm $script
+
+exec_cmd ssh -t root@${host} /tmp/install_guest.sh
 LN
-exec_cmd "$vm_scripts_path/stop_vm -server=$host -wait_os"
-~/plescripts/shell/wait_server $host
+
+exec_cmd "$vm_scripts_path/reboot_vm $host"
 LN

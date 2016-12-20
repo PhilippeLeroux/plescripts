@@ -3,6 +3,8 @@
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -10,15 +12,11 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-service_name=name
-	-dbfs_user=name
-	-dbfs_password=password
 "
 
 script_banner $ME $*
 
 typeset	service_name=undef
-typeset	dbfs_user=undef
-typeset	dbfs_password=undef
 
 while [ $# -ne 0 ]
 do
@@ -29,17 +27,7 @@ do
 			;;
 
 		-service_name=*)
-			service_name=${1##*=}
-			shift
-			;;
-
-		-dbfs_user=*)
-			dbfs_user=${1##*=}
-			shift
-			;;
-
-		-dbfs_password=*)
-			dbfs_password=${1##*=}
+			service_name=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -59,33 +47,32 @@ do
 done
 
 exit_if_param_undef service_name	"$str_usage"
-exit_if_param_undef dbfs_user		"$str_usage"
-exit_if_param_undef dbfs_password	"$str_usage"
 
 must_be_user root
 
 typeset	-r	pdb_name=$(sed 's/pdb\(.*\)_oci/\1/'<<<$service_name)
+typeset	-r	dbfs_cfg_file=/home/oracle/${pdb_name}_dbfs.cfg
 
-typeset	ORACLE_HOME=undef
-typeset	DBNAME=undef
-IFS=':' read DBNAME ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent" /etc/oratab)"
-
-info "Configure DBFS for :"
-info "ORACLE_HOME = '$ORACLE_HOME'"
-info "DBNAME = '$DBNAME'"
-info -n "Service $service_name running "
-if grep -iqE "Service $service_name is running.*"<<<"$(srvctl status service -db $DBNAME)"
+line_separator
+info "Load $dbfs_cfg_file"
+if [ ! -f $dbfs_cfg_file ]
 then
-	info -f "$OK"
-	LN
-else
-	info -f "$KO"
-	LN
-	info "$str_usage"
+	error "File not exists."
 	LN
 	exit 1
 fi
+. $dbfs_cfg_file
+LN
 
+line_separator
+typeset	ORACLE_HOME=undef
+IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent" /etc/oratab)"
+
+info "ORACLE_HOME = '$ORACLE_HOME'"
+typeset DBNAME=$(extract_db_name_from $pdb_name)
+exit_if_service_not_running $DBNAME $pdb_name $service_name
+
+line_separator
 info "Install fuse :"
 exec_cmd yum -y install fuse fuse-libs
 LN
@@ -100,16 +87,20 @@ then
 else
 	exec_cmd "echo '/usr/local/lib' >> /etc/ld.so.conf.d/usr_local_lib.conf"
 fi
-[ ! -h libclntsh.so.12.1 ] && \
-			exec_cmd ln -s $ORACLE_HOME/lib/libclntsh.so.12.1 || true
-[ ! -h libnnz12.so ] &&	\
-			exec_cmd ln -s $ORACLE_HOME/lib/libnnz12.so || true
-[ ! -h libclntshcore.so.12.1 ] &&	\
-			exec_cmd ln -s $ORACLE_HOME/lib/libclntshcore.so.12.1 || true
+
+typeset	-r	rel=$(cut -d. -f1-2<<<"$oracle_release")
+typeset	-r	ver=$(cut -d. -f1<<<"$oracle_release")
+
+[ ! -h libclntsh.so.$rel ] && \
+			exec_cmd ln -s $ORACLE_HOME/lib/libclntsh.so.$rel || true
+[ ! -h libnnz$ver.so ] &&	\
+			exec_cmd ln -s $ORACLE_HOME/lib/libnnz$ver.so || true
+[ ! -h libclntshcore.so.$rel ] &&	\
+			exec_cmd ln -s $ORACLE_HOME/lib/libclntshcore.so.$rel || true
 [ ! -h libfuse.so ] &&	\
 			exec_cmd ln -s /lib64/libfuse.so.2 libfuse.so || true
 exec_cmd ldconfig
-exec_cmd "ldconfig -p | grep -E 'fuse|12.1'"
+exec_cmd "ldconfig -p | grep -E 'fuse|$rel'"
 LN
 
 line_separator
@@ -156,7 +147,42 @@ info "Add mount point to fstab"
 if grep -qE "mount.dbfs#$dbfs_user@$service_name" /etc/fstab
 then
 	info "Remove existing mount point"
-	exec_cmd "sed -i '/#$dbfs_user@$service_name/d' /etc/fstab"
+	exec_cmd "sed -i '/#.*@$service_name/d' /etc/fstab"
+	LN
 fi
-exec_cmd "echo '/sbin/mount.dbfs#$dbfs_user@$service_name /mnt/$pdb_name fuse rw,user,allow_other,noauto,default 0 0' >> /etc/fstab"
+
+if [ $wallet == yes ]
+then
+	exec_cmd "echo '/sbin/mount.dbfs#/@$service_name /mnt/$pdb_name fuse wallet,rw,user,allow_other,direct_io,noauto,default 0 0' >> /etc/fstab"
+else
+	exec_cmd "echo '/sbin/mount.dbfs#$dbfs_user@$service_name /mnt/$pdb_name fuse rw,user,allow_other,direct_io,noauto,default 0 0' >> /etc/fstab"
+fi
+LN
+
+line_separator
+if grep -qE "oracle" <<<"$(who)"
+then
+	warning "***********************************"
+	warning "YOU must disconnect oracle account."
+	warning "***********************************"
+	LN
+fi
+
+if grep -qE "grid" <<<"$(who)"
+then
+	warning "*********************************"
+	warning "YOU must disconnect grid account."
+	warning "*********************************"
+	LN
+fi
+
+if [ $gi_count_nodes -gt 1 ]
+then
+	info "Run this script on servers : $gi_node_list"
+	LN
+fi
+
+info "With user grid execute :"
+info "cd plescripts/db/dbfs/"
+info "./create_crs_resource_for_dbfs.sh -pdb_name=$pdb_name"
 LN

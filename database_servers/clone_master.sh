@@ -12,10 +12,11 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-db=<str>            Identifiant de la base.
-	[-vmGroup=name]      Nom du group ou doit être enregistré la VM.
+	[-vmGroup=name]      Nom du groupe ou doit être enregistré la VM.
 	[-node=<#>]          N° du nœud si base de type RAC.
 
-	[-start_server_only] Le serveur est déjà cloné, uniquement le démarrer. (Util uniqement lors du debug)
+Debug flag :
+	[-start_server_only] Le serveur est déjà cloné, uniquement le démarrer.
 "
 
 script_banner $ME $*
@@ -222,7 +223,7 @@ function mount_oracle_install
 	LN
 }
 
-#	Sur le premier noeud les disques doivent être crées puis exportés.
+#	Sur le premier nœud les disques doivent être crées puis exportés.
 function create_san_LUNs_and_attach_to_node1
 {
 	line_separator
@@ -243,7 +244,7 @@ function create_san_LUNs_and_attach_to_node1
 	LN
 }
 
-#	Dans le cas d'un RAC les autres noeuds vont se connecter au portail et
+#	Dans le cas d'un RAC les autres nœuds vont se connecter au portail et
 #	appeler oracleasm pour accéder aux disques.
 function attach_existing_LUNs_on_node
 {
@@ -270,7 +271,7 @@ function make_ssh_equi_with_san
 
 #	Création des disques et points de montages pour l'installation des logiciels
 #	Oracle & Grid
-#	Note l'odre de création des FS est important, si OCFS2 est utilisé c'est le
+#	Note l'ordre de création des FS est important, si OCFS2 est utilisé c'est le
 #	disque sdc qui est partagé, sdb ne l'est jamais.
 function create_disks_for_oracle_and_grid_softwares
 {
@@ -320,20 +321,14 @@ function create_disks_for_oracle_and_grid_softwares
 	fi
 }
 
-function synch_ntp
+function workaround_ntp_sync
 {
 	line_separator
-	info "Synch time."
-	ssh_server systemctl stop ntpd
+	info "Workaround ntp sync"
+	ssh_server "~/plescripts/ntp/force_sync_ntp.sh"
 	LN
-
-	for i in $( seq 3 )
-	do
-		ssh_server ntpdate $infra_hostname
-	done
-	LN
-
-	ssh_server systemctl start ntpd
+	ssh_server "cp ~/plescripts/database_servers/sync_ntp.sh /root/"
+	ssh_server "crontab ~/plescripts/database_servers/crontab_workaround_ntp.txt"
 	LN
 }
 
@@ -386,6 +381,8 @@ function configure_server
 	make_ssh_equi_with_san
 	LN
 
+	[ $ntp_tool == ntp ] && workaround_ntp_sync
+
 	line_separator
 	#	Si depuis la création du master le dépôt par défaut a changé, permet
 	#	de basculer sur le bon dépôt.
@@ -396,8 +393,6 @@ function configure_server
 	LN
 
 	create_disks_for_oracle_and_grid_softwares
-
-	[ $ntp_tool == ntp ] && synch_ntp
 }
 
 #	Met en place tous les pré requis Oracle
@@ -420,9 +415,10 @@ function copy_color_file
 	LN
 }
 
-#	Ne pas appeler pour le premier noeud d'un RAC.
-#	Pour les autres noeuds (supérieur à 1 donc) test si le serveur précédent
+#	Ne pas appeler pour le premier nœud d'un RAC.
+#	Pour les autres nœuds (supérieur à 1 donc) test si le serveur précédent
 #	à été configuré.
+#	BUG : ne fonctionne pas avec plus de 2 nœuds.
 function test_if_other_nodes_up
 {
 	typeset check_ok=yes
@@ -485,20 +481,42 @@ function create_stats_services
 	LN
 }
 
+function test_if_enought_disk_space_on_san
+{
+	typeset	-ri	total_disk_mb=$(to_mb $(cfg_total_disk_size_gb $db)G)
+	typeset	-ri	san_free_space_mb=$(to_mb $(ssh $infra_conn LANG=C vgs $vg_name | tail -1 | awk '{ print $7 }'))
+
+	info -n "$db needs $(fmt_number $total_disk_mb)Mb of disk, available on $infra_hostname $(fmt_number $san_free_space_mb)Mb : "
+	if [ $total_disk_mb -gt $san_free_space_mb ]
+	then
+		info -f "$KO"
+		error "Not enought disk available."
+		LN
+		exit 1
+	fi
+	info -f "$OK"
+	LN
+}
+
 #	============================================================================
 #	MAIN
 #	============================================================================
 script_start
 
-[ $node -gt 1 ]	&& test_if_other_nodes_up
+if [ $node -eq 1 ]
+then
+	[ $cfg_luns_hosted_by == san ] && test_if_enought_disk_space_on_san || true
+else
+	test_if_other_nodes_up
+fi
 
 configure_server
 
 configure_oracle_accounts
 
-#	Equivalence entre le poste client/serveur host et le serveur de bdd
-#	Permet depuis le poste client/serveur host de se connecter sans mot de passe
-#	avec les comptes root, grid et oracle.
+#	Équivalence entre le virtual-host et le serveur de bdd
+#	Permet depuis le virtual-host de se connecter sans mot de passe avec les
+#	comptes root, grid et oracle.
 exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh	\
 													-remote_server=$server_name"
 LN
@@ -562,7 +580,7 @@ then	# C'est le dernier nœud
 	fi
 	LN
 elif [ $max_nodes -ne 1 ]
-then	# Ce n'est pas le dernier noeud et il y a plus de 1 noeud.
+then	# Ce n'est pas le dernier nœud et il y a plus de 1 nœud.
 	script_stop $ME $db
 
 	info "Run script :"

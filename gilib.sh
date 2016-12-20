@@ -13,7 +13,7 @@ function _get_other_nodes
 		typeset nl=$(olsnodes | xargs)
 		if [ x"$nl" != x ]
 		then # olsnodes ne retourne rien sur un SINGLE
-			sed "s/$(hostname -s) //" <<<"$nl"
+			sed "s/$(hostname -s)//"<<<"$nl"
 		fi
 	fi
 }

@@ -89,7 +89,9 @@ function gen_and_copy_server_pub_key
 
 	typeset -r public_key=$(get_server_public_key $from)
 	info "Copy la clef public de $from dans le known_hosts de $to"
-	exec_cmd -c "ssh -t $user1@$to sed -i '/${from}/d' .ssh/known_hosts"
+	exec_cmd "ssh -t $user1@$to	\
+		'[ -f .ssh/known_hosts ] && sed -i '/${from}/d' .ssh/known_hosts || true'"
+
 	exec_cmd "ssh -t $user1@$to \"echo \\\"$public_key\\\" >> .ssh/known_hosts\""
 	LN
 }
@@ -100,7 +102,10 @@ function gen_and_copy_user_pub_key
 	typeset	-r	to=$2
 
 	info "Génération de la clef pour $user1 sur le serveur $from"
-	exec_cmd "ssh -t $user1@$from \"[ ! -f ~/.ssh/id_rsa ] && ssh-keygen -t rsa -N \\\"\\\" -f ~/.ssh/id_rsa\" || true"
+	exec_cmd "ssh -t $user1@$from	\
+	   \"[ ! -f ~/.ssh/id_rsa ]									\
+			&& ssh-keygen -t rsa -N \\\"\\\" -f ~/.ssh/id_rsa\"	\
+			|| true"
 	LN
 
 	info -n "Lecture de la clef publique de $user1@$from : "
@@ -116,7 +121,10 @@ function gen_and_copy_user_pub_key
 	fi
 
 	info "Ajoute la clef de $from dans les clefs autorisées de $to"
-	exec_cmd -c "ssh -t $user1@$to sed -i '/${user1}@${from}.${infra_domain}/d' .ssh/authorized_keys"
+	exec_cmd "ssh -t $user1@$to	\
+	   '[ -f .ssh/authorized_keys ]												 \
+			&& sed -i '/${user1}@${from}.${infra_domain}/d' .ssh/authorized_keys \
+			|| true'"
 	exec_cmd "ssh -t $user1@$to \"echo \\\"$public_key\\\" >> .ssh/authorized_keys\""
 	LN
 }

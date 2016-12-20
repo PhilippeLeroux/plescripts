@@ -9,12 +9,18 @@ PLELIB_OUTPUT=FILE
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -db=<str> -delete_vms=yes"
+typeset -r str_usage="
+Usage : $ME
+	-db=<str>
+	[-keep_vm]         keep VMs.
+	[-keep_cfg_files]  keep configuration files.
+"
 
 script_banner $ME $*
 
 typeset	db=undef
 typeset	delete_vms=yes
+typeset	remove_cfg_file=yes
 
 while [ $# -ne 0 ]
 do
@@ -29,8 +35,13 @@ do
 			shift
 			;;
 
-		-delete_vms=*)
-			delete_vms=${1##*=}
+		-keep_vms)
+			delete_vms=no
+			shift
+			;;
+
+		-keep_cfg_file)
+			remove_cfg_file=no
 			shift
 			;;
 
@@ -65,6 +76,8 @@ then
 	do
 		cfg_load_node_info $db $inode
 		remove_from_known_hosts $cfg_server_name
+		exec_cmd "ssh -t $dns_conn					\
+				plescripts/ssh/remove_from_known_host.sh -host=$cfg_server_name"
 		if [[ $max_nodes -gt 1 && $inode -eq 1 ]]
 		then	# Supprime les scans.
 			remove_from_known_hosts ${db}-scan
@@ -80,7 +93,7 @@ exec_cmd "ssh -t $dns_conn plescripts/dns/remove_db_from_dns.sh -db=$db"
 LN
 
 line_separator
-info "Remove keys from DNS"
+info "Remove keys"
 exec_cmd "ssh -t $dns_conn plescripts/dns/clean_up_ssh_authorized_keys.sh"
 LN
 
@@ -94,7 +107,10 @@ info "Clean up local DNS cache :"
 exec_cmd -c sudo systemctl restart nscd.service
 LN
 
-line_separator
-info "Remove $cfg_path_prefix/$db"
-exec_cmd -c "rm -rf $cfg_path_prefix/$db"
-LN
+if [ $remove_cfg_file == yes ]
+then
+	line_separator
+	info "Remove $cfg_path_prefix/$db"
+	exec_cmd -c "rm -rf $cfg_path_prefix/$db"
+	LN
+fi

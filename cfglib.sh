@@ -48,3 +48,19 @@ function cfg_load_node_info
 				cfg_u2 cfg_iscsi_ip cfg_luns_hosted_by							\
 		<$cfg_file
 }
+
+#*> $1 db
+#*> return total disk size (Gb)
+function cfg_total_disk_size_gb
+{
+	typeset -r	l_db=$(to_lower $1)
+	typeset	-i	l_total_size_gb=0
+
+	while IFS=: read dg_name size_gb first_no last_no
+	do
+		count=$(( $last_no - $first_no + 1 ))
+		l_total_size_gb=$(( l_total_size_gb + size_gb * count ))
+	done < $cfg_path_prefix/$db/disks
+
+	echo $l_total_size_gb
+}

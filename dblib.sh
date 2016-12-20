@@ -104,12 +104,15 @@ function sqlplus_print_query
 #*> exit if service name not running else return 0
 function exit_if_service_not_running
 {
-	typeset	-r	db_name="$1"
-	typeset	-r	pdb_name="$2"
-	typeset	-r	service_name="$3"
+	typeset	-r	db_name_l="$1"
+	typeset	-r	pdb_name_l="$2"
+	typeset	-r	service_name_l="$3"
 
-	info -n "Database $db_name, pdb $pdb_name : service $service_name running "
-	if grep -iqE "Service $service_name is running.*"<<<"$(srvctl status service -db $db_name)"
+	exec_cmd srvctl status service -db $db_name_l
+	LN
+
+	info -n "Database $db_name_l, pdb $pdb_name_l : service $service_name_l running "
+	if grep -iqE "Service $service_name_l is running.*"<<<"$(srvctl status service -db $db_name_l)"
 	then
 		info -f "$OK"
 		LN
@@ -128,8 +131,8 @@ function exit_if_service_not_running
 #*> return db name
 function extract_db_name_from
 {
-	typeset	-r pdb_name="$1"
-	to_upper $(sed "s/\([a-z]*\)[0-9]*/\1/" <<<$pdb_name)
+	typeset	-r pdb_name_l="$1"
+	to_lower $(sed "s/\([a-z]*\)[0-9]*/\1/" <<<$pdb_name_l)
 }
 
 #*>	$1 pdb name
@@ -137,8 +140,8 @@ function extract_db_name_from
 #*> return associate oci service name
 function make_oci_service_name_for
 {
-	typeset	-r pdb_name=$(to_upper "$1")
-	echo pdb${pdb_name}_oci
+	typeset	-r pdb_name_l=$(to_upper "$1")
+	echo pdb${pdb_name_l}_oci
 }
 
 #*>	$1 pdb name
@@ -146,7 +149,7 @@ function make_oci_service_name_for
 #*> return associate java service name
 function make_java_service_name_for
 {
-	typeset	-r pdb_name=$(to_upper "$1")
-	echo pdb${pdb_name}_java
+	typeset	-r pdb_name_l=$(to_upper "$1")
+	echo pdb${pdb_name_l}_java
 }
 

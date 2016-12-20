@@ -68,12 +68,13 @@ function configure_ntp
 	LN
 
 	typeset	-r s2=$(escape_slash "# Please consider joining the pool (http://www.pool.ntp.org/join.html).")
-	#	Sur un réseau local utiliser burst (iburst c'est pour internet)
+	#	'burst' est conseillé sur un réseau local.
 	exec_cmd "sed -i '/$s2/a server $time_server burst' $ntp_conf"
 	LN
 
 	info "Config $sysconfig_ntpd"
-	exec_cmd "sed -i 's,^OPTIONS.*,OPTIONS=\"-x -u ntp:ntp -p /var/run/ntpd.pid\",' $sysconfig_ntpd"
+	exec_cmd "sed -i 's,^OPTIONS.*,OPTIONS=\"-x -g -I $if_pub_name -p /var/run/ntpd.pid\",' $sysconfig_ntpd"
+	exec_cmd "sed -i '/SYNC_HWCLOCK/d' $sysconfig_ntpd"
 	exec_cmd "echo 'SYNC_HWCLOCK=yes' >> $sysconfig_ntpd"
 	LN
 }
@@ -108,15 +109,9 @@ then
 	exec_cmd "sed -i 's/.*allow .*/allow ${network}\/$if_pub_prefix/g' $ntp_conf"
 	LN
 
-	exec_cmd "systemctl enable ntpdate"
-	exec_cmd "systemctl start ntpdate"
-	LN
-
 	exec_cmd "ntpdate $infra_hostname"
 	LN
 fi
-
-[ $role == master ] && configure_ntpdate || true
 
 info "Enabled & start ntpd"
 exec_cmd "systemctl enable ntpd"

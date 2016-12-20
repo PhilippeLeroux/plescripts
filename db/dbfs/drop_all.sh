@@ -42,15 +42,20 @@ done
 
 must_be_user oracle
 
-typeset	-r	dbfs_info=~/${pdb_name}_infra
+exit_if_param_undef pdb_name "$str_usage"
 
-if [ ! -f $dbfs_info ]
+typeset	-r	dbfs_cfg_file=~/${pdb_name}_dbfs.cfg
+
+if [ ! -f $dbfs_cfg_file ]
 then
-	echo "Error file $dbfs_info not exists."
+	echo "Error file $dbfs_cfg_file not exists."
 	exit 1
 fi
 
-. $dbfs_info
+. $dbfs_cfg_file
+
+exec_cmd -c fusermount -u /mnt/$pdb_name
+LN
 
 sqlplus -s $dbfs_user/$dbfs_password@$service<<EOSQL
 prompt drop filesystem DBFS $dbfs_name
@@ -67,3 +72,18 @@ drop tablespace $dbfs_tbs including contents and datafiles;
 EOSQL
 
 echo
+
+fake_exec_cmd mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service
+mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service<<EOP
+$oracle_password
+EOP
+LN
+
+exec_cmd rm $dbfs_cfg_file
+LN
+
+line_separator
+exec_cmd -c rm -rf $ORACLE_HOME/oracle/wallet
+LN
+
+info "Done."

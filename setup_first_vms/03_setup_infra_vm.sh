@@ -64,15 +64,9 @@ info "Setup SAN"
 exec_cmd "~/plescripts/san/targetcli_default_cfg.sh"
 LN
 
-case $ntp_tool in
-	chrony)
-		exec_cmd ~/plescripts/ntp/configure_chrony.sh -role=infra
-		;;
-
-	ntp)
-		exec_cmd ~/plescripts/ntp/configure_ntp.sh -role=infra
-		;;
-esac
+#	Le serveur d'infra doit utiliser chrony, ntp merde trop
+exec_cmd ~/plescripts/ntp/configure_chrony.sh -role=infra
+LN
 
 exec_cmd ~/plescripts/gadgets/customize_logon.sh -name=$infra_hostname
 
