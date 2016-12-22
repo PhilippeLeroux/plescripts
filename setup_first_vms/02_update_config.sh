@@ -36,13 +36,6 @@ info "Remove samba."
 exec_cmd yum -y erase samba-client.x86_64 samba-client-libs.x86_64 samba-common.noarch samba-common-libs.x86_64 samba-common-tools.x86_64 samba-libs.x86_64
 LN
 
-if [ $ntp_tool == ntp ]
-then
-	info "Remove chrony"
-	exec_cmd yum -y erase chrony
-	LN
-fi
-
 if test_if_rpm_update_available
 then
 	exec_cmd yum -y update
@@ -53,7 +46,6 @@ line_separator
 exec_cmd yum -y install	nfs-utils				\
 						iscsi-initiator-utils	\
 						deltarpm				\
-						$ntp_tool				\
 						wget					\
 						net-tools				\
 						vim-enhanced			\

@@ -45,15 +45,41 @@ done
 
 exit_if_param_invalid role "master infra" "$str_usage"
 
+[ $role == master ] && time_server=$infra_hostname || true
+
 typeset -r ntp_conf=/etc/ntp.conf
-typeset	-r sysconfig_ntpd=/etc/sysconfig/ntpd
 
-exit_if_file_not_exists $ntp_conf
+function install_ntp
+{
+	info "Uninstall chrony."
+	exec_cmd "yum -y erase chrony"
+	LN
 
-[ $role == master ] && time_server=$infra_hostname || time_server=$master_time_server
+	info "Install ntp."
+	exec_cmd "yum -y install ntp"
+	LN
+}
+
+function configure_and_start_ntpdate
+{
+	typeset -r ntpdate_conf=/etc/ntp/step-tickers
+
+	exec_cmd "echo '$infra_hostname' > $ntpdate_conf"
+	LN
+
+	info "Sync $(hostname -s) with $infra_hostname"
+	exec_cmd "ntpdate $infra_hostname"
+	LN
+
+	exec_cmd "systemctl enable ntpdate"
+	exec_cmd "systemctl start ntpdate"
+	LN
+}
 
 function configure_ntp
 {
+	typeset	-r sysconfig_ntpd=/etc/sysconfig/ntpd
+
 	info "Config $ntp_conf"
 	exec_cmd "cp $ntp_conf ${ntp_conf}.backup"
 	LN
@@ -74,44 +100,13 @@ function configure_ntp
 
 	info "Config $sysconfig_ntpd"
 	exec_cmd "sed -i 's,^OPTIONS.*,OPTIONS=\"-x -g -I $if_pub_name -p /var/run/ntpd.pid\",' $sysconfig_ntpd"
-	exec_cmd "sed -i '/SYNC_HWCLOCK/d' $sysconfig_ntpd"
-	exec_cmd "echo 'SYNC_HWCLOCK=yes' >> $sysconfig_ntpd"
 	LN
 }
 
-function configure_ntpdate
-{
-	typeset -r ntpdate_conf=/etc/ntp/step-tickers
-	typeset	-r sysconfig_ntpdate=/etc/sysconfig/ntpdate
+[ ! -f $ntp_conf ] && install_ntp || true
 
-	exec_cmd "echo '$infra_hostname' > $ntpdate_conf"
-	LN
-
-	exec_cmd "sed -i 's/SYNC_HWCLOCK=.*/SYNC_HWCLOCK=yes/' $sysconfig_ntpdate"
-	LN
-
-	info "Sync $(hostname -s) with $infra_hostname"
-	exec_cmd "ntpdate $infra_hostname"
-	LN
-
-	exec_cmd "systemctl enable ntpdate"
-	exec_cmd "systemctl start ntpdate"
-	LN
-}
-
-[ $time_server != internet ] && configure_ntp || true
-
-if [ $role == infra ]
-then
-	[ ! -f ${ntp_conf}.backup ] && exec_cmd "cp $ntp_conf ${ntp_conf}.backup"
-
-	typeset	-r network=$(right_pad_ip $infra_network)
-	exec_cmd "sed -i 's/.*allow .*/allow ${network}\/$if_pub_prefix/g' $ntp_conf"
-	LN
-
-	exec_cmd "ntpdate $infra_hostname"
-	LN
-fi
+configure_ntp
+configure_and_start_ntpdate
 
 info "Enabled & start ntpd"
 exec_cmd "systemctl enable ntpd"

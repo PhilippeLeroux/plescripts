@@ -58,15 +58,7 @@ LN
 
 exec_cmd "~/plescripts/setup_first_vms/02_update_config.sh"
 
-case $ntp_tool in
-	chrony)
-		exec_cmd ~/plescripts/ntp/configure_chrony.sh -role=master
-		;;
-
-	ntp)
-		exec_cmd ~/plescripts/ntp/configure_ntp.sh -role=master
-		;;
-esac
+exec_cmd ~/plescripts/ntp/configure_chrony.sh -role=master
 
 exec_cmd ~/plescripts/gadgets/customize_logon.sh -name=$master_hostname
 

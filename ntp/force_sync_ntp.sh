@@ -1,141 +1,81 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-. ~/plescripts/plelib.sh
+exec >> /tmp/force_sync_ntp.$(date +%d) 2>&1
+
 . ~/plescripts/global.cfg
-EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME ...."
 
-script_banner $ME $*
+typeset -ri	max_offset_ms=200
 
-while [ $# -ne 0 ]
-do
-	case $1 in
-		-emul)
-			EXEC_CMD_ACTION=NOP
-			shift
-			;;
-
-		-h|-help|help)
-			info "$str_usage"
-			LN
-			exit 1
-			;;
-
-		*)
-			error "Arg '$1' invalid."
-			LN
-			info "$str_usage"
-			exit 1
-			;;
-	esac
-done
-
-must_be_user root
-
+#	return abs( $1 )
 function abs
 {
 	typeset	val="$1"
-	if [ "${val:0:1}" == "-" ]
-	then
-		echo ${val:1}
-	else
-		echo $val
-	fi
+	[ "${val:0:1}" == "-" ] && echo ${val:1} || echo $val
 }
 
-function trunc_decimals
+#	return integer part of $1
+function int_part
 {
-	IFS='.' read int_p dec_p<<<"$1"
-	echo $int_p
+	cut -d. -f1<<<"$1"
 }
 
-function abs_and_trunc_decimals
-{
-	typeset v=$(abs $1)
-	trunc_decimals $v
-}
+#	============================================================================
+#	Test si décolage de plus de max_offset_ms
+read l_remote l_refid l_st l_t l_when l_pool l_reach l_delay l_offset l_jitter \
+													<<<"$(ntpq -p | tail -1)"
 
-#	return 0 if offset lower than 1000 else 1
-function test_offset
-{
-	exec_cmd ntpq -p
-	read l_remote l_refid l_st l_t l_when l_pool l_reach l_delay l_offset l_jitter \
-		<<<"$(ntpq -p | tail -1)"
+offset=$(abs $(int_part $l_offset))
+if [ x"$offset" == x ]
+then	# Se produit si après démarrage de ntpd on a le message d'erreur :
+		# ntpq: read: Connection refused
+	echo "offset is null, l_offset = '$l_offset' : bug ???"
+	offset=0
+fi
+[ $offset -lt $max_offset_ms ] && status=OK || status=KO
 
-	typeset -i off=$(abs_and_trunc_decimals $l_offset)
+TT=$(date +%Hh%M)
+echo "$TT : abs( ${l_offset} ms ) < ${max_offset_ms} ms : $status"
 
-	info -n "$off -lt 1000 : "
-	if [ $off -lt 1000 ]
-	then
-		info -f "$OK"
-		LN
-		return 0
-	else
-		info -f "$KO"
-		LN
-		return 1
-	fi
-}
+[ $status == OK ] && exit 0 || true
 
-test_offset
-[ $? -eq 0 ] && exit 0 || true
+[ $offset -gt 800 ] && echo "$TT : $l_offset" >> /tmp/ntp_big_offset.$(date +%d) || true
 
+#	============================================================================
 typeset	-r date_before_sync=$(date)
-typeset	-r hwclock_before_sync=$(hwclock)
-
 typeset	-r start_at=$SECONDS
 
-exec_cmd systemctl stop ntpd
-LN
+#	============================================================================
+echo "systemctl stop ntpd"
+systemctl stop ntpd
 
-typeset	-ri	max_loops=50
+#	============================================================================
+typeset	-ri	max_loops=4	# sécurité au cas ou la synchro ne se fait pas.
 
 typeset	-i	loop=0
 typeset		time_sync=no
 
 for loop in $( seq $max_loops )
 do
-	fake_exec_cmd ntpdate -b $infra_hostname
 	read day month tt l_ntpdate l_ajust l_time l_server ip_ntp_server	\
 			l_offset seconds l_sec <<<"$(ntpdate -b $infra_hostname)"
-	echo "$day $month $tt $l_ntpdate $l_ajust $l_time $l_server $ip_ntp_server $l_offset $seconds $l_sec"
 
-	typeset -i secs=$(abs_and_trunc_decimals $seconds)
+	[ $(abs $(int_part $seconds)) -eq 0 ] && status=OK || status=KO
 
-	info -n "$loop) $secs -eq 0 : "
-	if [ $secs -eq 0 ]
-	then
-		info -f "$OK"
-		LN
-		time_sync=yes
-		break	# exit loop
-	else
-		info -f "$KO"
-		LN
-	fi
+	echo "Time adjusted #${loop} abs( ${seconds} s ) < 1 s : $status"
+
+	[ $status == OK ] && time_sync=yes && break	# exit loop
 done
 
-exec_cmd systemctl start ntpd
-LN
+#	============================================================================
+echo "systemctl start ntpd"
+systemctl start ntpd
 
-info "Time to sync        : $(( SECONDS - start_at )) secs"
-info "Date before sync    : $date_before_sync"
-info "Date after sync     : $(date)"
-info "Hwclock before sync : $hwclock_before_sync"
-info "Hwclock after sync  : $(hwclock)"
-LN
-
-if [ $time_sync == no ]
-then
-	error "Cannot sync time with $infra_hostname"
-	LN
-	test_offset
-	[ $? -eq 0 ] && exit 0 || exit 1
-else
-	info "Time sync $OK"
-	exit 0
-fi
+#	============================================================================
+echo "Synchronization time : $(( SECONDS - start_at )) secs"
+echo "Date before sync     : $date_before_sync"
+echo "Date after sync      : $(date)"
+echo
+[ $time_sync == yes ] && exit 0 || exit 1

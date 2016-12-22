@@ -321,14 +321,13 @@ function create_disks_for_oracle_and_grid_softwares
 	fi
 }
 
-function workaround_ntp_sync
+function rac_configure_ntp
 {
-	line_separator
-	info "Workaround ntp sync"
-	ssh_server "~/plescripts/ntp/force_sync_ntp.sh"
+	info "RAC node : install & configure ntp."
+	ssh_master "~/plescripts/ntp/configure_ntp.sh"
 	LN
-	ssh_server "cp ~/plescripts/database_servers/sync_ntp.sh /root/"
-	ssh_server "crontab ~/plescripts/database_servers/crontab_workaround_ntp.txt"
+
+	ssh_master "~/plescripts/ntp/disable_kvmclock.sh"
 	LN
 }
 
@@ -357,6 +356,8 @@ function configure_server
 	LN
 	exec_cmd "wait_server $master_hostname"
 
+	[ $max_nodes -gt 1 ] && rac_configure_ntp || true
+
 	#	************************************************************************
 	#	La VM a été clonée mais sa configuration réseau correspond toujours à
 	#	celle du master, il faut donc régénérer la clef public.
@@ -380,8 +381,6 @@ function configure_server
 	line_separator
 	make_ssh_equi_with_san
 	LN
-
-	[ $ntp_tool == ntp ] && workaround_ntp_sync
 
 	line_separator
 	#	Si depuis la création du master le dépôt par défaut a changé, permet
