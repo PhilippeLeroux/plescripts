@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -54,15 +55,15 @@ fi
 
 . $dbfs_cfg_file
 
-exec_cmd -c fusermount -u /mnt/$pdb_name
+line_separator
+execute_on_all_nodes_v2 -c "fusermount -u /mnt/$pdb_name"
 LN
 
 sqlplus -s $dbfs_user/$dbfs_password@$service<<EOSQL
 prompt drop filesystem DBFS $dbfs_name
 @?/rdbms/admin/dbfs_drop_filesystem.sql $dbfs_name
 EOSQL
-
-echo
+LN
 
 sqlplus -s sys/Oracle12@$service as sysdba<<EOSQL
 prompt drop user $dbfs_user
@@ -70,20 +71,24 @@ drop user $dbfs_user cascade;
 prompt drop tbs $dbfs_tbs
 drop tablespace $dbfs_tbs including contents and datafiles;
 EOSQL
+LN
 
-echo
+line_separator
+execute_on_all_nodes_v2 'sed -i "/WALLET_LOCATION/d" $TNS_ADMIN/sqlnet.ora'
+execute_on_all_nodes_v2 'sed -i "/SQLNET.WALLET_OVERRIDE/d" $TNS_ADMIN/sqlnet.ora'
+LN
 
+#	Ce n'est pas utile, mais ca ma sert de mémo.
 fake_exec_cmd mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service
 mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service<<EOP
 $oracle_password
 EOP
 LN
 
-exec_cmd rm $dbfs_cfg_file
+execute_on_all_nodes_v2 "rm -f $dbfs_cfg_file"
 LN
 
-line_separator
-exec_cmd -c rm -rf $ORACLE_HOME/oracle/wallet
+execute_on_all_nodes_v2 "rm -rf $ORACLE_HOME/oracle/wallet"
 LN
 
 info "Done."

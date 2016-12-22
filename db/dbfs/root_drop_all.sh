@@ -1,8 +1,10 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
+PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -48,42 +50,42 @@ exit_if_param_undef service_name	"$str_usage"
 
 must_be_user root
 
-typeset -r pdb_name=$(sed 's/pdn\(.*\)_oci/\1/' <<<"$service_name")
+typeset -r pdb_name=$(sed 's/pdb\(.*\)_oci/\1/' <<<"$service_name")
 typeset	-r db_name=$(to_lower $(extract_db_name_from $pdb_name))
 
 exec_cmd -c  "sudo -iu grid crsctl delete res pdb.${pdb_name}.dbfs -f"
 LN
 
 line_separator
-exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/drop_all.sh -pdb_name=$pdb_name"
+exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/oracle_drop_all.sh -pdb_name=$pdb_name"
 LN
 
 line_separator
-exec_cmd rm -f /etc/ld.so.conf.d/usr_local_lib.conf
+execute_on_all_nodes "rm -f /etc/ld.so.conf.d/usr_local_lib.conf"
 LN
 
 line_separator
 typeset	-r	rel=$(cut -d. -f1-2<<<"$oracle_release")
 typeset	-r	ver=$(cut -d. -f1<<<"$oracle_release")
 [ -h libclntsh.so.$rel ] && \
-			exec_cmd rm -f $ORACLE_HOME/lib/libclntsh.so.$rel || true
+		execute_on_all_nodes rm -f $ORACLE_HOME/lib/libclntsh.so.$rel || true
 [ -h libnnz$ver.so ] &&	\
-			exec_cmd rm -f $ORACLE_HOME/lib/libnnz$ver.so || true
+		execute_on_all_nodes rm -f $ORACLE_HOME/lib/libnnz$ver.so || true
 [ -h libclntshcore.so.$rel ] &&	\
-			exec_cmd rm -f $ORACLE_HOME/lib/libclntshcore.so.$rel || true
+		execute_on_all_nodes rm -f $ORACLE_HOME/lib/libclntshcore.so.$rel || true
 [ -h libfuse.so ] &&	\
-			exec_cmd rm -f libfuse.so || true
-exec_cmd ldconfig
+		execute_on_all_nodes rm -f libfuse.so || true
+execute_on_all_nodes ldconfig
 LN
 
 line_separator
-exec_cmd "rm -f /sbin/mount.dbfs"
+execute_on_all_nodes "rm -f /sbin/mount.dbfs"
 LN
 
 line_separator
-exec_cmd "sed -i '/#.*@$service_name/d' /etc/fstab"
+execute_on_all_nodes "sed -i '/#.*@$service_name/d' /etc/fstab"
 LN
 
 line_separator
-exec_cmd yum -y remove fuse fuse-libs
+execute_on_all_nodes yum -y remove fuse fuse-libs
 LN

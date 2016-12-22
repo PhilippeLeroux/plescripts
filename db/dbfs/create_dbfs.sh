@@ -12,7 +12,7 @@ typeset -r ME=$0
 
 script_banner $ME $*
 
-typeset db_name=auto
+typeset dg_db_name=auto
 typeset pdb_name=undef
 typeset service_name=auto
 typeset account_name=dbfsadm
@@ -20,20 +20,17 @@ typeset	account_password=dbfs
 typeset	wallet=yes
 typeset	wallet_path=$ORACLE_HOME/oracle/wallet
 
-typeset	load_data=no
-
 typeset -r str_usage=\
 "Usage : $ME
 	-pdb_name=name
 	[-account_name=$account_name]
 	[-account_password=$account_password]
-	[-db_name=name]
+	[-db_name=name] Mandatory with dataguard.
 	[-service_name=name]
 	[-wallet_path=$wallet_path]
 
 Debug flags :
 	[-wallet=yes]	yes|no : with 'no', uses password file.
-	[-load_data]	Charge dans le FS le contenu du répertoire courant.
 "
 
 while [ $# -ne 0 ]
@@ -55,7 +52,7 @@ do
 			;;
 
 		-db_name=*)
-			db_name=${1##*=}
+			dg_db_name=${1##*=}
 			shift
 			;;
 
@@ -76,11 +73,6 @@ do
 
 		-wallet=*)
 			wallet=${1##*=}
-			shift
-			;;
-
-		-load_data)
-			load_data=yes
 			shift
 			;;
 
@@ -107,7 +99,12 @@ exit_if_param_invalid wallet "yes no"	"$str_usage"
 
 must_be_user oracle
 
-[ "$db_name" == auto ] && db_name=$(extract_db_name_from $pdb_name)
+if [ "$dg_db_name" == auto ]
+then
+	db_name=$(extract_db_name_from $pdb_name)
+else
+	db_name=$dg_db_name
+fi
 [ "$service_name" == auto ] && service_name=$(make_oci_service_name_for $pdb_name)
 
 typeset	-r	account_tbs=${account_name}_tbs
@@ -192,17 +189,26 @@ function add_dbfs_user_to_wallet_store
 #	du cluster.
 function copy_store_if_not_cfs
 {
-	for node in $gi_node_list
+	line_separator
+	#	Si $wallet_path existe sur l'autre noeud, je considère l'utilisation d'un CFS.
+	info "Test if wallet on CFS."
+	exec_cmd -c ssh ${gi_node_list[0]} test -d $wallet_path
+	if [ $? -eq 0 ]
+	then
+		info "CFS : nothing to do."
+		return 0
+	fi
+
+	info "Copy wallet & sqlnet.ora to : ${gi_node_list[*]}"
+	for node in ${gi_node_list[*]}
 	do
-		line_separator
-		info "Test CFS"
-		exec_cmd -c ssh $node test -d $wallet_path
-		if [ $? -ne 0 ]
-		then # Ce n'est pas sur un CFS : copie
-			info "copy store to $node"
-			exec_cmd scp -pr $wallet_path ${node}:${wallet_path%/*}
-			LN
-		fi
+		info "copy store to $node"
+		exec_cmd scp -pr $wallet_path ${node}:${wallet_path%/*}/
+		LN
+
+		info "copy tns to $node"
+		exec_cmd scp -pr $TNS_ADMIN/sqlnet.ora ${node}:$TNS_ADMIN/sqlnet.ora
+		LN
 	done
 }
 
@@ -215,7 +221,7 @@ function create_password_file
 	if [ $gi_count_nodes -gt 1 ]
 	then
 		info "Copy $pass_file to nodes : $gi_node_list"
-		for node in $gi_node_list
+		for node in ${gi_node_list[*]}
 		do
 			exec_cmd "scp $pass_file $node:$pass_file"
 		done
@@ -267,7 +273,6 @@ function resume
 	else
 		info "Use password file : debug mode !"
 	fi
-	[ $load_data == yes ] && info "Load data for tests." || true
 	LN
 }
 
@@ -285,17 +290,19 @@ if [ $wallet == yes ]
 then
 	create_wallet_store
 	add_dbfs_user_to_wallet_store
-	copy_store_if_not_cfs
+	[ $gi_count_nodes -ne 1 ] && copy_store_if_not_cfs || true
 else
 	create_password_file
 fi
 
-[ $load_data == yes ] && load_data || true
+[ $dg_db_name == auto ] && load_data || true
 
-exec_cmd crsctl stat res -t
-LN
-
-info "With user root execute :"
+info "With user root execute, on nodes $gi_current_node ${gi_node_list[*]} :"
 info "cd plescripts/db/dbfs/"
-info "./configure_fuse_and_dbfs_mount_point.sh -service_name=$service_name"
+if [ $dg_db_name == auto ]
+then
+	info "./configure_fuse_and_dbfs_mount_point.sh -pdb_name=$pdb_name"
+else
+	info "./configure_fuse_and_dbfs_mount_point.sh -dn_name=$db_name -pdb_name=$pdb_name"
+fi
 LN

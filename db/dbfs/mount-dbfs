@@ -2,21 +2,25 @@
 # vim: ts=4:sw=4
 
 #	Le script plescripts/db/dbfs/mount-dbfs est copié dans $ORACLE_HOME/ et
-#	renomé en mount-dbfs-"nom du point de montage"
+#	renommé en mount-dbfs-"nom du point de montage"
 
 #	Le script contient le nom du point de montage.
 typeset -r mount_point_name="${0##*-}"
 
 #	contiendra soit start, stop ou delete.
-typeset	-r last_action=/tmp/mount-dbfs-${mount_point_name}.last
+typeset	-r last_action=/tmp/mount-dbfs-${mount_point_name}.last_action
 
-typeset	-r log_name=/tmp/log-${mount_point_name}.log
+typeset	-r log_name=/tmp/log-dbfs-${mount_point_name}.log
 
 function mount_dbfs
 {
 	echo mount /mnt/$mount_point_name
 	echo sudo -iu oracle mount /mnt/$mount_point_name
 	sudo -iu oracle mount /mnt/$mount_point_name
+	if [ $? -eq 0 ]
+	then # Le premier accès est lent, donc j'en simule un.
+		ll /mnt/$mount_point_name/* >/dev/null 2>&1
+	fi
 }
 
 function umount_dbfs
@@ -48,10 +52,10 @@ function check_mount_point
 				sudo -iu oracle test -d /mnt/$mount_point_name/staging_area
 				if [ $? -eq 0 ]
 				then
-					echo "Loop $iloop check mount point up : OK"
+					echo "check #${iloop} mount point up : OK"
 					return 0
 				else
-					echo "Loop $iloop check mount point up : KO"
+					echo "check #${iloop}  mount point up : KO"
 				fi
 				;;
 
@@ -59,15 +63,15 @@ function check_mount_point
 				sudo -iu oracle test ! -d /mnt/$mount_point_name/staging_area
 				if [ $? -eq 0 ]
 				then
-					echo "Loop $iloop check mount point down : OK"
+					echo "check #${iloop}  mount point down : OK"
 					return 1	# code inversé ???
 				else
-					echo "Loop $iloop check mount point down : KO"
+					echo "check #${iloop}  mount point down : KO"
 				fi
 				;;
 
 			*)	echo "LAST_ACTION = '$LAST_ACTION' invalid."
-				return 0
+				return 1
 				;;
 		esac
 	done

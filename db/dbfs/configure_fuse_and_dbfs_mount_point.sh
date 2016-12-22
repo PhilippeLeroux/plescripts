@@ -11,12 +11,14 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-service_name=name
+	[-db_name=name]	Mandatory for DG.
+	-pdb_name=name
 "
 
 script_banner $ME $*
 
-typeset	service_name=undef
+typeset	dg_db_name=auto
+typeset	pdb_name=undef
 
 while [ $# -ne 0 ]
 do
@@ -26,8 +28,13 @@ do
 			shift
 			;;
 
-		-service_name=*)
-			service_name=$(to_lower ${1##*=})
+		-db_name=*)
+			dg_db_name=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-pdb_name=*)
+			pdb_name=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -46,11 +53,11 @@ do
 	esac
 done
 
-exit_if_param_undef service_name	"$str_usage"
+exit_if_param_undef pdb_name	"$str_usage"
 
 must_be_user root
 
-typeset	-r	pdb_name=$(sed 's/pdb\(.*\)_oci/\1/'<<<$service_name)
+typeset -r	service_name=$(make_oci_service_name_for $pdb_name)
 typeset	-r	dbfs_cfg_file=/home/oracle/${pdb_name}_dbfs.cfg
 
 line_separator
@@ -69,8 +76,13 @@ typeset	ORACLE_HOME=undef
 IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent" /etc/oratab)"
 
 info "ORACLE_HOME = '$ORACLE_HOME'"
-typeset DBNAME=$(extract_db_name_from $pdb_name)
-exit_if_service_not_running $DBNAME $pdb_name $service_name
+if [ $db_db_name == auto ]
+then
+	db_name=$(extract_db_name_from $pdb_name)
+else
+	db_name=$dg_db_name
+fi
+exit_if_service_not_running $db_name $pdb_name $service_name
 
 line_separator
 info "Install fuse :"
@@ -178,11 +190,16 @@ fi
 
 if [ $gi_count_nodes -gt 1 ]
 then
-	info "Run this script on servers : $gi_node_list"
+	info "This script must be executed on all nodes."
 	LN
 fi
 
 info "With user grid execute :"
 info "cd plescripts/db/dbfs/"
-info "./create_crs_resource_for_dbfs.sh -pdb_name=$pdb_name"
+if [ $dg_db_name == auto ]
+then
+	info "./create_crs_resource_for_dbfs.sh -pdb_name=$pdb_name"
+else
+	info "./create_crs_resource_for_dbfs.sh -db_name=$db_name -pdb_name=$pdb_name"
+fi
 LN

@@ -26,6 +26,8 @@ typeset	-ri	gi_count_nodes=$(( $(wc -w<<<"$gi_node_list") + 1 ))
 #	if $1 == -c script not interupted on error.
 function execute_on_other_nodes
 {
+	[ $gi_count_nodes -eq 1 ] && return 0 || true
+
 	if [ "$1" == "-c" ]
 	then
 		typeset -r first_arg="-c"
@@ -75,6 +77,6 @@ function execute_on_all_nodes_v2
 
 	typeset -r cmd="$@"
 
-	exec_cmd "$cmd"
-	execute_on_other_nodes ". .bash_profile; $cmd"
+	exec_cmd $first_arg "$cmd"
+	execute_on_other_nodes $first_arg ". .bash_profile; $cmd"
 }
