@@ -10,7 +10,7 @@ typeset -r mount_point_name="${0##*-}"
 #	contiendra soit start, stop ou delete.
 typeset	-r last_action=/tmp/mount-dbfs-${mount_point_name}.last_action
 
-typeset	-r log_name=/tmp/log-dbfs-${mount_point_name}.log
+typeset	-r log_name=/tmp/log-dbfs-${mount_point_name}-$(date +d%d-h%H).log
 
 function mount_dbfs
 {
@@ -84,6 +84,7 @@ function force_umount
 {
 	echo "Force umount"
 	echo sudo -iu oracle fusermount -u -z /mnt/$mount_point_name
+	sudo -iu oracle fusermount -u /mnt/$mount_point_name
 	sudo -iu oracle fusermount -u -z /mnt/$mount_point_name
 }
 
@@ -92,7 +93,6 @@ echo "run at $(date +"%Y/%m/%d %Hh%M")" >> $log_name
 
 case "$1" in
 	start)
-		rm $log_name
 		echo start > $last_action
 		mount_dbfs >> $log_name 2>&1
 		;;

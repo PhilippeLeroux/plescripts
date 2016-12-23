@@ -11,12 +11,14 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-service_name=name
+\t-service_name=name
+\t[-drop_wallet=yes]\tyes|no
 "
 
 script_banner $ME $*
 
 typeset	service_name=undef
+typeset drop_wallet=yes
 
 while [ $# -ne 0 ]
 do
@@ -28,6 +30,11 @@ do
 
 		-service_name=*)
 			service_name=${1##*=}
+			shift
+			;;
+
+		-drop_wallet=*)
+			drop_wallet=${1##*=}
 			shift
 			;;
 
@@ -47,6 +54,7 @@ do
 done
 
 exit_if_param_undef service_name	"$str_usage"
+exit_if_param_invalid drop_wallet "yes no" "$str_usage"
 
 must_be_user root
 
@@ -57,7 +65,8 @@ exec_cmd -c  "sudo -iu grid crsctl delete res pdb.${pdb_name}.dbfs -f"
 LN
 
 line_separator
-exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/oracle_drop_all.sh -pdb_name=$pdb_name"
+exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/oracle_drop_all.sh	\
+							-pdb_name=$pdb_name -drop_wallet=$drop_wallet"
 LN
 
 line_separator

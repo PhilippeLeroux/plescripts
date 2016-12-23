@@ -9,9 +9,13 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 
 typeset -r str_usage=\
-"Usage : $ME -pdb_name=name"
+"Usage : $ME
+\t-pdb_name=name
+\t[-drop_wallet=yes]\tyes|no
+"
 
 typeset pdb_name=undef
+typeset drop_wallet=yes
 
 while [ $# -ne 0 ]
 do
@@ -23,6 +27,11 @@ do
 
 		-pdb_name=*)
 			pdb_name=${1##*=}
+			shift
+			;;
+
+		-drop_wallet=*)
+			drop_wallet=${1##*=}
 			shift
 			;;
 
@@ -44,6 +53,7 @@ done
 must_be_user oracle
 
 exit_if_param_undef pdb_name "$str_usage"
+exit_if_param_invalid drop_wallet "yes no" "$str_usage"
 
 typeset	-r	dbfs_cfg_file=~/${pdb_name}_dbfs.cfg
 
@@ -73,22 +83,25 @@ drop tablespace $dbfs_tbs including contents and datafiles;
 EOSQL
 LN
 
-line_separator
-execute_on_all_nodes_v2 'sed -i "/WALLET_LOCATION/d" $TNS_ADMIN/sqlnet.ora'
-execute_on_all_nodes_v2 'sed -i "/SQLNET.WALLET_OVERRIDE/d" $TNS_ADMIN/sqlnet.ora'
-LN
+if [ $drop_wallet == yes ]
+then
+	line_separator
+	execute_on_all_nodes_v2 'sed -i "/WALLET_LOCATION/d" $TNS_ADMIN/sqlnet.ora'
+	execute_on_all_nodes_v2 'sed -i "/SQLNET.WALLET_OVERRIDE/d" $TNS_ADMIN/sqlnet.ora'
+	LN
 
-#	Ce n'est pas utile, mais ca ma sert de mémo.
-fake_exec_cmd mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service
-mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service<<EOP
-$oracle_password
-EOP
-LN
+	#	Ce n'est pas utile, mais ca ma sert de mémo.
+	fake_exec_cmd mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service
+	mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service<<-EOP
+	$oracle_password
+	EOP
+	LN
 
-execute_on_all_nodes_v2 "rm -f $dbfs_cfg_file"
-LN
+	execute_on_all_nodes_v2 "rm -f $dbfs_cfg_file"
+	LN
 
-execute_on_all_nodes_v2 "rm -rf $ORACLE_HOME/oracle/wallet"
-LN
+	execute_on_all_nodes_v2 "rm -rf $ORACLE_HOME/oracle/wallet"
+	LN
+fi
 
 info "Done."

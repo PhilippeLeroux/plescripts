@@ -63,12 +63,16 @@ typeset -ri	max_nodes=$(cfg_max_nodes $db)
 for inode in $( seq $max_nodes )
 do
 	cfg_load_node_info $db $inode
-	info "$cfg_server_name valeur actuelle de hpet :"
-	exec_cmd "VBoxManage showvminfo \"$cfg_server_name\" | grep ^HPET"
-	LN
-	exec_cmd VBoxManage modifyvm "$cfg_server_name" --hpet $hpet_value
-	LN
-	info "$cfg_server_name nouvelle valeur de hpet :"
-	exec_cmd "VBoxManage showvminfo \"$cfg_server_name\" | grep ^HPET"
+	actual_value=$(VBoxManage showvminfo $cfg_server_name | grep ^HPET | awk '{ print $2 }')
+	info "$cfg_server_name : switch hpet from $actual_value to $hpet_value"
+	exec_cmd -c VBoxManage modifyvm "$cfg_server_name" --hpet $hpet_value
+	new_value=$(VBoxManage showvminfo $cfg_server_name | grep ^HPET | awk '{ print $2 }')
+	info -n "$cfg_server_name swith to $hpet_value : "
+	if [ $new_value == $hpet_value ]
+	then
+		info -f "[$OK]"
+	else
+		info -f "[$KO]"
+	fi
 	LN
 done
