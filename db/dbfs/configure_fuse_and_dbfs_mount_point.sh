@@ -76,7 +76,7 @@ typeset	ORACLE_HOME=undef
 IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent" /etc/oratab)"
 
 info "ORACLE_HOME = '$ORACLE_HOME'"
-if [ $db_db_name == auto ]
+if [ $dg_db_name == auto ]
 then
 	db_name=$(extract_db_name_from $pdb_name)
 else

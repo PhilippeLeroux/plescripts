@@ -9,22 +9,15 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -role=[infra|master]
-Configure NTP for infra or master server.
+"Usage : $ME
+Configure NTP for RAC server.
 "
-
-typeset role=undef
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			shift
-			;;
-
-		-role=*)
-			role=${1##*=}
 			shift
 			;;
 
@@ -43,9 +36,7 @@ do
 	esac
 done
 
-exit_if_param_invalid role "master infra" "$str_usage"
-
-[ $role == master ] && time_server=$infra_hostname || true
+typeset -r time_server=$infra_hostname
 
 typeset -r ntp_conf=/etc/ntp.conf
 

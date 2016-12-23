@@ -356,8 +356,6 @@ function configure_server
 	LN
 	exec_cmd "wait_server $master_hostname"
 
-	[ $max_nodes -gt 1 ] && rac_configure_ntp || true
-
 	#	************************************************************************
 	#	La VM a été clonée mais sa configuration réseau correspond toujours à
 	#	celle du master, il faut donc régénérer la clef public.
@@ -369,6 +367,10 @@ function configure_server
 
 	line_separator
 	setup_iscsi_inititiator
+
+	#	Pour que ntp fonctionne correctement les options de boot sont modifiées,
+	#	la configuration est donc faite proche du reboot.
+	[ $max_nodes -gt 1 ] && rac_configure_ntp || true
 
 	line_separator
 	configure_ifaces_hostname_and_reboot
