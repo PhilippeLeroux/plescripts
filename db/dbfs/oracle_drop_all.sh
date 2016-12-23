@@ -90,17 +90,16 @@ then
 	execute_on_all_nodes_v2 'sed -i "/SQLNET.WALLET_OVERRIDE/d" $TNS_ADMIN/sqlnet.ora'
 	LN
 
-	#	Ce n'est pas utile, mais ca ma sert de mémo.
-	fake_exec_cmd mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service
-	mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service<<-EOP
-	$oracle_password
-	EOP
-	LN
-
 	execute_on_all_nodes_v2 "rm -f $dbfs_cfg_file"
 	LN
 
 	execute_on_all_nodes_v2 "rm -rf $ORACLE_HOME/oracle/wallet"
+	LN
+else
+	fake_exec_cmd mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service
+	mkstore -wrl $ORACLE_HOME/oracle/wallet -deleteCredential $service<<-EOP
+	$oracle_password
+	EOP
 	LN
 fi
 

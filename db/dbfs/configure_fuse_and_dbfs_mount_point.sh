@@ -86,7 +86,7 @@ exit_if_service_not_running $db_name $pdb_name $service_name
 
 line_separator
 info "Install fuse :"
-exec_cmd yum -y install fuse fuse-libs
+exec_cmd yum -y -q install fuse fuse-libs
 LN
 
 line_separator

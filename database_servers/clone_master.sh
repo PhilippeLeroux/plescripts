@@ -304,7 +304,7 @@ function create_disks_for_oracle_and_grid_softwares
 		LN
 	else
 		info "Install ocfs2"
-		ssh_server "yum -y install ocfs2-tools"
+		ssh_server "yum -y -q install ocfs2-tools"
 		LN
 
 		ssh_server "~/plescripts/disk/create_cluster_ocfs2.sh -db=$db"
@@ -390,7 +390,7 @@ function configure_server
 	ssh_server ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"
 
 	test_if_rpm_update_available $server_name
-	[ $? -eq 0 ] && ssh_server "yum -y update"
+	[ $? -eq 0 ] && ssh_server "yum -y -q update"
 	LN
 
 	create_disks_for_oracle_and_grid_softwares
