@@ -33,17 +33,18 @@ LN
 
 line_separator
 info "Remove samba."
-exec_cmd yum -y erase samba-client.x86_64 samba-client-libs.x86_64 samba-common.noarch samba-common-libs.x86_64 samba-common-tools.x86_64 samba-libs.x86_64
+exec_cmd yum -y -q erase samba-client.x86_64 samba-client-libs.x86_64 samba-common.noarch samba-common-libs.x86_64 samba-common-tools.x86_64 samba-libs.x86_64
 LN
 
 if test_if_rpm_update_available
 then
-	exec_cmd yum -y update
+	exec_cmd yum -y -q update
 fi
 LN
 
 line_separator
-exec_cmd yum -y install	nfs-utils				\
+exec_cmd yum -y -q install						\
+						nfs-utils				\
 						iscsi-initiator-utils	\
 						deltarpm				\
 						wget					\

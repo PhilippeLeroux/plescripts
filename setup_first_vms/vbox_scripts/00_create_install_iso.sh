@@ -7,20 +7,20 @@ PLELIB_OUTPUT=FILE
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset	keymap=fr
-typeset	locale=fr_FR.UTF-8
-typeset	timezone="Europe/Paris"
+typeset	keymap=detect
+typeset	locale=detect
+typeset	timezone=detect
 typeset	keep_iso_copy=no
 typeset	crypt_root_password=yes
 
 typeset -r str_usage=\
 "Usage : $ME
-	[-keymap=$keymap]             Keyboard mapping.
-	[-locale=$locale]    Locale.
-	[-timezone=$timezone] Timezone.
+	[-keymap=detect]   Keyboard mapping.
+	[-locale=detect]   Locale.
+	[-timezone=detect] Timezone.
 	[-do_not_crypt_root_password]
 
-	Debug flags :
+Debug flags :
 	[-keep_iso_copy]    Don't remove ISO copy.
 	[-pause]
 	[-emul]
@@ -122,7 +122,7 @@ function copy_iso_2_dir
 }
 
 #	$1 : répertoire contenant l'ISO dupliqué.
-#	copy le ficher kickstat mis à jour.
+#	copie le ficher kickstat mis à jour.
 function copy_ks_file
 {
 	typeset -r	dest=$1
@@ -212,6 +212,38 @@ function setup_ks_file
 	exec_cmd "sed -i \"s/network  --hostname=.*/network  --hostname=${master_hostname}.${infra_domain}/\" $ks_cfg"
 	LN
 }
+
+#	L'auto détection fonctionne sur mon poste, j'attends la confirmation qu'elle
+#	fonctionne ailleurs.
+typeset confirm_detect=no
+
+if [ "$keymap" == detect ]
+then
+	keymap=$(LANC=C localectl | grep "VC Keymap" | awk '{ print $3 }')
+	confirm_detect=yes
+fi
+
+if [ "$locale" == detect ]
+then
+	locale=$LANG
+	confirm_detect=yes
+fi
+
+if [ "$timezone" == detect ]
+then
+	timezone=$(LANC=C timedatectl | grep "Time zone" | awk '{ print $3 }')
+	confirm_detect=yes
+fi
+
+if [ $confirm_detect == yes ]
+then # Au moins un paramètre a été détecté, il faut confirmer.
+	line_separator
+	info "Keymap    = $keymap"
+	info "Locale    = $locale"
+	info "Time zone = $timezone"
+	LN
+	confirm_or_exit "Loaded settings from your configuration is correct :"
+fi
 
 line_separator
 exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"

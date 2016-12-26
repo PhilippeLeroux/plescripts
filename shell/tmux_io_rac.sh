@@ -56,7 +56,7 @@ do
 	esac
 done
 
-[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
+[[ $db == undef && -f /tmp/id_db ]] && db=$(cat /tmp/id_db) || true
 exit_if_param_undef db	"$str_usage"
 
 cfg_exists $db
@@ -71,6 +71,5 @@ typeset -r session_name="$node1/$node2"
 exec_cmd -ci tmux kill-session -t \"$session_name\"
 
 info "$session_name"
-set -x
-tmux new -s "$session_name"	"ssh -t root@${node1} \~/plescripts/disk/iostat_on_bdd_disks.sh"	\; \
-			split-window -h "ssh -t root@${node2} \~/plescripts/disk/iostat_on_bdd_disks.sh"
+tmux new -s "$session_name"	"ssh root@${node1} \~/plescripts/disk/iostat_on_bdd_disks.sh"	\; \
+			split-window -h "ssh root@${node2} \~/plescripts/disk/iostat_on_bdd_disks.sh"

@@ -73,11 +73,24 @@ function wait_os_until_stopped
 {
 	typeset -r os_name="$1"
 
-	info "Server $os_name stopping..."
+	typeset	-ri	wait_max_secs=120
+	typeset	-i	secs=0
+
+	info -n "Server $os_name stopping "
 	while [ 0 -eq 0 ]
 	do
 		VBoxManage list runningvms | grep -q $os_name
-		[ $? -eq 1 ] && break
+		[ $? -eq 1 ] && LN && break
+		info -f -n "."
+		if [ $secs -eq $wait_max_secs ]
+		then
+			LN
+			warning "$os_name not stopped after ${secs} s"
+			exec_cmd -c "VBoxManage controlvm $os_name poweroff"
+			break
+		fi
+		sleep 1
+		secs=secs+1
 	done
 }
 

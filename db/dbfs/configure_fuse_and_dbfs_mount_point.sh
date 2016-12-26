@@ -143,7 +143,7 @@ info "Create mount point /mnt/$pdb_name"
 fake_exec_cmd cd /mnt
 cd /mnt
 [ -d $pdb_name ] && exec_cmd "rmdir $pdb_name" || true
-exec_cmd mkdir $pdb_name 
+exec_cmd mkdir $pdb_name
 exec_cmd chown oracle.oinstall $pdb_name
 exec_cmd ls -ld $pdb_name
 LN
@@ -156,10 +156,10 @@ LN
 
 line_separator
 info "Add mount point to fstab"
-if grep -qE "mount.dbfs#$dbfs_user@$service_name" /etc/fstab
+if grep -qE "mount.dbfs.*$dbfs_user@$service_name" /etc/fstab
 then
 	info "Remove existing mount point"
-	exec_cmd "sed -i '/#.*@$service_name/d' /etc/fstab"
+	exec_cmd "sed -i '/@$service_name/d' /etc/fstab"
 	LN
 fi
 

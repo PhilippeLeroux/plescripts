@@ -41,9 +41,14 @@ Description du problème du temp [par RedHat](https://access.redhat.com/document
 
 	Configure le service `ntp` pour les VMs en RAC.
 
-	L'outil `cluvfy` d'Oracle retourne une erreur sur la synchro hardware, pourtant
-	elle est configurée au niveau de `ntp`.
+	Pour ne pas utiliser `ntp` mais `chrony` exporter la variable `RAC_NTP=chrony`
+	avant d'exécuter les scripts `clone_master.sh`.
 
+	Avec `ntp` les serveurs consomment plus de ressources CPU sur le virtual-host,
+	mais certaines commandes de base de données sont plus performante de 10 à 20 %
+	de gains.
+
+	L'outil `cluvfy` d'Oracle retourne une erreur sur la synchro hardware.
 	Je pense que c'est un bug Oracle, [la doc Redhat](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sect-Configuring_the_Date_and_Time-hwclock.html)
 	précise un changement de comportement entre Linux 6 et 7. Avec Linux 7 le
 	'hardware clock' est synchronisé toutes les 11 mn par le kernel, avant c'était
@@ -54,12 +59,12 @@ Description du problème du temp [par RedHat](https://access.redhat.com/document
 ### ntp
 [Documentation redhat](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/s1-Configure_ntpdate_Servers.html)
 
-* ntpq -p : permet de visualiser la configuration.
+* ntpq -p : pour visualiser la synchronisation.
 
 * ntpdate K2 : permet de synchroniser manuellement le serveur si l'offset retourné
 par `ntpq -p` est trop important.
 
 ###	Chrony
-* chronyc sources
+* chronyc sources : pour visualiser la synchro.
 * chronyc tracking
-* chronyc sourcestats
+* chronyc sourcestats : pour visualiser l'offset.

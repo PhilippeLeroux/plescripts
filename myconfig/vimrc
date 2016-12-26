@@ -35,7 +35,7 @@ call pathogen#helptags()
 
 if g:first_load == 1
 	if has("gui_running")
-		set columns=120
+		set columns=115
 		set lines=48
 		winpos 0 36
 	endif
@@ -50,7 +50,8 @@ set conceallevel=2
 autocmd BufRead *.template,*.doc.sh,*.md set syn=off
 
 "	Activé pour le plugin markdown
-filetype plugin on
+syntax enable
+filetype plugin indent on
 
 " Change the mapleader from \ to ,
 let mapleader=","

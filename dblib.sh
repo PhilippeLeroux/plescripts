@@ -108,11 +108,9 @@ function exit_if_service_not_running
 	typeset	-r	pdb_name_l="$2"
 	typeset	-r	service_name_l="$3"
 
-	exec_cmd srvctl status service -db $db_name_l
-	LN
-
+	exec_cmd LANG=C srvctl status service -db $db_name_l
 	info -n "Database $db_name_l, pdb $pdb_name_l : service $service_name_l running "
-	if grep -iqE "Service $service_name_l is running.*"<<<"$(srvctl status service -db $db_name_l)"
+	if grep -iqE "Service $service_name_l is running.*"<<<"$(LANG=C srvctl status service -db $db_name_l)"
 	then
 		info -f "$OK"
 		LN

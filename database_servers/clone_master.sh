@@ -191,7 +191,7 @@ function reboot_server
 function configure_ifaces_hostname_and_reboot
 {
 	info "Configure network..."
-	ssh_master "~/plescripts/configure_network/setup_iface_and_hostename.sh	\
+	ssh_master "~/plescripts/configure_network/setup_iface_and_hostname.sh	\
 															-db=$db -node=$node"
 	LN
 
@@ -370,7 +370,8 @@ function configure_server
 
 	#	Pour que ntp fonctionne correctement les options de boot sont modifiées,
 	#	la configuration est donc faite proche du reboot.
-	[ $max_nodes -gt 1 ] && rac_configure_ntp || true
+	#	Pour utiliser chrony définir la variable RAC_NTP=chrony
+	[[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
 
 	line_separator
 	configure_ifaces_hostname_and_reboot
@@ -400,6 +401,19 @@ function configure_server
 function configure_oracle_accounts
 {
 	run_oracle_preinstall
+
+	info "install bash completion for srvctl"
+	fake_exec_cmd cd ~/plescripts/tmp
+	cd ~/plescripts/tmp
+	exec_cmd rm -f srvctl.bash
+	exec_cmd -c wget https://raw.githubusercontent.com/PhilippeLeroux/oracle_bash_completion/master/srvctl.bash
+	if [ $? -eq 0 ]
+	then
+		exec_cmd scp srvctl.bash root@$cfg_server_name:/etc/bash_completion.d/
+	fi
+	fake_exec_cmd cd -
+	cd -
+	LN
 
 	ssh_server "plescripts/gadgets/customize_logon.sh"
 	LN

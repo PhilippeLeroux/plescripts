@@ -92,7 +92,7 @@ execute_on_all_nodes "rm -f /sbin/mount.dbfs"
 LN
 
 line_separator
-execute_on_all_nodes "sed -i '/#.*@$service_name/d' /etc/fstab"
+execute_on_all_nodes "sed -i '/@$service_name/d' /etc/fstab"
 LN
 
 line_separator

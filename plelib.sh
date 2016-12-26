@@ -2,7 +2,7 @@
 
 [ ! -z $plelib_banner ] && return 0
 
-LANG=en_US.UTF-8
+#LANG=en_US.UTF-8
 umask 0002
 
 ################################################################################
@@ -302,13 +302,13 @@ function my_echo
 #*> Print error message
 function error
 {
-	my_echo "${RED}${BLINK}" "*" " $@"
+	my_echo "${RED}${BLINK}" "✗ " " $@"
 }
 
 #*> Print warning message
 function warning
 {
-	my_echo "${LGREEN}${INVERT}" "<" " $@"
+	my_echo "${LGREEN}${INVERT}" "< " " $@"
 }
 
 #*> Affiche les informations de debug.
@@ -455,7 +455,8 @@ function ask_for
 
 		case "$keyboard" in
 			'')
-				[ "$yes_reply" == "CR" ] && return 0 || return 1
+				[ "$yes_reply" == "CR" ] && return 0 || true
+				error "'$keyboard' invalid."
 				;;
 
 			"$yes_reply")
