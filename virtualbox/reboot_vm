@@ -53,13 +53,13 @@ then
 
 		for vm in ${running_vm_list[*]}
 		do
-			exec_cmd "stop_vm -server=$vm -wait_os"
+			exec_cmd "stop_vm -server=$vm"
 		done
 		LN
 	fi
 fi
 
-exec_cmd "stop_vm -server=$server -wait_os"
+exec_cmd "stop_vm -server=$server"
 LN
 
 exec_cmd "start_vm $server -wait_os=no"

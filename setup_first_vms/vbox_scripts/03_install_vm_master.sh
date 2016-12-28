@@ -73,7 +73,8 @@ function master_ssh
 script_start
 
 #	La VM ne doit pas être démarrée.
-stop_vm $master_hostname -wait_os >/dev/null 2>&1
+stop_vm $master_hostname
+LN
 
 line_separator
 info "Cleanup :"

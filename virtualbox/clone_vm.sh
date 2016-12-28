@@ -80,6 +80,13 @@ else
 	typeset	-r	group_name="$vmGroup"
 fi
 
+if [ $max_nodes -eq 1 ]
+then
+	typeset -r nr_cpus=$mv_nr_cpus_for_single_db
+else
+	typeset -r nr_cpus=$mv_nr_cpus_for_rac_db
+fi
+
 for nr_node in $( seq $max_nodes )
 do
 	cfg_load_node_info $db $nr_node
@@ -98,7 +105,7 @@ do
 	LN
 
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
-	exec_cmd VBoxManage modifyvm $vm_name --cpus 2
+	exec_cmd VBoxManage modifyvm $vm_name --cpus $nr_cpus
 	exec_cmd "VBoxManage modifyvm $vm_name	\
 			--description \"$(~/plescripts/virtualbox/get_vm_description -db=$db)\""
 	LN

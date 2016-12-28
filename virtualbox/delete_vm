@@ -75,7 +75,7 @@ info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
 [ $confirm == yes ] && confirm_or_exit "Delete them ?"
 
 info "Stop all VMs..."
-exec_cmd -c stop_vm $db -wait_os
+exec_cmd stop_vm $db
 LN
 
 info "Delete all VMs.."

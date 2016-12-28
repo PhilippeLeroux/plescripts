@@ -76,7 +76,7 @@ exec_cmd VBoxManage modifyvm $master_hostname --acpi on
 exec_cmd VBoxManage modifyvm $master_hostname --ioapic on
 exec_cmd VBoxManage modifyvm $master_hostname --memory $vm_memory_mb_for_master
 exec_cmd VBoxManage modifyvm $master_hostname --vram 9
-exec_cmd VBoxManage modifyvm $master_hostname --cpus 2
+exec_cmd VBoxManage modifyvm $master_hostname --cpus 1
 exec_cmd VBoxManage modifyvm $master_hostname --rtcuseutc on
 exec_cmd VBoxManage modifyvm $master_hostname --largepages on
 exec_cmd VBoxManage modifyvm $master_hostname --hpet on

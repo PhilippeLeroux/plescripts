@@ -9,14 +9,14 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-server=<nom de la VM> si omis essait la variable ID_DB
-	[-wait_os]     : attend que l'OS soit stoppé avant de rendre la main.
+	[-wait_os=yes] : no n'aattend pas que l'OS soit stoppé avant de rendre la main.
 	[-reboot_vbox] : reboot tous les composants de vbox.
 "
 
 script_banner $ME $@
 
 typeset server=undef
-typeset	wait_os=no
+typeset	wait_os=yes
 typeset reboot_vbox=no
 
 while [ $# -ne 0 ]
@@ -33,8 +33,8 @@ do
 			shift
 			;;
 
-		-wait_os)
-			wait_os=yes
+		-wait_os=*)
+			wait_os=${1##*=}
 			shift
 			;;
 
@@ -66,8 +66,6 @@ done
 
 [[ $server == undef ]] && [[ -v ID_DB ]] && server=$ID_DB
 exit_if_param_undef server	"$str_usage"
-
-[ $reboot_vbox == yes ] && wait_os=yes
 
 function wait_os_until_stopped
 {
@@ -116,10 +114,10 @@ typeset -a vm_stopped_list
 
 typeset -i count_errors=0
 
+line_separator
 #	Stop toutes les VMs
 for vm in ${vm_list[@]}
 do
-	line_separator
 	exec_cmd -c "VBoxManage controlvm $vm acpipowerbutton"
 	if [ $? -ne 0 ]
 	then

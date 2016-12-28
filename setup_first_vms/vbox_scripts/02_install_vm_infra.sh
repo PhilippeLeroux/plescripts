@@ -95,7 +95,7 @@ then
 
 	info "Stop VM $master_hostname"
 	#	Normalement la VM est démarrée, si ce n'est pas le cas erreur mais continue.
-	exec_cmd stop_vm -server=$master_hostname -wait_os
+	exec_cmd stop_vm -server=$master_hostname
 	LN
 else
 	#	Je considère que l'équivalence est faite et que je recommence un test de
@@ -103,7 +103,7 @@ else
 	exec_cmd start_vm $master_hostname -wait_os=no
 	exec_cmd wait_server $master_ip
 	add_to_known_hosts $master_ip
-	exec_cmd stop_vm -server=$master_hostname -wait_os
+	exec_cmd stop_vm -server=$master_hostname 
 	LN
 fi
 
@@ -122,8 +122,7 @@ exec_cmd VBoxManage modifyvm $infra_hostname --cableconnected3 on
 LN
 
 line_separator
-info "Set 2 cpus"
-exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
+exec_cmd VBoxManage modifyvm $infra_hostname --cpus 1
 LN
 
 line_separator
@@ -195,7 +194,7 @@ LN
 
 line_separator
 info "Stop VM $infra_hostname to adjust RAM"
-exec_cmd "stop_vm -server=$infra_hostname -wait_os"
+exec_cmd "stop_vm -server=$infra_hostname"
 LN
 
 line_separator
