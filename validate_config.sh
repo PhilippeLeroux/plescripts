@@ -14,8 +14,6 @@ fonctionnement de la démo."
 
 script_banner $ME $*
 
-typeset db=undef
-
 while [ $# -ne 0 ]
 do
 	case $1 in
@@ -59,14 +57,17 @@ function scripts_exists
 
 function runInstaller_exists
 {
+	line_separator
 	info -n "Exist '$HOME/$oracle_install/database/runInstaller' "
 	if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
 	then
 		info -f "[$KO]"
 		error " $HOME/$oracle_install/database must contains Oracle installer."
+		LN
 		count_errors=count_errors+1
 	else
 		info -f "[$OK]"
+		LN
 	fi
 
 	info -n "Exist '$HOME/$oracle_install/grid/runInstaller' "
@@ -74,11 +75,12 @@ function runInstaller_exists
 	then
 		info -f "[$KO]"
 		error " $HOME/$oracle_install/grid must contains Grid installer."
+		LN
 		count_errors=count_errors+1
 	else
 		info -f "[$OK]"
+		LN
 	fi
-	LN
 }
 
 function _is_exported
@@ -87,22 +89,37 @@ function _is_exported
 
 	info -n "	- $directory "
 	typeset	-r	network=$(right_pad_ip $infra_network)
-	if grep -qE "${directory}\s*${network}.*" /etc/exports
+	if grep -qE "${directory}\s*${network}.*" /etc/exports 2>/dev/null
 	then
 		info -f "[$OK]"
+		return 0
 	else
 		count_errors=count_errors+1
 		info -f "[$KO]"
+		return 1
 	fi
 }
 
 function validate_NFS_exports
 {
+	line_separator
 	typeset	-r	network=$(right_pad_ip $infra_network)
 	info "Validate NFS exports from $client_hostname on network ${network} :"
 	_is_exported $HOME/plescripts
+	if [ $? -ne 0 ]
+	then
+		info "\tadd to /etc/resolv.conf : $HOME/plescripts $network/$if_pub_prefix (rw,$nfs_options)"
+	fi
 	_is_exported $HOME/$oracle_install
+	if [ $? -ne 0 ]
+	then
+		info "\tadd to /etc/resolv.conf : $HOME/oracle_install/12.1 $network/$if_pub_prefix (ro,$nfs_options)"
+	fi
 	_is_exported $iso_olinux_path
+	if [ $? -ne 0 ]
+	then
+		info "\tadd to /etc/resolv.conf : $iso_olinux_path $network/$if_pub_prefix (ro,$nfs_options)"
+	fi
 	LN
 }
 
@@ -135,22 +152,21 @@ function validate_resolv_conf
 	fi
 
 	info -n " - Test : nameserver $infra_ip "
-	if  grep -q ${infra_ip} /etc/resolv.conf 
+	if  grep -q ${infra_ip} /etc/resolv.conf
 	then
 		info -f "[$OK]"
 	else
 		info -f "[$KO]"
 		count_errors=count_errors+1
 	fi
-
 	LN
 }
 
 function _shell_in_path
 {
 	line_separator
-	info -n "~/plescripts/shell in path "
-	if $(test_if_cmd_exists llog)
+	info -n "\$PATH contains ~/plescripts/shell "
+	if $(test_if_cmd_exists stop_vm)
 	then
 		info -f "[$OK]"
 	else
@@ -195,11 +211,52 @@ function test_tools
 {
 	_shell_in_path
 
+	info "Installed :"
 	_in_path VBoxManage	"Install VirtualVox"
 	_in_path nc			"Install nc"
 	_in_path ssh		"Install ssh"
 	_in_path -o git		"Install git"
 	_in_path -o tmux	"Install tmux"
+	LN
+}
+
+function test_if_configure_global_cfg_executed
+{
+	line_separator
+	info -n "~/plescripts/configure_global.cfg.sh executed "
+	typeset	errors_msg
+	typeset -i exec_global=0
+	
+	hn=$(hostname -s)
+	if [ "$hn" != "$client_hostname" ]
+	then
+		count_errors=count_errors+1
+		exec_global=1
+		errors_msg="\n\tclient_hostname=$client_hostname expected $hn"
+	fi
+	
+	if [ "$USER" != "$common_user_name" ]
+	then
+		count_errors=count_errors+1
+		exec_global=1
+		errors_msg="$errors_msg\n\tcommon_user_name=$common_user_name expected $USER"
+	fi
+
+	if [ x"$vm_path" == x ]
+	then
+		count_errors=count_errors+1
+		exec_global=1
+		errors_msg="$errors_msg\n\tvm_path not set."
+	fi
+
+	if [ $exec_global -eq 1 ]
+	then
+		info -f "[$KO]"
+		info "Execute : ./configure_global.cfg.sh"
+		info "Errors :$errors_msg"
+	else
+		info -f "[$OK]"
+	fi
 	LN
 }
 
@@ -215,20 +272,10 @@ validate_resolv_conf
 
 test_tools
 
-line_separator
-exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
+test_if_configure_global_cfg_executed
 
 line_separator
-info -n "~/plescripts/configure_global.cfg.sh executed "
-hn=$(hostname -s)
-if [[ "$hn" == "$client_hostname" && "$USER" == "$common_user_name" && x"$vm_path" != x ]]
-then
-	info -f "[$OK]"
-else
-	info -f "[$KO]"
-	count_errors=count_errors+1
-fi
-LN
+exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
 
 line_separator
 if [ $count_errors -ne 0 ]

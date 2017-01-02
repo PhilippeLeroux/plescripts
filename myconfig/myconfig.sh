@@ -51,16 +51,17 @@ function run_apply
 
 	line_separator
 	info "Config sudo for user $USER"
-	exec_cmd -c "sudo grep \"$sudo_config\" /etc/sudoers"
+	exec_cmd -c "sudo grep -q \"$sudo_config\" /etc/sudoers"
 	if [ $? -eq 0 ]
 	then
 		info "sudo is already configured."
+		LN
 	else
 		info "Backup /etc/sudoers"
 		exec_cmd sudo cp /etc/sudoers /etc/sudoers.backup
 		LN
 
-		typeset -i ln=$(sudo grep -n "root ALL=(ALL) ALL" /etc/sudoers | cut -d: -f1)
+		typeset -i ln=$(sudo grep -qn "root ALL=(ALL) ALL" /etc/sudoers | cut -d: -f1)
 		ln=ln+1
 		exec_cmd "sudo sed -i \"${ln}i\\$sudo_config\" /etc/sudoers"
 		LN
@@ -81,8 +82,14 @@ function run_apply
 	fi
 
 	line_separator
-	exec_cmd "cat ~/plescripts/setup_first_vms/for_inputrc /etc/inputrc > new_inputrc"
-	exec_cmd "sudo mv new_inputrc /etc/inputrc"
+	if grep -q "set editing-mode vi" /etc/inputrc
+	then
+		info "mode vi is enabled."
+	else
+		info "enable mode vi"
+		exec_cmd "cat ~/plescripts/setup_first_vms/for_inputrc /etc/inputrc > new_inputrc"
+		exec_cmd "sudo mv new_inputrc /etc/inputrc"
+	fi
 	LN
 
 	line_separator
@@ -91,6 +98,15 @@ function run_apply
 	exec_cmd "sed -i \"/^.*bashrc_extensions.*$/d\" ~/.bashrc"
 	exec_cmd "echo \"[ -f ~/.bashrc_extensions ] && . ~/.bashrc_extensions || true\" >> ~/.bashrc"
 	LN
+
+	test_if_cmd_exists gvim
+	if [ $? -eq 0 ]
+	then
+		install_gvim=no
+		line_separator
+		info "gvim is installed."
+		LN
+	fi
 
 	if [ $install_gvim == yes ]
 	then
@@ -109,7 +125,7 @@ function run_apply
 				;;
 
 			*)
-				warning "$PRETTY_NAME : installation de gvim non faite."
+				warning "$PRETTY_NAME : install gvim yourself."
 				;;
 		esac
 		LN

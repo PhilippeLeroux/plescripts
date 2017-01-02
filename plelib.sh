@@ -51,8 +51,8 @@ function enable_markers
 	BOLD="\e[1m"
 	INVERT="\e[7m"
 	BLINK="\e[5m"
-	ITALIC="\e[3m"			# Ne fonctionne qu'avec xterm
-	STRIKE="\e[9m"			# Ne fonctionne qu'avec xterm
+	ITALIC="\e[3m"
+	STRIKE="\e[9m"
 
 	#	Clear End Of Line
 	CEOL="\e[K"
@@ -1049,7 +1049,7 @@ function timing
 	typeset -ri secs=$1
 	[ $# -eq 1 ] && typeset msg="" || typeset msg="$2 : "
 
-	info -n "$msg"; pause_in_secs $secs; LN; LN
+	info -n "$msg"; pause_in_secs $secs; LN
 }
 
 #*> pause_in_secs <seconds>
@@ -1062,46 +1062,51 @@ function pause_in_secs
 	typeset -ri max_secs=$1
 	[ $# -eq 2 ] && typeset -r suffix="$2" || typeset -r suffix
 
-	typeset -i	secs=1
+	typeset -i	secs=0
 	typeset		backspaces
-	typeset		buffer=""
-	typeset		bars=""
-	typeset		all_bars=""
-	typeset -i	bars_width=0
+	typeset		buffer
+	typeset		sticks_lt_5		# sticks en construction < 5
+	typeset		sticks_image	# Tous les sticks précédents à afficher.
 
 	case "$PLELIB_OUTPUT" in
 		"ENABLE"|"FILE")
 			hide_cursor
 
-			while [ $secs -le $max_secs ]
+			while [ $secs -ne $max_secs ]
 			do
 				sleep 1
+				secs=secs+1
 				buffer=$(printf "${secs}/${max_secs}s")
 				buffer="$buffer$suffix"
 
 				if [[ $max_secs -lt 5 || $max_secs -gt 30 ]]
 				then
-					bars_width=-1
 					printf "$backspaces$buffer$CEOL"
-				elif [[ $secs -ne 0 && $(( secs % 5 )) -eq 0 ]]
-				then
-					all_bars="$all_bars${STRIKE}||||${NORM} "
-					bars_width=bars_width+1
-					bars=""
-					printf "$backspaces$buffer $all_bars$CEOL"
+					backspaces=$(fill "\b" ${#buffer})
 				else
-					bars="$bars|"
-					printf "$backspaces$buffer $all_bars$bars$CEOL"
-					bars_width=bars_width+1
+					if [[ $(( secs % 5 )) -eq 0 ]]
+					then
+						sticks_image="$sticks_image${STRIKE}||||${NORM} "
+						sticks_lt_5=""
+						printf "$backspaces$buffer $sticks_image$CEOL"
+					else
+						sticks_lt_5="$sticks_lt_5|"
+						printf "$backspaces$buffer $sticks_image$sticks_lt_5$CEOL"
+					fi
+					backspaces=$(fill "\b" $((${#buffer}+1+secs)))
 				fi
-
-				secs=secs+1
-				backspaces=$(fill "\b" $((${#buffer}+bars_width+1)))
 			done
 
 			show_cursor
 
 			[ "$PLELIB_OUTPUT" = "FILE" ] && printf "${max_secs}/${max_secs}s" >> $PLELIB_LOG_FILE
+
+			if [[ $max_secs -lt 5 || $max_secs -gt 30 ]]
+			then
+				return ${#buffer}
+			else
+				return $(( ${#buffer}+1+secs ))
+			fi
 		;;
 
 		"DISABLE")
@@ -1119,10 +1124,10 @@ function pause_in_secs
 				printf " $suffix"
 				buffer=$buffer" "$suffix
 			fi
+
+			return ${#buffer}
 		;;
 	esac
-
-	return $(( ${#buffer}+bars_width+1 ))
 }
 
 ple_start=0

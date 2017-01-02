@@ -90,7 +90,7 @@ then
 	vm_p="$(VBoxManage list systemproperties | grep "Default machine folder:" | tr -s [:space:] | cut -d' ' -f4-)"
 	ask_for_variable vm_p "VMs folder :"
 else
-	error "VBox n'est pas installé ou VBoxManage n'est pas dans le PATH"
+	error "VirtualBox not installed or VBoxManage not in PATH"
 	LN
 fi
 

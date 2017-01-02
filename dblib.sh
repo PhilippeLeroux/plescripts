@@ -35,6 +35,28 @@ $@
 WT
 }
 
+#*> $1 chaine de connection
+#*>	Exécute les commandes "$@" avec sqlplus
+#*>	Affichage correct sur la sortie std et la log.
+#*> return :
+#*>    1 if EXEC_CMD_ACTION = NOP
+#*>    0 if EXEC_CMD_ACTION = EXEC
+function sqlplus_cmd_with
+{
+	typeset -r connect_string="$1"
+	shift
+	fake_exec_cmd sqlplus -s "$connect_string"
+	if [ $? -eq 0 ]
+	then
+		printf "${SPOOL}set echo off\nset timin on\n$@\n" | \
+			sqlplus -s $connect_string
+		return 0
+	else
+		printf "${SPOOL}set echo off\nset timin on\n$@\n"
+		return 1
+	fi
+}
+
 #*>	Exécute les commandes "$@" avec sqlplus en sysdba
 #*>	Affichage correct sur la sortie std et la log.
 #*> return :
@@ -42,16 +64,7 @@ WT
 #*>    0 if EXEC_CMD_ACTION = EXEC
 function sqlplus_cmd
 {
-	fake_exec_cmd sqlplus -s sys/$oracle_password as sysdba
-	if [ $? -eq 0 ]
-	then
-		printf "${SPOOL}set echo off\nset timin on\n$@\n" | \
-			sqlplus -s sys/$oracle_password as sysdba
-		return 0
-	else
-		printf "${SPOOL}set echo off\nset timin on\n$@\n"
-		return 1
-	fi
+	sqlplus_cmd_with "sys/$oracle_password as sysdba" "$@"
 }
 
 #*>	Exécute les commandes "$@" avec sqlplus en sysasm
@@ -108,7 +121,6 @@ function exit_if_service_not_running
 	typeset	-r	pdb_name_l="$2"
 	typeset	-r	service_name_l="$3"
 
-	exec_cmd LANG=C srvctl status service -db $db_name_l
 	info -n "Database $db_name_l, pdb $pdb_name_l : service $service_name_l running "
 	if grep -iqE "Service $service_name_l is running.*"<<<"$(LANG=C srvctl status service -db $db_name_l)"
 	then

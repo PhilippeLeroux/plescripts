@@ -145,4 +145,20 @@ run_all.sh			|	daisy				|	1h47mn26s
 ![Screenshot](https://github.com/PhilippeLeroux/plescripts/wiki/virtualbox_manager.png)
 
 --------------------------------------------------------------------------------
+
 [Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)
+
+--------------------------------------------------------------------------------
+
+### LICENCE
+
+Copyright © 2016,2017 Philippe Leroux <philippe.lrx@gmail.com>
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.

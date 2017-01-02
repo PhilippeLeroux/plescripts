@@ -105,33 +105,39 @@ then
 else
 	db_name=$dg_db_name
 fi
+
 [ "$service_name" == auto ] && service_name=$(make_oci_service_name_for $pdb_name)
 
 typeset	-r	account_tbs=${account_name}_tbs
 typeset	-r	dbfs_name=staging_area
 typeset -r	pass_file=~/${pdb_name}_pass
 
+function sql_create_user_dbfs
+{
+	set_sql_cmd "set ver off"
+	set_sql_cmd "set echo on"
+	set_sql_cmd "set feed on"
+	set_sql_cmd "@create_user_dbfs.sql $account_tbs $account_name $account_password"
+}
+
 function create_user_dbfs
 {
 	line_separator
-	fake_exec_cmd sqlplus -s sys/$oracle_password@${service_name} as sysdba
-	sqlplus -s sys/$oracle_password@${service_name} as sysdba<<-EOSQL
-	set ver off
-	set echo on
-	set feed on
-	@create_user_dbfs.sql $account_tbs $account_name $account_password
-	EOSQL
+	sqlplus_cmd_with	"sys/$oracle_password@${service_name} as sysdba"	\
+						"$(sql_create_user_dbfs)"
 	LN
+}
+
+function sql_create_dbfs
+{
+	set_sql_cmd "@?/rdbms/admin/dbfs_create_filesystem.sql	$account_tbs $dbfs_name"
 }
 
 function create_dbfs
 {
 	line_separator
-	fake_exec_cmd sqlplus -s $account_name/$account_password@${service_name}
-	sqlplus -s $account_name/$account_password@${service_name}<<-EOSQL
-	prompt create filesystem $dbfs_name on tablespace $account_tbs
-	@?/rdbms/admin/dbfs_create_filesystem.sql $account_tbs $dbfs_name
-	EOSQL
+	sqlplus_cmd_with	"$account_name/$account_password@${service_name}"	\
+						"$(sql_create_dbfs)"
 	LN
 }
 
@@ -196,8 +202,10 @@ function copy_store_if_not_cfs
 	if [ $? -eq 0 ]
 	then
 		info "CFS : nothing to do."
+		LN
 		return 0
 	fi
+	LN
 
 	info "Copy wallet & sqlnet.ora to : ${gi_node_list[*]}"
 	for node in ${gi_node_list[*]}
@@ -297,7 +305,7 @@ fi
 
 [ $dg_db_name == auto ] && load_data || true
 
-info "With user root execute, on nodes $gi_current_node ${gi_node_list[*]} :"
+info "With user root execute :"
 info "cd plescripts/db/dbfs/"
 if [ $dg_db_name == auto ]
 then

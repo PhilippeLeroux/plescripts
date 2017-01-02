@@ -149,20 +149,7 @@ function create_local_resource
 	LN
 }
 
-function exit_is_rac_not_administrator_managed
-{
-	grep -qE "Database is administrator managed" <<<"$(srvctl config database -db $db_name)"
-	if [ $? -ne 0 ]
-	then
-		error "Work only on RAC administrator managed."
-		LN
-		exit 1
-	fi
-}
-
 exit_if_service_not_running $db_name $pdb_name $service_name
-
-[ $gi_count_nodes -gt 1 ] && exit_is_rac_not_administrator_managed || true
 
 create_script
 

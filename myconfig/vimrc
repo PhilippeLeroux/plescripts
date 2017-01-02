@@ -114,8 +114,10 @@ map <F3> :call ToggleAllFolders()<CR>
 autocmd BufRead * call EnableShellFoldBrace()
 
 "	============================================================================
-source $HOME/vimfunc/ToggleHOME2Plescripts.vim
-map <silent> <F4> :call ToggleHOME2Plescripts()<CR>
+source $HOME/vimfunc/GotoDir.vim
+nnoremap <silent> <C-o> :call Goto_oracle_bash_completion()<CR>
+nnoremap <silent> <C-e> :call Goto_plescripts()<CR>
+nnoremap <silent> <C-h> :call Goto_home()<CR>
 
 "	============================================================================
 "	NERDTree

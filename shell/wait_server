@@ -46,11 +46,11 @@ function ping_test
 
 	if [ $duration -ge $max_time ]
 	then
-		printf "[${RED}ko${NORM}] Waiting : %s\n" $(fmt_seconds $duration)
+		printf "[$KO] Waiting : %s\n" $(fmt_seconds $duration)
 		show_cursor
 		return 1
 	else
-		printf "[${GREEN}ok${NORM}] Waiting %s\n" $(fmt_seconds $duration)
+		printf "[$OK] Waiting %s\n" $(fmt_seconds $duration)
 		return 0
 	fi
 }
@@ -87,10 +87,10 @@ function wait_for
 
 	if [ $duration -ge $max_time ]
 	then
-		printf "[${RED}ko${NORM}] Waiting %s${CEOL}\n" $(fmt_seconds $duration)
+		printf "[$KO] Waiting %s${CEOL}\n" $(fmt_seconds $duration)
 		return 1
 	else
-		printf "[${GREEN}ok${NORM}] Waiting %s${CEOL}\n"  $(fmt_seconds $duration)
+		printf "[$OK] Waiting %s${CEOL}\n"  $(fmt_seconds $duration)
 		return 0
 	fi
 }
@@ -119,4 +119,3 @@ fi
 
 wait_for $1
 exit $?
-

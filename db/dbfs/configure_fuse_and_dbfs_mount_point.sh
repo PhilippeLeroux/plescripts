@@ -19,6 +19,7 @@ script_banner $ME $*
 
 typeset	dg_db_name=auto
 typeset	pdb_name=undef
+typeset	local_only=no
 
 while [ $# -ne 0 ]
 do
@@ -35,6 +36,11 @@ do
 
 		-pdb_name=*)
 			pdb_name=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-local_only)
+			local_only=yes
 			shift
 			;;
 
@@ -118,8 +124,8 @@ LN
 line_separator
 info "Add oracle to group fuse"
 exec_cmd usermod -a -G fuse oracle
-info "Add grid to group fuse"
-exec_cmd usermod -a -G fuse grid
+#info "Add grid to group fuse"
+#exec_cmd usermod -a -G fuse grid
 LN
 
 line_separator
@@ -149,7 +155,7 @@ exec_cmd ls -ld $pdb_name
 LN
 
 line_separator
-info "Configure fuse : grid & oracle can mount and rw."
+info "Configure fuse : oracle can mount and rw."
 exec_cmd "sed -i '/user_allow_other/d' /etc/fuse.conf"
 exec_cmd "echo 'user_allow_other' >> /etc/fuse.conf"
 LN
@@ -171,35 +177,34 @@ else
 fi
 LN
 
+if [[ $gi_count_nodes -gt 1 && $local_only == no ]]
+then
+	line_separator
+	execute_on_other_nodes ". .bash_profile; ~/plescripts/db/dbfs/${ME##*/}	\
+								-db_name=$db_name -pdb_name=$pdb_name		\
+								-local_only"
+	LN
+fi
+
 line_separator
 if grep -qE "oracle" <<<"$(who)"
 then
 	warning "***********************************"
 	warning "YOU must disconnect oracle account."
 	warning "***********************************"
+	exec_cmd w oracle
 	LN
 fi
 
-if grep -qE "grid" <<<"$(who)"
-then
-	warning "*********************************"
-	warning "YOU must disconnect grid account."
-	warning "*********************************"
+if [ $local_only == no ]
+then # Affiche l'info que sur le serveur ou a été lancé le script.
+	info "With user grid execute :"
+	info "cd plescripts/db/dbfs/"
+	if [ $dg_db_name == auto ]
+	then
+		info "./create_crs_resource_for_dbfs.sh -pdb_name=$pdb_name"
+	else
+		info "./create_crs_resource_for_dbfs.sh -db_name=$db_name -pdb_name=$pdb_name"
+	fi
 	LN
 fi
-
-if [ $gi_count_nodes -gt 1 ]
-then
-	info "This script must be executed on all nodes."
-	LN
-fi
-
-info "With user grid execute :"
-info "cd plescripts/db/dbfs/"
-if [ $dg_db_name == auto ]
-then
-	info "./create_crs_resource_for_dbfs.sh -pdb_name=$pdb_name"
-else
-	info "./create_crs_resource_for_dbfs.sh -db_name=$db_name -pdb_name=$pdb_name"
-fi
-LN

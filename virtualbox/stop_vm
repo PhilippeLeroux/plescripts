@@ -86,6 +86,9 @@ function wait_os_until_stopped
 			warning "$os_name not stopped after ${secs} s"
 			exec_cmd -c "VBoxManage controlvm $os_name poweroff"
 			break
+		elif [[ $secs -ne 0 && $(( secs % 10 )) -eq 0 ]]
+		then
+			info -f -n "${secs}s"
 		fi
 		sleep 1
 		secs=secs+1
