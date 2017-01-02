@@ -108,17 +108,17 @@ function validate_NFS_exports
 	_is_exported $HOME/plescripts
 	if [ $? -ne 0 ]
 	then
-		info "\tadd to /etc/resolv.conf : $HOME/plescripts $network/$if_pub_prefix (rw,$nfs_options)"
+		info "\tadd to /etc/exports : $HOME/plescripts $network/$if_pub_prefix (rw,$nfs_options)"
 	fi
 	_is_exported $HOME/$oracle_install
 	if [ $? -ne 0 ]
 	then
-		info "\tadd to /etc/resolv.conf : $HOME/oracle_install/12.1 $network/$if_pub_prefix (ro,$nfs_options)"
+		info "\tadd to /etc/exports : $HOME/oracle_install/12.1 $network/$if_pub_prefix (ro,$nfs_options)"
 	fi
 	_is_exported $iso_olinux_path
 	if [ $? -ne 0 ]
 	then
-		info "\tadd to /etc/resolv.conf : $iso_olinux_path $network/$if_pub_prefix (ro,$nfs_options)"
+		info "\tadd to /etc/exports : $iso_olinux_path $network/$if_pub_prefix (ro,$nfs_options)"
 	fi
 	LN
 }
