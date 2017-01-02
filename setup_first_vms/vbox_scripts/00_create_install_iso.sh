@@ -232,6 +232,11 @@ fi
 if [ "$timezone" == detect ]
 then
 	timezone=$(LANC=C timedatectl | grep "Time zone" | awk '{ print $3 }')
+	if [ "$timezone" == "n/a" ]                                                  
+	then                                                                         
+		error "Cannot detect your timezone."                                     
+		exit 1                                                                   
+	fi
 	confirm_detect=yes
 fi
 
