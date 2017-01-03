@@ -122,7 +122,7 @@ exec_cmd VBoxManage modifyvm $infra_hostname --cableconnected3 on
 LN
 
 line_separator
-exec_cmd VBoxManage modifyvm $infra_hostname --cpus 1
+exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
 LN
 
 line_separator
