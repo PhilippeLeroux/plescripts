@@ -17,6 +17,7 @@ typeset -r str_usage=\
 
 Debug flag :
 	[-start_server_only] Le serveur est déjà cloné, uniquement le démarrer.
+	[-keep_kvmclock]     Par défaut, pour les RAC, kvmclock est désactivé.
 "
 
 script_banner $ME $*
@@ -26,6 +27,7 @@ typeset -i	node=-1
 typeset		vmGroup
 
 typeset		start_server_only=no
+typeset		kvmclock=disable
 
 while [ $# -ne 0 ]
 do
@@ -47,6 +49,11 @@ do
 
 		-start_server_only)
 			start_server_only=yes
+			shift
+			;;
+
+		-keep_kvmclock)
+			kvmclock=enable
 			shift
 			;;
 
@@ -327,8 +334,11 @@ function rac_configure_ntp
 	ssh_master "~/plescripts/ntp/configure_ntp.sh"
 	LN
 
-	ssh_master "~/plescripts/ntp/disable_kvmclock.sh"
-	LN
+	if [ $kvmclock == disable ]
+	then
+		ssh_master "~/plescripts/ntp/disable_kvmclock.sh"
+		LN
+	fi
 }
 
 #	Configure le master cloné
