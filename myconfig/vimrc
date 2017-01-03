@@ -41,6 +41,10 @@ if g:first_load == 1
 	endif
 endif
 
+"	vim-session & vim-misc
+let g:session_autoload='yes'
+let g:session_autosave='yes'
+
 "	Pour vim-markdown
 let g:vim_markdown_folding_disabled = 1
 let g:vim_markdown_toc_autofit = 1
