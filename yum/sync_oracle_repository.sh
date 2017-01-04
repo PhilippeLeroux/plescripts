@@ -153,16 +153,12 @@ line_separator
 test_if_rpm_update_available
 if [ $? -eq 0 ]
 then
-	info "Update $(hostname -s)"
-	exec_cmd yum -y update
+	info "To update : yum update"
+	LN
+	info " * yum/update_master.sh to upadte VM $master_hostname, execute from $client_hostname"
+	info " * yum/update_db_os.sh to update VM with bdd, execute from the bdd server."
 	LN
 else
 	info "No update available."
 	LN
 fi
-
-line_separator
-info "Notes :"
-info " * yum/update_master.sh to upadte VM $master_hostname, execute from $client_hostname"
-info " * yum/update_db_os.sh to update VM with bdd, execute from the bdd server."
-LN
