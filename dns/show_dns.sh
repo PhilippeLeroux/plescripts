@@ -1,12 +1,12 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 
-info $( fill "~" $(( 18 + 1 + 1 + 1 + 15)) )
+typeset	-r	horizontal_separator=$( fill "~" $(( 18 + 1 + 1 + 1 + 15)) )
+info $horizontal_separator
 info "$(printf "%-18s | %s" "Server" "ip")"
-info $( fill "~" $(( 18 + 1 + 1 + 1 + 15)) )
+info $horizontal_separator
 
 #	Trié par rapport à l'ip node.
 cat /var/named/named.orcl	|\
@@ -18,4 +18,4 @@ do
 	info "$(printf "%-18s | %s" $server_name $server_ip)"
 done
 
-info $( fill "~" $(( 18 + 1 + 1 + 1 + 15)) )
+info $horizontal_separator
