@@ -190,7 +190,7 @@ function _in_path
 	typeset -r	distrib=$(grep ^NAME /etc/os-release | cut -d= -f2)
 
 	typeset -r msg=$(printf "%-10s " $cmd)
-	info -n "$msg"
+	info -n "  $msg"
 	if $(test_if_cmd_exists $cmd)
 	then
 		info -f "[$OK]"
@@ -203,7 +203,11 @@ function _in_path
 			info -f -n "[$KO]"
 		fi
 		info -f " $cmd_msg"
-		[[ $option == no && $distrib == openSUSE ]] && ( exec_cmd -ci cnf $cmd; LN )
+		if [[ $option == no && $distrib == openSUSE ]]
+		then
+			exec_cmd -ci cnf $cmd
+			LN
+		fi
 	fi
 }
 

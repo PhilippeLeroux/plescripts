@@ -506,7 +506,7 @@ function create_stats_services
 	LN
 }
 
-function test_if_enought_disk_space_on_san
+function test_space_on_san
 {
 	typeset	-ri	total_disk_mb=$(to_mb $(cfg_total_disk_size_gb $db)G)
 	typeset	-ri	san_free_space_mb=$(to_mb $(ssh $infra_conn LANG=C vgs $vg_name | tail -1 | awk '{ print $7 }'))
@@ -530,7 +530,7 @@ script_start
 
 if [ $node -eq 1 ]
 then
-	[ $cfg_luns_hosted_by == san ] && test_if_enought_disk_space_on_san || true
+	[ $cfg_luns_hosted_by == san ] && test_space_on_san || true
 else
 	test_if_other_nodes_up
 fi
