@@ -41,14 +41,25 @@ if g:first_load == 1
 	endif
 endif
 
-"	vim-session & vim-misc
-let g:session_autoload='yes'
-let g:session_autosave='yes'
-
 "	Pour vim-markdown
 let g:vim_markdown_folding_disabled = 1
 let g:vim_markdown_toc_autofit = 1
 set conceallevel=2
+
+"	vim-session & vim-misc
+let g:session_autoload='yes'
+let g:session_autosave='yes'
+"	Ne fonctionne pas.
+"	il faut supprimer default.vim
+"	g:session_default_name est buggé. pour pouvoir réutiliser le nom par
+"	défaut : supprimer les fichiers sessions existant, définir :
+"	let g:session_default_name=bidon qui provoque une erreur au démarrage, il
+"	suffit ensuite de supprimer la varaible et c'est bon.
+"if has("gui_running")
+"	let g:session_default_name='vim_gui'
+"else
+"	let g:session_default_name='vim_term'
+"endif
 
 " Pour mes fichiers template et .md je désactive la syntaxe
 autocmd BufRead *.template,*.doc.sh,*.md set syn=off

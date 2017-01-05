@@ -198,7 +198,11 @@ fi
 
 case $action in
 	backup)
-		exec_cmd "tar cf - .vim -C ~/ | gzip -c > ~/plescripts/myconfig/vim.tar.gz"
+		cd $HOME
+		rm -rf ~/plescripts/myconfig/vim.tar.gz
+		exec_cmd "tar --exclude '.git*' -cf - .vim  	|\
+					gzip -c > ~/plescripts/myconfig/vim.tar.gz"
+		cd -
 		LN
 		;;
 

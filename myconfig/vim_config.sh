@@ -59,6 +59,9 @@ case $action in
 
 		exec_cmd "tar -cf - -C $HOME/ vimfunc | gzip -c > ~/plescripts/myconfig/vimfunc.tar.gz"
 		LN
+
+		exec_cmd "~/plescripts/myconfig/vim_plugin.sh -backup"
+		LN
 		;;
 
 	restore)
@@ -66,5 +69,10 @@ case $action in
 		LN
 
 		exec_cmd "gzip -dc ~/plescripts/myconfig/vimfunc.tar.gz | tar xf - -C $HOME/"
+		LN
+
+		exec_cmd "rm -rf $HOME/.vim"
+		exec_cmd "gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf - -C $HOME/"
+		LN
 		;;
 esac
