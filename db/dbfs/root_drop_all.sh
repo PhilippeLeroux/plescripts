@@ -75,7 +75,7 @@ exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/oracle_drop_all.sh	\
 LN
 
 line_separator
-execute_on_all_nodes "rmdir /mnt/$pdb_name"
+execute_on_all_nodes "rm -rf /mnt/$pdb_name"
 LN
 
 line_separator

@@ -210,11 +210,12 @@ function copy_store_if_not_cfs
 	info "Copy wallet & sqlnet.ora to : ${gi_node_list[*]}"
 	for node in ${gi_node_list[*]}
 	do
-		info "copy store to $node"
-		exec_cmd scp -pr $wallet_path ${node}:${wallet_path%/*}/
+		info "copy wallet store to $node"
+		exec_cmd ssh ${node} mkdir -p $wallet_path
+		exec_cmd scp -pr $wallet_path/* ${node}:$wallet_path/
 		LN
 
-		info "copy tns to $node"
+		info "copy sqlnet.ora to $node"
 		exec_cmd scp -pr $TNS_ADMIN/sqlnet.ora ${node}:$TNS_ADMIN/sqlnet.ora
 		LN
 	done
