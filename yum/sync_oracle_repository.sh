@@ -9,7 +9,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-\t[-use_tar=name] Usage tar 'name' to create local repository.
+\t[-use_tar=name] Initialise le dépôt avec \$use_tar
 \t[-release=$default_yum_repository_release]	latest|R3|R4
 
 Update OS & sync local repository
@@ -119,8 +119,7 @@ then
 fi
 
 if [ "$use_tar" != none ]
-then #	$use_tar contient le dépôt OL7 à partir de ol7, gains de temps dans les
-	 #	testes. Cloner le dépôt prend une heure avec l'archive 2mn maximum.
+then #	$use_tar contient le backup d'un dépôt OL7.
 	info "Extract repository from $use_tar"
 	root_dir="/$(echo $infra_olinux_repository_path | cut -d/ -f2)"
 	exec_cmd mv "$use_tar"	"$root_dir"
@@ -144,8 +143,8 @@ LN
 
 line_separator
 exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=infra
-#	Pour le serveur d'infra les dépôts R3 ou R4 ne doivent pas être activés, trop
-#	de problème avec target.
+#	Pour le serveur d'infra le dépôt R4 ne doit pas être activé, trop de
+#	problème avec target.
 exec_cmd ~/plescripts/yum/switch_repo_to.sh -local
 LN
 

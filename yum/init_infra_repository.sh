@@ -44,12 +44,12 @@ typeset -r backup_name="yum_repo.tar.gz"
 typeset -r full_backup_name="$iso_olinux_path/$backup_name"
 
 if [ ! -f $full_backup_name ]
-then
+then # Pas de backup de dépôt, la synchronisation sera longue.
 	line_separator
 	info "Cloning OL7 repository on $infra_hostname"
 	exec_cmd "ssh -t root@$infra_ip '~/plescripts/yum/sync_oracle_repository.sh'"
 	LN
-else	#	Duplication du backup du repo : gain en temps
+else # Le dépôt sera initialisé avec $full_backup_name
 	line_separator
 	exec_cmd "ssh -t root@$infra_ip \"[ -d /repo ] && rm -rf /repo || true\""
 	LN

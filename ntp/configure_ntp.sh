@@ -43,11 +43,11 @@ typeset -r ntp_conf=/etc/ntp.conf
 function install_ntp
 {
 	info "Uninstall chrony."
-	exec_cmd "yum -y erase chrony"
+	exec_cmd "LANG=C yum -y erase chrony"
 	LN
 
 	info "Install ntp."
-	exec_cmd "yum -y install ntp"
+	exec_cmd "LANG=C yum -y install ntp"
 	LN
 }
 
@@ -59,6 +59,7 @@ function configure_and_start_ntpdate
 	LN
 
 	info "Sync $(hostname -s) with $infra_hostname"
+	exec_cmd "ntpdate $infra_hostname"
 	exec_cmd "ntpdate $infra_hostname"
 	LN
 
@@ -101,8 +102,8 @@ configure_and_start_ntpdate
 
 info "Enabled & start ntpd"
 exec_cmd "systemctl enable ntpd"
+LN
 exec_cmd "systemctl start ntpd"
 LN
-
 exec_cmd "ntpq -p"
 LN

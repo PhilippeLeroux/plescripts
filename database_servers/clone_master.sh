@@ -363,14 +363,13 @@ function configure_server
 
 	#	-wait_os=no car le nom du serveur n'a pas encore été changé.
 	exec_cmd "$vm_scripts_path/start_vm $server_name -wait_os=no"
-	LN
+
 	exec_cmd "wait_server $master_hostname"
 
 	#	************************************************************************
 	#	La VM a été clonée mais sa configuration réseau correspond toujours à
 	#	celle du master, il faut donc régénérer la clef public.
 	add_to_known_hosts $master_hostname
-	LN
 
 	line_separator
 	register_server_2_dns
@@ -393,7 +392,6 @@ function configure_server
 
 	line_separator
 	make_ssh_equi_with_san
-	LN
 
 	line_separator
 	#	Si depuis la création du master le dépôt par défaut a changé, permet

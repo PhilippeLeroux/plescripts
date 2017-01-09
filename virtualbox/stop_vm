@@ -74,6 +74,7 @@ function wait_os_until_stopped
 	typeset	-ri	wait_max_secs=120
 	typeset	-i	secs=0
 
+	hide_cursor
 	info -n "Server $os_name stopping "
 	while [ 0 -eq 0 ]
 	do
@@ -93,6 +94,7 @@ function wait_os_until_stopped
 		sleep 1
 		secs=secs+1
 	done
+	show_cursor
 }
 
 #===============================================================================

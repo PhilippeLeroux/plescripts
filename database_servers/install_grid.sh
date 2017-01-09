@@ -271,6 +271,7 @@ function start_grid_installation
 						-responseFile /home/grid/grid_$db.rsp\""
 	if [ $? -gt 250 ]
 	then
+		error "To check errors :"
 		error "cd /mnt/oracle_install/grid"
 		error "Run : ./runcluvfy.sh stage -pre crsinst -fixup -n $(echo ${node_names[*]} | tr [:space:] ',')"
 		exit 1
