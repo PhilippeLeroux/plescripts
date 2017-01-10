@@ -108,7 +108,7 @@ fi
 
 [ "$service_name" == auto ] && service_name=$(make_oci_service_name_for $pdb_name)
 
-typeset	-r	account_tbs=${account_name}_tbs
+typeset	-r	dbfs_tbs=${account_name}_tbs
 typeset	-r	dbfs_name=staging_area
 typeset -r	pass_file=~/${pdb_name}_pass
 
@@ -117,7 +117,7 @@ function sql_create_user_dbfs
 	set_sql_cmd "set ver off"
 	set_sql_cmd "set echo on"
 	set_sql_cmd "set feed on"
-	set_sql_cmd "@create_user_dbfs.sql $account_tbs $account_name $account_password"
+	set_sql_cmd "@create_user_dbfs.sql $dbfs_tbs $account_name $account_password"
 }
 
 function create_user_dbfs
@@ -130,7 +130,7 @@ function create_user_dbfs
 
 function sql_create_dbfs
 {
-	set_sql_cmd "@?/rdbms/admin/dbfs_create_filesystem.sql	$account_tbs $dbfs_name"
+	set_sql_cmd "@?/rdbms/admin/dbfs_create_filesystem.sql	$dbfs_tbs $dbfs_name nocompress nodeduplicate noencrypt partition"
 }
 
 function create_dbfs
@@ -149,7 +149,7 @@ function create_file_dbfs_config
 	exec_cmd "echo 'service=$service_name' > $dbfs_cfg_file"
 	exec_cmd "echo 'dbfs_user=$account_name' >> $dbfs_cfg_file"
 	exec_cmd "echo 'dbfs_password=$account_password' >> $dbfs_cfg_file"
-	exec_cmd "echo 'dbfs_tbs=$account_tbs' >> $dbfs_cfg_file"
+	exec_cmd "echo 'dbfs_tbs=$dbfs_tbs' >> $dbfs_cfg_file"
 	exec_cmd "echo 'dbfs_name=$dbfs_name' >> $dbfs_cfg_file"
 	exec_cmd "echo 'wallet=$wallet' >> $dbfs_cfg_file"
 	LN
