@@ -74,38 +74,6 @@ exit_if_param_undef pdb	"$str_usage"
 
 exit_if_ORACLE_SID_not_defined
 
-# print to stdout primary database name
-function read_primary_name
-{
-	dgmgrl sys/$oracle_password 'show configuration'	|\
-				grep "Primary database" | awk '{ print $1 }'
-}
-
-# buil arrays physical_list & stby_server_list
-function load_stby_database
-{
-	typeset name
-	while read name
-	do
-		physical_list+=( $name )
-	done<<<"$(dgmgrl sys/$oracle_password 'show configuration'	|\
-					grep "Physical standby" | awk '{ print $1 }')"
-
-	typeset stby_name
-	for stby_name in ${physical_list[*]}
-	do
-		stby_server_list+=($(tnsping $stby_name | tail -2 | head -1 |\
-					sed "s/.*(\s\?HOST\s\?=\s\?\(.*\)\s\?)\s\?(\s\?PORT.*/\1/"))
-	done
-
-}
-
-function add_temp_tbs_to
-{
-	set_sql_cmd "alter session set container=$1;"
-	set_sql_cmd "alter tablespace temp add tempfile;"
-}
-
 if dataguard_config_available
 then
 	typeset	-r dataguard=yes
@@ -177,6 +145,12 @@ fi
 
 if [ $dataguard == yes ]
 then
+	function add_temp_tbs_to
+	{
+		set_sql_cmd "alter session set container=$1;"
+		set_sql_cmd "alter tablespace temp add tempfile;"
+	}
+
 	line_separator
 	info "12cR1 : temporary tablespace not created."
 	for stby_name in ${physical_list[*]}

@@ -14,8 +14,7 @@ script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef
-typeset service=undef
-typeset	role=primary
+typeset service=auto
 typeset account_name=dbfsadm
 typeset	account_password=dbfs
 typeset	wallet=yes
@@ -25,11 +24,12 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
-	-service=name
-	-physical			for physical standby database.
+	-service=$service
 	[-account_name=$account_name]
 	[-account_password=$account_password]
 	[-wallet_path=$wallet_path]
+
+For dataguard must be executed first on the primary database.
 
 Debug flags :
 	[-wallet=yes]	yes|no : with 'no', uses password file.
@@ -55,11 +55,6 @@ do
 
 		-service=*)
 			service=${1##*=}
-			shift
-			;;
-
-		-physical)
-			role=physical
 			shift
 			;;
 
@@ -102,15 +97,17 @@ must_be_user oracle
 
 exit_if_param_undef db					"$str_usage"
 exit_if_param_undef pdb					"$str_usage"
-exit_if_param_undef service				"$str_usage"
 exit_if_param_undef account_name		"$str_usage"
 exit_if_param_undef account_password	"$str_usage"
 
 exit_if_param_invalid wallet "yes no"	"$str_usage"
 
+[ "$service" == auto ] && service=$(make_oci_service_name_for $pdb) || true
+
 typeset	-r	dbfs_tbs=${account_name}_tbs
 typeset	-r	dbfs_name=staging_area
 typeset -r	pass_file=~/${pdb}_pass
+account_name=$(to_upper $account_name)
 
 function create_user_dbfs
 {
@@ -290,11 +287,39 @@ resume
 
 exit_if_service_not_exists $db $service
 
+if dataguard_config_available
+then
+	if [[  $gi_count_nodes -gt 1 ]]
+	then
+		error "RAC + Dataguard not supported."
+		exit 1
+	fi
+	typeset -r role=$(read_database_role $db)
+else
+	typeset -r role=primary
+fi
+
 if [ $role == primary ]
 then
 	create_user_dbfs
 
 	create_dbfs
+else
+	function read_user
+	{
+		typeset -r stby_service=$(make_oci_stby_service_name_for $pdb)
+		sqlplus -s sys/${oracle_password}@${stby_service} as sysdba<<-EOSQL | tail -1
+		set feed off  head off
+		select username from dba_users where username='$account_name';
+		EOSQL
+	}
+
+	if [ "$(read_user)" != $account_name ]
+	then
+		error "Script not executed on primary database."
+		LN
+		exit 1
+	fi
 fi
 
 create_file_dbfs_config

@@ -34,6 +34,40 @@ function dataguard_config_available
 	dgmgrl -silent sys/$oracle_password 'show configuration' >/dev/null 2>&1
 }
 
+#*> $1 database name
+#*> print to stdout database role : primary or physical
+function read_database_role
+{
+	to_lower $(dgmgrl -silent sys/Oracle12 'show configuration'	|\
+							grep $1 | cut -d- -f2 | awk '{ print $1 }')
+}
+
+# arrays physical_list & stby_server_list must be declared
+function load_stby_database
+{
+	typeset name
+	while read name
+	do
+		physical_list+=( $name )
+	done<<<"$(dgmgrl sys/$oracle_password 'show configuration'	|\
+					grep "Physical standby" | awk '{ print $1 }')"
+
+	typeset stby_name
+	for stby_name in ${physical_list[*]}
+	do
+		stby_server_list+=($(tnsping $stby_name | tail -2 | head -1 |\
+					sed "s/.*(\s\?HOST\s\?=\s\?\(.*\)\s\?)\s\?(\s\?PORT.*/\1/"))
+	done
+
+}
+
+# print to stdout primary database name
+function read_primary_name
+{
+	dgmgrl sys/$oracle_password 'show configuration'	|\
+				grep "Primary database" | awk '{ print $1 }'
+}
+
 #*>	$@ contient une commande à exécuter.
 #*>	La fonction n'exécute pas la commande elle :
 #*>		- affiche le prompt SQL> suivi de la commande.
@@ -154,13 +188,8 @@ function service_exists
 function service_running
 {
 	typeset -r db_name_l=$1
-	typeset -r service_name_l=$2
-	if grep -iqE "Service $service_name_l is running.*"<<<"$(LANG=C srvctl status service -db $db_name_l -s $service_name_l)"
-	then
-		return 0
-	else
-		return 1
-	fi
+	typeset -r service_name_l=$(to_lower $2)
+	grep -iqE "Service $service_name_l is running.*"<<<"$(LANG=C srvctl status service -db $db_name_l -s $service_name_l)"
 }
 
 #*> $1 db name
@@ -223,6 +252,16 @@ function make_oci_service_name_for
 	typeset	-r pdb_name_l=$(to_upper "$1")
 	echo pdb${pdb_name_l}_oci
 }
+
+#*>	$1 pdb name
+#*>
+#*> return associate oci service name for stby
+function make_oci_stby_service_name_for
+{
+	typeset	-r pdb_name_l=$(to_upper "$1")
+	echo pdb${pdb_name_l}_stby_oci
+}
+
 
 #*>	$1 pdb name
 #*>

@@ -13,7 +13,7 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
-	-service=name
+	-service=auto	auto or service name.
 "
 
 script_banner $ME $*
@@ -71,7 +71,8 @@ must_be_user root
 
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef pdb		"$str_usage"
-exit_if_param_undef service	"$str_usage"
+
+[ "$service" == auto ] && service=$(make_oci_service_name_for $pdb) || true
 
 typeset	-r	dbfs_cfg_file=/home/oracle/${pdb}_dbfs.cfg
 
@@ -203,6 +204,6 @@ if [ $local_only == no ]
 then # Affiche l'info que sur le serveur ou a été lancé le script.
 	info "With user grid execute :"
 	info "cd plescripts/db/dbfs/"
-	info "./create_crs_resource_for_dbfs.sh -db=$db -pdb=$pdb"
+	info "./create_crs_resource_for_dbfs.sh -db=$db -pdb=$pdb -service=$service"
 	LN
 fi

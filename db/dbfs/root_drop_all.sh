@@ -14,18 +14,20 @@ typeset -r str_usage=\
 $ME
 \t-db=name
 \t-pdb=name
-\t-service=name
-\t-physical\t\tif physical standby database.
-\t[-drop_wallet=yes]\tyes|no
+\t-service=auto     auto or service name
+\t-physical         for physical standby database.
+\t[-drop_wallet]    drop wallet store
+\t[-uninstall_fuse] uninstall fuse
 "
 
 script_banner $ME $*
 
 typeset	db=undef
 typeset	pdb=undef
-typeset	service=undef
+typeset	service=auto
 typeset	role=primary
-typeset drop_wallet=yes
+typeset drop_wallet=no
+typeset uninstall_fuse=no
 
 while [ $# -ne 0 ]
 do
@@ -55,8 +57,13 @@ do
 			shift
 			;;
 
-		-drop_wallet=*)
-			drop_wallet=${1##*=}
+		-drop_wallet)
+			drop_wallet=yes
+			shift
+			;;
+
+		-uninstall_fuse)
+			uninstall_fuse=yes
 			shift
 			;;
 
@@ -77,11 +84,10 @@ done
 
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef pdb		"$str_usage"
-exit_if_param_undef service	"$str_usage"
-
-exit_if_param_invalid drop_wallet "yes no" "$str_usage"
 
 must_be_user root
+
+[ $service == auto ] && service=$(make_oci_service_name_for $pdb) || true
 
 exit_if_service_not_exists $db $service
 
@@ -95,7 +101,7 @@ if [ $role == primary ]
 then
 	line_separator
 	exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/oracle_drop_all.sh	\
-							-pdb=$pdb -drop_wallet=$drop_wallet"
+						-db=$db -pdb=$pdb -drop_wallet=$drop_wallet"
 	LN
 fi
 
@@ -103,28 +109,34 @@ line_separator
 execute_on_all_nodes "rm -rf /mnt/$pdb"
 LN
 
-line_separator
-execute_on_all_nodes "rm -f /etc/ld.so.conf.d/usr_local_lib.conf"
-LN
+if [ $uninstall_fuse == yes ]
+then
+	line_separator
+	execute_on_all_nodes "rm -f /etc/ld.so.conf.d/usr_local_lib.conf"
+	LN
 
-line_separator
-typeset	-r	rel=$(cut -d. -f1-2<<<"$oracle_release")
-typeset	-r	ver=$(cut -d. -f1<<<"$oracle_release")
-execute_on_all_nodes rm -f /usr/local/lib/libclntsh.so.$rel
-execute_on_all_nodes rm -f /usr/local/lib/libnnz$ver.so
-execute_on_all_nodes rm -f /usr/local/lib/libclntshcore.so.$rel
-execute_on_all_nodes rm -f /usr/local/lib/libfuse.so
-execute_on_all_nodes ldconfig
-LN
+	line_separator
+	typeset	-r	rel=$(cut -d. -f1-2<<<"$oracle_release")
+	typeset	-r	ver=$(cut -d. -f1<<<"$oracle_release")
+	execute_on_all_nodes rm -f /usr/local/lib/libclntsh.so.$rel
+	execute_on_all_nodes rm -f /usr/local/lib/libnnz$ver.so
+	execute_on_all_nodes rm -f /usr/local/lib/libclntshcore.so.$rel
+	execute_on_all_nodes rm -f /usr/local/lib/libfuse.so
+	execute_on_all_nodes ldconfig
+	LN
 
-line_separator
-execute_on_all_nodes "rm -f /sbin/mount.dbfs"
-LN
+	line_separator
+	execute_on_all_nodes "rm -f /sbin/mount.dbfs"
+	LN
+fi
 
 line_separator
 execute_on_all_nodes "sed -i '/@$service/d' /etc/fstab"
 LN
 
-line_separator
-execute_on_all_nodes yum -y remove fuse fuse-libs
-LN
+if [ $uninstall_fuse == yes ]
+then
+	line_separator
+	execute_on_all_nodes yum -y remove fuse fuse-libs
+	LN
+fi

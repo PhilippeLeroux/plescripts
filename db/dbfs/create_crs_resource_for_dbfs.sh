@@ -13,7 +13,7 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
-	-service=name
+	-service=auto         auto or service name
 	[-update_script_only] Met uniquement à jour le script.
 	[-force]              Si le service existe, il est recréé.
 "
@@ -22,7 +22,7 @@ script_banner $ME $*
 
 typeset db=undef
 typeset	pdb=undef
-typeset	service=undef
+typeset	service=auto
 typeset	create_crs_resource=yes
 typeset	force=no
 
@@ -78,7 +78,8 @@ must_be_user grid
 
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef pdb		"$str_usage"
-exit_if_param_undef service	"$str_usage"
+
+[ "$service" == auto ] && service=$(make_oci_service_name_for $pdb) || true
 
 typeset	-r	script_name=~/mount-dbfs-$pdb
 typeset	-r	resource_name="pdb.${pdb}.dbfs"
@@ -117,7 +118,7 @@ function resource_exists
 
 function create_local_resource
 {
-	if $(resource_exists $resource_name)
+	if resource_exists $resource_name
 	then
 		line_separator
 		info "Resource $resource_name exists."
@@ -148,13 +149,19 @@ function create_local_resource
 	exec_cmd crsctl stat res $resource_name -t
 	LN
 
-	info "Start $resource_name"
-	exec_cmd crsctl start res $resource_name
-	LN
+	if service_running $db $service
+	then
+		info "Start $resource_name"
+		exec_cmd crsctl start res $resource_name
+		LN
 
-	info "Status"
-	exec_cmd crsctl stat res $resource_name -t
-	LN
+		info "Status"
+		exec_cmd crsctl stat res $resource_name -t
+		LN
+	else
+		info "Service $service not running, $resource_name not started."
+		LN
+	fi
 }
 
 exit_if_service_not_exists $db $service
