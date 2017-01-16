@@ -39,3 +39,7 @@ afiedt.buf
 #	Fichier de configuration DBFS
 db/dbfs/account.txt
 db/dbfs/pass
+
+#	Tests sql
+db/sql/jl
+db/sql/uwe
