@@ -8,7 +8,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage="Usage : $ME"
 
-[ "$USER" != "root" ] && error "User must be root." && exit 1
+must_be_user root
 
 while [ $# -ne 0 ]
 do
@@ -28,18 +28,18 @@ do
 	esac
 done
 
-typeset -r service_name=pleiscsistats
-typeset -r service_file=/usr/lib/systemd/system/$service_name.service
+typeset -r service=pleiscsistats
+typeset -r service_file=/usr/lib/systemd/system/$service.service
 
 if [ -f $service_file ]
 then
-	info "$service_name service exists."
-	exec_cmd systemctl stop $service_name
-	exec_cmd systemctl disable $service_name
+	info "$service service exists."
+	exec_cmd systemctl stop $service
+	exec_cmd systemctl disable $service
 	exec_cmd rm -f $service_file
 fi
 
-info "Create systemd service $service_name"
+info "Create systemd service $service"
 
 cat <<EOS > $service_file
 [Unit]
@@ -72,10 +72,10 @@ LN
 if grep -q IFISCSI <<< "$PLE_STATISTICS"
 then
 	info "Enable service"
-	exec_cmd "systemctl enable $service_name"
+	exec_cmd "systemctl enable $service"
 	LN
 
 	info "Start service"
-	exec_cmd "systemctl start $service_name"
+	exec_cmd "systemctl start $service"
 	LN
 fi
