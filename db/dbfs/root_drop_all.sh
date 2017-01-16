@@ -87,7 +87,7 @@ exit_if_param_undef pdb		"$str_usage"
 
 must_be_user root
 
-[ $service == auto ] && service=$(make_oci_service_name_for $pdb) || true
+[ $service == auto ] && service=$(to_lower $(make_oci_service_name_for $pdb)) || true
 
 exit_if_service_not_exists $db $service
 
