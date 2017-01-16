@@ -253,7 +253,7 @@ function must_be_user
 #*> script_banner $ME $*
 function script_banner
 {
-	info "Running : $@"
+	info "Running : ${@/$HOME/~}"
 	LN
 }
 
@@ -663,7 +663,8 @@ function exec_cmd
 
 	typeset -i	eval_return
 
-	typeset	-r	simplify_cmd=$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:])
+	typeset		simplify_cmd=$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:])
+	simplify_cmd=${simplify_cmd/$HOME/~}
 
 	case $EXEC_CMD_ACTION in
 		NOP)
@@ -787,15 +788,20 @@ function exec_dynamic_cmd
 
 	[ $confirm == yes ] && confirm_or_exit "Continue" || true
 
-	#	Avec la paramètre -h exec_cmd n'affiche pas le temps d'exécution.
-	typeset	-ri	exec_cmd_start_at=$SECONDS
-	exec_cmd -hf $cmd_name "${ple_dyn_param_cmd[@]}"
-	typeset	-ri	exec_cmd_return=$?
-
-	typeset	-ri	exec_cmd_duration=$(( SECONDS - exec_cmd_start_at ))
-	if [ $exec_cmd_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
+	if [ $EXEC_CMD_ACTION == EXEC ]
 	then
-		my_echo "${YELLOW}" "$(date +"%Hh%M")< " "${cmd_name##* } running time : $(fmt_seconds $exec_cmd_duration)"
+		#	Avec la paramètre -h exec_cmd n'affiche pas le temps d'exécution.
+		typeset	-ri	exec_cmd_start_at=$SECONDS
+		exec_cmd -hf $cmd_name "${ple_dyn_param_cmd[@]}"
+		typeset	-ri	exec_cmd_return=$?
+
+		typeset	-ri	exec_cmd_duration=$(( SECONDS - exec_cmd_start_at ))
+		if [ $exec_cmd_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
+		then
+			my_echo "${YELLOW}" "$(date +"%Hh%M")< " "${cmd_name##* } running time : $(fmt_seconds $exec_cmd_duration)"
+		fi
+	else
+		typeset	-ri	exec_cmd_return=0
 	fi
 
 	unset ple_dyn_param_cmd

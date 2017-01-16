@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -10,11 +11,11 @@ typeset -r ME=$0
 
 typeset -r str_usage=\
 "Usage : $ME
-\t-pdb_name=name
+\t-pdb=name
 \t[-drop_wallet=yes]\tyes|no
 "
 
-typeset pdb_name=undef
+typeset pdb=undef
 typeset drop_wallet=yes
 
 while [ $# -ne 0 ]
@@ -25,8 +26,8 @@ do
 			shift
 			;;
 
-		-pdb_name=*)
-			pdb_name=${1##*=}
+		-pdb=*)
+			pdb=${1##*=}
 			shift
 			;;
 
@@ -52,10 +53,13 @@ done
 
 must_be_user oracle
 
-exit_if_param_undef pdb_name "$str_usage"
+exit_if_ORACLE_SID_not_defined
+
+exit_if_param_undef pdb	"$str_usage"
+
 exit_if_param_invalid drop_wallet "yes no" "$str_usage"
 
-typeset	-r	dbfs_cfg_file=~/${pdb_name}_dbfs.cfg
+typeset	-r	dbfs_cfg_file=~/${pdb}_dbfs.cfg
 
 if [ ! -f $dbfs_cfg_file ]
 then
@@ -66,7 +70,7 @@ fi
 . $dbfs_cfg_file
 
 line_separator
-execute_on_all_nodes_v2 -c "fusermount -u /mnt/$pdb_name"
+execute_on_all_nodes_v2 -c "fusermount -u /mnt/$pdb"
 LN
 
 sqlplus -s $dbfs_user/$dbfs_password@$service<<EOSQL

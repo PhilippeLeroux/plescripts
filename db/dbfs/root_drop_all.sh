@@ -10,14 +10,21 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME
-\t-pdb_name=name
+"Usage :
+$ME
+\t-db=name
+\t-pdb=name
+\t-service=name
+\t-physical\t\tif physical standby database.
 \t[-drop_wallet=yes]\tyes|no
 "
 
 script_banner $ME $*
 
-typeset	pdb_name=undef
+typeset	db=undef
+typeset	pdb=undef
+typeset	service=undef
+typeset	role=primary
 typeset drop_wallet=yes
 
 while [ $# -ne 0 ]
@@ -28,8 +35,23 @@ do
 			shift
 			;;
 
-		-pdb_name=*)
-			pdb_name=${1##*=}
+		-db=*)
+			db=${1##*=}
+			shift
+			;;
+
+		-pdb=*)
+			pdb=${1##*=}
+			shift
+			;;
+
+		-service=*)
+			service=${1##*=}
+			shift
+			;;
+
+		-physical)
+			role=physical
 			shift
 			;;
 
@@ -53,29 +75,32 @@ do
 	esac
 done
 
-exit_if_param_undef pdb_name	"$str_usage"
+exit_if_param_undef db		"$str_usage"
+exit_if_param_undef pdb		"$str_usage"
+exit_if_param_undef service	"$str_usage"
+
 exit_if_param_invalid drop_wallet "yes no" "$str_usage"
 
 must_be_user root
 
-typeset	-r service_name=$(make_oci_service_name_for $pdb_name)
-typeset	-r db_name=$(to_lower $(extract_db_name_from $pdb_name))
-
-exit_if_service_not_running $db_name $pdb_name $service_name
+exit_if_service_not_exists $db $service
 
 line_separator
-exec_cmd -c  "sudo -iu grid crsctl stop res pdb.${pdb_name}.dbfs -f"
+exec_cmd -c  "sudo -iu grid crsctl stop res pdb.${pdb}.dbfs -f"
 LN
-exec_cmd -c  "sudo -iu grid crsctl delete res pdb.${pdb_name}.dbfs -f"
-LN
-
-line_separator
-exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/oracle_drop_all.sh	\
-							-pdb_name=$pdb_name -drop_wallet=$drop_wallet"
+exec_cmd -c  "sudo -iu grid crsctl delete res pdb.${pdb}.dbfs -f"
 LN
 
+if [ $role == primary ]
+then
+	line_separator
+	exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/oracle_drop_all.sh	\
+							-pdb=$pdb -drop_wallet=$drop_wallet"
+	LN
+fi
+
 line_separator
-execute_on_all_nodes "rm -rf /mnt/$pdb_name"
+execute_on_all_nodes "rm -rf /mnt/$pdb"
 LN
 
 line_separator
@@ -97,7 +122,7 @@ execute_on_all_nodes "rm -f /sbin/mount.dbfs"
 LN
 
 line_separator
-execute_on_all_nodes "sed -i '/@$service_name/d' /etc/fstab"
+execute_on_all_nodes "sed -i '/@$service/d' /etc/fstab"
 LN
 
 line_separator

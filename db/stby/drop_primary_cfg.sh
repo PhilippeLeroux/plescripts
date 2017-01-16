@@ -117,12 +117,12 @@ from
 	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' );
 "
 
-	while read pdbName
+	while read pdb
 	do
-		[ x"$pdbName" == x ] && continue
+		[ x"$pdb" == x ] && continue
 
 		line_separator
-		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh -db=$db -pdbName=$pdbName"
+		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh -db=$db -pdb=$pdb"
 		LN
 	done<<<"$(sqlplus_exec_query "$query")"
 }

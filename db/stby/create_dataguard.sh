@@ -199,7 +199,7 @@ function sqlcmd_create_standby_redo_logs
 #	$3	ORACLE_HOME
 #
 #	Remarque :
-#	 - Il peut y avoir plusieurs SID_LIST_LISTENER, les configurations s'ejoutent.
+#	 - Il peut y avoir plusieurs SID_LIST_LISTENER, les configurations s'ajoutent.
 #	 - TODO : la suppression d'un SID_LIST_LISTENER devrait être facilement faisable.
 #		grep -n "# Added by bibi : $sid_name" pour la première ligne.
 #		grep -n "End bibi : $sid_name" pour la dernière ligne.
@@ -320,13 +320,13 @@ function setup_tnsnames
 {
 	line_separator
 	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-				-service_name=$primary			\
+				-service=$primary				\
 				-host_name=$primary_host"
 	LN
 
 	line_separator
 	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-				-service_name=$standby			\
+				-service=$standby				\
 				-host_name=$standby_host		\
 				-copy_server_list=$standby_host"
 	LN
@@ -590,15 +590,15 @@ from
 "
 
 	line_separator
-	while read pdbName
+	while read pdb
 	do
-		[ x"$pdbName" == x ] && continue
+		[ x"$pdb" == x ] && continue
 
 		if [ $create_primary_cfg == yes ]
 		then
-			info "Create stby service for pdb $pdbName on cdb $primary"
+			info "Create stby service for pdb $pdb on cdb $primary"
 			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-						-db=$primary -pdbName=$pdbName				\
+						-db=$primary -pdb=$pdb						\
 						-role=primary"
 			LN
 
@@ -606,15 +606,15 @@ from
 			# Il est important de démarrer les services stby sinon le démarrage
 			# des services sur la standby échoura. (1)
 			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-						-db=$primary -pdbName=$pdbName				\
+						-db=$primary -pdb=$pdb						\
 						-role=physical_standby"
 			LN
 		fi
 
-		info "Create services for pdb $pdbName on cdb $standby"
+		info "Create services for pdb $pdb on cdb $standby"
 		exec_cmd "ssh -t -t $standby_host '. .profile;			\
 					~/plescripts/db/create_srv_for_single_db.sh	\
-						-db=$standby -pdbName=$pdbName			\
+						-db=$standby -pdb=$pdb					\
 						-role=primary -start=no'</dev/null"
 		LN
 
@@ -622,7 +622,7 @@ from
 		#	Le faire après la création du broker.
 		exec_cmd "ssh -t -t $standby_host '. .profile;				\
 					~/plescripts/db/create_srv_for_single_db.sh		\
-						-db=$standby -pdbName=$pdbName				\
+						-db=$standby -pdb=$pdb						\
 						-role=physical_standby -start=no'</dev/null"
 		LN
 
@@ -631,8 +631,8 @@ from
 			 #    Les services stdby démarreront automatiquement lors de l'overture
 			 #    de la stdby en RO.
 			info "(1) Stop stby services on primary $primary :"
-			exec_cmd "srvctl stop service -db $primary -service pdb${pdbName}_stby_oci"
-			exec_cmd "srvctl stop service -db $primary -service pdb${pdbName}_stby_java"
+			exec_cmd "srvctl stop service -db $primary -service pdb${pdb}_stby_oci"
+			exec_cmd "srvctl stop service -db $primary -service pdb${pdb}_stby_java"
 			LN
 		fi
 	done<<<"$(sqlplus_exec_query "$query")"

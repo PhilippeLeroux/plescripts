@@ -11,16 +11,18 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-db_name=name]       Mandatory for DG.
-	-pdb_name=name
+	-db=name
+	-pdb=name
+	-service=name
 	[-update_script_only] Met uniquement à jour le script.
 	[-force]              Si le service existe, il est recréé.
 "
 
 script_banner $ME $*
 
-typeset db_name=auto
-typeset	pdb_name=undef
+typeset db=undef
+typeset	pdb=undef
+typeset	service=undef
 typeset	create_crs_resource=yes
 typeset	force=no
 
@@ -32,13 +34,18 @@ do
 			shift
 			;;
 
-		-db_name=*)
-			db_name=${1##*=}
+		-db=*)
+			db=${1##*=}
 			shift
 			;;
 
-		-pdb_name=*)
-			pdb_name=${1##*=}
+		-pdb=*)
+			pdb=${1##*=}
+			shift
+			;;
+
+		-service=*)
+			service=${1##*=}
 			shift
 			;;
 
@@ -67,16 +74,16 @@ do
 	esac
 done
 
-exit_if_param_undef pdb_name	"$str_usage"
-
 must_be_user grid
 
-typeset	-r	script_name=~/mount-dbfs-$pdb_name
-[ $db_name == auto ] && db_name=$(to_lower $(extract_db_name_from $pdb_name)) || true
-typeset	-r	service_name=pdb${pdb_name}_oci
-typeset	-r	resource_name="pdb.${pdb_name}.dbfs"
+exit_if_param_undef db		"$str_usage"
+exit_if_param_undef pdb		"$str_usage"
+exit_if_param_undef service	"$str_usage"
+
+typeset	-r	script_name=~/mount-dbfs-$pdb
+typeset	-r	resource_name="pdb.${pdb}.dbfs"
 typeset	-r	dbfs_name=staging_area
-typeset -r	ora_service=$(to_lower "ora.${db_name}.${service_name}.svc")
+typeset -r	ora_service=$(to_lower "ora.${db}.${service}.svc")
 
 function create_script
 {
@@ -97,9 +104,10 @@ function create_script
 	fi
 }
 
+#*> $1 resource name.
 function resource_exists
 {
-	if grep -qE "CRS-2613" <<<"$(crsctl stat res $resource_name)"
+	if grep -qE "CRS-2613" <<<"$(crsctl stat res $1)"
 	then
 		return 1	# resource not exists
 	else
@@ -132,7 +140,7 @@ function create_local_resource
 	add_dynamic_cmd_param "-attr \"ACTION_SCRIPT='$script_name'"
 	add_dynamic_cmd_param "     ,CHECK_INTERVAL=3600,RESTART_ATTEMPTS=10"
 	add_dynamic_cmd_param "     ,START_DEPENDENCIES='pullup:always($ora_service)'"
-	add_dynamic_cmd_param "     ,STOP_DEPENDENCIES='hard(intermediate:ora.${db_name}.db)'"
+	add_dynamic_cmd_param "     ,STOP_DEPENDENCIES='hard(intermediate:ora.${db}.db)'"
 	add_dynamic_cmd_param "     ,SCRIPT_TIMEOUT=300\""
 	exec_dynamic_cmd "crsctl add resource $resource_name"
 
@@ -149,7 +157,7 @@ function create_local_resource
 	LN
 }
 
-exit_if_service_not_running $db_name $pdb_name $service_name
+exit_if_service_not_exists $db $service
 
 create_script
 

@@ -12,9 +12,10 @@ typeset -r ME=$0
 
 script_banner $ME $*
 
-typeset dg_db_name=auto
-typeset pdb_name=undef
-typeset service_name=auto
+typeset db=undef
+typeset pdb=undef
+typeset service=undef
+typeset	role=primary
 typeset account_name=dbfsadm
 typeset	account_password=dbfs
 typeset	wallet=yes
@@ -22,11 +23,12 @@ typeset	wallet_path=$ORACLE_HOME/oracle/wallet
 
 typeset -r str_usage=\
 "Usage : $ME
-	-pdb_name=name
+	-db=name
+	-pdb=name
+	-service=name
+	-physical			for physical standby database.
 	[-account_name=$account_name]
 	[-account_password=$account_password]
-	[-db_name=name] Mandatory with dataguard.
-	[-service_name=name]
 	[-wallet_path=$wallet_path]
 
 Debug flags :
@@ -41,23 +43,28 @@ do
 			shift
 			;;
 
-		-pdb_name=*)
-			pdb_name=${1##*=}
+		-db=*)
+			db=${1##*=}
+			shift
+			;;
+
+		-pdb=*)
+			pdb=${1##*=}
+			shift
+			;;
+
+		-service=*)
+			service=${1##*=}
+			shift
+			;;
+
+		-physical)
+			role=physical
 			shift
 			;;
 
 		-wallet_path=*)
 			wallet_path=${1##*=}
-			shift
-			;;
-
-		-db_name=*)
-			dg_db_name=${1##*=}
-			shift
-			;;
-
-		-service_name=*)
-			pdb_name=${1##*=}
 			shift
 			;;
 
@@ -91,52 +98,44 @@ do
 	esac
 done
 
-exit_if_param_undef pdb_name			"$str_usage"
+must_be_user oracle
+
+exit_if_param_undef db					"$str_usage"
+exit_if_param_undef pdb					"$str_usage"
+exit_if_param_undef service				"$str_usage"
 exit_if_param_undef account_name		"$str_usage"
 exit_if_param_undef account_password	"$str_usage"
 
 exit_if_param_invalid wallet "yes no"	"$str_usage"
 
-must_be_user oracle
-
-if [ "$dg_db_name" == auto ]
-then
-	db_name=$(extract_db_name_from $pdb_name)
-else
-	db_name=$dg_db_name
-fi
-
-[ "$service_name" == auto ] && service_name=$(make_oci_service_name_for $pdb_name)
-
 typeset	-r	dbfs_tbs=${account_name}_tbs
 typeset	-r	dbfs_name=staging_area
-typeset -r	pass_file=~/${pdb_name}_pass
-
-function sql_create_user_dbfs
-{
-	set_sql_cmd "set ver off"
-	set_sql_cmd "set echo on"
-	set_sql_cmd "set feed on"
-	set_sql_cmd "@create_user_dbfs.sql $dbfs_tbs $account_name $account_password"
-}
+typeset -r	pass_file=~/${pdb}_pass
 
 function create_user_dbfs
 {
+	function sql_create_user_dbfs
+	{
+		set_sql_cmd "set ver off"
+		set_sql_cmd "set feed on"
+		set_sql_cmd "@create_user_dbfs.sql $dbfs_tbs $account_name $account_password"
+	}
+
 	line_separator
-	sqlplus_cmd_with	"sys/$oracle_password@${service_name} as sysdba"	\
+	sqlplus_cmd_with	"sys/$oracle_password@${service} as sysdba"	\
 						"$(sql_create_user_dbfs)"
 	LN
 }
 
-function sql_create_dbfs
-{
-	set_sql_cmd "@?/rdbms/admin/dbfs_create_filesystem.sql	$dbfs_tbs $dbfs_name nocompress nodeduplicate noencrypt partition"
-}
-
 function create_dbfs
 {
+	function sql_create_dbfs
+	{
+		set_sql_cmd "@?/rdbms/admin/dbfs_create_filesystem.sql	$dbfs_tbs $dbfs_name nocompress nodeduplicate noencrypt partition"
+	}
+
 	line_separator
-	sqlplus_cmd_with	"$account_name/$account_password@${service_name}"	\
+	sqlplus_cmd_with	"$account_name/$account_password@${service}"	\
 						"$(sql_create_dbfs)"
 	LN
 }
@@ -144,9 +143,9 @@ function create_dbfs
 function create_file_dbfs_config
 {
 	line_separator
-	typeset	-r	dbfs_cfg_file=~/${pdb_name}_dbfs.cfg
+	typeset	-r	dbfs_cfg_file=~/${pdb}_dbfs.cfg
 	info "Save configuration to $dbfs_cfg_file"
-	exec_cmd "echo 'service=$service_name' > $dbfs_cfg_file"
+	exec_cmd "echo 'service=$service' > $dbfs_cfg_file"
 	exec_cmd "echo 'dbfs_user=$account_name' >> $dbfs_cfg_file"
 	exec_cmd "echo 'dbfs_password=$account_password' >> $dbfs_cfg_file"
 	exec_cmd "echo 'dbfs_tbs=$dbfs_tbs' >> $dbfs_cfg_file"
@@ -182,10 +181,10 @@ function add_dbfs_user_to_wallet_store
 	info "Add $account_name to wallet"
 
 	fake_exec_cmd mkstore -wrl $wallet_path	\
-				-createCredential $service_name $account_name $account_password
+				-createCredential $service $account_name $account_password
 
 	mkstore -wrl $wallet_path	\
-			-createCredential $service_name $account_name $account_password<<-EOP
+			-createCredential $service $account_name $account_password<<-EOP
 	$oracle_password
 	EOP
 	LN
@@ -238,15 +237,17 @@ function create_password_file
 	fi
 }
 
-function load_data
+#	Copie dans le dbfs les fichiers du répertoire courant pour valider le bon
+#	fonctionnement.
+function load_data_tests
 {
 	line_separator
 	info "Tests :"
 	if [ $wallet == yes ]
 	then
-		typeset	-r connect_string=/@$service_name
+		typeset	-r connect_string=/@$service
 	else
-		typeset	-r connect_string=$account_name@$service_name
+		typeset	-r connect_string=$account_name@$service
 	fi
 
 	ls_dbfs="dbfs_client $connect_string --command ls dbfs:/$dbfs_name/"
@@ -272,9 +273,9 @@ function resume
 {
 	line_separator
 	info "Resume"
-	info "DB          : $db_name"
-	info "PDB         : $pdb_name"
-	info "Service     : $service_name"
+	info "DB          : $db"
+	info "PDB         : $pdb"
+	info "Service     : $service"
 	info "DBFS user   : $account_name/$account_password"
 	if [ $wallet == yes ]
 	then
@@ -287,11 +288,14 @@ function resume
 
 resume
 
-exit_if_service_not_running $db_name $pdb_name $service_name
+exit_if_service_not_exists $db $service
 
-create_user_dbfs
+if [ $role == primary ]
+then
+	create_user_dbfs
 
-create_dbfs
+	create_dbfs
+fi
 
 create_file_dbfs_config
 
@@ -304,14 +308,9 @@ else
 	create_password_file
 fi
 
-[ $dg_db_name == auto ] && load_data || true
+[ $role == primary ] && load_data_tests || true
 
 info "With user root execute :"
 info "cd plescripts/db/dbfs/"
-if [ $dg_db_name == auto ]
-then
-	info "./configure_fuse_and_dbfs_mount_point.sh -pdb_name=$pdb_name"
-else
-	info "./configure_fuse_and_dbfs_mount_point.sh -dn_name=$db_name -pdb_name=$pdb_name"
-fi
+info "./configure_fuse_and_dbfs_mount_point.sh -db=$db -pdb=$pdb -service=$service"
 LN

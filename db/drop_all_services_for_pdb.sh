@@ -9,7 +9,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
-	-pdbName=name
+	-pdb=name
 
 Remove all services for a pdb."
 
@@ -32,8 +32,8 @@ do
 			shift
 			;;
 
-		-pdbName=*)
-			pdbName=${1##*=}
+		-pdb=*)
+			pdb=${1##*=}
 			shift
 			;;
 
@@ -52,19 +52,19 @@ do
 	esac
 done
 
-exit_if_param_undef db		"$str_usage"
-exit_if_param_undef pdbName	"$str_usage"
+exit_if_param_undef db	"$str_usage"
+exit_if_param_undef pdb	"$str_usage"
 
 typeset -i	count=0
 
-while read label service_name rem
+while read label service rem
 do
 	[ x"$label" == x ] && continue
 
-	exec_cmd "~/plescripts/db/drop_service.sh -db=$db -service=$service_name"
+	exec_cmd "~/plescripts/db/drop_service.sh -db=$db -service=$service"
 	LN
 	count=count+1
-done<<<"$(srvctl status service -db $db | grep pdb$(to_upper $pdbName))"
+done<<<"$(srvctl status service -db $db | grep pdb$(to_upper $pdb))"
 
 info "$count services removed."
 LN

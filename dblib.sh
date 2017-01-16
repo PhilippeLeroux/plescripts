@@ -18,6 +18,22 @@ fi
 
 typeset -r	SQL_PROMPT="prompt SQL>"
 
+function exit_if_ORACLE_SID_not_defined
+{
+	if [[ x"$ORACLE_SID" == x || "$ORACLE_SID" == NOSID ]]
+	then
+		error "$(hostname -s) : ORACLE_SID not define."
+		LN
+		exit 1
+	fi
+}
+
+# return 0 if dataguard configuration exist else return 1
+function dataguard_config_available
+{
+	dgmgrl -silent sys/$oracle_password 'show configuration' >/dev/null 2>&1
+}
+
 #*>	$@ contient une commande à exécuter.
 #*>	La fonction n'exécute pas la commande elle :
 #*>		- affiche le prompt SQL> suivi de la commande.
@@ -43,16 +59,23 @@ WT
 #*>    0 if EXEC_CMD_ACTION = EXEC
 function sqlplus_cmd_with
 {
-	typeset -r connect_string="$1"
+	typeset connect_string="$1"
 	shift
+	if [ "$1" == as ]
+	then
+		typeset -r connect_string="$connect_string as $2"
+		shift 2
+	fi
+
+	typeset	-r	db_cmd="$*"
 	fake_exec_cmd sqlplus -s "$connect_string"
 	if [ $? -eq 0 ]
 	then
-		printf "${SPOOL}set echo off\nset timin on\n$@\n" | \
+		printf "${SPOOL}set timin on\n$db_cmd\n" | \
 			sqlplus -s $connect_string
 		return 0
 	else
-		printf "${SPOOL}set echo off\nset timin on\n$@\n"
+		printf "${SPOOL}set timin on\n$db_cmd\n"
 		return 1
 	fi
 }
@@ -110,27 +133,74 @@ function sqlplus_print_query
 	LN
 }
 
-#*> $1	db name
-#*> $2	pdb name
-#*> $3	service name
+#*> $1 db name
+#*> $2 service name
 #*>
-#*> exit if service name not running else return 0
-function exit_if_service_not_running
+#*> return 1 if db name or service name not exists, else return 0
+function service_exists
 {
-	typeset	-r	db_name_l="$1"
-	typeset	-r	pdb_name_l="$2"
-	typeset	-r	service_name_l="$3"
+	if grep -qE "^PRCR-1001"<<<"$(srvctl config service -db $1 -service $2)"
+	then
+		return 1
+	else
+		return 0
+	fi
+}
 
-	info -n "Database $db_name_l, pdb $pdb_name_l : service $service_name_l running "
-	if grep -iqE "Service $service_name_l is running.*"<<<"$(LANG=C srvctl status service -db $db_name_l)"
+#*> $1 db name
+#*> $2 service name
+#*>
+#*> return 0 if service running else return 1
+function service_running
+{
+	typeset -r db_name_l=$1
+	typeset -r service_name_l=$2
+	if grep -iqE "Service $service_name_l is running.*"<<<"$(LANG=C srvctl status service -db $db_name_l -s $service_name_l)"
+	then
+		return 0
+	else
+		return 1
+	fi
+}
+
+#*> $1 db name
+#*> $2 service name
+#*>
+#*> exit 1 if service not exists.
+function exit_if_service_not_exists
+{
+	typeset -r db_name_l=$1
+	typeset -r service_name_l=$2
+
+	info -n "Database $db_name_l, service $service_name_l exists : "
+	if service_exists $db_name_l $service_name_l
 	then
 		info -f "$OK"
 		LN
-		return 0
 	else
 		info -f "$KO"
 		LN
-		info "$str_usage"
+		exit 1
+	fi
+}
+
+
+#*> $1	db name
+#*> $2	service name
+#*>
+#*> exit 1 if service name not running else return 0
+function exit_if_service_not_running
+{
+	typeset	-r	db_name_l="$1"
+	typeset	-r	service_name_l="$2"
+
+	info -n "Database $db_name_l, service $service_name_l running "
+	if service_running $db_name_l $service_name_l
+	then
+		info -f "$OK"
+		LN
+	else
+		info -f "$KO"
 		LN
 		exit 1
 	fi

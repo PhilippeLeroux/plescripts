@@ -66,5 +66,10 @@ begin
 	exec( 'create user &username identified by &username default tablespace &tbs' );
 	exec( 'grant create session, create table to &username' );
 	exec( 'alter user &username quota unlimited on  &tbs' );
+	p( 'Grant to used dbms_xplan' );
+	exec( 'grant select on v_$session					to &username' );
+	exec( 'grant select on v_$sql_plan					to &username' );
+	exec( 'grant select on v_$sql_plan_statistics_all	to &username' );
+	exec( 'grant select on v_$sql						to &username' );
 end;
 /

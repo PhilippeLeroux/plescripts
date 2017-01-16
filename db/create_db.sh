@@ -30,7 +30,7 @@ typeset		db_type=undef
 typeset		node_list=undef
 typeset		cdb=yes
 typeset		lang=french
-typeset		pdbName=undef
+typeset		pdb=undef
 typeset		serverPoolName=undef
 typeset		policyManaged=no
 typeset		enable_flashback=yes
@@ -81,7 +81,7 @@ add_help_param "[-sysPassword=$sysPassword]"
 add_help_param "[-totalMemory=$totalMemory]"			"Unit Mb"
 add_help_param "[-shared_pool_size=<str>]"				"Préciser l'unité, par défaut 256M"
 add_help_param "[-cdb=$cdb]"							"(yes/no) (1)"
-add_help_param "[-pdbName=<str>]"						"(2)"
+add_help_param "[-pdb=<str>]"							"(2)"
 add_help_param "[-data=$data]"
 add_help_param "[-fra=$fra]"
 add_help_param "[-templateName=$templateName]"
@@ -96,11 +96,11 @@ typeset -r str_usage=\
 $ME
 $(print_all_parameters)
 
-\t1 : Si vaut yes et que -pdbName n'est pas précisé alors pdbName == db || 01
+\t1 : Si vaut yes et que -pdb n'est pas précisé alors pdb == db || 01
 \t    Le service de la pdb sera : pdb || db || 01
-\t    Pour ne pas créer de pdb utiliser -pdbName=no
+\t    Pour ne pas créer de pdb utiliser -pdb=no
 
-\t2 : Si -pdbName est précisé -cdb vaut automatiquement yes
+\t2 : Si -pdb est précisé -cdb vaut automatiquement yes
 
 \t3 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
 \t    de nœuds, si 1 seul nœud c'est SINGLE sinon c'est RAC.
@@ -144,8 +144,8 @@ do
 			shift
 			;;
 
-		-pdbName=*)
-			pdbName=${1##*=}
+		-pdb=*)
+			pdb=${1##*=}
 			shift
 			;;
 
@@ -292,10 +292,10 @@ function make_dbca_args
 	if [ "$cdb" = yes ]
 	then
 		add_dynamic_cmd_param "-createAsContainerDatabase true"
-		if [ "$pdbName" != undef ]
+		if [ "$pdb" != undef ]
 		then
 			add_dynamic_cmd_param "    -numberOfPDBs     $numberOfPDBs"
-			add_dynamic_cmd_param "    -pdbName          $pdbName"
+			add_dynamic_cmd_param "    -pdbName          $pdb"
 			add_dynamic_cmd_param "    -pdbAdminPassword $pdbAdminPassword"
 		fi
 	else
@@ -441,24 +441,28 @@ function create_database
 function create_services_for_pdb
 {
 	line_separator
-	info "Create service for pdb $pdbName"
+	info "Create service for pdb $pdb"
 	case $db_type in
 		RAC)
 			if [ $serverPoolName == "undef" ]
 			then
-				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName}"
+				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh	\
+								-db=$db -pdb=$pdb -prefixService=pdb${pdb}"
 				LN
 			else
-				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh -db=$db -pdbName=$pdbName -prefixService=pdb${pdbName} -poolName=$serverPoolName"
+				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh			\
+								-db=$db -pdb=$pdb -prefixService=pdb${pdb}	\
+								-poolName=$serverPoolName"
 				LN
 			fi
 			;;
 
 		RACONENODE)
 			info "Create service for RAC One Node"
-			exec_cmd srvctl add service -db $db -service pdb$pdbName -pdb $pdbName
-			exec_cmd srvctl start service -db $db -service pdb$pdbName
-			exec_cmd "~/plescripts/db/add_tns_alias.sh -service_name=pdb$pdbName -host_name=$(hostname -s)"
+			exec_cmd srvctl add service -db $db -service pdb$pdb -pdb $pdb
+			exec_cmd srvctl start service -db $db -service pdb$pdb
+			exec_cmd "~/plescripts/db/add_tns_alias.sh -service=pdb$pdb	\
+													-host_name=$(hostname -s)"
 			LN
 			;;
 
@@ -466,7 +470,8 @@ function create_services_for_pdb
 			if [ $usefs == no ]
 			then
 				info "Create service for SINGLE database."
-				exec_cmd "~/plescripts/db/create_srv_for_single_db.sh -db=$db -pdbName=$pdbName"
+				exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
+															-db=$db -pdb=$pdb"
 				LN
 			else
 				warning "No services created for pdb, DIY"
@@ -506,13 +511,15 @@ function copy_glogin
 		do
 			if [ $node != $(hostname -s) ]
 			then
-				exec_cmd scp $node:~/plescripts/oracle_preinstall/glogin.sql $ORACLE_HOME/sqlplus/admin/glogin.sql
+				exec_cmd scp $node:~/plescripts/oracle_preinstall/glogin.sql	\
+										$ORACLE_HOME/sqlplus/admin/glogin.sql
 				LN
 			fi
 		done
 	fi
 
-	exec_cmd cp ~/plescripts/oracle_preinstall/glogin.sql $ORACLE_HOME/sqlplus/admin/glogin.sql
+	exec_cmd cp ~/plescripts/oracle_preinstall/glogin.sql	\
+										$ORACLE_HOME/sqlplus/admin/glogin.sql
 	LN
 }
 
@@ -525,10 +532,10 @@ function setup_fs_database
 	exec_cmd "rm /tmp/ot"
 	LN
 
-	if [ $pdbName != undef ]
+	if [ $pdb != undef ]
 	then
 		line_separator
-		warning "pdb $pdbName not open on startup, DIY."
+		warning "pdb $pdb not open on startup, DIY."
 		line_separator
 		LN
 	fi
@@ -554,10 +561,10 @@ fi
 #	----------------------------------------------------------------------------
 #	Ajustement des paramètres
 #	Détermine le nom de la PDB si non précisée.
-[ $cdb == yes ] && [ $pdbName == undef ] && pdbName=${lower_db}01
-[ $pdbName == no ] && pdbName=undef
+[ $cdb == yes ] && [ $pdb == undef ] && pdb=${lower_db}01
+[ $pdb == no ] && pdb=undef
 
-if [ $pdbName != undef ]
+if [ $pdb != undef ]
 then
 	numberOfPDBs=1
 	pdbAdminPassword=$sysPassword
@@ -582,7 +589,7 @@ remove_glogin
 
 [ "${db_type:0:3}" == "RAC" ] && update_rac_oratab
 
-[ $cdb == yes ] && [ $pdbName != undef ] && create_services_for_pdb
+[ $cdb == yes ] && [ $pdb != undef ] && create_services_for_pdb
 
 if [ $usefs == yes ]
 then

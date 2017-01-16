@@ -9,22 +9,22 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=str
-	-pdbName=str
-	-prefixService=str	Ex : pdb || pdbName
-	[-poolName=str]     Impliquera la création de services 'Policy Managed'
+	-db=name
+	-pdb=name
+	-prefixService=name Ex pdb||pdbName
+	[-poolName=name]    For policy managed database.
 
-Création de 2 services :
+Create services :
 	 prefixService || _oci
 	 prefixService || _java
 
-Pour les standalones serveurs : create_srv_for_single_db.sh
+For single database used : create_srv_for_single_db.sh
 "
 
 script_banner $ME $*
 
 typeset db=undef
-typeset pdbName=undef
+typeset pdb=undef
 typeset prefixService=undef
 typeset poolName
 typeset preferredInstances
@@ -43,8 +43,8 @@ do
 			shift
 			;;
 
-		-pdbName=*)
-			pdbName=${1##*=}
+		-pdb=*)
+			pdb=${1##*=}
 			shift
 			;;
 
@@ -74,7 +74,7 @@ do
 done
 
 exit_if_param_undef db				"$str_usage"
-exit_if_param_undef pdbName			"$str_usage"
+exit_if_param_undef pdb				"$str_usage"
 exit_if_param_undef prefixService	"$str_usage"
 
 line_separator
@@ -127,7 +127,7 @@ typeset	-r	scan_name=$(get_scan_name)
 #	GRANT EXECUTE ON DBMS_APP_CONT;
 
 add_dynamic_cmd_param "add service -service ${prefixService}_oci "
-add_dynamic_cmd_param "    -pdb $pdbName -db $db"
+add_dynamic_cmd_param "    -pdb $pdb -db $db"
 if [ x"$poolName" == x ]
 then
 	add_dynamic_cmd_param "    -preferred      $preferredInstances"
@@ -147,7 +147,7 @@ exec_cmd srvctl start service -service ${prefixService}_oci -db $db
 LN
 
 exec_cmd "~/plescripts/db/add_tns_alias.sh			\
-				-service_name=${prefixService}_oci	\
+				-service=${prefixService}_oci		\
 				-host_name=$scan_name				\
 				-copy_server_list=\"${gi_node_list}\""
 LN
@@ -163,7 +163,7 @@ fi
 LN
 
 add_dynamic_cmd_param "add service -service ${prefixService}_java "
-add_dynamic_cmd_param "    -pdb $pdbName -db $db"
+add_dynamic_cmd_param "    -pdb $pdb -db $db"
 if [ x"$poolName" == x ]
 then
 	add_dynamic_cmd_param "    -preferred      $preferredInstances"

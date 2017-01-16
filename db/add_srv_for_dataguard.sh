@@ -9,9 +9,9 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
+	-pdb=name
 	-standby=name
 	-standby_host=name
-	-pdbName=str
 
 	Must be run from primary server !
 
@@ -21,9 +21,9 @@ typeset -r str_usage=\
 script_banner $ME $*
 
 typeset db=undef
+typeset pdb=undef
 typeset standby=undef
 typeset standby_host=undef
-typeset pdbName=undef
 
 while [ $# -ne 0 ]
 do
@@ -35,7 +35,12 @@ do
 			;;
 
 		-db=*)
-			db=${1##*=}
+			db=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-pdb=*)
+			pdb=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -46,11 +51,6 @@ do
 
 		-standby_host=*)
 			standby_host=${1##*=}
-			shift
-			;;
-
-		-pdbName=*)
-			pdbName=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -70,31 +70,38 @@ do
 done
 
 exit_if_param_undef db				"$str_usage"
+exit_if_param_undef pdb				"$str_usage"
 exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
-exit_if_param_undef pdbName			"$str_usage"
 
 exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
-			-db=$db -pdbName=$pdbName -role=primary -start=yes
+							-db=$db						\
+							-pdb=$pdb					\
+							-role=primary				\
+							-start=yes
 LN
 
+#	Il faut démarrer les services stby, puis les stopper sinon la création
+#	des services échouera sur la stby.
 exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
-			-db=$db -pdbName=$pdbName -role=physical_standby -start=yes
+							-db=$db						\
+							-pdb=$pdb					\
+							-role=physical_standby		\
+							-start=yes
 LN
 
-info "Arrêt des services stby (oui ils doivent être démarrés)"
-exec_cmd srvctl stop service -db $db -service pdb${pdbName}_stby_oci
+exec_cmd srvctl stop service -db $db -service pdb${pdb}_stby_oci
 LN
 
-exec_cmd srvctl stop service -db $db -service pdb${pdbName}_stby_java
+exec_cmd srvctl stop service -db $db -service pdb${pdb}_stby_java
 LN
 
 exec_cmd "ssh -t $standby_host \". .bash_profile;				\
-				~/plescripts/db/create_srv_for_single_db.sh		\
-				-db=$standby -pdbName=$pdbName -role=primary -start=no\""
+			~/plescripts/db/create_srv_for_single_db.sh			\
+			-db=$standby -pdb=$pdb -role=primary -start=no\""
 LN
 
 exec_cmd "ssh -t $standby_host \". .bash_profile;			\
-			~/plescripts/db/create_srv_for_single_db.sh		\
-			-db=$standby -pdbName=$pdbName -role=physical_standby -start=yes\""
+		~/plescripts/db/create_srv_for_single_db.sh			\
+		-db=$standby -pdb=$pdb -role=physical_standby -start=yes\""
 LN

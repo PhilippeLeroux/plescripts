@@ -11,14 +11,16 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-db_name=name]	Mandatory for DG.
-	-pdb_name=name
+	-db=name
+	-pdb=name
+	-service=name
 "
 
 script_banner $ME $*
 
-typeset	dg_db_name=auto
-typeset	pdb_name=undef
+typeset	db=undef
+typeset	pdb=undef
+typeset	service=undef
 typeset	local_only=no
 
 while [ $# -ne 0 ]
@@ -29,17 +31,23 @@ do
 			shift
 			;;
 
-		-db_name=*)
-			dg_db_name=$(to_lower ${1##*=})
+		-db=*)
+			db=$(to_lower ${1##*=})
 			shift
 			;;
 
-		-pdb_name=*)
-			pdb_name=$(to_lower ${1##*=})
+		-pdb=*)
+			pdb=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-service=*)
+			service=$(to_lower ${1##*=})
 			shift
 			;;
 
 		-local_only)
+			# Le script ne sera pas exécuté sur les autres serveurs.
 			local_only=yes
 			shift
 			;;
@@ -59,12 +67,13 @@ do
 	esac
 done
 
-exit_if_param_undef pdb_name	"$str_usage"
-
 must_be_user root
 
-typeset -r	service_name=$(make_oci_service_name_for $pdb_name)
-typeset	-r	dbfs_cfg_file=/home/oracle/${pdb_name}_dbfs.cfg
+exit_if_param_undef db		"$str_usage"
+exit_if_param_undef pdb		"$str_usage"
+exit_if_param_undef service	"$str_usage"
+
+typeset	-r	dbfs_cfg_file=/home/oracle/${pdb}_dbfs.cfg
 
 line_separator
 info "Load $dbfs_cfg_file"
@@ -79,16 +88,11 @@ LN
 
 line_separator
 typeset	ORACLE_HOME=undef
-IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent" /etc/oratab)"
+IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent"	\
+															/etc/oratab)"
 
 info "ORACLE_HOME = '$ORACLE_HOME'"
-if [ $dg_db_name == auto ]
-then
-	db_name=$(extract_db_name_from $pdb_name)
-else
-	db_name=$dg_db_name
-fi
-exit_if_service_not_running $db_name $pdb_name $service_name
+exit_if_service_not_exists $db $service
 
 line_separator
 info "Install fuse :"
@@ -145,13 +149,13 @@ exec_cmd ls -l /sbin/mount.dbfs
 LN
 
 line_separator
-info "Create mount point /mnt/$pdb_name"
+info "Create mount point /mnt/$pdb"
 fake_exec_cmd cd /mnt
 cd /mnt
-[ -d $pdb_name ] && exec_cmd "rmdir $pdb_name" || true
-exec_cmd mkdir $pdb_name
-exec_cmd chown oracle.oinstall $pdb_name
-exec_cmd ls -ld $pdb_name
+[ -d $pdb ] && exec_cmd "rmdir $pdb" || true
+exec_cmd mkdir $pdb
+exec_cmd chown oracle.oinstall $pdb
+exec_cmd ls -ld $pdb
 LN
 
 line_separator
@@ -162,18 +166,18 @@ LN
 
 line_separator
 info "Add mount point to fstab"
-if grep -qE "mount.dbfs.*$dbfs_user@$service_name" /etc/fstab
+if grep -qE "mount.dbfs.*$dbfs_user@$service" /etc/fstab
 then
 	info "Remove existing mount point"
-	exec_cmd "sed -i '/@$service_name/d' /etc/fstab"
+	exec_cmd "sed -i '/@$service/d' /etc/fstab"
 	LN
 fi
 
 if [ $wallet == yes ]
 then
-	exec_cmd "echo '/sbin/mount.dbfs#/@$service_name /mnt/$pdb_name fuse wallet,rw,user,allow_other,direct_io,noauto,default 0 0' >> /etc/fstab"
+	exec_cmd "echo '/sbin/mount.dbfs#/@$service /mnt/$pdb fuse wallet,rw,user,allow_other,direct_io,noauto,default 0 0' >> /etc/fstab"
 else
-	exec_cmd "echo '/sbin/mount.dbfs#$dbfs_user@$service_name /mnt/$pdb_name fuse rw,user,allow_other,direct_io,noauto,default 0 0' >> /etc/fstab"
+	exec_cmd "echo '/sbin/mount.dbfs#$dbfs_user@$service /mnt/$pdb fuse rw,user,allow_other,direct_io,noauto,default 0 0' >> /etc/fstab"
 fi
 LN
 
@@ -181,8 +185,7 @@ if [[ $gi_count_nodes -gt 1 && $local_only == no ]]
 then
 	line_separator
 	execute_on_other_nodes ". .bash_profile; ~/plescripts/db/dbfs/${ME##*/}	\
-								-db_name=$db_name -pdb_name=$pdb_name		\
-								-local_only"
+								-db=$db -pdb=$pdb -local_only"
 	LN
 fi
 
@@ -200,11 +203,6 @@ if [ $local_only == no ]
 then # Affiche l'info que sur le serveur ou a été lancé le script.
 	info "With user grid execute :"
 	info "cd plescripts/db/dbfs/"
-	if [ $dg_db_name == auto ]
-	then
-		info "./create_crs_resource_for_dbfs.sh -pdb_name=$pdb_name"
-	else
-		info "./create_crs_resource_for_dbfs.sh -db_name=$db_name -pdb_name=$pdb_name"
-	fi
+	info "./create_crs_resource_for_dbfs.sh -db=$db -pdb=$pdb"
 	LN
 fi

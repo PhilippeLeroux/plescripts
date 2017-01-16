@@ -8,9 +8,9 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=str
-	-pdbName=str
-	[-role=str]        (primary, physical_standby, ${STRIKE}logical_standby, snapshot_standby$NORM)
+	-db=name
+	-pdb=name
+	[-role=name] (primary, physical_standby, ${STRIKE}logical_standby, snapshot_standby$NORM)
 	[-start=yes]
 
 Si le service existe et que le rôle est définie le service est modifié en fonction du rôle.
@@ -21,7 +21,7 @@ Pour les RACs : create_srv_for_rac_db.sh
 script_banner $ME $*
 
 typeset db=undef
-typeset pdbName=undef
+typeset pdb=undef
 typeset role=undef
 typeset start=yes
 
@@ -39,8 +39,8 @@ do
 			shift
 			;;
 
-		-pdbName=*)
-			pdbName=$(to_upper ${1##*=})
+		-pdb=*)
+			pdb=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -69,8 +69,8 @@ do
 	esac
 done
 
-exit_if_param_undef db				"$str_usage"
-exit_if_param_undef pdbName			"$str_usage"
+exit_if_param_undef db	"$str_usage"
+exit_if_param_undef pdb	"$str_usage"
 
 #	http://docs.oracle.com/database/121/RACAD/hafeats.htm#RACAD7026
 #	Creating Services for Application Continuity ssi -failovertype TRANSACTION
@@ -88,14 +88,15 @@ exit_if_param_undef pdbName			"$str_usage"
 #	$1 service name
 function test_if_service_exist
 {
-	typeset -r service_name=$1
-	exec_cmd -ci "srvctl status service -db $db -service $service_name" >/dev/null 2>&1
+	typeset -r service=$1
+	exec_cmd -ci "srvctl status service -db $db	\
+								-service $service" >/dev/null 2>&1
 }
 
 function oci_service
 {
 	line_separator
-	info "create service ${prefixService}_oci on pluggable $pdbName (db = $db)."
+	info "create service ${prefixService}_oci on pluggable $pdb."
 	LN
 
 	test_if_service_exist ${prefixService}_oci
@@ -111,7 +112,7 @@ function oci_service
 	fi
 
 	add_dynamic_cmd_param "$action service -service ${prefixService}_oci"
-	add_dynamic_cmd_param "    -pdb $pdbName -db $db"
+	add_dynamic_cmd_param "    -pdb $pdb -db $db"
 	if [ $role != undef ]
 	then
 		add_dynamic_cmd_param "    -role           $role"
@@ -131,12 +132,13 @@ function oci_service
 	then
 		if [ $start == yes ]
 		then
-			exec_cmd srvctl start service -service ${prefixService}_oci -db $db
+			exec_cmd srvctl start service	-service ${prefixService}_oci	\
+											-db $db
 			LN
 		fi
 
-		exec_cmd "~/plescripts/db/add_tns_alias.sh		\
-					-service_name=${prefixService}_oci	\
+		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=${prefixService}_oci	\
 					-host_name=$(hostname -s)"
 		LN
 	fi
@@ -146,7 +148,7 @@ function java_service
 {
 	line_separator
 	#	Services for Application Continuity (java)
-	info "create service ${prefixService}_java on pluggable $pdbName (db = $db)"
+	info "create service ${prefixService}_java on pluggable $pdb."
 	LN
 
 	test_if_service_exist ${prefixService}_java
@@ -162,7 +164,7 @@ function java_service
 	fi
 
 	add_dynamic_cmd_param "$action service -service ${prefixService}_java"
-	add_dynamic_cmd_param "    -pdb $pdbName -db $db"
+	add_dynamic_cmd_param "    -pdb $pdb -db $db"
 	if [ $role != undef ]
 	then
 		add_dynamic_cmd_param "    -role             $role"
@@ -186,18 +188,19 @@ function java_service
 
 	if [[ $action == add && $start == yes ]]
 	then
-		exec_cmd srvctl start service -service ${prefixService}_java  -db $db
+		exec_cmd srvctl start service	-service ${prefixService}_java	\
+										-db $db
 		LN
 	fi
 }
 
 case "$role" in
 	primary|undef)
-		typeset -r prefixService=pdb${pdbName}
+		typeset -r prefixService=pdb${pdb}
 		;;
 
 	physical_standby)
-		typeset -r prefixService=pdb${pdbName}_stby
+		typeset -r prefixService=pdb${pdb}_stby
 		;;
 
 	*)
