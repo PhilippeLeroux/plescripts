@@ -163,7 +163,7 @@ then
 		add_dynamic_cmd_param "-pdb=$pdb"
 		add_dynamic_cmd_param "-standby=${physical_list[i]}"
 		add_dynamic_cmd_param "-standby_host=${stby_server_list[i]}"
-		exec_dynamic_cmd "./add_srv_for_dataguard.sh"
+		exec_dynamic_cmd "./create_srv_for_dataguard.sh"
 		LN
 	done
 else
