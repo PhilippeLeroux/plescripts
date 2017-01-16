@@ -127,15 +127,8 @@ do
 	esac
 done
 
+exit_if_ORACLE_SID_not_defined
 typeset -r primary=$ORACLE_SID
-if [[ x"$primary" == x || "$primary" == NOSID ]]
-then
-	error "ORACLE_SID not defined."
-	LN
-
-	info "$str_usage"
-	exit 1
-fi
 
 exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
@@ -287,7 +280,7 @@ EOS
 	LN
 }
 
-function sqlcmd_print_redo
+function sql_print_redo
 {
 	set_sql_cmd "set lines 130 pages 45"
 	set_sql_cmd "col member for a45"
@@ -309,7 +302,7 @@ function add_standby_redolog
 	sqlplus_cmd "$(sqlcmd_create_standby_redo_logs $nr_stdby_redo $redo_size_mb)"
 	LN
 
-	sqlplus_print_query "$(sqlcmd_print_redo)"
+	sqlplus_print_query "$(sql_print_redo)"
 	LN
 }
 
@@ -396,7 +389,7 @@ EOR
 #	Toutes les commandes sont fabriquées avec la fonction set_sql_cmd.
 #	Passer la sortie de cette fonction en paramètre de la fonction sqlplus_cmd
 #	EST INUTILE : log_archive_dest_2='service=$standby async valid_for=(online_logfiles,primary_role) db_unique_name=$standby'
-function sqlcmd_create_primary_cfg
+function sql_create_primary_cfg
 {
 	set_sql_cmd "alter system set standby_file_management='AUTO' scope=both sid='*';"
 
@@ -447,7 +440,7 @@ function setup_primary
 
 		line_separator
 		info "Setup primary database $primary for duplicate & dataguard."
-		sqlplus_cmd "$(sqlcmd_create_primary_cfg)"
+		sqlplus_cmd "$(sql_create_primary_cfg)"
 		LN
 	else
 		dgmgrl_remove_standby
@@ -491,7 +484,7 @@ function duplicate
 	LN
 }
 
-function sqlcmd_mount_db_and_start_recover
+function sql_mount_db_and_start_recover
 {
 	set_sql_cmd "shutdown immediate;"
 	set_sql_cmd "startup mount;"
@@ -525,7 +518,7 @@ function register_standby_to_GI
 	LN
 
 	info "$standby : mount & start recover :"
-	sqlplus_cmd_on_standby "$(sqlcmd_mount_db_and_start_recover)"
+	sqlplus_cmd_on_standby "$(sql_mount_db_and_start_recover)"
 	timing 10 "Wait recover"
 }
 
@@ -639,7 +632,7 @@ from
 }
 
 #	Instruction pour activer le flashback sur la base standby.
-function sqlcmd_enable_flashback
+function sql_enable_flashback
 {
 	set_sql_cmd "recover managed standby database cancel;"
 	set_sql_cmd "alter database flashback on;"
@@ -816,7 +809,7 @@ if [ "$(read_flashback_value)" == YES ]
 then
 	line_separator
 	info "Enable flashback on $standby"
-	sqlplus_cmd_on_standby "$(sqlcmd_enable_flashback)"
+	sqlplus_cmd_on_standby "$(sql_enable_flashback)"
 fi
 
 configure_rman
