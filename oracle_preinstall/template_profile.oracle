@@ -51,7 +51,7 @@ then
     if [ $? -eq 0 ]
     then
         ORACLE_SID=$instance
-        ORAENV_ASK=NO . oraenv
+        ORAENV_ASK=NO . oraenv >/dev/null 2>&1
     fi
 fi
 
