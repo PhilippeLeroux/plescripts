@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -42,11 +43,7 @@ do
 	esac
 done
 
-if [[ x"$ORACLE_SID" == x || "$ORACLE_SID" == undef ]]
-then
-	error "Oracle env not loaded..."
-	exit 1
-fi
+exit_if_ORACLE_SID_not_defined
 
 cd ~/plescripts/db
 
