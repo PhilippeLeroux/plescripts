@@ -135,8 +135,10 @@ if [ $max_nodes -gt 1 ]
 then	# Inscrit dans /etc/hosts les informations concernant les autres nœuds.
 	exec_cmd "echo \"\" >> /etc/hosts"
 	exec_cmd "echo \"#Other nodes :\" >> /etc/hosts"
-	for inode in $( seq 2 $max_nodes )
+	typeset -i inode
+	for inode in $( seq $max_nodes )
 	do
+		[ $inode -eq $node ] && continue || true
 		cfg_load_node_info $db $inode
 		exec_cmd "echo \"$cfg_server_ip	$cfg_server_name\" >> /etc/hosts"
 		exec_cmd "echo \"$cfg_server_vip	${cfg_server_name}-vip\" >> /etc/hosts"
