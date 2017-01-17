@@ -136,12 +136,7 @@ function drop_pdb_on_physical_standby_database
 
 exit_if_ORACLE_SID_not_defined
 
-if dataguard_config_available
-then
-	typeset	-r dataguard=yes
-else
-	typeset	-r dataguard=no
-fi
+typeset	-r dataguard=$(dataguard_config_available)
 
 if [ $dataguard == yes ]
 then

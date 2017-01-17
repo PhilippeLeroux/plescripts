@@ -28,10 +28,11 @@ function exit_if_ORACLE_SID_not_defined
 	fi
 }
 
-# return 0 if dataguard configuration exist else return 1
+# print yes to stdout if dataguarg configutation available or no
 function dataguard_config_available
 {
 	dgmgrl -silent sys/$oracle_password 'show configuration' >/dev/null 2>&1
+	[ $? -eq 0 ] && echo "yes" || echo "no"
 }
 
 #*> $1 database name

@@ -75,12 +75,7 @@ exit_if_param_undef pdb	"$str_usage"
 
 exit_if_ORACLE_SID_not_defined
 
-if dataguard_config_available
-then
-	typeset	-r dataguard=yes
-else
-	typeset	-r dataguard=no
-fi
+typeset	-r dataguard=$(dataguard_config_available)
 
 if [[ $dataguard == yes && $gi_count_nodes -gt 1 ]]
 then

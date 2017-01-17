@@ -287,7 +287,7 @@ resume
 
 exit_if_service_not_exists $db $service
 
-if dataguard_config_available
+if [ "$(dataguard_config_available)" == yes ]
 then
 	if [[  $gi_count_nodes -gt 1 ]]
 	then

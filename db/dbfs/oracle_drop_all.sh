@@ -77,7 +77,7 @@ fi
 
 . $dbfs_cfg_file
 
-if dataguard_config_available
+if [ "$(dataguard_config_available)" == yes ]
 then
 	typeset	-r role=$(read_database_role $db)
 else
