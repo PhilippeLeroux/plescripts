@@ -53,11 +53,11 @@ done<<<"$(VBoxManage list runningvms)"
 typeset -ri	vm_count=${#vm_list[@]}
 
 line_separator
-info "Save state for running VMs."
+info "Stop running VMs."
 info "    $vm_count VMs running : ${vm_list[@]}"
 for vm in ${vm_list[*]}
 do
-	exec_cmd -c "VBoxManage controlvm $vm savestate" &
+	exec_cmd stop_vm $vm &
 	LN
 done
 LN
@@ -69,7 +69,11 @@ then
 	LN
 fi
 
-[ $infra_running == yes ] && exec_cmd -c "VBoxManage controlvm $infra_hostname savestate" && LN
+if [ $infra_running == yes ]
+then
+	exec_cmd stop_vm $infra_hostname
+	LN
+fi
 
 line_separator
 exec_cmd "sudo systemctl stop vboxdrv"
@@ -111,7 +115,7 @@ if [ $infra_running == yes ]
 then
 	line_separator
 	info "Start $infra_hostname"
-	exec_cmd -c "VBoxManage startvm $infra_hostname --type headless"
+	exec_cmd start_vm $infra_hostname
 	LN
 fi
 
@@ -119,7 +123,7 @@ line_separator
 info "Start $vm_count VMs"
 for vm in ${vm_list[*]}
 do
-	exec_cmd -c "VBoxManage startvm $vm --type headless"
+	exec_cmd start_vm $vm
 done
 
 if [ $vbox_running == yes ]

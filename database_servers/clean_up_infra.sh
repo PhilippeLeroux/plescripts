@@ -114,3 +114,8 @@ then
 	exec_cmd -c "rm -rf $cfg_path_prefix/$db"
 	LN
 fi
+
+info "Before to create a server with same name execute :"
+info "$ cd ~/plescripts/virtualbox"
+info "$ ./restart_vboxdrv.sh"
+LN
