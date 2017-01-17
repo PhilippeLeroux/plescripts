@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -163,6 +164,11 @@ then
 		set_sql_cmd "alter pluggable database $pdb close immediate;"
 		set_sql_cmd "drop pluggable database $pdb including datafiles;"
 	}
+
+	execute_on_other_nodes ". .bash_profile;								\
+					echo 'alter pluggable database $pdb close immediate;'	|\
+					sqlplus -s sys/$oracle_password as sysdba"
+
 	sqlplus_cmd "$(sql_drop_pdb)"
 else
 	sqlplus_cmd	\

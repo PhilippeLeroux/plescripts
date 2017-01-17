@@ -107,7 +107,7 @@ function sqlplus_cmd_with
 	then
 		printf "${SPOOL}set timin on\n$db_cmd\n" | \
 			sqlplus -s $connect_string
-		return 0
+		return $?
 	else
 		printf "${SPOOL}set timin on\n$db_cmd\n"
 		return 1

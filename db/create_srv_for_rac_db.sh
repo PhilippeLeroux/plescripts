@@ -11,12 +11,12 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
-	-prefixService=name Ex pdb||pdbName
+	-prefixService=name if name==auto (default) : prefixService=pdb||pdbName
 	[-poolName=name]    For policy managed database.
 
 Create services :
-	 prefixService || _oci
-	 prefixService || _java
+	prefixService || _oci
+	prefixService || _java
 
 For single database used : create_srv_for_single_db.sh
 "
@@ -25,7 +25,7 @@ script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef
-typeset prefixService=undef
+typeset prefixService=auto
 typeset poolName
 typeset preferredInstances
 
@@ -75,7 +75,8 @@ done
 
 exit_if_param_undef db				"$str_usage"
 exit_if_param_undef pdb				"$str_usage"
-exit_if_param_undef prefixService	"$str_usage"
+
+[ "$prefixService" == auto ] && prefixService=pdb${pdb} || true
 
 line_separator
 warning "Les services sont créées à partir de notes rapides."
@@ -120,7 +121,7 @@ typeset	-r	scan_name=$(get_scan_name)
 #	-failoverretry par défaut 30
 #	-failoverdelay 10s entre chaque retry.
 #	-notification: FAN is highly recommended—set this value to TRUE to enable FAN for OCI and ODP.Net clients.
-#	
+#
 #	Creating Services for Transaction Guard : To enable Transaction Guard, but not Application Continuity
 #	-commit_outcome TRUE
 #	To use Transaction Guard, a DBA must grant permission, as follows:

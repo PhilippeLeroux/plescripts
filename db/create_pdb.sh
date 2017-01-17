@@ -19,6 +19,7 @@ typeset admin_pass=ple
 typeset -r str_usage=\
 "Usage :
 $ME
+	-db=name
 	-pdb=name
 	[-admin_user=$admin_user]
 	[-admin_pass=$admin_pass]
@@ -103,7 +104,7 @@ then
 	load_stby_database
 fi
 
-info "On database $primary create pdb $pdb"
+info "On database $db create pdb $pdb"
 if [ $dataguard == yes ]
 then
 	info "Physical standby : ${physical_list[*]}"
@@ -112,7 +113,12 @@ fi
 LN
 
 line_separator
-sqlplus_cmd "$(set_sql_cmd "create pluggable database $pdb admin user $admin_user identified by $admin_pass;")"
+function ddl_create_pdb
+{
+	set_sql_cmd "whenever sqlerror exit 1;"
+	set_sql_cmd "create pluggable database $pdb admin user $admin_user identified by $admin_pass;"
+}
+sqlplus_cmd "$(ddl_create_pdb)"
 LN
 
 for stby in ${physical_list[*]}
@@ -139,7 +145,10 @@ else
 	then
 		exec_cmd ./create_srv_for_single_db.sh -db=$db -pdb=$pdb
 	else
-		warning "TODO : RAC create services with create_srv_for_rac_db.sh"
+		typeset poolName="$(srvctl config database -db daisy	|\
+								grep "^Server pools:" | awk '{ print $3 }')"
+		exec_cmd ./create_srv_for_rac_db.sh	\
+								-db=$db -pdb=$pdb -poolName=$poolName
 	fi
 fi
 

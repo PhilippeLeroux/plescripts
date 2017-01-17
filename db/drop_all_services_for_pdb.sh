@@ -28,12 +28,12 @@ do
 			;;
 
 		-db=*)
-			db=${1##*=}
+			db=$(to_lower ${1##*=})
 			shift
 			;;
 
 		-pdb=*)
-			pdb=${1##*=}
+			pdb=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -64,7 +64,7 @@ do
 	exec_cmd "~/plescripts/db/drop_service.sh -db=$db -service=$service"
 	LN
 	count=count+1
-done<<<"$(srvctl status service -db $db | grep pdb$(to_upper $pdb))"
+done<<<"$(srvctl status service -db $db | grep pdb$pdb)"
 
 info "$count services removed."
 LN
