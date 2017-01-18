@@ -7,11 +7,12 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-typeset -r service_name=${infra_hostname}.service
-typeset -r service_file=/usr/lib/systemd/system/${service_name}
+typeset		target=graphical
+typeset -r	service_name=${infra_hostname}.service
+typeset -r	service_file=/usr/lib/systemd/system/${service_name}
 
 typeset -r str_usage=\
-"Usage : $ME
+"Usage : $ME -target=$target : graphical or multi-user
 
 Create service $service_name to start VM $infra_hostname on startup."
 
@@ -22,6 +23,11 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-target=*)
+			target=${1##=*}
 			shift
 			;;
 
@@ -66,7 +72,7 @@ ExecStart=/usr/bin/su - $USER -c "$HOME/plescripts/virtualbox/start_vm_infra"
 ExecStop=/usr/bin/su - $USER -c "$HOME/plescripts/shell/stop_vm $infra_hostname"
 
 [Install]
-WantedBy=graphical.target
+WantedBy=${target}.target
 EOS
 
 exec_cmd sudo mv /tmp/$service_name $service_file
