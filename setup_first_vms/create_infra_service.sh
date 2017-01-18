@@ -57,6 +57,9 @@ then
 	info "\tsudo systemctl disable ${service_name}"
 	info "\tsudo rm $service_file"
 	confirm_or_exit "Do actions"
+	exec_cmd sudo systemctl stop ${service_name}
+	exec_cmd sudo systemctl disable ${service_name}
+	exec_cmd sudo rm $service_file
 	LN
 fi
 
