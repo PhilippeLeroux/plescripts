@@ -12,4 +12,4 @@ MAILTO=root
 # |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
 # |  |  |  |  |
 # *  *  *  *  * command to be executed
-  *  *  *  *  * /root/plescripts/ntp/force_sync_ntp.sh
+  */1  *  *  *  * /root/plescripts/ntp/force_sync_ntp.sh

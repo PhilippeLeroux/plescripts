@@ -1,47 +1,69 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-exec >> /tmp/force_sync_ntp.$(date +%d) 2>&1
+#	Version VBox < 5.1.2 il peut être préférable de forcer le sync.
+#	Avec VBox 5.1.2 pas besoin de forcer le sync.
+#	Donc finalement le script ne sera pas mis en oeuvre.
 
 . ~/plescripts/global.cfg
 
 typeset -r ME=$0
 
-typeset -ri	max_offset_ms=200
+typeset -ri	max_offset_ms=1
 
-#	return abs( $1 )
+#	print abs( $1 ) to stdout
 function abs
 {
 	typeset	val="$1"
 	[ "${val:0:1}" == "-" ] && echo ${val:1} || echo $val
 }
 
-#	return integer part of $1
+#	print integer part of $1 to stdout
 function int_part
 {
 	cut -d. -f1<<<"$1"
 }
 
+# print offset in ms to stdout
+function ntpq_read_offset_ms
+{
+	read	l_remote l_refid l_st l_t l_when l_pool	\
+			l_reach l_delay l_offset l_jitter		\
+		<<<"$(ntpq -p | tail -1)"
+	abs $(int_part $l_offset)
+}
+
+# print offset in ms to stdout
+function ntpdate_read_offset_ms
+{
+	typeset seconds
+	read day month tt l_ntpdate l_ajust l_time l_server ip_ntp_server	\
+			l_offset seconds l_sec <<<"$(ntpdate -b $infra_hostname)"
+
+	if [ $(abs $(int_part $seconds)) -gt 0 ]
+	then
+		echo "1000"
+	else
+		sed "s/.*\.\(...\).*/\1/"<<<"$seconds"
+	fi
+}
+
 #	============================================================================
 #	Test si décolage de plus de max_offset_ms
-read l_remote l_refid l_st l_t l_when l_pool l_reach l_delay l_offset l_jitter \
-													<<<"$(ntpq -p | tail -1)"
-
-offset=$(abs $(int_part $l_offset))
-if [ x"$offset" == x ]
-then	# Se produit si après démarrage de ntpd on a le message d'erreur :
-		# ntpq: read: Connection refused
-	echo "offset is null, l_offset = '$l_offset' : bug ???"
-	offset=0
-fi
-[ $offset -lt $max_offset_ms ] && status=OK || status=KO
-
-TT=$(date +%Hh%M)
-echo "$TT : abs( ${l_offset} ms ) < ${max_offset_ms} ms : $status"
+typeset -i offset_ms=$(ntpq_read_offset_ms)
+[ $offset_ms -lt $max_offset_ms ] && status=OK || status=KO
 
 [ $status == OK ] && exit 0 || true
 
-[ $offset -gt 800 ] && echo "$TT : $l_offset" >> /tmp/ntp_big_offset.$(date +%d) || true
+[ ! -t 1 ] && exec >> /tmp/force_sync_ntp.$(date +%d) 2>&1 || true
+
+TT=$(date +%Hh%M)
+echo "$TT : $offset_ms ms < $max_offset_ms ms : $status"
+
+typeset -r lockfile=/var/lock/force_sync_ntp.lock
+[[ -f $lockfile ]] && exit 0 || true
+trap "{ rm -f $lockfile ; exit 0; }" EXIT
+touch $lockfile
 
 #	============================================================================
 typeset	-r date_before_sync=$(date)
@@ -59,12 +81,10 @@ typeset		time_sync=no
 
 for loop in $( seq $max_loops )
 do
-	read day month tt l_ntpdate l_ajust l_time l_server ip_ntp_server	\
-			l_offset seconds l_sec <<<"$(ntpdate -b $infra_hostname)"
+	typeset -i offset_ms=$(ntpdate_read_offset_ms)
+	[ $offset_ms -lt $max_offset_ms ] && status=OK || status=KO
 
-	[ $(abs $(int_part $seconds)) -eq 0 ] && status=OK || status=KO
-
-	echo "Time adjusted #${loop} abs( ${seconds} s ) < 1 s : $status"
+	echo "Time adjusted #${loop} $offset_ms ms  < $offset_ms ms : $status"
 
 	[ $status == OK ] && time_sync=yes && break	# exit loop
 done

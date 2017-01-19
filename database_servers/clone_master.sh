@@ -334,6 +334,10 @@ function rac_configure_ntp
 	ssh_master "~/plescripts/ntp/configure_ntp.sh"
 	LN
 
+	info "Force sync time"
+	ssh_master "crontab ~/plescripts/ntp/crontab_workaround_ntp.txt"
+	LN
+
 	if [ $kvmclock == disable ]
 	then
 		ssh_master "~/plescripts/ntp/disable_kvmclock.sh"

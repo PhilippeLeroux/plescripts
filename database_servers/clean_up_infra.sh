@@ -116,6 +116,5 @@ then
 fi
 
 info "Before to create a server with same name execute :"
-info "$ cd ~/plescripts/virtualbox"
-info "$ ./restart_vboxdrv.sh"
+info "$ ~/plescripts/virtualbox/restart_vboxdrv.sh"
 LN
