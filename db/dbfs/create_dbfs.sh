@@ -335,7 +335,8 @@ fi
 
 [ $role == primary ] && load_data_tests || true
 
-info "With user root execute :"
-info "cd plescripts/db/dbfs/"
-info "./configure_fuse_and_dbfs_mount_point.sh -db=$db -pdb=$pdb -service=$service"
-LN
+info "root password required, press enter."
+read keyboard
+add_dynamic_cmd_param "\"plescripts/db/dbfs/configure_fuse_and_dbfs_mount_point.sh"
+add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service\""
+exec_dynamic_cmd "su - root -c"

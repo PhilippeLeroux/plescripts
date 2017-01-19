@@ -202,8 +202,7 @@ fi
 
 if [ $local_only == no ]
 then # Affiche l'info que sur le serveur ou a été lancé le script.
-	info "With user grid execute :"
-	info "cd plescripts/db/dbfs/"
-	info "./create_crs_resource_for_dbfs.sh -db=$db -pdb=$pdb -service=$service"
-	LN
+	add_dynamic_cmd_param "\"plescripts/db/dbfs/create_crs_resource_for_dbfs.sh"
+	add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service\""
+	exec_dynamic_cmd "su - grid -c"
 fi
