@@ -84,7 +84,7 @@ do
 	typeset -i offset_ms=$(ntpdate_read_offset_ms)
 	[ $offset_ms -lt $max_offset_ms ] && status=OK || status=KO
 
-	echo "Time adjusted #${loop} $offset_ms ms  < $offset_ms ms : $status"
+	echo "Time adjusted #${loop} $offset_ms ms  < $max_offset_ms ms : $status"
 
 	[ $status == OK ] && time_sync=yes && break	# exit loop
 done
