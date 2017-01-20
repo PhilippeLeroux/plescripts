@@ -520,23 +520,17 @@ function get_cmd_name
 	typeset -ri size=${#argv[@]}
 
 	case "${argv[0]}" in
-		sudo)
-			echo "${argv[1]} (${argv[0]})"
+		ssh|sudo|su)
+			:	# lecture de la commande exécutée.
+			;;
+		*)
+			echo ${argv[0]}
 			return 0
 			;;
 	esac
 
-	# TODO prendre charge su :
-	#		Formats root
-	#		su - root -c cmd
-	#		su - -c cmd
-	#		su root -c cmd
-	#		Formats utilisateur
-	#		su - username -c cmd
-	#		su username -c cmd
-
-	if [ "${argv[0]}" != ssh ] || [ $size -eq 1 ]
-	then	# Ce n'est pas ssh ou il n'y a qu'une seule commande
+	if [ $size -eq 1 ]
+	then	# Il n'y a qu'une seule commande
 		echo ${argv[0]}
 		return 0
 	fi
@@ -546,7 +540,7 @@ function get_cmd_name
 	while [ $argc -ne $size ]
 	do
 		arg=${argv[$argc]}
-		[ ${arg:0:1} != - ] && break
+		[ "${arg:0:1}" != - ] && break || true
 
 		argc=argc+1
 	done
@@ -559,36 +553,76 @@ function get_cmd_name
 		return 0
 	fi
 
-	typeset cmd=${argv[argc+1]}
+	typeset	-i	icmd=argc+1
+	typeset		cmd=${argv[icmd]}
 
-	# Si la commande débute par une simple ou double quote elle est supprimée.
+	# cas de su ... -c
+	if [ "$cmd" == "-c" ]
+	then
+		icmd=icmd+1
+		cmd=${argv[icmd]}
+		argc=argc+1
+	fi
+
+	# Supprime la ' ou " du début si elle est présente.
 	case "${cmd:0:1}" in
 		"'"|"\"")
 			cmd=${cmd:1}
 			;;
 	esac
-
-	# Si la commande set termine par une simple ou double quote elle est supprimée.
+	# Supprime la ' ou " de fin si elle est présente.
 	case "${cmd:${#cmd}-1:1}" in
 		"'"|"\"")
 			cmd=${cmd:0:${#cmd}-1}
 			;;
 	esac
 
-	#	TODO : ne plus mémoriser la commande mais la position !
+	# Passe LANG=*
+	if [ "${cmd:0:5}" == "LANG=" ]
+	then
+		icmd=icmd+1
+		cmd=${argv[icmd]}
+		argc=argc+1
+	fi
 
-	[ "$cmd" == "sudo" ] && cmd=${argv[argc+2]}
+	case "$cmd" in
+		sudo|su)
+			typeset new_argv
+			for i in $( seq $icmd ${#argv[*]} )
+			do
+				if [ x"$new_argv" == x ]
+				then
+					new_argv="${argv[i]}"
+				else
+					new_argv="$new_argv ${argv[i]}"
+				fi
+			done
 
-	# Si la commande est LANG=C on passe à la suivante.
-	[ "$cmd" == "LANG=C" ] && cmd=${argv[argc+2]}
+			# Supprime la ' ou " du début si elle est présente.
+			case "${new_argv:0:1}" in
+				"'"|"\"")
+					new_argv=${new_argv:1}
+					;;
+			esac
+			# Supprime la ' ou " de fin si elle est présente.
+			case "${new_argv:${#new_argv}-1:1}" in
+				"'"|"\"")
+					cmd=${new_argv:0:${#new_argv}-1}
+					;;
+			esac
 
-	# Si la commande est '.' c'est qu'un fichier profile est chargé on passe le
-	# profile : . ./.profile ... donc pointe sur 3
-	[ "$cmd" == "." ] && cmd=${argv[argc+3]}
+			echo "$(get_cmd_name "$new_argv") (ssh)"
+			return 0
+			;;
+	esac
+
+	# Si la commande est '.' c'est qu'un fichier profile est sourcé.
+	# Ex : . ./.profile ... donc pointe sur 3
+	[ "$cmd" == "." ] && cmd=${argv[argc+3]} || true
 	# Arrive dans ce scénario : . ./.profile \; ....
-	[ "$cmd" == ";" ] && cmd=${argv[argc+4]}
+	[ "$cmd" == ";" ] && cmd=${argv[argc+4]} || true
 
-	echo "$cmd (ssh)"
+	echo "$cmd (${argv[0]})"
 }
 
 #*> exec_cmd
@@ -798,7 +832,8 @@ function exec_dynamic_cmd
 		typeset	-ri	exec_cmd_duration=$(( SECONDS - exec_cmd_start_at ))
 		if [ $exec_cmd_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 		then
-			my_echo "${YELLOW}" "$(date +"%Hh%M")< " "${cmd_name##* } running time : $(fmt_seconds $exec_cmd_duration)"
+			typeset cmd=$(get_cmd_name $cmd_name ${ple_dyn_param_cmd[@]})
+			my_echo "${YELLOW}" "$(date +"%Hh%M")< " "${cmd} running time : $(fmt_seconds $exec_cmd_duration)"
 		fi
 	else
 		typeset	-ri	exec_cmd_return=0
