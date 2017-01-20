@@ -134,6 +134,17 @@ function drop_pdb_on_physical_standby_database
 	done
 }
 
+function stop_and_remove_dbfs
+{
+	typeset -r res="pdb.${pdb}.dbfs"
+	if grep -qE "CRS-2613"<<<$(crsctl stat res $res)
+	then
+		return 0 # le service n'existe pas
+	fi
+
+	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb"
+}
+
 exit_if_ORACLE_SID_not_defined
 
 typeset	-r dataguard=$(dataguard_config_available)
@@ -148,6 +159,8 @@ then
 		exit_if_db_not_physical_standby_database
 	fi
 fi
+
+stop_and_remove_dbfs
 
 exec_cmd "./drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
 

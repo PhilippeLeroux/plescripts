@@ -152,12 +152,15 @@ then
 	execute_on_all_nodes_v2 'sed -i "/SQLNET.WALLET_OVERRIDE/d" $TNS_ADMIN/sqlnet.ora'
 	LN
 
-	execute_on_all_nodes_v2 "rm -f $dbfs_cfg_file"
-	LN
-
-	execute_on_all_nodes_v2 "rm -rf $wallet_path"
+	execute_on_all_nodes "rm -rf $wallet_path"
 	LN
 fi
+
+execute_on_all_nodes "rm -f $dbfs_cfg_file"
+LN
+
+execute_on_all_nodes "sudo -iu grid rm /home/grid/mount-dbfs-$pdb"
+LN
 
 info "Entry to fstab must be removed with user root on all nodes."
 LN
