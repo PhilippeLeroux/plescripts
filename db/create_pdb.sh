@@ -13,8 +13,8 @@ script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef
-typeset admin_user=ple
-typeset admin_pass=ple
+typeset admin_user=syspdb
+typeset admin_pass=$oracle_password
 
 typeset -r str_usage=\
 "Usage :
