@@ -194,8 +194,11 @@ function copy_store_if_not_cfs
 	line_separator
 	#	Si $wallet_path existe sur l'autre noeud, je considère l'utilisation d'un CFS.
 	info "Test if wallet on CFS."
-	exec_cmd -c ssh ${gi_node_list[0]} test -d $wallet_path
-	if [ $? -eq 0 ]
+	exec_cmd "touch $wallet_path/is_cfs"
+	exec_cmd -c ssh ${gi_node_list[0]} test -f $wallet_path/is_cfg
+	typeset is_cfs=$?
+	exec_cmd "rm $wallet_path/is_cfs"
+	if [ $is_cfs -eq 0 ]
 	then
 		info "CFS : nothing to do."
 		LN
@@ -335,8 +338,12 @@ fi
 
 [ $role == primary ] && load_data_tests || true
 
-info "root password required, press enter."
-read keyboard
+info "With user root"
+info "cd ~/plescripts/db/dbfs"
+info "configure_fuse_and_dbfs_mount_point.sh -db=$db -pdb=$pdb -service=$service"
+LN
+
+info "ctrl-c to skip script execution."
 add_dynamic_cmd_param "\"plescripts/db/dbfs/configure_fuse_and_dbfs_mount_point.sh"
-add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service\""
+add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service -call_crs_script\""
 exec_dynamic_cmd "su - root -c"

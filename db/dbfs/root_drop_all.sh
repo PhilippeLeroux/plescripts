@@ -91,16 +91,10 @@ must_be_user root
 
 exit_if_service_not_exists $db $service
 
-line_separator
-exec_cmd -c  "sudo -iu grid crsctl stop res pdb.${pdb}.dbfs -f"
-LN
-exec_cmd -c  "sudo -iu grid crsctl delete res pdb.${pdb}.dbfs -f"
-LN
-
 if [ $role == primary ]
 then
 	line_separator
-	exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/oracle_drop_all.sh	\
+	exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/drop_dbfs.sh	\
 						-db=$db -pdb=$pdb -drop_wallet=$drop_wallet"
 	LN
 fi

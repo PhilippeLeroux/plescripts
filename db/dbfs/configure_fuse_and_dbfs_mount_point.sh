@@ -22,6 +22,7 @@ typeset	db=undef
 typeset	pdb=undef
 typeset	service=undef
 typeset	local_only=no
+typeset call_crs_script=no
 
 while [ $# -ne 0 ]
 do
@@ -49,6 +50,11 @@ do
 		-local_only)
 			# Le script ne sera pas exécuté sur les autres serveurs.
 			local_only=yes
+			shift
+			;;
+
+		-call_crs_script)
+			call_crs_script=yes
 			shift
 			;;
 
@@ -167,7 +173,7 @@ LN
 
 line_separator
 info "Add mount point to fstab"
-if grep -qE "mount.dbfs.*$dbfs_user@$service" /etc/fstab
+if grep -qE "@$service" /etc/fstab
 then
 	info "Remove existing mount point"
 	exec_cmd "sed -i '/@$service/d' /etc/fstab"
@@ -202,7 +208,14 @@ fi
 
 if [ $local_only == no ]
 then # Affiche l'info que sur le serveur ou a été lancé le script.
-	add_dynamic_cmd_param "\"plescripts/db/dbfs/create_crs_resource_for_dbfs.sh"
-	add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service\""
-	exec_dynamic_cmd "su - grid -c"
+	if [ $call_crs_script == yes ]
+	then
+		add_dynamic_cmd_param "\"plescripts/db/dbfs/create_crs_resource_for_dbfs.sh"
+		add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service\""
+		exec_dynamic_cmd "su - grid -c"
+	else
+		info "With user grid :"
+		info "cd ~plescripts/db/dbfs"
+		info "create_crs_resource_for_dbfs.sh -db=$db -pdb=$pdb -service=$service"
+	fi
 fi
