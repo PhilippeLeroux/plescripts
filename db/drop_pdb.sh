@@ -120,7 +120,7 @@ function drop_pdb_on_physical_standby_database
 	for stby_name in ${physical_list[*]}
 	do
 		stby_server_list+=($(tnsping $stby_name | tail -2 | head -1 |\
-					sed "s/.*(\s\?HOST\s\?=\s\?\(.*\)\s\?)\s\?(\s\?PORT.*/\1/"))
+			sed "s/.*(\s\{0,\}HOST\s\{0,\}=\s\{0,\}\(.*\)\s\{0,\})\s\{0,\}(\s\{0,\}PORT.*/\1/"))
 	done
 
 	for i in $( seq 0 $(( ${#physical_list[@]} - 1 )) )
