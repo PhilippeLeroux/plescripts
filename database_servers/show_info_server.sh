@@ -99,7 +99,7 @@ function print_disks
 	do
 		if [ $dg_name = FS ]
 		then
-			info "FS of ${disk_size}Gb"
+			info "Will used available space on /$GRID_DISK"
 		else
 			info "DG $dg_name :"
 			typeset	-i	size=0
