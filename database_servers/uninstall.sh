@@ -146,9 +146,9 @@ exit_if_param_invalid storage "FS ASM" "$str_usage"
 #	Si le premier paramètre est -f l'exécution est forcée.
 function suoracle
 {
-	[ "$1" = -f ] && typeset -r arg=$1 && shift
+	[ "$1" = -f ] && typeset -r farg="-f" && shift
 
-	exec_cmd $arg "su - oracle -c \"$@\""
+	exec_cmd $farg "su - oracle -c \"$@\""
 }
 
 #	Exécute la commande "$@" en faisant un su - grid -c
