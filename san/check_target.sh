@@ -14,19 +14,6 @@ function show_lv_errors
 	lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$"
 }
 
-#./remove_lv.sh -vg_name=asm01 -prefix=testsan -first_no=18
-function cmd_remove_lv
-{
-	echo "    $ ssh root@K2"
-	echo "    $ cd ~/san"
-	while read lv_name vg_name rem
-	do
-		read prefix name no <<<"$(echo $lv_name|sed "s/\(..\)\(.*\)\([0-9].\)$/\1 \2 \3/")"
-		echo "    $ ./remove_lv.sh -vg_name=$vg_name -prefix=$name -first_no=$no"
-		echo "    # (if VM $name not exists)"
-	done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
-}
-
 function cmd_restore_vg_link
 {
 	echo "    $ ssh root@K2"
@@ -44,9 +31,6 @@ function print_error_help
 	echo "2 : restore links"
 	cmd_restore_vg_link
 	echo
-	echo "3 : remove lv"
-	cmd_remove_lv
-	echo
 }
 
 function restart_target
@@ -55,15 +39,21 @@ function restart_target
 
 	exec_cmd -c systemctl status target -l
 	LN
-	
+
 	exec_cmd -c systemctl stop target
 	LN
-	
+
 	exec_cmd systemctl start target
 	LN
-	
+
 	exec_cmd systemctl status target -l
 	LN
+}
+
+#	return 0 if backstore $1 exists, else return 1
+function backstore_exists
+{
+	targetcli ls backstores/block/$1 >/dev/null 2>&1
 }
 
 typeset -i lv_errors=$(count_lv_errors)
@@ -79,15 +69,38 @@ then
 	if [ $lv_errors -ne 0 ]
 	then
 		error "$lv_errors LV(s) errors"
-		error "LV orphaned, missing link or bug ??"
 		LN
 
-		show_lv_errors
-		LN
-		print_error_help
-		LN
-		info "target [$KO]"
-		exit 1
+		typeset -i lv_corrected=0
+		while read lv_name vg_name rem
+		do
+			typeset backstore_name=${vg_name}_${lv_name}
+			if ! backstore_exists $backstore_name
+			then
+				info "Backstore $backstore_name not exists."
+				info "remove lv $lv_name from vg $vg_name"
+				read prefix no <<<$(sed "s/lv\(.*\)\([0-9]\{2\}\)/\1 \2/g"<<<"$lv_name")
+				exec_cmd -c ~/plescripts/san/remove_lv.sh		\
+											-vg_name=$vg_name	\
+											-prefix=$prefix		\
+											-first_no=$no
+				[ $? -eq 0 ] && ((lv_corrected++)) || true
+				LN
+			fi
+		done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
+
+		if [ $lv_corrected -eq $lv_errors ]
+		then
+			info "target [$OK]"
+			exit 0
+		else
+			show_lv_errors
+			LN
+			print_error_help
+			LN
+			info "target [$KO]"
+			exit 1
+		fi
 	fi
 else
 	exec_cmd -c "systemctl status target" >/dev/null 2>&1

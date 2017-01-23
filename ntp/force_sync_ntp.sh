@@ -49,8 +49,8 @@ function ntpdate_read_offset_ms
 }
 
 #	============================================================================
-#	Test si décolage de plus de max_offset_ms
-typeset -i offset_ms=$(ntpq_read_offset_ms)
+#	Test si décalage de plus de max_offset_ms
+typeset -i offset_ms=10#$(ntpq_read_offset_ms)
 [ $offset_ms -lt $max_offset_ms ] && status=OK || status=KO
 
 [ $status == OK ] && exit 0 || true
@@ -81,7 +81,7 @@ typeset		time_sync=no
 
 for loop in $( seq $max_loops )
 do
-	typeset -i offset_ms=$(ntpdate_read_offset_ms)
+	typeset -i offset_ms=10#$(ntpdate_read_offset_ms)
 	[ $offset_ms -lt $max_offset_ms ] && status=OK || status=KO
 
 	echo "Time adjusted #${loop} $offset_ms ms  < $max_offset_ms ms : $status"
