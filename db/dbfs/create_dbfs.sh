@@ -102,7 +102,7 @@ exit_if_param_undef account_password	"$str_usage"
 
 exit_if_param_invalid wallet "yes no"	"$str_usage"
 
-[ "$service" == auto ] && service=$(make_oci_service_name_for $pdb) || true
+[ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
 
 typeset	-r	dbfs_tbs=${account_name}_tbs
 typeset	-r	dbfs_name=staging_area
@@ -192,7 +192,6 @@ function add_dbfs_user_to_wallet_store
 function copy_store_if_not_cfs
 {
 	line_separator
-	#	Si $wallet_path existe sur l'autre noeud, je considère l'utilisation d'un CFS.
 	info "Test if wallet on CFS."
 	exec_cmd "touch $wallet_path/is_cfs"
 	exec_cmd -c ssh ${gi_node_list[0]} test -f $wallet_path/is_cfg
@@ -310,7 +309,7 @@ then
 else
 	function read_user
 	{
-		typeset -r stby_service=$(make_oci_stby_service_name_for $pdb)
+		typeset -r stby_service=$(mk_oci_stby_service $pdb)
 		sqlplus -s sys/${oracle_password}@${stby_service} as sysdba<<-EOSQL | tail -1
 		set feed off  head off
 		select username from dba_users where username='$account_name';

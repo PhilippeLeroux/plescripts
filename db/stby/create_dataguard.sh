@@ -376,7 +376,7 @@ run {
 		set cluster_database='false'
 		set fal_server='$primary'
 		nofilenamecheck
-	 ;
+	;
 }
 EOR
 	exec_cmd "rman	target sys/$oracle_password@$primary	\
@@ -591,16 +591,14 @@ from
 		then
 			info "Create stby service for pdb $pdb on cdb $primary"
 			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-						-db=$primary -pdb=$pdb						\
-						-role=primary"
+						-db=$primary -pdb=$pdb	-role=primary"
 			LN
 
 			info "(1) Need to start stby services on primary $primary for a short time."
 			# Il est important de démarrer les services stby sinon le démarrage
 			# des services sur la standby échoura. (1)
 			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-						-db=$primary -pdb=$pdb						\
-						-role=physical_standby"
+						-db=$primary -pdb=$pdb -role=physical_standby"
 			LN
 		fi
 
@@ -621,11 +619,13 @@ from
 
 		if [ $create_primary_cfg == yes ]
 		then #(1) Il faut stopper les services stdby maintenant sur la primary.
-			 #    Les services stdby démarreront automatiquement lors de l'overture
-			 #    de la stdby en RO.
+			 #    Les services stdby démarreront automatiquement lors de
+			 #	  l'ouverture de la stdby en RO.
 			info "(1) Stop stby services on primary $primary :"
-			exec_cmd "srvctl stop service -db $primary -service pdb${pdb}_stby_oci"
-			exec_cmd "srvctl stop service -db $primary -service pdb${pdb}_stby_java"
+			exec_cmd "srvctl stop service -db $primary	\
+										-service $(mk_oci_stby_service $pdb)"
+			exec_cmd "srvctl stop service -db $primary	\
+										-service $(mk_java_stby_service $pdb)"
 			LN
 		fi
 	done<<<"$(sqlplus_exec_query "$query")"
@@ -686,7 +686,6 @@ function check_params
 	typeset -ri c=$(dgmgrl -silent sys/$oracle_password 'show configuration' |\
 						grep -E "Primary|Physical" | wc -l 2>/dev/null)
 	info "Dataguard broker : $c database configured."
-	#	Est juste là pour avertissement.
 	if [ $create_primary_cfg == yes ]
 	then
 		if [ $c -ne 0 ]
@@ -755,7 +754,7 @@ function check_prereq
 	fi
 }
 
-function configure_rman
+function standby_configure_rman
 {
 	line_separator
 	if [ $create_primary_cfg == yes ]
@@ -767,7 +766,10 @@ function configure_rman
 	exec_cmd "ssh $standby_host	\
 		'. .bash_profile; ~/plescripts/db/configure_backup.sh -with_standby'"
 	LN
+}
 
+function backup_standby
+{
 	#	Nécessaire sinon le backup échoue.
 	exec_cmd "ssh $standby_host						\
 		'. .bash_profile; cd ~/plescripts/db/rman;	\
@@ -812,10 +814,12 @@ then
 	sqlplus_cmd_on_standby "$(sql_enable_flashback)"
 fi
 
-configure_rman
+standby_configure_rman
+backup_standby
 
 info "Copy glogin.sql"
-exec_cmd "scp $ORACLE_HOME/sqlplus/admin/glogin.sql $standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
+exec_cmd "scp	$ORACLE_HOME/sqlplus/admin/glogin.sql	\
+				$standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
 LN
 
 exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"

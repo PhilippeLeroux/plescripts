@@ -248,28 +248,31 @@ function extract_db_name_from
 #*>	$1 pdb name
 #*>
 #*> return associate oci service name
-function make_oci_service_name_for
+function mk_oci_service
 {
-	typeset	-r pdb_name_l=$(to_upper "$1")
-	echo pdb${pdb_name_l}_oci
+	echo $(to_lower "$1")_oci
 }
 
 #*>	$1 pdb name
 #*>
 #*> return associate oci service name for stby
-function make_oci_stby_service_name_for
+function mk_oci_stby_service
 {
-	typeset	-r pdb_name_l=$(to_upper "$1")
-	echo pdb${pdb_name_l}_stby_oci
+	echo $(to_lower "$1")_stby_oci
 }
-
 
 #*>	$1 pdb name
 #*>
 #*> return associate java service name
-function make_java_service_name_for
+function mk_java_service
 {
-	typeset	-r pdb_name_l=$(to_upper "$1")
-	echo pdb${pdb_name_l}_java
+	echo $(to_lower "$1")_java
 }
 
+#*>	$1 pdb name
+#*>
+#*> return associate java service name
+function mk_java_stby_service
+{
+	echo $(to_lower "$1")_stby_java
+}

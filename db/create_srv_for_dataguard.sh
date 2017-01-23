@@ -40,7 +40,7 @@ do
 			;;
 
 		-pdb=*)
-			pdb=$(to_upper ${1##*=})
+			pdb=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -90,10 +90,10 @@ exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
 							-start=yes
 LN
 
-exec_cmd srvctl stop service -db $db -service pdb${pdb}_stby_oci
+exec_cmd srvctl stop service -db $db -service ${pdb}_stby_oci
 LN
 
-exec_cmd srvctl stop service -db $db -service pdb${pdb}_stby_java
+exec_cmd srvctl stop service -db $db -service ${pdb}_stby_java
 LN
 
 exec_cmd "ssh -t $standby_host \". .bash_profile;				\

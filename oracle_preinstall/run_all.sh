@@ -17,6 +17,8 @@ timing 5
 exec_cmd "mount /mnt$infra_olinux_repository_path"
 timing 5
 LN
+exec_cmd "~/plescripts/yum/clean_cache.sh"
+LN
 
 exec_cmd "./01_create_oracle_users.sh -release=$oracle_release -db_type=$db_type"
 LN

@@ -78,7 +78,7 @@ must_be_user root
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef pdb		"$str_usage"
 
-[ "$service" == auto ] && service=$(make_oci_service_name_for $pdb) || true
+[ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
 
 typeset	-r	dbfs_cfg_file=/home/oracle/${pdb}_dbfs.cfg
 
@@ -192,7 +192,7 @@ if [[ $gi_count_nodes -gt 1 && $local_only == no ]]
 then
 	line_separator
 	execute_on_other_nodes ". .bash_profile; ~/plescripts/db/dbfs/${ME##*/}	\
-								-db=$db -pdb=$pdb -local_only"
+												-db=$db -pdb=$pdb -local_only"
 	LN
 fi
 

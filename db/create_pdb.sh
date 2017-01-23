@@ -140,7 +140,7 @@ else
 	then
 		exec_cmd ./create_srv_for_single_db.sh -db=$db -pdb=$pdb
 	else
-		typeset poolName="$(srvctl config database -db daisy	|\
+		typeset poolName="$(srvctl config database -db $db	|\
 								grep "^Server pools:" | awk '{ print $3 }')"
 		exec_cmd ./create_srv_for_rac_db.sh	\
 								-db=$db -pdb=$pdb -poolName=$poolName

@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -40,7 +41,7 @@ do
 			;;
 
 		-pdb=*)
-			pdb=$(to_upper ${1##*=})
+			pdb=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -95,23 +96,33 @@ function test_if_service_exist
 
 function oci_service
 {
+	case "$role" in
+		primary|undef)
+			typeset -r service=$(mk_oci_service $pdb)
+			;;
+
+		physical_standby)
+			typeset -r service=$(mk_oci_stby_service $pdb)
+			;;
+	esac
+
 	line_separator
-	info "create service ${prefixService}_oci on pluggable $pdb."
+	info "create service $service on pluggable $pdb."
 	LN
 
-	test_if_service_exist ${prefixService}_oci
+	test_if_service_exist $service
 	[ $? -eq 0 ] && action=modify || action=add
 
 	if [[ $action == modify && $role == undef ]]
 	then
-		error "Service ${prefixService}_oci exist and no role specified."
+		error "Service $service exist and no role specified."
 		LN
 		info "$str_usage"
 		LN
 		exit 1
 	fi
 
-	add_dynamic_cmd_param "$action service -service ${prefixService}_oci"
+	add_dynamic_cmd_param "$action service -service $service"
 	add_dynamic_cmd_param "    -pdb $pdb -db $db"
 	if [ $role != undef ]
 	then
@@ -132,38 +143,46 @@ function oci_service
 	then
 		if [ $start == yes ]
 		then
-			exec_cmd srvctl start service	-service ${prefixService}_oci	\
-											-db $db
+			exec_cmd srvctl start service -service $service -db $db
 			LN
 		fi
 
 		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-					-service=${prefixService}_oci	\
-					-host_name=$(hostname -s)"
+						-service=$service -host_name=$(hostname -s)"
 		LN
 	fi
 }
 
 function java_service
 {
+	case "$role" in
+		primary|undef)
+			typeset -r service=$(mk_java_service $pdb)
+			;;
+
+		physical_standby)
+			typeset -r service=$(mk_java_stby_service $pdb)
+			;;
+	esac
+
 	line_separator
 	#	Services for Application Continuity (java)
-	info "create service ${prefixService}_java on pluggable $pdb."
+	info "create service $service on pluggable $pdb."
 	LN
 
-	test_if_service_exist ${prefixService}_java
+	test_if_service_exist $service
 	[ $? -eq 0 ] && action=modify || action=add
 
 	if [[ $action == modify && $role == undef ]]
 	then
-		error "Service ${prefixService}_java exist and no role specified."
+		error "Service $service exist and no role specified."
 		LN
 		info "$str_usage"
 		LN
 		exit 1
 	fi
 
-	add_dynamic_cmd_param "$action service -service ${prefixService}_java"
+	add_dynamic_cmd_param "$action service -service $service"
 	add_dynamic_cmd_param "    -pdb $pdb -db $db"
 	if [ $role != undef ]
 	then
@@ -188,19 +207,14 @@ function java_service
 
 	if [[ $action == add && $start == yes ]]
 	then
-		exec_cmd srvctl start service	-service ${prefixService}_java	\
-										-db $db
+		exec_cmd srvctl start service -service $service -db $db
 		LN
 	fi
 }
 
 case "$role" in
-	primary|undef)
-		typeset -r prefixService=pdb${pdb}
-		;;
-
-	physical_standby)
-		typeset -r prefixService=pdb${pdb}_stby
+	primary|undef|physical_standby)
+		:
 		;;
 
 	*)

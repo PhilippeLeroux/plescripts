@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -11,12 +12,7 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
-	-prefixService=name if name==auto (default) : prefixService=pdb||pdbName
 	[-poolName=name]    For policy managed database.
-
-Create services :
-	prefixService || _oci
-	prefixService || _java
 
 For single database used : create_srv_for_single_db.sh
 "
@@ -25,7 +21,6 @@ script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef
-typeset prefixService=auto
 typeset poolName
 typeset preferredInstances
 
@@ -53,11 +48,6 @@ do
 			shift
 			;;
 
-		-prefixService=*)
-			prefixService=${1##*=}
-			shift
-			;;
-
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -76,8 +66,6 @@ done
 exit_if_param_undef db				"$str_usage"
 exit_if_param_undef pdb				"$str_usage"
 
-[ "$prefixService" == auto ] && prefixService=pdb${pdb} || true
-
 line_separator
 warning "Les services sont créées à partir de notes rapides."
 warning "J'ai hacké pour que les services soient créées."
@@ -85,6 +73,7 @@ warning "Le but principal étant de poser un mémo"
 warning "Donc ils sont foireux et à adapter...."
 LN
 
+# print all instances to stdout
 function get_all_instances
 {
 	typeset list
@@ -96,23 +85,25 @@ function get_all_instances
 	echo $list
 }
 
-#	return scan name
+#	print scan name to stdout
 function get_scan_name
 {
 	srvctl config scan | head -1 | sed "s/.*: \(.*-scan\),.*/\1/"
 }
 
+typeset -r oci_service=$(mk_oci_service $pdb)
+typeset -r java_service=$(mk_java_service $pdb)
+typeset	-r scan_name=$(get_scan_name)
+
 line_separator
 if [ x"$poolName" == x ]
 then
 	preferredInstances=$(get_all_instances)
-	info "Create service Administrator Managed ${prefixService}_oci"
+	info "Create service Administrator Managed $oci_service"
 else
-	info "Create service Policy Managed ${prefixService}_oci"
+	info "Create service Policy Managed $oci_service"
 fi
 LN
-
-typeset	-r	scan_name=$(get_scan_name)
 
 #	http://docs.oracle.com/database/121/RACAD/hafeats.htm#RACAD7026
 #	Creating Services for Application Continuity ssi -failovertype TRANSACTION
@@ -127,7 +118,7 @@ typeset	-r	scan_name=$(get_scan_name)
 #	To use Transaction Guard, a DBA must grant permission, as follows:
 #	GRANT EXECUTE ON DBMS_APP_CONT;
 
-add_dynamic_cmd_param "add service -service ${prefixService}_oci "
+add_dynamic_cmd_param "add service -service $oci_service"
 add_dynamic_cmd_param "    -pdb $pdb -db $db"
 if [ x"$poolName" == x ]
 then
@@ -144,11 +135,11 @@ add_dynamic_cmd_param "    -rlbgoal        throughput"
 
 exec_dynamic_cmd srvctl
 LN
-exec_cmd srvctl start service -service ${prefixService}_oci -db $db
+exec_cmd srvctl start service -service $oci_service -db $db
 LN
 
 exec_cmd "~/plescripts/db/add_tns_alias.sh			\
-				-service=${prefixService}_oci		\
+				-service=$oci_service				\
 				-host_name=$scan_name				\
 				-copy_server_list=\"${gi_node_list}\""
 LN
@@ -157,13 +148,13 @@ line_separator
 #	Services for Application Continuity (java)
 if [ x"$poolName" == x ]
 then
-	info "Create service Administrator Managed ${prefixService}_java"
+	info "Create service Administrator Managed $java_service"
 else
-	info "Create service Policy Managed ${prefixService}_java"
+	info "Create service Policy Managed $java_service"
 fi
 LN
 
-add_dynamic_cmd_param "add service -service ${prefixService}_java "
+add_dynamic_cmd_param "add service -service $java_service"
 add_dynamic_cmd_param "    -pdb $pdb -db $db"
 if [ x"$poolName" == x ]
 then
@@ -182,7 +173,7 @@ add_dynamic_cmd_param "    -commit_outcome true"
 exec_dynamic_cmd srvctl
 LN
 
-exec_cmd srvctl start service -service ${prefixService}_java  -db $db
+exec_cmd srvctl start service -service $java_service -db $db
 LN
 
 line_separator

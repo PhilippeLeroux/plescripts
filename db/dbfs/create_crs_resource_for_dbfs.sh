@@ -79,7 +79,7 @@ must_be_user grid
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef pdb		"$str_usage"
 
-[ "$service" == auto ] && service=$(make_oci_service_name_for $pdb) || true
+[ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
 
 typeset	-r	script_name=~/mount-dbfs-$pdb
 typeset	-r	resource_name="pdb.${pdb}.dbfs"

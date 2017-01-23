@@ -80,14 +80,14 @@ add_help_param "[-lang=$lang]"							"Language"
 add_help_param "[-sysPassword=$sysPassword]"
 add_help_param "[-totalMemory=$totalMemory]"			"Unit Mb"
 add_help_param "[-shared_pool_size=<str>]"				"Préciser l'unité, par défaut 256M"
-add_help_param "[-cdb=$cdb]"							"(yes/no) (1)"
-add_help_param "[-pdb=<str>]"							"(2)"
+add_help_param "[-cdb=$cdb]"							"yes|no (1)"
+add_help_param "[-pdb=name]"							"pdb name (2)"
 add_help_param "[-data=$data]"
 add_help_param "[-fra=$fra]"
 add_help_param "[-templateName=$templateName]"
 add_help_param "[-db_type=SINGLE|RAC|RACONENODE]"		"(3)"
 add_help_param "[-policyManaged]"						"Créer une base en 'Policy Managed' (4)"
-add_help_param "[-serverPoolName=<str>]"				"Nom du pool à utiliser. (5)"
+add_help_param "[-serverPoolName=name]"					"Nom du pool à utiliser. (5)"
 add_help_param "[-enable_flashback=$enable_flashback]"	"yes|no"
 add_help_param "[-no_backup]"							"Pas de backup après création de la base."
 
@@ -96,7 +96,7 @@ typeset -r str_usage=\
 $ME
 $(print_all_parameters)
 
-\t1 : Si vaut yes et que -pdb n'est pas précisé alors pdb == db || 01
+\t1 : Si vaut yes et que -pdb n'est pas précisé alors pdb == pdb01
 \t    Le service de la pdb sera : pdb || db || 01
 \t    Pour ne pas créer de pdb utiliser -pdb=no
 
@@ -447,21 +447,21 @@ function create_services_for_pdb
 			if [ $serverPoolName == "undef" ]
 			then
 				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh	\
-								-db=$db -pdb=$pdb -prefixService=pdb${pdb}"
+														-db=$db -pdb=$pdb"
 				LN
 			else
 				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh			\
-								-db=$db -pdb=$pdb -prefixService=pdb${pdb}	\
-								-poolName=$serverPoolName"
+								-db=$db -pdb=$pdb -poolName=$serverPoolName"
 				LN
 			fi
 			;;
 
 		RACONENODE)
 			info "Create service for RAC One Node"
-			exec_cmd srvctl add service -db $db -service pdb$pdb -pdb $pdb
-			exec_cmd srvctl start service -db $db -service pdb$pdb
-			exec_cmd "~/plescripts/db/add_tns_alias.sh -service=pdb$pdb	\
+			typeset srv=$(mk_oci_service $pdb)
+			exec_cmd srvctl add service -db $db -service $srv -pdb $pdb
+			exec_cmd srvctl start service -db $db -service $srv
+			exec_cmd "~/plescripts/db/add_tns_alias.sh -service=$srv	\
 													-host_name=$(hostname -s)"
 			LN
 			;;
@@ -471,7 +471,7 @@ function create_services_for_pdb
 			then
 				info "Create service for SINGLE database."
 				exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-															-db=$db -pdb=$pdb"
+														-db=$db -pdb=$pdb"
 				LN
 			else
 				warning "No services created for pdb, DIY"
@@ -561,7 +561,7 @@ fi
 #	----------------------------------------------------------------------------
 #	Ajustement des paramètres
 #	Détermine le nom de la PDB si non précisée.
-[ $cdb == yes ] && [ $pdb == undef ] && pdb=${lower_db}01
+[ $cdb == yes ] && [ $pdb == undef ] && pdb=pdb01
 [ $pdb == no ] && pdb=undef
 
 if [ $pdb != undef ]

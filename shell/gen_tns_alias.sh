@@ -9,9 +9,9 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : ${ME##*/}
 	-service=name                       Nom du service.
+	-alias_name=name	                Nom de l'alias.
 	-server_list=\"server1 server2 ...\"  Liste des serveurs.
 
-Créé un alias TNS du même nom que le service.
 La définition de l'alias est affichée sur la canal 1.
 Si il y a plus d'un serveur dans -server_list alors configuration dataguard.
 
@@ -25,6 +25,7 @@ Exemples :
 "
 
 typeset service=undef
+typeset alias_name=undef
 typeset server_list=undef
 
 while [ $# -ne 0 ]
@@ -38,6 +39,11 @@ do
 
 		-service=*)
 			service=${1##*=}
+			shift
+			;;
+
+		-alias_name=*)
+			alias_name=${1##*=}
 			shift
 			;;
 
@@ -62,6 +68,7 @@ do
 done
 
 exit_if_param_undef service		"$str_usage"
+exit_if_param_undef alias_name	"$str_usage"
 exit_if_param_undef server_list	"$str_usage"
 
 typeset	-ri	count_servers=$(echo "$server_list" | wc -w)
@@ -88,7 +95,7 @@ function open_section_description
 }
 
 cat<<EOS
-$(to_upper $service) =
+$(to_upper $alias_name) =
 $(open_section_description)
 		(ADDRESS_LIST=
 $(get_address)

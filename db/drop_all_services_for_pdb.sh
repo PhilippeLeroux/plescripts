@@ -64,7 +64,9 @@ do
 	exec_cmd "~/plescripts/db/drop_service.sh -db=$db -service=$service"
 	LN
 	count=count+1
-done<<<"$(srvctl status service -db $db | grep pdb$pdb)"
+done<<<"$(srvctl status service -db $db | grep -iE "(pdb){,1}${pdb}")"
+# (pdb){,1} nécessaire pour supprimer les services avec l'ancienne convention
+# de nomage.
 
 info "$count services removed."
 LN
