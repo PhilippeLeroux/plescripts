@@ -144,3 +144,6 @@ LN
 
 exec_cmd "crsctl stat res -t"
 LN
+
+exec_cmd "su - oracle -c \"plescripts/memory/show_pages.sh\""
+LN
