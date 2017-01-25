@@ -43,10 +43,11 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
+#	Le service Rac One Node ne peut pas être supprimé.
 while read label serviceName w1 w2 w3
 do
 	[ x"$label" == x ] && continue
 
 	exec_cmd ~/plescripts/db/drop_service.sh -db=$db -service=$serviceName
 	LN
-done<<<"$(srvctl status service -db $db)"
+done<<<"$(srvctl status service -db $db | grep -v ron)"

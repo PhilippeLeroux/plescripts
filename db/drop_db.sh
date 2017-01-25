@@ -63,11 +63,16 @@ function error_msg_on_script_failed
 	LN
 }
 
-trap '[ "$?" -ne 0 ] && error_msg_on_script_failed' EXIT
+line_separator
+info "Delete services :"
+exec_cmd "~/plescripts/db/drop_all_services.sh -db=$db"
+LN
 
 line_separator
 info "Delete database :"
 LN
+
+trap '[ "$?" -ne 0 ] && error_msg_on_script_failed' EXIT
 
 add_dynamic_cmd_param "-deleteDatabase"
 add_dynamic_cmd_param "    -sourcedb       $db"
