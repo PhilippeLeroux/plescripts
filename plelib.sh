@@ -251,10 +251,16 @@ function must_be_user
 
 #*> Idéalement tous les scripts doivent appeler cette fonction.
 #*> script_banner $ME $*
+#*>
+#*> Redondant avec l'affichage de la function exec_cmd, n'affichera le nom
+#*> du script que si SCRIPT_BANNER == ENABLE
 function script_banner
 {
-	info "Running : ${@/$HOME/~}"
-	LN
+	if [ "$SCRIPT_BANNER" = ENABLE ]
+	then
+		info "Running : ${@/$HOME/~}"
+		LN
+	fi
 }
 
 #*< Used by fonctions info, warning and error.
@@ -785,6 +791,7 @@ function add_dynamic_cmd_param
 function exec_dynamic_cmd
 {
 	typeset confirm=no
+	typeset farg
 	while [ 0 -eq 0 ]
 	do
 		case "$1" in
@@ -792,7 +799,10 @@ function exec_dynamic_cmd
 				confirm=yes
 				shift
 				;;
-
+			"-c")
+				farg="-c"
+				shift
+				;;
 			*)
 				break;
 				;;
@@ -826,7 +836,7 @@ function exec_dynamic_cmd
 	then
 		#	Avec la paramètre -h exec_cmd n'affiche pas le temps d'exécution.
 		typeset	-ri	exec_cmd_start_at=$SECONDS
-		exec_cmd -hf $cmd_name "${ple_dyn_param_cmd[@]}"
+		exec_cmd $farg -hf $cmd_name "${ple_dyn_param_cmd[@]}"
 		typeset	-ri	exec_cmd_return=$?
 
 		typeset	-ri	exec_cmd_duration=$(( SECONDS - exec_cmd_start_at ))

@@ -398,6 +398,10 @@ function configure_server
 	make_ssh_equi_with_san
 
 	line_separator
+	info "Workaround yum error : [Errno 256] No more mirrors to try."
+	ssh_server systemctl start nfs-mountd.service
+	LN
+
 	#	Si depuis la création du master le dépôt par défaut a changé, permet
 	#	de basculer sur le bon dépôt.
 	ssh_server ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"

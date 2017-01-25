@@ -263,12 +263,12 @@ function start_grid_installation
 {
 	line_separator
 	info "Start grid installation (~17mn)."
-	exec_cmd -c "ssh -t grid@${node_names[0]}					\
-				\"LANG=C /mnt/oracle_install/grid/runInstaller	\
-						-silent									\
-						-showProgress							\
-						-waitforcompletion						\
-						-responseFile /home/grid/grid_$db.rsp\""
+	add_dynamic_cmd_param "\"LANG=C /mnt/oracle_install/grid/runInstaller"
+	add_dynamic_cmd_param "      -silent"
+	add_dynamic_cmd_param "      -showProgress"
+	add_dynamic_cmd_param "      -waitforcompletion"
+	add_dynamic_cmd_param "      -responseFile /home/grid/grid_$db.rsp\""
+	exec_dynamic_cmd -c "ssh -t grid@${node_names[0]}"
 	if [ $? -gt 250 ]
 	then
 		error "To check errors :"
@@ -301,8 +301,8 @@ function print_manual_workaround
 	info "Manual workaround"
 	info "> ssh root@${node_names[$idxnode]}"
 	info "> $ORACLE_HOME/root.sh"
-	info "if log ok : ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
-	info "if log ko : reboot servers, wait crs up and"
+	info "log $OK : ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
+	info "log $KO : reboot servers, wait crs up and"
 	info "$ ./install_grid.sh -db=$db -skip_grid_install"
 	LN
 }
@@ -508,7 +508,7 @@ fi
 
 [ $rsp_file_only == yes ] && exit 0	# Ne fait pas l'installation.
 
-~/plescripts/shell/wait_server ${node_names[0]}
+exec_cmd wait_server ${node_names[0]}
 
 stats_tt start grid_installation
 

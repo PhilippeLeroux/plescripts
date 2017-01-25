@@ -9,13 +9,10 @@ typeset -r db_type=$1
 
 fake_exec_cmd cd ~/plescripts/oracle_preinstall
 cd ~/plescripts/oracle_preinstall
+LN
 
-#	Le problème de lecture du point de montage NFS est revenu.
-info "Workaround yum repository errors :"
-exec_cmd "umount /mnt$infra_olinux_repository_path"
-timing 5
-exec_cmd "mount /mnt$infra_olinux_repository_path"
-timing 5
+info "Workaround yum error : [Errno 256] No more mirrors to try."
+exec_cmd systemctl start nfs-mountd.service
 LN
 exec_cmd "~/plescripts/yum/clean_cache.sh"
 LN

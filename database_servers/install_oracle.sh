@@ -158,12 +158,12 @@ function start_oracle_installation
 	line_separator
 	info "Start Oracle installation (~30mn)"
 	info "Log here : $ORA_INVENTORY/logs"
-	exec_cmd -c "ssh oracle@${node_names[0]}						\
-				 \"LANG=C /mnt/oracle_install/database/runInstaller	\
-					-silent											\
-					-showProgress									\
-					-waitforcompletion								\
-					-responseFile /home/oracle/oracle_$db.rsp\""
+	add_dynamic_cmd_param "\"LANG=C /mnt/oracle_install/database/runInstaller"
+	add_dynamic_cmd_param "      -silent"
+	add_dynamic_cmd_param "      -showProgress"
+	add_dynamic_cmd_param "      -waitforcompletion"
+	add_dynamic_cmd_param "      -responseFile /home/oracle/oracle_$db.rsp\""
+	exec_dynamic_cmd -c "ssh oracle@${node_names[0]}"
 	ret=$?
 	LN
 	[ $ret -gt 250 ] && exit 1
@@ -217,7 +217,7 @@ create_response_file
 
 [ $action == config ] && exit 0	# Pas d'installation.
 
-~/plescripts/shell/wait_server ${node_names[0]}
+exec_cmd wait_server ${node_names[0]}
 
 stats_tt start oracle_installation
 
