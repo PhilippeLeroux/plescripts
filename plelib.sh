@@ -826,7 +826,7 @@ function exec_dynamic_cmd
 	fake_exec_cmd "$(printf "%-${l}s%s\n" "$cmd_name" "\\\\")"
 
 	#	Affiche les paramètres de la commande :
-	for i in $( seq 0 $(( ${#ple_dyn_param_cmd[@]} - 1 )) )
+	for (( i=0; i < ${#ple_dyn_param_cmd[@]}; i++ ))
 	do
 		[ $i -ne 0 ] && info -f "\\\\"	# Affiche \ à la fin de la ligne précédente.
 		info -f -n "$(printf "%${ple_param_margin}s%-${ple_dyn_param_max_len}s" " " "${ple_dyn_param_cmd[$i]}")"
