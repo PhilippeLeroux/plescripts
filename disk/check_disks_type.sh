@@ -46,18 +46,25 @@ do
 		if [ $nb_part -ne 0 ]
 		then
 			echo ", partitions :"
-			for ipart in $( seq 1 $nb_part )
+			for (( ipart=1; ipart <= nb_part; ipart++ ))
 			do
 				part_name=${disk}$ipart
 				part_type="$(disk_type $part_name)"
 				info -n "	-$part_name type $part_type"
-				if [ "$part_type" == oracleasm ]
-				then
-					desc=$(oracleasm querydisk $part_name)
-					info -f " : ${desc##* }"
-				else
-					LN
-				fi
+				case "$part_type" in
+					oracleasm)
+						desc=$(oracleasm querydisk $part_name)
+						info -f " : ${desc##* }"
+						;;
+					LVM2_member)
+						LN
+						info lsblk $part_name 
+						lsblk $part_name | sed "s/^/	/g"
+						;;
+					*)
+						LN
+						;;
+				esac
 			done
 		else
 			LN
