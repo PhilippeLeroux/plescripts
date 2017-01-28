@@ -1,17 +1,15 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/disklib.sh
 . ~/plescripts/global.cfg
-
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage="Usage : $ME"
 
-[ $USER != root ] && error "Only root can execute this script" && exit 1
+must_be_user root
 
 while [ $# -ne 0 ]
 do
@@ -58,8 +56,8 @@ do
 						;;
 					LVM2_member)
 						LN
-						info lsblk $part_name 
-						lsblk $part_name | sed "s/^/	/g"
+						info "\tlsblk $part_name"
+						lsblk $part_name | sed "s/^/\t\t/g"
 						;;
 					*)
 						LN
@@ -68,6 +66,12 @@ do
 			done
 		else
 			LN
+			case "$part_type" in
+				LVM2_member)
+					info "\tlsblk $disk"
+					lsblk $disk | sed "s/^/\t\t/g"
+					;;
+			esac
 		fi
 	fi
 	LN
