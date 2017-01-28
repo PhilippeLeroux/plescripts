@@ -11,13 +11,51 @@ typeset -r str_usage=\
 
 script_banner $ME $*
 
-[[ $# -eq 0 ]] && [[ -v ID_DB ]] && server=$ID_DB || server=$1
+typeset server=undef
+typeset error_on_poweroff=no
 
-if [ x"$server" == x ]
-then
-	error "$str_usage"
-	exit 1
-fi
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-server=*)
+			server=${1##*=}
+			shift
+			;;
+
+		-error_on_poweroff)
+			error_on_poweroff=yes
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			if [ $server == undef ]
+			then
+				server=$1
+				shift
+			else
+				error "Arg '$1' invalid."
+				LN
+				info "$str_usage"
+				exit 1
+			fi
+			;;
+	esac
+done
+
+[[ "$server" == undef && -v ID_DB ]] && server=$ID_DB || true
+
+exit_if_param_undef server	"$str_usage"
 
 typeset	-a	running_vm_list
 
@@ -59,8 +97,16 @@ then
 	fi
 fi
 
-exec_cmd "stop_vm -server=$server"
-LN
+case $error_on_poweroff in
+	no)
+		exec_cmd "stop_vm -server=$server"
+		LN
+		;;
+	yes)
+		exec_cmd "stop_vm -server=$server -error_on_poweroff"
+		LN
+		;;
+esac
 
 exec_cmd "start_vm $server -wait_os=no"
 LN

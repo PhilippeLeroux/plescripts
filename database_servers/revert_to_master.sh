@@ -123,7 +123,7 @@ exec_cmd "systemctl restart NetworkManager"
 LN
 
 line_separator
-info "Run ./clean_up_infra.sh -db=<ID> -keep_vm -keep_cfg_files from the virtual-host server before to start a new installation."
+info "Run ./cleanup_infra.sh -db=<ID> -keep_vm -keep_cfg_files from the virtual-host server before to start a new installation."
 LN
 
 if [ $EXEC_CMD_ACTION == NOP ]

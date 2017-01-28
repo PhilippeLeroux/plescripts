@@ -17,10 +17,10 @@ typeset		luns_hosted_by=san
 
 typeset -r	str_usage=\
 "Usage : $ME
-	-db=id
+	-db=name
 	[-vbox]          Utiliser VBox pour gérer les LUNs.
 	[-db_size_gb=$db_size_gb] Taille de la base.
-	[-standby=id]    Permet de créer une standby.
+	[-standby=name]  Permet de créer une standby.
 	[-max_nodes=#]   Pour un RAC préciser le nombre de nœuds.
 	[others]         Transmis à create_db.sh
 "
@@ -78,12 +78,14 @@ script_start
 typeset	vmGroup
 [ $standby != undef ] && vmGroup="/DG $(initcap $db) et $(initcap $standby)"
 
-function configure_server
+#	$1 db name
+#	Create server(s)
+#	Install grid
+#	Install oracle
+function create_database_server
 {
-	typeset -r db=$1
-
 	exec_cmd ./define_new_server.sh							\
-							-db=$db							\
+							-db=$1							\
 							-size_dg_gb=$db_size_gb			\
 							-max_nodes=$max_nodes			\
 							-luns_hosted_by=$luns_hosted_by
@@ -91,48 +93,74 @@ function configure_server
 
 	for inode in $( seq $max_nodes )
 	do
-		exec_cmd ./clone_master.sh -db=$db -node=$inode -vmGroup=\"$vmGroup\"
+		exec_cmd ./clone_master.sh -db=$1 -node=$inode -vmGroup=\"$vmGroup\"
 		LN
 	done
 
-	exec_cmd ./install_grid.sh -db=$db
+	exec_cmd ./install_grid.sh -db=$1
 	LN
 
-	exec_cmd ./install_oracle.sh -db=$db
+	exec_cmd ./install_oracle.sh -db=$1
 	LN
 }
 
-info "Validate params : $@"
-exec_cmd -c "~/plescripts/db/create_db.sh -validate_params -y -db=$db $@"
-if [ $? -ne 0 ]
-then
+#	Create standby server(s)
+#	Install grid
+#	Install oracle
+#	Create dataguard
+function create_standby_database_server
+{
+	create_database_server $standby
+
+	add_dynamic_cmd_param "-user1=oracle"
+	add_dynamic_cmd_param "-server1=srv${db}01"
+	add_dynamic_cmd_param "-server2=srv${standby}01"
+	exec_dynamic_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh"
 	LN
-	error "Invalid parameter !"
+
+	add_dynamic_cmd_param "\". .bash_profile;"
+	add_dynamic_cmd_param "~/plescripts/db/stby/create_dataguard.sh"
+	add_dynamic_cmd_param "    -standby=$standby"
+	add_dynamic_cmd_param "    -standby_host=srv${standby}01\""
+	exec_dynamic_cmd "ssh -t -t oracle@srv${db}01"
+	LN
+}
+
+#	exit 1 if parameters "$@" invalides
+function validate_params
+{
+	exec_cmd -c "~/plescripts/db/create_db.sh -validate_params -y -db=$db $@"
+	if [ $? -ne 0 ]
+	then
+		LN
+		error "Invalid parameter !"
+		LN
+		info "$str_usage"
+		LN
+		exit 1
+	fi
+	LN
+}
+
+if [ "$db" == "$standby" ]
+then
+	error "db $db == standby $standby"
 	LN
 	info "$str_usage"
 	LN
 	exit 1
 fi
+
+validate_params "$@"
+
+create_database_server $db
+
+line_separator
+add_dynamic_cmd_param "     \". .bash_profile;"
+add_dynamic_cmd_param "     ~/plescripts/db/create_db.sh -y -db=$db $@\""
+exec_dynamic_cmd "ssh -t -t oracle@srv${db}01"
 LN
 
-configure_server $db
-
-exec_cmd "ssh -t -t oracle@srv${db}01 \". .profile; ~/plescripts/db/create_db.sh -y -db=$db $@\""
-LN
-
-if [ $standby != undef ]
-then
-	configure_server $standby
-
-	exec_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh	\
-				-user1=oracle -server1=srv${db}01 -server2=srv${standby}01"
-	LN
-
-	exec_cmd "ssh -t -t oracle@srv${db}01								\
-			\". .profile;												\
-				~/plescripts/db/stby/create_dataguard.sh				\
-					-standby=$standby -standby_host=srv${standby}01\""
-	LN
-fi
+[ $standby != undef ] && create_standby_database_server || true
 
 script_stop $ME $db

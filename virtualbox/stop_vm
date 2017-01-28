@@ -11,6 +11,7 @@ typeset -r str_usage=\
 	-server=<nom de la VM> si omis essait la variable ID_DB
 	[-wait_os=yes] : no n'aattend pas que l'OS soit stoppé avant de rendre la main.
 	[-reboot_vbox] : reboot tous les composants de vbox.
+	[-error_on_poweroff] : si un poweroff est nécessaire retourn 1
 "
 
 script_banner $ME $@
@@ -18,13 +19,13 @@ script_banner $ME $@
 typeset server=undef
 typeset	wait_os=yes
 typeset reboot_vbox=no
+typeset error_on_poweroff=no
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -40,6 +41,11 @@ do
 
 		-reboot_vbox)
 			reboot_vbox=yes
+			shift
+			;;
+
+		-error_on_poweroff)
+			error_on_poweroff=yes
 			shift
 			;;
 
@@ -74,13 +80,15 @@ function wait_os_until_stopped
 	typeset	-ri	wait_max_secs=120
 	typeset	-i	secs=0
 
+	typeset tod_color
+
 	hide_cursor
 	info -n "Server $os_name stopping "
 	while [ 0 -eq 0 ]
 	do
 		VBoxManage list runningvms | grep -q $os_name
 		[ $? -eq 1 ] && LN && break
-		info -f -n "."
+		info -f -n "${tod_color}.${NORM}"
 		if [ $secs -eq $wait_max_secs ]
 		then
 			LN
@@ -90,6 +98,16 @@ function wait_os_until_stopped
 		elif [[ $secs -ne 0 && $(( secs % 10 )) -eq 0 ]]
 		then
 			info -f -n "${secs}s"
+			if [[ $secs -ge 30 && $secs -lt 60 ]]
+			then
+				tod_color=$PINK
+			elif [[ $secs -ge 60 && $sec -lt 90 ]]
+			then
+				tod_color=$YELLOW
+			elif [[ $sec -ge 90 ]]
+			then
+				tod_color=$RED
+			fi
 		fi
 		sleep 1
 		secs=secs+1
@@ -129,13 +147,18 @@ do
 		error "Failed to stop $vm"
 		LN
 
-		line_separator
-		info "Poweroff : $vm"
-		exec_cmd -c "VBoxManage controlvm $vm poweroff"
-		if [ $? -ne 0 ]
+		if [ $error_on_poweroff == yes ]
 		then
-			error "Failed to poweroff $vm"
 			count_errors=count_errors+1
+		else
+			line_separator
+			info "Poweroff : $vm"
+			exec_cmd -c "VBoxManage controlvm $vm poweroff"
+			if [ $? -ne 0 ]
+			then
+				error "Failed to poweroff $vm"
+				count_errors=count_errors+1
+			fi
 		fi
 	else
 		vm_stopped_list+=( $vm )

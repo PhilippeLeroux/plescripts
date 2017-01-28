@@ -11,7 +11,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage="
 Usage : $ME
-	-db=<str>
+	-db=name
 	[-keep_vm]         keep VMs.
 	[-keep_cfg_files]  keep configuration files.
 "
@@ -83,6 +83,11 @@ then
 			remove_from_known_hosts ${db}-scan
 		fi
 		[ $delete_vms == yes ] && exec_cmd rm -rf \"$vm_path/$cfg_server_name\"
+		LN
+		info "Clearing arp cache."
+		#	Ne pas utiliser arp -d sinon le cache des autres serveurs n'est pas mis
+		#	à jour.
+		exec_cmd sudo ip -s -s neigh flush all
 	done
 fi
 LN
@@ -115,6 +120,6 @@ then
 	LN
 fi
 
-info "Before to create a server with same name execute :"
+info "To flush network :"
 info "$ ~/plescripts/virtualbox/restart_vboxdrv.sh"
 LN

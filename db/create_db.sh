@@ -495,7 +495,7 @@ function update_rac_oratab
 #	Mon glogin fait planter la création de la PDB.
 function remove_glogin
 {
-	line_separator
+	LN
 	info "Remove glogin.sql"
 	execute_on_all_nodes "rm -f \$ORACLE_HOME/sqlplus/admin/glogin.sql"
 	LN

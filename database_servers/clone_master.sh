@@ -11,9 +11,9 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<str>            Identifiant de la base.
+	-db=name             Identifiant de la base.
 	[-vmGroup=name]      Nom du groupe ou doit être enregistré la VM.
-	[-node=<#>]          N° du nœud si base de type RAC.
+	[-node=#]            N° du nœud si base de type RAC.
 
 Debug flag :
 	[-start_server_only] Le serveur est déjà cloné, uniquement le démarrer.
@@ -188,11 +188,10 @@ function reboot_server
 	typeset -r server=$1
 
 	info "Reboot server $server..."
-	exec_cmd "$vm_scripts_path/reboot_vm $server"
+	exec_cmd "$vm_scripts_path/reboot_vm $server -error_on_poweroff"
 	LN
 
 	loop_wait_server $server
-	LN
 }
 
 function configure_ifaces_hostname_and_reboot
@@ -202,8 +201,18 @@ function configure_ifaces_hostname_and_reboot
 															-db=$db -node=$node"
 	LN
 
-	# Le reboot est nécessaire à cause du changement du nom du serveur et de son IP.
+	# Le reboot est nécessaire à cause du changement du nom du serveur et de
+	# son IP.
 	reboot_server $server_name
+	LN
+
+	#	Pour que le serveur cloné et le serveur master n'aient pas la même
+	#	HWaddress.
+	info "Clearing arp cache."
+	#	Ne pas utiliser arp -d sinon le cache des autres serveurs n'est pas mis
+	#	à jour.
+	exec_cmd sudo ip -s -s neigh flush all
+	LN
 }
 
 #	Nomme l'initiator

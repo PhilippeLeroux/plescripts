@@ -12,7 +12,11 @@ cd ~/plescripts/oracle_preinstall
 LN
 
 info "Workaround yum error : [Errno 256] No more mirrors to try."
-exec_cmd systemctl start nfs-mountd.service
+exec_cmd systemctl restart nfs-mountd.service
+exec_cmd umount /mnt$infra_olinux_repository_path
+timing 2
+exec_cmd mount /mnt$infra_olinux_repository_path
+timing 2
 LN
 exec_cmd "~/plescripts/yum/clean_cache.sh"
 LN

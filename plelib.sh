@@ -256,7 +256,7 @@ function must_be_user
 #*> du script que si SCRIPT_BANNER == ENABLE
 function script_banner
 {
-	if [ "$SCRIPT_BANNER" = ENABLE ]
+	if [ "$SCRIPT_BANNER" == ENABLE ]
 	then
 		info "Running : ${@/$HOME/~}"
 		LN
@@ -516,9 +516,9 @@ function fake_exec_cmd
 	esac
 }
 
-#*< Extrait la commande de "$@"
-#*< Si la première commande est ssh alors recherche la commande exécutée par ssh
-function get_cmd_name
+#*< Extrait la commande de "$@", si une des commandes su, sudo ou ssh sont utilisées
+#*< leurs noms apparaitra.
+function shorten_command
 {
 	typeset	-a	argv
 	read -a argv <<<"$@"
@@ -617,7 +617,7 @@ function get_cmd_name
 					;;
 			esac
 
-			echo "$(get_cmd_name "$new_argv") (ssh)"
+			echo "$(shorten_command "$new_argv") (ssh)"
 			return 0
 			;;
 	esac
@@ -641,14 +641,14 @@ function get_cmd_name
 #*> Parameters:
 #*>		-f  EXEC_CMD_ACTION is ignored.
 #*>		-c  continue on error.
-#*>		-ci like -c but not print error message. BUG : ne fonctionne plus
+#*>		-ci like -c.
 #*>		-h  hide command except on error.
-#*>		-hf hide command even on error.  BUG : ne fonctionne plus
+#*>		-hf like -h.
 #*>
 #*> Show execution time after PLE_SHOW_EXECUTION_TIME_AFTER seconds
 #*>
 #*> Les paramètres -ci et -hf ne sont plus pris en compte (je ne sais pas pourquoi)
-#*> mais ils sont encore utilisés dans plusieurs scripts. Leur effet étaient
+#*> mais ils sont encore utilisés dans plusieurs scripts. Leurs effets étaient
 #*> uniquement sur l'affichage.
 #*> En regardant l'historique git, les actions de ces paramètres ont disparus il
 #*> 4 mois (date du reset du repository) donc je ne sais pas vraiment ce qui
@@ -680,9 +680,9 @@ function exec_cmd
 				continue_on_error=YES
 				;;
 
-			"-ci")			# N'affiche pas de message si la commande échoue
+			"-ci")			# NOP : n'est plus utilisé.
 				shift
-				continue_on_error=YES_AND_HIDE_MESSAGE
+				continue_on_error=YES
 				;;
 
 			"-h")
@@ -690,30 +690,30 @@ function exec_cmd
 				hide_command=YES
 				;;
 
-			"-hf")
+			"-hf")			# NOP : n'est plus utilisé.
 				shift
-				hide_command=YES_EVEN_ON_ERROR
+				hide_command=YES
 				;;
 
 			*)
-				break
+				break		# exit while.
 				;;
 		esac
 	done
 
 	typeset -i	eval_return
 
-	typeset		simplify_cmd=$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:])
-	simplify_cmd=${simplify_cmd/$HOME/~}
+	typeset		simplified_cmd=$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:])
+	simplified_cmd=${simplified_cmd/$HOME/~}
 
 	case $EXEC_CMD_ACTION in
 		NOP)
-			my_echo "${YELLOW}" " nop > " "$simplify_cmd"
+			my_echo "${YELLOW}" " nop > " "$simplified_cmd"
 			;;
 
 		EXEC)
 			[ $force == YES ] && typeset -r COL=$RED || typeset -r COL=$YELLOW
-			[ $hide_command == NO ] && my_echo "$COL" "$(date +"%Hh%M")> " "$simplify_cmd"
+			[ $hide_command == NO ] && my_echo "$COL" "$(date +"%Hh%M")> " "$simplified_cmd" || true
 
 			typeset -ri eval_start_at=$SECONDS
 			if [ x"$PLELIB_LOG_FILE" == x ]
@@ -724,35 +724,38 @@ function exec_cmd
 				eval "$*" 2>&1 | tee -a $PLELIB_LOG_FILE
 				eval_return=${PIPESTATUS[0]}
 
-				#	BUG workaround :
-				[ x"$eval_return" == x ] &&	eval_return=0
+				#	ksh workaround, mais ksh n'est normallement plus utilisé :
+				[ x"$eval_return" == x ] &&	eval_return=0 || true
 			fi
 
-			typeset -r simplified_user_cmd=$(get_cmd_name "$@")
+			typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
 
-			if [ $hide_command == NO ]
+			typeset -ri eval_duration=$(( SECONDS - eval_start_at ))
+			if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 			then
-				typeset -ri eval_duration=$(( SECONDS - eval_start_at ))
-				if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
-				then
-					my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$simplified_user_cmd running time : $(fmt_seconds $eval_duration)"
-				fi
+				my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$shortened_cmd running time : $(fmt_seconds $eval_duration)"
 			fi
 
 			if [ $eval_return -ne 0 ]
 			then
-				[ $hide_command == YES ] && my_echo "$COL" "$(date +"%Hh%M")> " "$@"
-
-				if [ $continue_on_error == NO ]
+				if [[ $eval_duration -lt $PLE_SHOW_EXECUTION_TIME_AFTER && $hide_command == YES ]]
 				then
-					error "$simplified_user_cmd return $eval_return"
-				else
-					[ $continue_on_error == YES ] && warning "$simplified_user_cmd return $eval_return, continue..."
+					# Si la commande a durée plus de PLE_SHOW_EXECUTION_TIME_AFTER
+					# elle a été affichée, sinon elle ne l'est pas. Sur une erreur
+					# on affiche la commande.
+					my_echo "$COL" "$(date +"%Hh%M")> " "$shortened_cmd" || true
 				fi
 
-				[ $force == YES ] && EXEC_CMD_ACTION=NOP
-
-				[ $continue_on_error == NO ] && exit 1
+				case "$continue_on_error" in
+					NO)
+						[ $force == YES ] && EXEC_CMD_ACTION=NOP || true # Utile, si le script appelant continue sur une erreur.
+						error "$shortened_cmd return $eval_return"
+						exit 1
+						;;
+					YES)
+						warning "$shortened_cmd return $eval_return, continue..."
+						;;
+				esac
 			fi
 			;;
 
@@ -762,7 +765,7 @@ function exec_cmd
 			;;
 	esac
 
-	[ $force == YES ] && EXEC_CMD_ACTION=NOP
+	[ $force == YES ] && EXEC_CMD_ACTION=NOP || true
 
 	return $eval_return
 }
@@ -786,8 +789,8 @@ function add_dynamic_cmd_param
 }
 
 #*> run command '$@' with parameters define by add_dynamic_cmd_param
-#*> if first parameter is -confirm a prompt is printed to confirm or not execution.
-#*> For other parameters see exec_cmd
+#*>		[-confirm] a prompt is printed to confirm or not execution.
+#*>		[-c] continue on error.
 function exec_dynamic_cmd
 {
 	typeset confirm=no
@@ -830,22 +833,14 @@ function exec_dynamic_cmd
 	done
 	LN
 
-	[ $confirm == yes ] && confirm_or_exit "Continue" || true
-
 	if [ $EXEC_CMD_ACTION == EXEC ]
 	then
-		#	Avec la paramètre -h exec_cmd n'affiche pas le temps d'exécution.
-		typeset	-ri	exec_cmd_start_at=$SECONDS
-		exec_cmd $farg -hf $cmd_name "${ple_dyn_param_cmd[@]}"
-		typeset	-ri	exec_cmd_return=$?
+		[ $confirm == yes ] && confirm_or_exit "Continue" || true
 
-		typeset	-ri	exec_cmd_duration=$(( SECONDS - exec_cmd_start_at ))
-		if [ $exec_cmd_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
-		then
-			typeset cmd=$(get_cmd_name $cmd_name ${ple_dyn_param_cmd[@]})
-			my_echo "${YELLOW}" "$(date +"%Hh%M")< " "${cmd} running time : $(fmt_seconds $exec_cmd_duration)"
-		fi
+		exec_cmd $farg -h $cmd_name "${ple_dyn_param_cmd[@]}"
+		typeset	-ri	exec_cmd_return=$?
 	else
+		[ $confirm == yes ] && info "Continue yes (parameter -emul set)" || true
 		typeset	-ri	exec_cmd_return=0
 	fi
 

@@ -12,14 +12,14 @@ typeset -r ME=$0
 
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<identifiant>     identifiant de la base.
+	-db=name              nom de la base.
 	[-luns_hosted_by=$disks_hosted_by] san|vbox
 	[-max_nodes=1]        nombre de nœuds pour un RAC.
 	[-size_dg_gb=$default_size_dg_gb]      taille du DG ou du FS.
 	[-size_lun_gb=$default_size_lun_gb]      taille des LUNs si utilisation d'ASM.
 	[-no_dns_test]        ne pas tester si les IPs sont utilisées.
 	[-usefs]              ne pas utiliser ASM mais un FS.
-	[-ip_node=<node>]     nœud IP, sinon prend la première IP disponible.
+	[-ip_node=node]       nœud IP, sinon prend la première IP disponible.
 "
 script_banner $ME $*
 

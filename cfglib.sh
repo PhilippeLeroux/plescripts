@@ -6,9 +6,7 @@ typeset -r cfg_path_prefix=~/plescripts/database_servers
 #*> $2 use_return_code : return 1 instead of exit 1
 function cfg_exists
 {
-	typeset	-r	db=$1
-
-	info -n "Test if configuration file for $db exist : "
+	info -n "Configuration for $1 exist : "
 	if [ ! -d $cfg_path_prefix/$(to_lower $1) ]
 	then
 		info -f "[$KO]"
