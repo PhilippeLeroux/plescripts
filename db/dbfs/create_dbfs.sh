@@ -24,7 +24,7 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
-	-service=$service
+	[-service=$service]
 	[-account_name=$account_name]
 	[-account_password=$account_password]
 	[-wallet_path=$wallet_path]
@@ -193,10 +193,11 @@ function copy_store_if_not_cfs
 {
 	line_separator
 	info "Test if wallet on CFS."
-	exec_cmd "touch $wallet_path/is_cfs"
-	exec_cmd -c ssh ${gi_node_list[0]} test -f $wallet_path/is_cfg
+	typeset -r test_file=$wallet_path/is_cfs
+	exec_cmd "touch $test_file"
+	exec_cmd -c ssh ${gi_node_list[0]} test -f $test_file
 	typeset is_cfs=$?
-	exec_cmd "rm $wallet_path/is_cfs"
+	exec_cmd "rm $test_file"
 	if [ $is_cfs -eq 0 ]
 	then
 		info "CFS : nothing to do."

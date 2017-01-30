@@ -2,25 +2,30 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
-EXEC_CMD_ACTION=EXEC
-
 . ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-typeset -r str_usage=\
-"Usage : $ME
-	-db=name              nom de la base.
-	[-luns_hosted_by=$disks_hosted_by] san|vbox
-	[-max_nodes=1]        nombre de nœuds pour un RAC.
-	[-size_dg_gb=$default_size_dg_gb]      taille du DG ou du FS.
-	[-size_lun_gb=$default_size_lun_gb]      taille des LUNs si utilisation d'ASM.
-	[-no_dns_test]        ne pas tester si les IPs sont utilisées.
-	[-usefs]              ne pas utiliser ASM mais un FS.
-	[-ip_node=node]       nœud IP, sinon prend la première IP disponible.
-"
+# OH : ORACLE_HOME
+typeset OH_FS=$rac_orcl_fs
+[ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
+
+add_usage "-db=name"				"Database name."
+add_usage "[-max_nodes=1]"			"RAC #nodes"
+add_usage "[-OH_FS=$OH_FS]"			"RAC : ORACLE_HOME FS : ocfs2|$rdbms_fs_type."
+add_usage "[-luns_hosted_by=$disks_hosted_by]"	"san|vbox"
+add_usage "[-size_dg_gb=$default_size_dg_gb]"	"DG size"
+add_usage "[-size_lun_gb=$default_size_lun_gb]" "LUNs size"
+add_usage "[-no_dns_test]"			"ne pas tester si les IPs sont utilisées."
+add_usage "[-usefs]"				"ne pas utiliser ASM mais un FS."
+add_usage "[-ip_node=node]"			"nœud IP, sinon prend la première IP disponible."
+
+typeset -r str_usage="Usage : $ME\n$(print_usage)"
+
 script_banner $ME $*
 
 typeset		db=undef
@@ -78,6 +83,11 @@ do
 			shift
 			;;
 
+		-OH_FS=*)
+			OH_FS=$(to_lower ${1##*=})
+			shift
+			;;
+
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -99,6 +109,15 @@ exit_if_param_undef db	"$str_usage"
 [ $max_nodes -gt 1 ] && [ $db_type != rac ] && db_type=rac
 
 [ $db_type == rac ] && [ $usefs == yes ] && error "RAC on FS not supported." && exit 1
+
+exit_if_param_invalid OH_FS "ocfs2 $rdbms_fs_type" "$str_usage"
+
+if [[ $OH_FS != $rdbms_fs_type && $max_nodes -eq 1 ]]
+then
+	error  "ORACLE_HOME on $OH_FS only for RAC."
+	LN
+	exit 1
+fi
 
 typeset -r	cfg_path=$cfg_path_prefix/$db
 
@@ -140,6 +159,7 @@ function normalyze_node
 	test_ip_node_used $ip_node
 
 	server_private_ip=$if_iscsi_network.$ip_node
+	rac_network=${if_rac_network}.${ip_node}
 	ip_node=ip_node+1
 
 	if [ $db_type == rac ]
@@ -148,10 +168,11 @@ function normalyze_node
 		server_vip=$if_pub_network.$ip_node
 	else
 		server_vip=undef
+		rac_network=undef
 	fi
 	ip_node=ip_node+1
 
-	echo "${db_type}:${server_name}:${server_ip}:${server_name}-vip:${server_vip}:${server_name}-priv:${server_private_ip}:${luns_hosted_by}" > $cfg_path/node${num_node}
+	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}" > $cfg_path/node${num_node}
 }
 
 function normalyze_scan
@@ -256,5 +277,4 @@ fi
 
 ~/plescripts/shell/show_info_server -db=$db
 
-info -n "Run : ./clone_master.sh -db=$db"
-[ $db_type == rac ] && info -f " -node=1" || LN
+info "Run : ./create_database_servers.sh -db=$db"

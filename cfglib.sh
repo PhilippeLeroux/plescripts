@@ -33,17 +33,21 @@ function cfg_max_nodes
 #*>		- cfg_server_name		nom du serveur
 #*>		- cfg_server_ip			ip du serveur
 #*>		- cfg_server_vip		vip du serveur
+#*>		- cfg_rac_network		rac interco
 #*>		- cfg_iscsi_ip			ip des disques iscsi
 #*>		- cfg_luns_hosted_by	vbox|san
+#*>		- cfg_oracle_home		ocfs2|xfs
 function cfg_load_node_info
 {
 	typeset -r	db=$(to_lower $1)
 	typeset -ri nr_node=$2
 	typeset -r	cfg_file=$cfg_path_prefix/$db/node${nr_node}
 
-	#	cfg_uX champs non utilisés
-	IFS=: read	cfg_db_type cfg_server_name cfg_server_ip cfg_u1 cfg_server_vip	\
-				cfg_u2 cfg_iscsi_ip cfg_luns_hosted_by							\
+	IFS=: read	cfg_db_type										\
+				cfg_server_name cfg_server_ip cfg_server_vip	\
+				cfg_rac_network cfg_iscsi_ip					\
+				cfg_luns_hosted_by								\
+				cfg_oracle_home									\
 		<$cfg_file
 }
 

@@ -3,14 +3,15 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<str> Nom de la base à supprimer.
-	-y        No confirmation.
+	-db=name  Nom de la base à supprimer.
+	[-y]      No confirmation.
 "
 
 typeset db=undef
@@ -64,15 +65,31 @@ function error_msg_on_script_failed
 }
 
 line_separator
+while read res_name
+do
+	[ x"$res_name" == x ] && continue || true
+
+	pdbName=$(cut -d. -f2<<<$res_name)
+	info "Drop dbfs for pdb $pdbName"
+	exec_cmd -c  "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdbName"
+	LN
+done<<<"$(crsctl stat res -t | grep -E ".*\.dbfs$")"
+
+line_separator
 info "Delete services :"
 exec_cmd "~/plescripts/db/drop_all_services.sh -db=$db"
 LN
 
+# Les problèmes de suppression d'une base étaient du à la désynchronisation NTP,
+# ces problèmes ne devraient plus se produire, cf readme.md du répertoire ntp.
+#
+# Avec OCFS2 la suppression peut échouée ==> FS corrompu ! (à cause NTP je pense)
+# Il vaut mieux réparer le FS.
+trap '[ "$?" -ne 0 ] && error_msg_on_script_failed' EXIT
+
 line_separator
 info "Delete database :"
 LN
-
-trap '[ "$?" -ne 0 ] && error_msg_on_script_failed' EXIT
 
 add_dynamic_cmd_param "-deleteDatabase"
 add_dynamic_cmd_param "    -sourcedb       $db"

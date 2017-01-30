@@ -4,12 +4,12 @@
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
+. ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-. ~/plescripts/global.cfg
-
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -db=<str>"
+
+typeset -r str_usage="Usage : $ME -db=name"
 
 typeset db=undef
 
@@ -31,7 +31,7 @@ do
 done
 
 [[ $db == undef && x"$ID_DB" == x ]] && db=$ID_DB
-exit_if_param_undef db
+exit_if_param_undef db "$str_usage"
 
 cfg_exists $db
 
@@ -45,6 +45,12 @@ function print_node # $1 #inode
 
 	case $cfg_db_type in
 		rac)
+			if [ $inode -eq 1 ]
+			then
+				info "ORACLE_HOME FS : $cfg_oracle_home"
+				LN
+			fi
+
 			info "Node #$inode RAC : "
 			;;
 
@@ -57,7 +63,7 @@ function print_node # $1 #inode
 	if [ $cfg_db_type == rac ]
 	then
 		info "	VIP             ${cfg_server_name}-vip   : ${cfg_server_vip}"
-		info "	Interco RAC     ${cfg_server_name}-rac   : ${if_rac_network}.${cfg_server_ip##*.}"
+		info "	Interco RAC     ${cfg_server_name}-rac   : ${cfg_rac_network}"
 	fi
 
 	case $cfg_luns_hosted_by in

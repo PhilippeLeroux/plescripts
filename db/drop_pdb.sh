@@ -142,7 +142,7 @@ function stop_and_remove_dbfs
 		return 0 # le service n'existe pas
 	fi
 
-	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb"
+	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb -skip_drop_user"
 }
 
 exit_if_ORACLE_SID_not_defined

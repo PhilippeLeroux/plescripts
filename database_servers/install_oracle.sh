@@ -202,7 +202,7 @@ if [ $max_nodes -gt 1 ]
 then
 	info "==> clusterNodes  = $clusterNodes"
 
-	if [ $rac_orcl_fs == ocfs2 ]
+	if [ $cfg_oracle_home == ocfs2 ]
 	then	#	oraInventory ne peut pas être sur un CFS.
 		ORA_INVENTORY=/$GRID_DISK/app/oraInventory
 	else

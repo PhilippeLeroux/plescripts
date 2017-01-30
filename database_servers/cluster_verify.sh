@@ -70,9 +70,8 @@ then
 	run_cluvfy "checks reachability between nodes" comp nodereach -n all
 	run_cluvfy "checks node connectivity" comp nodecon
 
-	if [ $rac_orcl_fs == ocfs2 ]
-	then	# BUG : testé sur ORACLE_HOME est sur un FS en cluster ou non
-			# En testant dans dans fstab si rdbms_fs_type est utilisé ?
+	if [ $cfg_oracle_home == ocfs2 ]
+	then
 		run_cluvfy "checks CFS integrity" comp cfs -n all -f /$ORCL_DISK
 	fi
 

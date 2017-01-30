@@ -3,6 +3,7 @@
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/stats/statslib.sh
@@ -22,7 +23,7 @@ typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=$(to_mb $shm_for_db)
 [ $totalMemory -eq 0 ] && totalMemory=640
-typeset		shared_pool_size=default
+typeset		shared_pool_size="256M"
 typeset		data=DATA
 typeset		fra=FRA
 typeset		templateName=General_Purpose.dbc
@@ -36,68 +37,37 @@ typeset		policyManaged=no
 typeset		enable_flashback=yes
 typeset		backup=yes
 typeset		confirm="-confirm"
+typeset	-i	redoSize=64	# Unit Mb
 
 #	Permet au script database_severs/run_all.sh de valider les arguments.
 typeset		validate_params=no
 
 typeset		skip_db_create=no
 
-typeset	-a	parameter_desc_list
-typeset	-i	max_len_parameter_desc=0
-typeset	-a	parameter_help_list
-
-function add_help_param
-{
-	typeset	-r	parameter_desc="$1"
-	typeset	-ri	len=${#parameter_desc}
-
-	parameter_desc_list+=( $parameter_desc )
-	[ $len -gt $max_len_parameter_desc ] && max_len_parameter_desc=$len || true
-	if [ $# -eq 2 ]
-	then
-		parameter_help_list+=( "$2" )
-	else
-		parameter_help_list+=( "none" )
-	fi
-}
-
-function print_all_parameters
-{
-	for i in $( seq 0 $(( ${#parameter_desc_list[@]} - 1 )) )
-	do
-		printf "\t%-${max_len_parameter_desc}s" ${parameter_desc_list[$i]}
-		if [ "${parameter_help_list[$i]}" == "none" ]
-		then
-			echo
-		else
-			echo " ${parameter_help_list[$i]}"
-		fi
-	done
-}
-
-add_help_param "<-db=name>"								"Database name"
-add_help_param "[-lang=$lang]"							"Language"
-add_help_param "[-sysPassword=$sysPassword]"
-add_help_param "[-totalMemory=$totalMemory]"			"Unit Mb"
-add_help_param "[-shared_pool_size=<str>]"				"Préciser l'unité, par défaut 256M"
-add_help_param "[-cdb=$cdb]"							"yes|no (1)"
-add_help_param "[-pdb=name]"							"pdb name (2)"
-add_help_param "[-data=$data]"
-add_help_param "[-fra=$fra]"
-add_help_param "[-templateName=$templateName]"
-add_help_param "[-db_type=SINGLE|RAC|RACONENODE]"		"(3)"
-add_help_param "[-policyManaged]"						"Créer une base en 'Policy Managed' (4)"
-add_help_param "[-serverPoolName=name]"					"Nom du pool à utiliser. (5)"
-add_help_param "[-enable_flashback=$enable_flashback]"	"yes|no"
-add_help_param "[-no_backup]"							"Pas de backup après création de la base."
+add_usage "<-db=name>"								"Database name"
+add_usage "[-lang=$lang]"							"Language"
+add_usage "[-sysPassword=$sysPassword]"
+add_usage "[-totalMemory=$totalMemory]"				"Unit Mb"
+add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting."
+add_usage "[-cdb=$cdb]"								"yes|no (1)"
+add_usage "[-pdb=name]"								"pdb name (2)"
+add_usage "[-redoSize=$redoSize]"					"Redo size Mb."
+add_usage "[-data=$data]"
+add_usage "[-fra=$fra]"
+add_usage "[-templateName=$templateName]"
+add_usage "[-db_type=SINGLE|RAC|RACONENODE]"		"(3)"
+add_usage "[-policyManaged]"						"Créer une base en 'Policy Managed' (4)"
+add_usage "[-serverPoolName=name]"					"Nom du pool à utiliser. (5)"
+add_usage "[-enable_flashback=$enable_flashback]"	"yes|no"
+add_usage "[-no_backup]"							"Pas de backup après création de la base."
 
 typeset -r str_usage=\
 "Usage :
 $ME
-$(print_all_parameters)
+$(print_usage)
 
 \t1 : Si vaut yes et que -pdb n'est pas précisé alors pdb == pdb01
-\t    Le service de la pdb sera : pdb || db || 01
+\t    Les services de la pdb seront : pdb01_oci & pdb01_java
 \t    Pour ne pas créer de pdb utiliser -pdb=no
 
 \t2 : Si -pdb est précisé -cdb vaut automatiquement yes
@@ -141,6 +111,11 @@ do
 			db=$(to_upper ${1##*=})
 			lower_db=$(to_lower $db)
 			paramsql=param${db}.sql
+			shift
+			;;
+
+		-redoSize=*)
+			redoSize=${1##*=}
 			shift
 			;;
 
@@ -246,8 +221,6 @@ done
 
 typeset		usefs=no
 
-typeset -r	redoLogFileSizeMb=128
-
 #	============================================================================
 
 function make_dbca_args
@@ -304,7 +277,7 @@ function make_dbca_args
 
 	add_dynamic_cmd_param "-sysPassword    $sysPassword"
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
-	add_dynamic_cmd_param "-redoLogFileSize $redoLogFileSizeMb"
+	add_dynamic_cmd_param "-redoLogFileSize $redoSize"
 
 	add_dynamic_cmd_param "-totalMemory $totalMemory"
 	if [[ "$shm_for_db" != "0" && $totalMemory -gt $(to_mb $shm_for_db) ]]
@@ -320,11 +293,9 @@ function make_dbca_args
 			;;
 	esac
 
-	if [ $shared_pool_size == default ]
+	if [ "$shared_pool_size" != "0" ]
 	then
-		initParams="$initParams,shared_pool_size=256M"
-	else
-		[ $shared_pool_size != "0" ] && initParams="$initParams,shared_pool_size=$shared_pool_size"
+		initParams="$initParams,shared_pool_size=$shared_pool_size"
 	fi
 	add_dynamic_cmd_param "$initParams"
 }
@@ -444,10 +415,11 @@ function create_services_for_pdb
 	info "Create service for pdb $pdb"
 	case $db_type in
 		RAC)
+			info "Create services for RAC."
 			if [ $serverPoolName == "undef" ]
 			then
 				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh	\
-														-db=$db -pdb=$pdb"
+								-db=$db -pdb=$pdb"
 				LN
 			else
 				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh			\
@@ -457,12 +429,16 @@ function create_services_for_pdb
 			;;
 
 		RACONENODE)
-			info "Create service for RAC One Node"
+			info "Create services for RAC One Node."
 			typeset srv=$(mk_oci_service $pdb)
 			exec_cmd srvctl add service -db $db -service $srv -pdb $pdb
 			exec_cmd srvctl start service -db $db -service $srv
 			exec_cmd "~/plescripts/db/add_tns_alias.sh -service=$srv	\
-													-host_name=$(hostname -s)"
+											-host_name=$(hostname -s)"
+			LN
+			srv=$(mk_java_service $pdb)
+			exec_cmd srvctl add service -db $db -service $srv -pdb $pdb
+			exec_cmd srvctl start service -db $db -service $srv
 			LN
 			;;
 
@@ -471,7 +447,7 @@ function create_services_for_pdb
 			then
 				info "Create service for SINGLE database."
 				exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-														-db=$db -pdb=$pdb"
+											-db=$db -pdb=$pdb"
 				LN
 			else
 				warning "No services created for pdb, DIY"

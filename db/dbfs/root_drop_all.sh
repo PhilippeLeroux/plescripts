@@ -3,7 +3,6 @@
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
-. ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -12,21 +11,11 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage :
 $ME
-\t-db=name
-\t-pdb=name
-\t-service=auto     auto or service name
-\t-physical         for physical standby database.
-\t[-drop_wallet]    drop wallet store
 \t[-uninstall_fuse] uninstall fuse
 "
 
 script_banner $ME $*
 
-typeset	db=undef
-typeset	pdb=undef
-typeset	service=auto
-typeset	role=primary
-typeset drop_wallet=no
 typeset uninstall_fuse=no
 
 while [ $# -ne 0 ]
@@ -34,31 +23,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			shift
-			;;
-
-		-db=*)
-			db=${1##*=}
-			shift
-			;;
-
-		-pdb=*)
-			pdb=${1##*=}
-			shift
-			;;
-
-		-service=*)
-			service=${1##*=}
-			shift
-			;;
-
-		-physical)
-			role=physical
-			shift
-			;;
-
-		-drop_wallet)
-			drop_wallet=yes
 			shift
 			;;
 
@@ -82,26 +46,18 @@ do
 	esac
 done
 
-exit_if_param_undef db		"$str_usage"
-exit_if_param_undef pdb		"$str_usage"
-
 must_be_user root
 
-[ $service == auto ] && service=$(to_lower $(mk_oci_service $pdb)) || true
-
-exit_if_service_not_exists $db $service
-
-if [ $role == primary ]
+typeset -ri count_dbfs_res=$(crsctl stat res -t | grep -E ".*\.dbfs$" | wc -l)
+if [ $count_dbfs_res -ne 0 ]
 then
-	line_separator
-	exec_cmd -c "sudo -iu oracle plescripts/db/dbfs/drop_dbfs.sh	\
-						-db=$db -pdb=$pdb -drop_wallet=$drop_wallet"
+	error "$count_dbfs_res dbfs resources exists"
+	exec_cmd "crsctl stat res -t | grep -E '.*\.dbfs$'"
 	LN
+	info "Execute with oracle : drop_dbfs.sh"
+	LN
+	exit 1
 fi
-
-line_separator
-execute_on_all_nodes "rm -rf /mnt/$pdb"
-LN
 
 if [ $uninstall_fuse == yes ]
 then
@@ -124,9 +80,6 @@ then
 	LN
 fi
 
-line_separator
-execute_on_all_nodes "sed -i '/@$service/d' /etc/fstab"
-LN
 
 if [ $uninstall_fuse == yes ]
 then

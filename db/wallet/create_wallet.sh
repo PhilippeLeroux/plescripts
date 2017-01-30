@@ -49,7 +49,7 @@ done
 
 must_be_user oracle
 
-exit_if_param_undef wallet_path
+exit_if_param_undef wallet_path	"$str_usage"
 
 function create_wallet_store
 {

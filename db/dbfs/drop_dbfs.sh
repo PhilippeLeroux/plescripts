@@ -13,11 +13,13 @@ typeset db=undef
 typeset pdb=undef
 typeset drop_wallet=no
 typeset	wallet_path=$ORACLE_HOME/oracle/wallet
+typeset	drop_user=yes
 
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
+	[-skip_drop_user]	Utile si le pdb va être supprimé.
 	[-wallet_path=$wallet_path]
 	[-drop_wallet=$drop_wallet] yes|no
 "
@@ -37,6 +39,11 @@ do
 
 		-pdb=*)
 			pdb=${1##*=}
+			shift
+			;;
+
+		-skip_drop_user)
+			drop_user=no
 			shift
 			;;
 
@@ -97,7 +104,7 @@ LN
 exec_cmd -c  "crsctl delete res pdb.${pdb}.dbfs -f"
 LN
 
-if [ $role == primary ]
+if [[ $drop_user == yes && $role == primary ]]
 then
 	sqlplus -s $dbfs_user/$dbfs_password@$service<<-EOSQL
 	prompt drop filesystem DBFS $dbfs_name
@@ -147,13 +154,7 @@ fi
 
 if [ $drop_wallet == yes ]
 then
-	line_separator
-	execute_on_all_nodes_v2 'sed -i "/WALLET_LOCATION/d" $TNS_ADMIN/sqlnet.ora'
-	execute_on_all_nodes_v2 'sed -i "/SQLNET.WALLET_OVERRIDE/d" $TNS_ADMIN/sqlnet.ora'
-	LN
-
-	execute_on_all_nodes "rm -rf $wallet_path"
-	LN
+	exec_cmd "~/plescripts/db/wallet/drop_wallet.sh -wallet_path=$wallet_path"
 fi
 
 execute_on_all_nodes "rm -f $dbfs_cfg_file"
@@ -162,5 +163,6 @@ LN
 execute_on_all_nodes "sudo -iu grid rm /home/grid/mount-dbfs-$pdb"
 LN
 
-info "Entry to fstab must be removed with user root on all nodes."
+exec_cmd "su - root -c 'plescripts/db/dbfs/root_clean_mount_point.sh	\
+									-pdb=$pdb -service=$service'"
 LN

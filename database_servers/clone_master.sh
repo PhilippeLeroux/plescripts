@@ -310,7 +310,7 @@ function create_disks_for_oracle_and_grid_softwares
 
 	fi
 
-	if [[ $max_nodes -eq 1 || $rac_orcl_fs == default ]]
+	if [[ $max_nodes -eq 1 || $cfg_oracle_home == $rdbms_fs_type ]]
 	then
 		info "Create mount point /$ORCL_DISK for Oracle"
 		ssh_server	plescripts/disk/create_fs.sh		\

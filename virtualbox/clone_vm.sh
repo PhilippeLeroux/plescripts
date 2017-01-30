@@ -107,7 +107,7 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
 	exec_cmd VBoxManage modifyvm $vm_name --cpus $nr_cpus
 	exec_cmd "VBoxManage modifyvm $vm_name	\
-			--description \"$(~/plescripts/virtualbox/get_vm_description -db=$db)\""
+		--description \"$(~/plescripts/virtualbox/get_vm_description -db=$db)\""
 	LN
 
 	exec_cmd VBoxManage modifyvm "$vm_name" --hpet on
@@ -125,9 +125,9 @@ do
 							-fixed_size
 	LN
 
-	if [[ $cfg_db_type != rac || $rac_orcl_fs != ocfs2 ]]
-	then # Si utilisation de ocfs2 les disques sont crées après la création de
-		 # tous les serveurs.
+	if [[ $cfg_db_type != rac || $cfg_oracle_home != ocfs2 ]]
+	then	# Si utilisation de ocfs2 les disques sont crées après la création
+			# de tous les serveurs.
 		info "Create disk ${vm_name}_$ORCL_DISK for mount point /$ORCL_DISK for Oracle"
 		exec_cmd $vm_scripts_path/add_disk.sh								\
 								-vm_name="$vm_name"							\
@@ -144,7 +144,7 @@ do
 	LN
 done
 
-if [[ $cfg_db_type == rac && $rac_orcl_fs == ocfs2 ]]
+if [[ $cfg_db_type == rac && $cfg_oracle_home == ocfs2 ]]
 then # Avec ocfs2 le disque Oracle est partagé par tous les nœuds.
 	cfg_load_node_info $db 1
 

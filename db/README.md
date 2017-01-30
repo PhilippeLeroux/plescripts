@@ -42,11 +42,11 @@ Les serveurs doivent avoir été créés, instructions [ici](https://github.com/
 			   -templateName General_Purpose.dbc    \
 			   -createAsContainerDatabase true      \
 				   -numberOfPDBs     1              \
-				   -pdbName          daisy01        \
+				   -pdbName          pdb01          \
 				   -pdbAdminPassword Oracle12       \
 			   -sysPassword    Oracle12             \
 			   -systemPassword Oracle12             \
-			   -redoLogFileSize 512                 \
+			   -redoLogFileSize 128                 \
 			   -totalMemory 640                     \
 			   -initParams threaded_execution=true,nls_language=FRENCH,NLS_TERRITORY=FRANCE,shared_pool_size=256M
 	# Continue y/n ? y
@@ -59,17 +59,20 @@ Les serveurs doivent avoir été créés, instructions [ici](https://github.com/
 	avec le compte sys il faut donc utiliser la syntaxe : `sqlplus sys/Oracle12 as sysbda`
 
 	Paramètres utiles :
-	 - -db_type=RACONENODE, crée un RAC One Node et le service ron_'nom_du_serveur ou est crée la base' (ron = rac one node)
+	 - `-db_type=RACONENODE` : crée un RAC One Node avec le service `ron_'nom_du_serveur ou est crée la base'` (ron = rac one node)
 
-	 - -pdbName= permet de nommer la PDB créée.
+	 - `-pdbName` : permet de nommer la PDB créée.
 
-		Sans ce paramètre la règle de nommage est :
-		 * Nom de la pdb = nom du cdb || 01
-		 * Nom du service = pdb || nom de la pdb
+		Par défaut le nom de la PDB est `pdb01`, deux services seront créés l'un
+		pour les connexions java et l'autre pour les connexions oci :
+		 * Nom du service oci (ajout du suffix '_oci') : `pdb01_oci`
+		 * Nom du service java (ajout du suffix '_java') : `pdb01_java`
 
-	 - -policyManaged permet, dans le cas d'un RAC, d'utiliser des services 'Policy Managed'
+		Un alias 'TNS' est créé sur tous les nœuds pour les services 'oci'.
 
-	 - -serverPoolName= dans le cas d'un RAC 'Policy Managed' permet de spécifier
+	 - `-policyManaged` : permet, dans le cas d'un RAC, d'utiliser des services 'Policy Managed'
+
+	 - `-serverPoolName` : dans le cas d'un RAC 'Policy Managed' permet de spécifier
 	 le nom du 'pool' qui par défaut est `poolAllNodes`.
 
 	   L'utilisation de ce paramètre active automatiquement `-policyManaged`
@@ -96,7 +99,7 @@ Les serveurs doivent avoir été créés, instructions [ici](https://github.com/
 		Database role: PRIMARY
 		Management policy: AUTOMATIC
 		Disk Groups: FRA,DATA
-		Services: pdbdaisy01
+		Services: pdb01_java,pdb01_oci
 		OSDBA group:
 		OSOPER group:
 		Database instance: DAISY
@@ -143,7 +146,7 @@ Les serveurs doivent avoir été créés, instructions [ici](https://github.com/
 		Server pools:
 		Disk Groups: FRA,DATA
 		Mount point paths:
-		Services: pdbdaisy01
+		Services: pdb01_java,pdb01_oci
 		Type: RAC
 		Start concurrency:
 		Stop concurrency:
@@ -199,6 +202,8 @@ Pour chaque service OCI un alias TNS est créé localement.
 	4 services sont créés sur les 2 bases du dataguard :
 	 * *_oci et *_java qui ont le rôle 'primary'
 	 * *_stby_oci et *_stby_java qui ont le rôle 'standby'
+
+ * Pour un RAC One Node il n'y a pas de script spécifique, todo ?
 
 #### Suppression de services et alias TNS
 
