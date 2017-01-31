@@ -12,7 +12,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<str>        Identifiant.
+	-db=name         Identifiant.
 	-action=install  Si config l'installation n'est pas lancée.
 "
 
@@ -74,12 +74,22 @@ typeset -a	node_priv_names
 typeset -a	node_priv_ips
 typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
+typeset		primary_db_server=none
+
 function load_node_cfg # $1 inode
 {
 	typeset	-ri	inode=$1
 
 	info "Load node $inode"
 	cfg_load_node_info $db $inode
+
+	if [[ $inode -eq $max_nodes && $cfg_standby != none ]]
+	then
+		if [ -d $cfg_path_prefix/$cfg_standby ]
+		then # La config exist, donc sur ce serveur créer une standby
+			primary_db_server=$cfg_standby
+		fi
+	fi
 
 	if [ x"$clusterNodes" = x ]
 	then
@@ -106,7 +116,7 @@ function create_response_file
 	exit_if_file_not_exists template_oracle_${oracle_release%.*.*}.rsp
 	exec_cmd cp -f template_oracle_${oracle_release%.*.*}.rsp $rsp_file
 	LN
- 
+
 	typeset	-r	O_BASE=/$ORCL_DISK/app/oracle
 	typeset	-r	O_HOME=$O_BASE/$oracle_release/dbhome_1
 
@@ -169,7 +179,7 @@ function start_oracle_installation
 	[ $ret -gt 250 ] && exit 1
 }
 
-function run_post_install_root_scripts_on_node	# $1 No node
+function exec_post_install_root_scripts_on_node	# $1 No node
 {
 	typeset  -ri idxnode=$1
 	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
@@ -184,6 +194,50 @@ function run_post_install_root_scripts_on_node	# $1 No node
 	# 8.3.1 Creating a Backup of the root.sh Script
 	info "Backup the root.sh script to $backup_script_root_sh"
 	LN
+}
+
+function next_instructions
+{
+	line_separator
+	if [ $primary_db_server == none ]
+	then
+		info "Database can be created :"
+		LN
+		if [ $max_nodes -eq 1 ]
+		then
+			info "$ ssh oracle@${node_names[0]}"
+			info "oracle@${node_names[0]}:NOSID:oracle> cd db"
+			info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db"
+			LN
+		else
+			info "$ ssh oracle@${node_names[0]}"
+			info "oracle@${node_names[0]}:NOSID:oracle> cd db"
+			LN
+			info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db"
+			info "or"
+			info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -policyManaged"
+			info "or"
+			info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -db_type=RACONENODE"
+			LN
+		fi
+	else
+		#	Remarque db contient le nom de la standby et standby contient le
+		#	nom de la base existante, les noms sont inversés.
+		info "Create standby database $db from $primary_db_server"
+		LN
+
+		add_dynamic_cmd_param "-user1=oracle"
+		add_dynamic_cmd_param "-server1=srv${db}01"
+		add_dynamic_cmd_param "-server2=srv${primary_db_server}01"
+		exec_dynamic_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh"
+		LN
+
+		info "Execute :"
+		info "$ ssh oracle@srv${primary_db_server}01"
+		info "$ cd ~/plescripts/db/stby/"
+		info "$ ./create_dataguard.sh -standby=$db -standby_host=srv${db}01"
+		LN
+	fi
 }
 
 #	============================================================================
@@ -230,39 +284,21 @@ start_oracle_installation
 typeset -i idxnode=0
 while [ $idxnode -lt $max_nodes ]
 do
-	run_post_install_root_scripts_on_node $idxnode
+	exec_post_install_root_scripts_on_node $idxnode
 	idxnode=idxnode+1
 	LN
 done
 
 typeset -r type_disks=$(cat $db_cfg_path/disks | tail -1 | cut -d: -f1)
-[ "$type_disks" == FS ] && exec_cmd "ssh -t root@${node_names[0]} \"~/plescripts/database_servers/create_systemd_service_oracledb.sh\""
+if [ "$type_disks" == FS ]
+then
+	exec_cmd "ssh -t root@${node_names[0]}	\
+		\"~/plescripts/database_servers/create_systemd_service_oracledb.sh\""
+fi
 
 stats_tt stop oracle_installation
 
 script_stop $ME $db
 LN
 
-line_separator
-info "Database can be created :"
-LN
-if [ $max_nodes -eq 1 ]
-then
-info \
-"$ ssh oracle@${node_names[0]}
-  oracle@${node_names[0]}:NOSID:oracle> cd db
-  oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db"
-LN
-else
-info	\
-"$ ssh oracle@${node_names[0]}
-
-  oracle@${node_names[0]}:NOSID:oracle> cd db
-
-  oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db
-  or
-  oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -policyManaged
-  or
-  oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db -db_type=RACONENODE"
-LN
-fi
+next_instructions

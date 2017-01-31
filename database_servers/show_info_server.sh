@@ -79,6 +79,12 @@ function print_node # $1 #inode
 			warning "	Old cfg file."
 			;;
 	esac
+
+	if [ "$cfg_standby" != none ]
+	then
+		LN
+		info "Dataguard with $cfg_standby"
+	fi
 }
 
 function print_scan

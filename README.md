@@ -76,44 +76,6 @@ SINGLE ou RAC se fait en 5 étapes :
 
 --------------------------------------------------------------------------------
 
-##	Script `run_all.sh`
-
-Le script `run_all.sh` permet de lancer tous les scripts simultanément, initialement
-il sert comme jeu de test mais est finalement bien pratique.
-
-Exécuter ces scripts uniquement après avoir validé l'environnement en créant au moins
-un serveur Oracle avec une base mono instance.
-
-Ce script lance les scripts :
- - define_new_server.sh
- - clone_master.sh
- - install_grid.sh
- - install_oracle.sh
- - create_db.sh
- - et éventuellement create_dataguard.sh
-
-Paramètres utiles :
- - -vbox permet de faire gérer les LUNs par VBox.
- - -db_size_gb=# indique la taille de la base souhaitée.
- - -standby=db identifiant de la standby.
- - -h  permet d'avoir la liste exhaustive des paramètres.
-
-Exemples, se positionner dans le répertoire `~/plescripts/database_servers` :
- - Création d'une base mono instance : `./run_all.sh -vbox -db=SINGLE`
-
- - Création d'un RAC 2 nœuds : `./run_all.sh -db=RAC2N -max_nodes=2`
-
- - Création d'un dataguard : `./run_all.sh -db=saturne -standby=jupiter`
-
-Dès qu'un paramètre est inconnu pour `run_all.sh` ce paramètre et tous les suivants
-sont transmis au script `create_db.sh`
-
-Par exemple : `./run_all.sh -db=RAC2N -max_nodes=2 -policyManaged`
-
-Le paramètre `-policyManaged` est passé au script `create_db.sh`
-
-Si l'un des paramètres est invalide, le script create_db.sh plantera.
-
 ##	Temps de références
 ### Création d'un dataguard (Base single)
 
@@ -127,7 +89,6 @@ clone_master.sh		|	saturne				|	   3mn40s
 install_grid.sh		|	saturne				|	   7mn34s
 install_oracle.sh	|	saturne				|	   4mn14s
 create_dataguard.sh	|	VENUS with SATURNE	|	  11mn12s
-run_all.sh			|	venus				|	1h01mn04s
 
 ###	Création d'un RAC
 
@@ -138,7 +99,6 @@ clone_master.sh		|	daisy				|	3mn37s
 install_grid.sh		|	daisy				|	31mn46s
 install_oracle.sh	|	daisy				|	13mn13s
 create_db.sh		|	daisy				|	54mn29s
-run_all.sh			|	daisy				|	1h47mn26s
 
 --------------------------------------------------------------------------------
 
@@ -153,6 +113,7 @@ run_all.sh			|	daisy				|	1h47mn26s
 ### LICENCE
 
 Copyright © 2016,2017 Philippe Leroux <philippe.lrx@gmail.com>
+
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or

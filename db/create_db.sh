@@ -3,6 +3,7 @@
 
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/usagelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/dblib.sh
@@ -42,7 +43,7 @@ typeset	-i	redoSize=64	# Unit Mb
 #	Permet au script database_severs/run_all.sh de valider les arguments.
 typeset		validate_params=no
 
-typeset		skip_db_create=no
+typeset		create_database=yes
 
 add_usage "<-db=name>"								"Database name"
 add_usage "[-lang=$lang]"							"Language"
@@ -194,7 +195,7 @@ do
 			;;
 
 		-skip_db_create)
-			skip_db_create=yes
+			create_database=no
 			shift
 			;;
 
@@ -218,8 +219,6 @@ do
 			;;
 	esac
 done
-
-typeset		usefs=no
 
 #	============================================================================
 
@@ -312,7 +311,7 @@ function test_if_serverpool_exists
 	return $res
 }
 
-function remove_all_log_and_db_fs_files
+function remove_logs_and_db_files
 {
 	line_separator
 	info "Remove all files on $(hostname -s)"
@@ -391,7 +390,7 @@ function check_if_ASM_used
 #	Ne rends pas la main sur une erreur.
 function create_database
 {
-	remove_all_log_and_db_fs_files
+	remove_logs_and_db_files
 
 	make_dbca_args
 
@@ -519,6 +518,40 @@ function setup_fs_database
 	copy_glogin
 }
 
+function adjust_parameters
+{
+	[[ $cdb == yes && $pdb == undef ]] && pdb=pdb01 || true
+	[ $pdb == no ] && pdb=undef || true
+
+	if [ $pdb != undef ]
+	then
+		numberOfPDBs=1
+		pdbAdminPassword=$sysPassword
+	fi
+
+	#	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
+	[[ $policyManaged == yes && $serverPoolName == undef ]] && serverPoolName=poolAllNodes || true
+	[ $serverPoolName != undef ] && policyManaged=yes || true
+}
+
+function next_instructions
+{
+	if cfg_exists $db use_return_code
+	then
+		cfg_load_node_info $db 1
+		if [ "$cfg_stantby" != none ]
+		then
+			if [[ $(dataguard_config_available) == no && ! -d $cfg_path_prefix/$cfg_standby ]]
+			then
+				info "From $client_hostname execute :"
+				info "$ cd ~/plescripts/database_servers"
+				info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db)"
+				LN
+			fi
+		fi
+	fi
+}
+
 #	============================================================================
 #	MAIN
 #	============================================================================
@@ -529,27 +562,11 @@ exit_if_param_invalid	enable_flashback "yes no"			"$str_usage"
 
 if [ $validate_params == yes ]
 then
-	info "All params validates"
 	rm -rf $PLELIB_LOG_FILE
 	exit 0
 fi
 
-#	----------------------------------------------------------------------------
-#	Ajustement des paramètres
-#	Détermine le nom de la PDB si non précisée.
-[ $cdb == yes ] && [ $pdb == undef ] && pdb=pdb01
-[ $pdb == no ] && pdb=undef
-
-if [ $pdb != undef ]
-then
-	numberOfPDBs=1
-	pdbAdminPassword=$sysPassword
-fi
-
-#	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
-[ $policyManaged == "yes" ] && [ $serverPoolName == undef ] && serverPoolName=poolAllNodes
-[ $serverPoolName != undef ] && policyManaged=yes
-#	----------------------------------------------------------------------------
+adjust_parameters
 
 stats_tt start create_$lower_db
 
@@ -557,15 +574,16 @@ typeset prefixInstance=${db:0:8}
 
 check_rac_or_single
 
+typeset	usefs=no
 check_if_ASM_used
 
 remove_glogin
 
-[ $skip_db_create == no ] && create_database
+[ $create_database == yes ] && create_database || true
 
-[ "${db_type:0:3}" == "RAC" ] && update_rac_oratab
+[ "${db_type:0:3}" == "RAC" ] && update_rac_oratab || true
 
-[ $cdb == yes ] && [ $pdb != undef ] && create_services_for_pdb
+[[ $cdb == yes && $pdb != undef ]] && create_services_for_pdb || true
 
 if [ $usefs == yes ]
 then
@@ -577,7 +595,7 @@ fi
 line_separator
 export ORACLE_DB=${db}
 unset ORACLE_SID
-fake_exec_cmd 'ORACLE_SID=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)'
+fake_exec_cmd 'ORACLE_SID=$(ps -ef | grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)'
 ORACLE_SID=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)
 info "Load env for $ORACLE_SID"
 if [ x"$ORACLE_SID" == x ]
@@ -637,3 +655,5 @@ stats_tt stop create_$lower_db
 
 script_stop $ME $lower_db
 LN
+
+next_instructions

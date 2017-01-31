@@ -37,6 +37,7 @@ function cfg_max_nodes
 #*>		- cfg_iscsi_ip			ip des disques iscsi
 #*>		- cfg_luns_hosted_by	vbox|san
 #*>		- cfg_oracle_home		ocfs2|xfs
+#*>		- cfg_stantby			standby id
 function cfg_load_node_info
 {
 	typeset -r	db=$(to_lower $1)
@@ -48,6 +49,7 @@ function cfg_load_node_info
 				cfg_rac_network cfg_iscsi_ip					\
 				cfg_luns_hosted_by								\
 				cfg_oracle_home									\
+				cfg_standby										\
 		<$cfg_file
 }
 

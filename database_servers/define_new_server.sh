@@ -10,32 +10,33 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-# OH : ORACLE_HOME
-typeset OH_FS=$rac_orcl_fs
-[ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
-
-add_usage "-db=name"				"Database name."
-add_usage "[-max_nodes=1]"			"RAC #nodes"
-add_usage "[-OH_FS=$OH_FS]"			"RAC : ORACLE_HOME FS : ocfs2|$rdbms_fs_type."
-add_usage "[-luns_hosted_by=$disks_hosted_by]"	"san|vbox"
-add_usage "[-size_dg_gb=$default_size_dg_gb]"	"DG size"
-add_usage "[-size_lun_gb=$default_size_lun_gb]" "LUNs size"
-add_usage "[-no_dns_test]"			"ne pas tester si les IPs sont utilisées."
-add_usage "[-usefs]"				"ne pas utiliser ASM mais un FS."
-add_usage "[-ip_node=node]"			"nœud IP, sinon prend la première IP disponible."
-
-typeset -r str_usage="Usage : $ME\n$(print_usage)"
-
-script_banner $ME $*
-
 typeset		db=undef
+typeset		standby=none
 typeset -i	ip_node=-1
 typeset -i	max_nodes=1
 typeset -i	size_dg_gb=$default_size_dg_gb
 typeset -i	size_lun_gb=$default_size_lun_gb
 typeset		dns_test=yes
-typeset 	usefs=no
+typeset 	storage=ASM
 typeset		luns_hosted_by=$disks_hosted_by
+# OH : ORACLE_HOME
+typeset		OH_FS=$rac_orcl_fs
+[ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
+
+add_usage "-db=name"				"Database name."
+add_usage "-standby=id"				"ID for standby server."
+add_usage "[-max_nodes=1]"			"RAC #nodes"
+add_usage "[-OH_FS=$OH_FS]"			"RAC : ORACLE_HOME FS : ocfs2|$rdbms_fs_type."
+add_usage "[-luns_hosted_by=$luns_hosted_by]"	"san|vbox"
+add_usage "[-size_dg_gb=$size_dg_gb]"			"DG size"
+add_usage "[-size_lun_gb=$size_lun_gb]"			"LUNs size"
+add_usage "[-no_dns_test]"			"ne pas tester si les IPs sont utilisées."
+add_usage "[-storage=$storage]"		"ASM|FS"
+add_usage "[-ip_node=node]"			"nœud IP, sinon prend la première IP disponible."
+
+typeset -r str_usage="Usage : $ME\n$(print_usage)"
+
+script_banner $ME $*
 
 #	rac si max_nodes vaut plus de 1
 typeset		db_type=std
@@ -55,6 +56,11 @@ do
 
 		-db=*)
 			db=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-standby=*)
+			standby=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -78,8 +84,8 @@ do
 			shift
 			;;
 
-		-usefs)
-			usefs=yes
+		-storage=*)
+			storage=${1##*=}
 			shift
 			;;
 
@@ -106,9 +112,11 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
-[ $max_nodes -gt 1 ] && [ $db_type != rac ] && db_type=rac
+exit_if_param_invalid storage "ASM FS" "$str_usage"
 
-[ $db_type == rac ] && [ $usefs == yes ] && error "RAC on FS not supported." && exit 1
+[[ $max_nodes -gt 1 && $db_type != rac ]] && db_type=rac || true
+
+[[ $db_type == rac && $storage == FS ]] && error "RAC on FS not supported." && exit 1
 
 exit_if_param_invalid OH_FS "ocfs2 $rdbms_fs_type" "$str_usage"
 
@@ -119,11 +127,9 @@ then
 	exit 1
 fi
 
-typeset -r	cfg_path=$cfg_path_prefix/$db
-
 function validate_config
 {
-	exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"
+	exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc" >/dev/null 2>&1
 	if [ $? -ne 0 ]
 	then
 		cat /tmp/vc
@@ -172,7 +178,7 @@ function normalyze_node
 	fi
 	ip_node=ip_node+1
 
-	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}" > $cfg_path/node${num_node}
+	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${standby}" > $cfg_path/node${num_node}
 }
 
 function normalyze_scan
@@ -190,6 +196,24 @@ function normalyze_scan
 	echo "$buffer" > $cfg_path/scanvips
 }
 
+function adjust_DG_size
+{
+	#	La taille du DG doit être un multiple de la taille des LUNs.
+	typeset -i dg_lun_count=$(( size_dg_gb /  size_lun_gb))
+	if [ $dg_lun_count -lt $default_minimum_lun ]
+	then
+		dg_lun_count=$default_minimum_lun
+		typeset	-i corrected_size_dg_gb=$(( size_lun_gb *  dg_lun_count ))
+		while [ $corrected_size_dg_gb -lt $size_dg_gb ]
+		do
+			corrected_size_dg_gb=$(( corrected_size_dg_gb + size_lun_gb ))
+		done
+		size_dg_gb=$corrected_size_dg_gb
+		info "Adjust DG size to ${size_dg_gb}Gb : minimum $default_minimum_lun LUNs of ${size_lun_gb}Gb per DG"
+		LN
+	fi
+}
+
 #	Les n° de disques n'ont plus de sens, ils sont conservés car ils permettent
 #	de déterminer le nombre de disques nécessaire.
 function normalyse_asm_disks
@@ -201,6 +225,8 @@ function normalyse_asm_disks
 		echo "CRS:6:1:3" > $cfg_path/disks
 		i_lun=4
 	fi
+
+	adjust_DG_size
 
 	typeset	-i	max_luns=$(( size_dg_gb / size_lun_gb ))
 	typeset	-i	corrected_size_dg_gb=$(( size_lun_gb *  max_luns ))
@@ -231,50 +257,70 @@ function normalyse_fs_disks
 	echo "FS:$size_dg_gb:1:1" > $cfg_path/disks
 }
 
+# Init variable ip_node
+function set_ip_node
+{
+	# Détermine le nombre d'adresse IPs à obtenir.
+	if [ $max_nodes -eq 1 ]
+	then # Standalone server.
+		typeset -ri ip_range=1
+	else # RAC server.
+		typeset -ri ip_range=max_nodes*2+3	# 2 IP / nodes, 3 SCAN IP
+	fi
+
+	# Demande '$ip_range' adresses IPs consécutives.
+	ip_node=$(ssh $dns_conn "~/plescripts/dns/get_free_ip_node.sh -range=$ip_range")
+}
+
+function next_instructions
+{
+	if [ "$standby" != none ]
+	then
+		if [ -d $cfg_path_prefix/$standby ]
+		then # Le premier serveur existe
+			typeset -r vmGroup="/DG $(initcap $standby) et $(initcap $db)"
+		else
+			typeset -r vmGroup="/DG $(initcap $db) et $(initcap $standby)"
+		fi
+		if [ $max_nodes -eq 1 ]
+		then
+			info "Exec : ./clone_master.sh -db=$db -vmGroup=\"$vmGroup\""
+		else
+			info "Exec : ./create_database_servers.sh -db=$db -vmGroup=\"$vmGroup\""
+		fi
+	else
+		if [ $max_nodes -eq 1 ]
+		then
+			info "Exec : ./clone_master.sh -db=$db"
+		else
+			info "Exec : ./create_database_servers.sh -db=$db"
+		fi
+	fi
+}
+
 validate_config
 
 line_separator
+typeset -r	cfg_path=$cfg_path_prefix/$db
 if [ -d $cfg_path ]
-then
+then # La configuration pour $db existe déjà !
 	confirm_or_exit "$cfg_path exists, remove :"
 	exec_cmd rm -rf $cfg_path
 fi
 exec_cmd mkdir $cfg_path
 LN
 
-typeset -i ip_range=1
-[ $max_nodes -gt 1 ] && ip_range=max_nodes*2+3	# 2 IP / nodes, 3 SCAN IP
-[ $ip_node -eq -1 ] && ip_node=$(ssh $dns_conn "~/plescripts/dns/get_free_ip_node.sh -range=$ip_range")
+[ $ip_node -eq -1 ] && set_ip_node || true
 
-for i in $(seq $max_nodes)
+for (( i=1; i <= max_nodes; i++ ))
 do
 	normalyze_node $i
 done
 
-[ $db_type == rac ] && normalyze_scan
+[ $db_type == rac ] && normalyze_scan || true
 
-#	La taille du DG doit être un multiple de la taille des LUNs.
-typeset -i dg_lun_count=$(( size_dg_gb /  size_lun_gb))
-if [ $dg_lun_count -lt $default_minimum_lun ]
-then
-	dg_lun_count=$default_minimum_lun
-	typeset	-i corrected_size_dg_gb=$(( size_lun_gb *  dg_lun_count ))
-	while [ $corrected_size_dg_gb -lt $size_dg_gb ]
-	do
-		corrected_size_dg_gb=$(( corrected_size_dg_gb + size_lun_gb ))
-	done
-	size_dg_gb=$corrected_size_dg_gb
-	info "Adjust DG size to ${size_dg_gb}Gb : minimum $default_minimum_lun LUNs of ${size_lun_gb}Gb per DG"
-	LN
-fi
+[ $storage == ASM ] && normalyse_asm_disks || normalyse_fs_disks
 
-if [ $usefs == no ]
-then
-	normalyse_asm_disks
-else
-	normalyse_fs_disks
-fi
+./show_info_server.sh -db=$db
 
-~/plescripts/shell/show_info_server -db=$db
-
-info "Run : ./create_database_servers.sh -db=$db"
+next_instructions
