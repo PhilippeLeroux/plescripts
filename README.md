@@ -1,15 +1,29 @@
 [English translation](https://github.com/PhilippeLeroux/plescripts/wiki/english)
 
 ### Objectifs :
+Simuler une infrastructure de VMs pour créer des serveurs de base de données
+dans les conditions proches de ce que l'on peut trouver en entreprise.
 
-Automatiser l'installation et la création de base de données Oracle, que ce soit
-des bases mono instance, des bases en dataguard ou en RAC.
-Le but est d'être le plus indépendant possible du logiciel de virtualisation.
+Le serveur central se nomme K2 et à en charge :
+- la gestion du DNS via bind.
+- la gestion du SAN via target (qui est présent sur les distributions de type Redhat),
+les disques sont exportés sur le réseau via le protocole iSCSI.
+- la GATEWAY qui centralise l'accès à internet des serveurs, par défaut aucun
+serveur de base de données ne peut accéder à internet.
+- la gestion du dépôt des rpms.
 
-Cette version se base maintenant uniquement sur Oracle Linux 7, OpenFiler est
-abandonné pour targetcli qui a le gros avantage d'être scriptable, seul Oracle 12cR1
-est pris en charge et le RAC étendu n'est plus pris en compte.
-L'hyperviseur n'est plus KVM mais VirtualBox qui a l'avantage d'être portable.
+Tout type de serveurs de base de données peuvent être créé :
+- Base de données sur un serveur standalone.
+- Base de données en RAC (pas de RAC étendue, uniquement MAA)
+- Mise en dataguard de 2 serveurs standalone.
+
+Versions logiciels :
+- Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur K2.
+- La version Oracle utilisée et la 12.1.0.2 (la version 12.2 n'est pas disponible
+actuellement au public).
+
+La création des serveurs de base de données est 100 % automatisée, il n'y a pas
+besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
 
 --------------------------------------------------------------------------------
 
@@ -31,7 +45,6 @@ SINGLE ou RAC se fait en 5 étapes :
 
 	* ~20mn pour un RAC 2 nœuds.
 	* ~5mn pour une SINGLE.
-
 
 5. Création d'une base de données CDB + 1 PDB :
 
@@ -72,7 +85,7 @@ SINGLE ou RAC se fait en 5 étapes :
 
 * Création d'une base : [instructions](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
 
-* Mise en dataguard de 2 serveurs standalones : [instructions](https://github.com/PhilippeLeroux/plescripts/blob/master/db/stby/README.md)
+* Mise en dataguard de 2 serveurs standalones : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Create-dataguard)
 
 --------------------------------------------------------------------------------
 

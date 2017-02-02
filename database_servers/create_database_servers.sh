@@ -58,7 +58,7 @@ cfg_exists $db
 
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
-for (( inode=1; inode <= max_nodes; inode++ ))
+for (( inode=1; inode <= max_nodes; ++inode ))
 do
 	exec_cmd ./clone_master.sh -db=$db -node=$inode -vmGroup=\"$vmGroup\"
 	LN

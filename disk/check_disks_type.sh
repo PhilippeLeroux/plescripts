@@ -44,7 +44,7 @@ do
 		if [ $nb_part -ne 0 ]
 		then
 			echo ", partitions :"
-			for (( ipart=1; ipart <= nb_part; ipart++ ))
+			for (( ipart=1; ipart <= nb_part; ++ipart ))
 			do
 				part_name=${disk}$ipart
 				part_type="$(disk_type $part_name)"

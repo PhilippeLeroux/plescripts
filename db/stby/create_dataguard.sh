@@ -180,7 +180,7 @@ function sqlcmd_create_standby_redo_logs
 	typeset -ri nr=$1
 	typeset -r	redo_size_mb="$2"
 
-	for i in $( seq $nr )
+	for (( i=0; i < nr; ++i ))
 	do
 		set_sql_cmd "alter database add standby logfile thread 1 size $redo_size_mb;"
 	done

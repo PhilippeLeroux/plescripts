@@ -312,9 +312,9 @@ LN
 
 [ $ip_node -eq -1 ] && set_ip_node || true
 
-for (( i=1; i <= max_nodes; i++ ))
+for (( inode=1; inode <= max_nodes; ++inode ))
 do
-	normalyze_node $i
+	normalyze_node $inode
 done
 
 [ $db_type == rac ] && normalyze_scan || true

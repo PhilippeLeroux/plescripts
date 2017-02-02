@@ -65,7 +65,7 @@ fi
 
 typeset	-ri	count_ping_error=0
 
-for inode in $( seq $max_nodes )
+for (( inode=1; inode <= max_nodes; ++inode ))
 do
 	[ $inode -eq $node ] && continue
 

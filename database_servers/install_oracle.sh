@@ -137,7 +137,7 @@ function create_response_file
 	if [ $max_nodes -gt 1 ]
 	then
 		server_list=${node_names[0]}
-		for idxnode in $( seq $max_nodes )
+		for (( idxnode=1; idxnode <= max_nodes; ++idxnode ))
 		do
 			server_list=$server_list","${node_names[$idxnode]}
 		done
@@ -246,7 +246,7 @@ function next_instructions
 script_start
 
 line_separator
-for inode in $( seq $max_nodes )
+for (( inode=1; inode <= max_nodes; ++inode ))
 do
 	load_node_cfg $inode
 done

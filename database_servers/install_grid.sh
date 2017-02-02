@@ -13,7 +13,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-db=<str>      Identifiant de la base
+	-db=name       Identifiant de la base
 	-rsp_file_only Uniquement créer le fichier réponse, pas d'installation.
 
 	Pour passer certaine phases de l'installation :
@@ -141,6 +141,14 @@ typeset -a	node_iscsi_names
 typeset -a	node_iscsi_ips
 typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
+#	$1 account name
+#	Execute on node 0 (node_names[0]) command "$@" (execpt first arg
+function ssh_node0
+{
+	typeset -r account=$1
+	shift
+	exec_cmd "ssh -t ${account}@${node_names[0]} \". .bash_profile; $@\""
+}
 
 function load_node_cfg # $1 inode
 {
@@ -175,7 +183,7 @@ function make_disk_list
 
 	#	Les disques sont numérotés à partir de 1, donc le n° du dernier disque
 	#	correspond au nombre de disques.
-	typeset	-ri	total_disks=$(head -1 $disk_cfg_file | cut -d':' -f 4)
+	typeset	-ri	total_disks=$(head -1 $disk_cfg_file | cut -d: -f4)
 
 	#	Lecture des $total_disks premiers disques.
 	typeset disk_list
@@ -183,7 +191,8 @@ function make_disk_list
 	do
 		[ x"$disk_list" != x ] && disk_list=$disk_list","
 		disk_list=$disk_list"ORCL:$oracle_disk"
-	done<<<"$(ssh root@${node_names[0]} "oracleasm listdisks" | head -$total_disks)"
+	done<<<"$(ssh root@${node_names[0]} ". .bash_profile; oracleasm listdisks"|\
+															head -$total_disks)"
 
 	echo $disk_list
 }
@@ -256,13 +265,13 @@ function mount_install_directory
 {
 	line_separator
 	info "Mount install directory :"
-	exec_cmd -cont "ssh root@${node_names[0]} mount /mnt/oracle_install"
+	exec_cmd -c "ssh root@${node_names[0]} mount /mnt/oracle_install"
 }
 
 function start_grid_installation
 {
 	line_separator
-	info "Start grid installation (~17mn)."
+	info "Start grid installation (~12mn)."
 	add_dynamic_cmd_param "\"LANG=C /mnt/oracle_install/grid/runInstaller"
 	add_dynamic_cmd_param "      -silent"
 	add_dynamic_cmd_param "      -showProgress"
@@ -287,11 +296,12 @@ function run_post_install_root_scripts_on_node	# $1 server_name
 	info "Run post install scripts on node $server_name (~10mn)"
 	LN
 
-	exec_cmd "ssh -t root@$server_name										\
+	exec_cmd "ssh -t root@$server_name	\
 				\"${ORACLE_BASE%/*/*}/app/oraInventory/orainstRoot.sh\""
 	LN
 
-	exec_cmd -c "ssh -t root@$server_name \". .bash_profile; $ORACLE_HOME/root.sh\""
+	exec_cmd -c "ssh -t root@$server_name \". .bash_profile;	\
+											$ORACLE_HOME/root.sh\""
 	return $?
 }
 
@@ -327,7 +337,9 @@ function run_post_install_root_scripts
 
 			run_post_install_root_scripts_on_node ${node_names[0]}
 			LN
+
 			timing 10
+			LN
 
 			run_post_install_root_scripts_on_node ${node_names[$idxnode]}
 			typeset -i ret=$?
@@ -342,7 +354,12 @@ function run_post_install_root_scripts
 			fi
 		fi
 
-		[[ $max_nodes -gt 1 && $idxnode -eq 0 ]] && timing 10
+		if [[ $max_nodes -gt 1 && $idxnode -eq 0 ]]
+		then
+			timing 10
+			LN
+		fi
+
 		idxnode=idxnode+1
 	done
 }
@@ -377,7 +394,7 @@ function create_all_dgs
 	line_separator
 
 	# Pour le RAC uniquement, le premier DG étant CRS ou GRID
-	[ $max_nodes -gt 1 ] && create_dg DATA
+	[ $max_nodes -gt 1 ] && create_dg DATA || true
 
 	create_dg FRA
 }
@@ -394,10 +411,10 @@ function stop_and_disable_unwanted_grid_ressources
 {
 	line_separator
 	disclaimer
-	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl stop cvu"
-	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl disable cvu"
-	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl stop oc4j"
-	exec_cmd "ssh -t root@${node_names[0]} . /root/.bash_profile \; srvctl disable oc4j"
+	ssh_node0 root srvctl stop cvu
+	ssh_node0 root srvctl disable cvu
+	ssh_node0 root srvctl stop oc4j
+	ssh_node0 root srvctl disable oc4j
 }
 
 function set_ASM_memory_target_low_and_restart_ASM
@@ -412,21 +429,21 @@ function set_ASM_memory_target_low_and_restart_ASM
 
 		if [ $max_nodes -gt 1 ]
 		then	#	RAC
-			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
-						crsctl stop cluster -all\""
+			ssh_node0 root crsctl stop cluster -all
+			LN
 
 			timing 5
+			LN
 
-			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
-						crsctl start cluster -all\""
+			ssh_node0 root crsctl start cluster -all
 		else	#	SINGLE
-			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
-						srvctl stop asm -f\""
+			ssh_node0 root srvctl stop asm -f
+			LN
 
 			timing 5
+			LN
 
-			exec_cmd "ssh -t root@${node_names[0]} \". .bash_profile;	\
-						srvctl start asm\""
+			ssh_node0 root srvctl start asm
 		fi
 		LN
 	else
@@ -438,7 +455,7 @@ function remove_tfa_on_all_nodes
 {
 	line_separator
 	disclaimer
-	for i in $( seq 0 $(( max_nodes - 1 )) )
+	for (( i=0; i < max_nodes; ++i ))
 	do
 		exec_cmd -c ssh -t root@${node_names[$i]} \
 				". /root/.bash_profile \; tfactl uninstall"
@@ -455,7 +472,7 @@ function add_scan_to_local_known_hosts
 	IFS=':' read scan vip1 vip2 vip3<<<"$(cat $scan_cfg)"
 
 	typeset -r pub_key=$(ssh-keyscan -t ecdsa $scan | cut -d\  -f2-)
-	
+
 	exec_cmd "sed -i '/$scan/d' ~/.ssh/known_hosts"
 	exec_cmd "echo '$scan,$vip1,$vip2,$vip3 $pub_key' >> ~/.ssh/known_hosts"
 	LN
@@ -467,7 +484,7 @@ function add_scan_to_local_known_hosts
 script_start
 
 line_separator
-for inode in $( seq $max_nodes )
+for (( inode = 1; inode <= max_nodes; ++inode ))
 do
 	load_node_cfg $inode
 done
@@ -475,7 +492,7 @@ done
 if [ $max_nodes -gt 1 ]
 then
 	exit_if_file_not_exists $db_cfg_path/scanvips
-	typeset -r scan_name=$(cat $db_cfg_path/scanvips | cut -d':' -f1)
+	typeset -r scan_name=$(cat $db_cfg_path/scanvips | cut -d: -f1)
 
 	info "==> scan name     = $scan_name"
 	info "==> clusterNodes  = $clusterNodes"
@@ -485,8 +502,8 @@ fi
 if [ $oracle_home_for_test == no ]
 then
 	#	On doit récupérer l'ORACLE_HOME du grid qui est différent entre 1 cluster et 1 single.
-	ORACLE_HOME=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_HOME"|cut -d= -f2)
-	ORACLE_BASE=$(ssh grid@${node_names[0]} ". .profile; env|grep ORACLE_BASE"|cut -d= -f2)
+	ORACLE_HOME=$(ssh grid@${node_names[0]} ". .bash_profile; env|grep ORACLE_HOME"|cut -d= -f2)
+	ORACLE_BASE=$(ssh grid@${node_names[0]} ". .bash_profile; env|grep ORACLE_BASE"|cut -d= -f2)
 else
 	ORACLE_HOME=/$GRID_DISK/oracle_home/bidon
 	ORACLE_BASE=/$GRID_DISK/oracle_base/bidon
@@ -509,6 +526,7 @@ fi
 [ $rsp_file_only == yes ] && exit 0	# Ne fait pas l'installation.
 
 exec_cmd wait_server ${node_names[0]}
+LN
 
 stats_tt start grid_installation
 
@@ -522,7 +540,7 @@ then
 	LN
 fi
 
-[ $skip_root_scripts == no ] && run_post_install_root_scripts
+[ $skip_root_scripts == no ] && run_post_install_root_scripts || true
 
 if [ $skip_configToolAllCommands == no ]
 then
@@ -530,14 +548,14 @@ then
 	then	#	RAC
 		if [ $do_hacks == yes ]
 		then
-			[ $force_MGMTDB == yes ] && runConfigToolAllCommands && LN
+			[ $force_MGMTDB == yes ] && runConfigToolAllCommands && LN || true
 			remove_tfa_on_all_nodes
 			LN
 			stop_and_disable_unwanted_grid_ressources
 			LN
 			set_ASM_memory_target_low_and_restart_ASM
 			LN
-			[ $force_MGMTDB == no ] && info "La base -MGMTDB n'est pas créée." && LN
+			[ $force_MGMTDB == no ] && info "La base -MGMTDB n'est pas créée." && LN || true
 		else
 			runConfigToolAllCommands
 		fi
@@ -550,6 +568,7 @@ then
 			set_ASM_memory_target_low_and_restart_ASM
 			#Pour être certain qu'ASM est démarré.
 			timing 30 "Wait grid"
+			LN
 		fi
 	fi
 fi
@@ -561,7 +580,7 @@ fi
 stats_tt stop grid_installation
 
 info "Installation status :"
-exec_cmd "ssh grid@${node_names[0]} \". .profile; crsctl stat res -t\""
+ssh_node0 grid crsctl stat res -t
 LN
 
 script_stop $ME $db

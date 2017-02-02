@@ -39,7 +39,7 @@ typeset	-ri	max_nodes=$(olsnodes | wc -l)
 
 info "Update /etc/oratab on $(hostname -s)"
 info "Add all instances, useful for Policy Managed and RAC One Node"
-for inode in $( seq 1 $max_nodes )
+for (( inode=1; inode <= max_nodes; ++inode ))
 do
 	INSTANCE=$prefixInstance$inode
 

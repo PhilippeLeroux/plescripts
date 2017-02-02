@@ -62,7 +62,7 @@ typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
 line_separator
 info "Make configuration :"
-for inode in $( seq $max_nodes )
+for (( inode=1; inode <= max_nodes; ++inode ))
 do
 	cfg_load_node_info $db $inode
 	exec_cmd o2cb add-node $db $cfg_server_name --ip $cfg_iscsi_ip

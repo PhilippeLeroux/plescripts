@@ -126,7 +126,7 @@ line_separator
 info "Create services"
 if [ $dataguard == yes ]
 then
-	for i in $( seq 0 $(( ${#physical_list[@]} - 1 )) )
+	for (( i=0; i < ${#physical_list[@]}; ++i ))
 	do
 		add_dynamic_cmd_param "-db=$primary"
 		add_dynamic_cmd_param "-pdb=$pdb"

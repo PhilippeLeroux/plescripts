@@ -61,7 +61,7 @@ fi
 
 function make_sql_cmd
 {
-	for (( i=1; i < $disks; ++i ))
+	for (( i=1; i < disks; ++i ))
 	do
 		other_disks="$other_disks\n,   '${disk_list[$i]}'"
 	done

@@ -54,7 +54,7 @@ exec_cmd cp $named_file ${named_file}.backup
 exec_cmd cp $reverse_file ${reverse_file}.backup
 LN
 
-for inode in $( seq $max_nodes )
+for (( inode=1; inode <= max_nodes; ++inode ))
 do
 	cfg_load_node_info $db $inode
 	exec_cmd ~/plescripts/dns/remove_server.sh -name=$cfg_server_name -no_restart

@@ -594,11 +594,11 @@ case $cfg_luns_hosted_by in
 		exit 1
 esac
 
-info "Plymouth theme."
-ssh_server -c "plescripts/shell/set_plymouth_them"
-LN
-
 create_stats_services
+
+info "Reboot nedeed : new kernel config form oracle-rdbms-server-12cR1-preinstall"
+reboot_server $server_name
+LN
 
 if [ $node -eq $max_nodes ]
 then	# C'est le dernier nœud

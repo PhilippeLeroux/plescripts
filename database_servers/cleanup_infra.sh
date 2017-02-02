@@ -72,7 +72,7 @@ fi
 if [ -f ~/.ssh/known_hosts ]
 then
 	line_separator
-	for inode in $( seq $max_nodes )
+	for (( inode=1; inode <= max_nodes; ++inode ))
 	do
 		cfg_load_node_info $db $inode
 		remove_from_known_hosts $cfg_server_name
