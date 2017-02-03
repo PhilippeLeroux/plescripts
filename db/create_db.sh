@@ -539,7 +539,7 @@ function next_instructions
 	if cfg_exists $db use_return_code
 	then
 		cfg_load_node_info $db 1
-		if [ "$cfg_stantby" != none ]
+		if [ "$cfg_standby" != none ]
 		then
 			if [[ $(dataguard_config_available) == no && ! -d $cfg_path_prefix/$cfg_standby ]]
 			then

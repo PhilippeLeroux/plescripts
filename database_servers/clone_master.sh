@@ -14,6 +14,7 @@ typeset -r str_usage=\
 	-db=name             Identifiant de la base.
 	[-vmGroup=name]      Nom du groupe ou doit être enregistré la VM.
 	[-node=#]            N° du nœud si base de type RAC.
+	[-skip_os_update]    Ne fait pas la mise à jour de l'OS.
 
 Debug flag :
 	[-start_server_only] Le serveur est déjà cloné, uniquement le démarrer.
@@ -25,6 +26,7 @@ script_banner $ME $*
 typeset		db=undef
 typeset -i	node=-1
 typeset		vmGroup
+typeset		do_os_update=yes
 
 typeset		start_server_only=no
 typeset		kvmclock=disable
@@ -54,6 +56,11 @@ do
 
 		-keep_kvmclock)
 			kvmclock=enable
+			shift
+			;;
+
+		-skip_os_update)
+			do_os_update=no
 			shift
 			;;
 
@@ -225,7 +232,7 @@ function setup_iscsi_inititiator
 }
 
 #	Monte le répertoire d'installation sur /mnt/oracle_install
-function mount_oracle_install
+function add_oracle_install_directory_to_fstab
 {
 	line_separator
 	info "Mount point for Oracle installation"
@@ -337,23 +344,6 @@ function create_disks_for_oracle_and_grid_softwares
 	fi
 }
 
-function rac_configure_ntp
-{
-	info "RAC node : install & configure ntp."
-	ssh_master "~/plescripts/ntp/configure_ntp.sh"
-	LN
-
-	info "Force sync time"
-	ssh_master "crontab ~/plescripts/ntp/crontab_workaround_ntp.txt"
-	LN
-
-	if [ $kvmclock == disable ]
-	then
-		ssh_master "~/plescripts/ntp/disable_kvmclock.sh"
-		LN
-	fi
-}
-
 #	Configure le master cloné
 function configure_server
 {
@@ -390,11 +380,6 @@ function configure_server
 	line_separator
 	setup_iscsi_inititiator
 
-	#	Pour que ntp fonctionne correctement les options de boot sont modifiées,
-	#	la configuration est donc faite proche du reboot.
-	#	Pour utiliser chrony définir la variable RAC_NTP=chrony
-	[[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
-
 	line_separator
 	configure_ifaces_hostname_and_reboot
 
@@ -415,9 +400,12 @@ function configure_server
 	#	de basculer sur le bon dépôt.
 	ssh_server ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"
 
-	test_if_rpm_update_available $server_name
-	[ $? -eq 0 ] && ssh_server "yum -y -q update"
-	LN
+	if [ $do_os_update == yes ]
+	then
+		test_if_rpm_update_available $server_name
+		[ $? -eq 0 ] && ssh_server "yum -y -q update"
+		LN
+	fi
 
 	create_disks_for_oracle_and_grid_softwares
 }
@@ -442,6 +430,23 @@ function configure_oracle_accounts
 
 	ssh_server "plescripts/gadgets/customize_logon.sh"
 	LN
+}
+
+function rac_configure_ntp
+{
+	info "RAC node : install & configure ntp."
+	ssh_server "~/plescripts/ntp/configure_ntp.sh"
+	LN
+
+	info "Force sync time"
+	ssh_server "crontab ~/plescripts/ntp/crontab_workaround_ntp.txt"
+	LN
+
+	if [ $kvmclock == disable ]
+	then
+		ssh_server "~/plescripts/ntp/disable_kvmclock.sh"
+		LN
+	fi
 }
 
 function copy_color_file
@@ -565,7 +570,7 @@ install_vim_plugin
 
 copy_color_file
 
-mount_oracle_install
+add_oracle_install_directory_to_fstab
 
 case $cfg_luns_hosted_by in
 	san)
@@ -595,6 +600,9 @@ case $cfg_luns_hosted_by in
 esac
 
 create_stats_services
+
+#	Pour utiliser chrony définir la variable RAC_NTP=chrony
+[[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
 
 info "Reboot nedeed : new kernel config form oracle-rdbms-server-12cR1-preinstall"
 reboot_server $server_name

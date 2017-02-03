@@ -9,8 +9,10 @@ Le serveur central se nomme K2 et à en charge :
 - la gestion du SAN via target (qui est présent sur les distributions de type Redhat),
 les disques sont exportés sur le réseau via le protocole iSCSI.
 - la GATEWAY qui centralise l'accès à internet des serveurs, par défaut aucun
-serveur de base de données ne peut accéder à internet.
+serveur de base de données ne peut accéder à internet. Le firewall et SELinux sont
+activés sur ce serveur.
 - la gestion du dépôt des rpms.
+- de synchroniser l'horloge des serveurs de base de données.
 
 Tout type de serveurs de base de données peuvent être créé :
 - Base de données sur un serveur standalone.
@@ -27,31 +29,6 @@ besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
 
 --------------------------------------------------------------------------------
 
-### Étapes pour la création d'une base :
-
-Une fois les VMs master et K2 opérationnelles, la création d'une nouvelle base
-SINGLE ou RAC se fait en 5 étapes :
-
-1. Définir l'identifiant de la base et le nombre de nœuds.
-
-2. Clonage du serveur de référence : ~5mn par serveur.
-
-3. Installation du Grid Infrastructure et création des DGs
-
-	* ~35mn pour un RAC 2 nœuds.
-	* ~8mn pour une SINGLE.
-
-4. Installation d'Oracle
-
-	* ~20mn pour un RAC 2 nœuds.
-	* ~5mn pour une SINGLE.
-
-5. Création d'une base de données CDB + 1 PDB :
-
-	* ~30mn pour un RAC 2 nœuds.
-	* ~18mn pour une SINGLE.
-
---------------------------------------------------------------------------------
 ### Télécharger les logiciels suivants :
 
 * VirtualBox
@@ -111,7 +88,7 @@ clone_master.sh		|	daisy				|	4mn15s
 clone_master.sh		|	daisy				|	3mn37s
 install_grid.sh		|	daisy				|	31mn46s
 install_oracle.sh	|	daisy				|	13mn13s
-create_db.sh		|	daisy				|	54mn29s
+create_db.sh		|	daisy				|	42mn29s
 
 --------------------------------------------------------------------------------
 
