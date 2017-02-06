@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -54,7 +55,7 @@ done
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef service	"$str_usage"
 
-function is_running
+function service_running
 {
 	typeset	-r	db=$1
 	typeset	-r	service=$2
@@ -62,7 +63,7 @@ function is_running
 	srvctl status service -db $db -service $service | grep -q "is running"
 }
 
-if $(is_running $db $service)
+if $(service_running $db $service)
 then
 	exec_cmd srvctl stop service -db $db -service $service
 	LN
@@ -71,5 +72,5 @@ fi
 exec_cmd srvctl remove service -db $db -service $service
 LN
 
-exec_cmd ~/plescripts/db/delete_tns_alias.sh -alias_name=$service
+execute_on_all_nodes_v2 ~/plescripts/db/delete_tns_alias.sh -alias_name=$service
 LN
