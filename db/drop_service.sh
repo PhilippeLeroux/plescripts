@@ -63,7 +63,7 @@ function service_running
 	srvctl status service -db $db -service $service | grep -q "is running"
 }
 
-if $(service_running $db $service)
+if service_running $db $service
 then
 	exec_cmd srvctl stop service -db $db -service $service
 	LN
