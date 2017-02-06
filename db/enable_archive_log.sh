@@ -102,9 +102,6 @@ function enable_archivelog_with_GI
 	exec_cmd "srvctl stop database -db $db"
 	LN
 
-	#	Je ne fais plus de startup mount avec sqlplus, car si les schémas sont
-	#	créés l'alias sur le spfile n'est pas créé et la command échoue en
-	#	disant que le spfile n'existe pas.
 	info "Start instance $ORACLE_SID"
 	exec_cmd srvctl start instance	-db $db					\
 									-instance $ORACLE_SID	\
