@@ -28,7 +28,7 @@ La création des serveurs de base de données est 100 % automatisée, il n'y a p
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
 
 La version 12c d'oracle est particulièrement consommatrice en ressources mémoire
-et CPU, un certain nombre de hachs sont mis en œuvre pour pouvoir installer
+et CPU, un certain nombre de hacks sont mis en œuvre pour pouvoir installer
 une base en SINGLE ou RAC sur un PC possédant au moins 8 Gb de RAM et un processeur
 équivalent à un i5 4ème génération.
 
