@@ -32,7 +32,7 @@ et CPU, un certain nombre de hachs sont mis en œuvre pour pouvoir installer
 une base en SINGLE ou RAC sur un PC possédant au moins 8 Gb de RAM et un processeur
 équivalent à un i5 4ème génération.
 
-Si vous avez une configuration inférieure oubliez-moi, merci.
+Si vous avez une configuration inférieure n'y pensez même pas.
 
 --------------------------------------------------------------------------------
 
