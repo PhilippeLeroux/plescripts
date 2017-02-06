@@ -87,7 +87,7 @@ EOA
 
 typeset	-r	tnsnames_file=$TNS_ADMIN/tnsnames.ora
 
-if [ ! -d $TNS_ADMIN ]
+if [ ! -d "$TNS_ADMIN" ]
 then
 	error "Directory TNS_ADMIN='$TNS_ADMIN' not exist."
 	exit 1
@@ -100,14 +100,11 @@ info "Append new alias : $service"
 get_alias_for $service $host_name >> $tnsnames_file
 LN
 
-if [ x"$copy_server_list" != X ]
-then
-	for server_name in $copy_server_list
-	do
-		info "Copy \$TNS_ADMIN/tnsnames.ora to $server_name"
-		scp $tnsnames_file ${server_name}:$tnsnames_file
-		LN
-	done
-fi
+for server_name in $copy_server_list
+do
+	info "Copy \$TNS_ADMIN/tnsnames.ora to $server_name"
+	scp $tnsnames_file ${server_name}:$tnsnames_file
+	LN
+done
 
 info "\$TNS_ADMIN/tnsnames.ora updated."

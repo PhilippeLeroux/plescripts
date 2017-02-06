@@ -24,7 +24,7 @@ typeset		OH_FS=$rac_orcl_fs
 [ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
 
 add_usage "-db=name"				"Database name."
-add_usage "-standby=id"				"ID for standby server."
+add_usage "[-standby=id]"			"ID for standby server."
 add_usage "[-max_nodes=1]"			"RAC #nodes"
 add_usage "[-OH_FS=$OH_FS]"			"RAC : ORACLE_HOME FS : ocfs2|$rdbms_fs_type."
 add_usage "[-luns_hosted_by=$luns_hosted_by]"	"san|vbox"

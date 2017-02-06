@@ -73,6 +73,8 @@ must_be_user oracle
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
+exit_if_database_not_exists $db
+
 exit_if_ORACLE_SID_not_defined
 
 typeset	-r dataguard=$(dataguard_config_available)

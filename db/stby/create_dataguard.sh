@@ -723,7 +723,7 @@ from
 		return 0
 	else
 		info -f "[$KO]"
-		info "Run : ~/plescripts/db/enable_archive_log.sh"
+		info "Execute : ~/plescripts/db/enable_archive_log.sh -db=$primary"
 		LN
 		return 1
 	fi

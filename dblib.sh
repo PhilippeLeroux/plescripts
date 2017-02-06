@@ -18,6 +18,19 @@ fi
 
 typeset -r	SQL_PROMPT="prompt SQL>"
 
+#*> $1 database name
+#*> exit 1 if $1 not exists.
+function exit_if_database_not_exists
+{
+	srvctl status database -db $1 >/dev/null 2>&1
+	if [ $? -ne 0 ]
+	then
+		error "Database $1 not exists."
+		LN
+		exit 1
+	fi
+}
+
 function exit_if_ORACLE_SID_not_defined
 {
 	if [[ x"$ORACLE_SID" == x || "$ORACLE_SID" == NOSID ]]

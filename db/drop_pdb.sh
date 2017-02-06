@@ -72,6 +72,8 @@ exit_if_param_undef pdb	"$str_usage"
 
 exit_if_param_invalid role "primary physical"	"$str_usage"
 
+exit_if_database_not_exists $db
+
 function exit_if_db_not_primary_database
 {
 	if  ! dgmgrl sys/$oracle_password 'show configuration' |\

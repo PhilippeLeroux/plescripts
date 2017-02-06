@@ -23,7 +23,7 @@ typeset -r ME=$0
 typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=$(to_mb $shm_for_db)
-[ $totalMemory -eq 0 ] && totalMemory=640
+[ $totalMemory -eq 0 ] && totalMemory=640 || true
 typeset		shared_pool_size="256M"
 typeset		data=DATA
 typeset		fra=FRA
@@ -39,14 +39,16 @@ typeset		enable_flashback=yes
 typeset		backup=yes
 typeset		confirm="-confirm"
 typeset	-i	redoSize=64	# Unit Mb
+typeset		sampleSchema=true
 
 #	Permet au script database_severs/run_all.sh de valider les arguments.
 typeset		validate_params=no
 
 typeset		create_database=yes
 
-add_usage "<-db=name>"								"Database name"
+add_usage "-db=name"								"Database name"
 add_usage "[-lang=$lang]"							"Language"
+add_usage "[-sampleSchema=$sampleSchema]"			"true|false"
 add_usage "[-sysPassword=$sysPassword]"
 add_usage "[-totalMemory=$totalMemory]"				"Unit Mb"
 add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting."
@@ -111,7 +113,11 @@ do
 		-db=*)
 			db=$(to_upper ${1##*=})
 			lower_db=$(to_lower $db)
-			paramsql=param${db}.sql
+			shift
+			;;
+
+		-sampleSchema=*)
+			sampleSchema=${1##*=}
 			shift
 			;;
 
@@ -220,8 +226,6 @@ do
 	esac
 done
 
-#	============================================================================
-
 function make_dbca_args
 {
 	add_dynamic_cmd_param "-createDatabase -silent"
@@ -264,14 +268,25 @@ function make_dbca_args
 	if [ "$cdb" = yes ]
 	then
 		add_dynamic_cmd_param "-createAsContainerDatabase true"
+
 		if [ "$pdb" != undef ]
 		then
 			add_dynamic_cmd_param "    -numberOfPDBs     $numberOfPDBs"
 			add_dynamic_cmd_param "    -pdbName          $pdb"
 			add_dynamic_cmd_param "    -pdbAdminPassword $pdbAdminPassword"
+
+			if [ $sampleSchema == true ]
+			then
+				add_dynamic_cmd_param "-sampleSchema true"
+			fi
 		fi
 	else
 		add_dynamic_cmd_param "-createAsContainerDatabase false"
+
+		if [ $sampleSchema == true ]
+		then
+			add_dynamic_cmd_param "-sampleSchema true"
+		fi
 	fi
 
 	add_dynamic_cmd_param "-sysPassword    $sysPassword"
@@ -296,6 +311,7 @@ function make_dbca_args
 	then
 		initParams="$initParams,shared_pool_size=$shared_pool_size"
 	fi
+
 	add_dynamic_cmd_param "$initParams"
 }
 
@@ -309,29 +325,6 @@ function test_if_serverpool_exists
 	res=$?
 	LN
 	return $res
-}
-
-function remove_logs_and_db_files
-{
-	line_separator
-	info "Remove all files on $(hostname -s)"
-	if [ "$usefs" == "yes" ]
-	then
-		# Marche pas avec -i sed (oracle donc) n'a pas le droit de créer
-		# de fichier temporaire dans /etc
-		exec_cmd "sed '/^${db}.*/d' /etc/oratab > /tmp/oratab"
-		exec_cmd "cat /tmp/oratab > /etc/oratab"
-
-		exec_cmd rm -rf "$data/$db"
-		exec_cmd rm -rf "$fra/$db"
-		[ ! -d $data ] && exec_cmd mkdir -p $data
-		[ ! -d $fra ] && exec_cmd mkdir -p $fra
-	fi
-
-	exec_cmd -c "rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*"
-	exec_cmd -c "rm -rf $ORACLE_BASE/diag/rdbms/$lower_db"
-	exec_cmd -c "rm -rf $ORACLE_BASE/admin/${db}"
-	LN
 }
 
 #	Test si l'installation est de type RAC ou SINGLE.
@@ -390,8 +383,6 @@ function check_if_ASM_used
 #	Ne rends pas la main sur une erreur.
 function create_database
 {
-	remove_logs_and_db_files
-
 	make_dbca_args
 
 	exec_dynamic_cmd $confirm dbca
@@ -543,7 +534,7 @@ function next_instructions
 		then
 			if [[ $(dataguard_config_available) == no && ! -d $cfg_path_prefix/$cfg_standby ]]
 			then
-				info "From $client_hostname execute :"
+				info "From virtual-host $client_hostname execute :"
 				info "$ cd ~/plescripts/database_servers"
 				info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db)"
 				LN
@@ -557,8 +548,14 @@ function next_instructions
 #	============================================================================
 script_start
 
-exit_if_param_undef		db									"$str_usage"
-exit_if_param_invalid	enable_flashback "yes no"			"$str_usage"
+exit_if_param_undef		db								"$str_usage"
+exit_if_param_invalid	cdb "yes no"					"$str_usage"
+if [ $db_type != undef ]
+then
+	exit_if_param_invalid	db_type "SINGLE RAC RACONENODE"	"$str_usage"
+fi
+exit_if_param_invalid	enable_flashback "yes no"		"$str_usage"
+exit_if_param_invalid	sampleSchema "true false"		"$str_usage"
 
 if [ $validate_params == yes ]
 then
@@ -593,28 +590,32 @@ then
 fi
 
 line_separator
-export ORACLE_DB=${db}
-unset ORACLE_SID
-fake_exec_cmd 'ORACLE_SID=$(ps -ef | grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)'
-ORACLE_SID=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)
-info "Load env for $ORACLE_SID"
+ORACLE_SID=$(~/plescripts/db/get_active_instance.sh)
 if [ x"$ORACLE_SID" == x ]
 then
-	error "ORACLE_SID not defined."
+	error "Cannot define ORACLE_SID ?"
 	exit 1
 fi
+
+info "Load env for $ORACLE_SID"
 ORAENV_ASK=NO . oraenv
 LN
 
 line_separator
-info "Ajust FRA size"
+info "Adjust FRA size"
 sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
+LN
+
+line_separator
+info "Stave PDB state"
+#	Je n'ai pas compris l'intérêt de cette commande ??
+sqlplus_cmd "$(set_sql_cmd "alter pluggable database all save state;")"
 LN
 
 line_separator
 info "Enable archivelog :"
 info "Instance : $ORACLE_SID"
-exec_cmd "~/plescripts/db/enable_archive_log.sh"
+exec_cmd "~/plescripts/db/enable_archive_log.sh -db=$db"
 LN
 
 if [ $enable_flashback == yes ]

@@ -1,6 +1,7 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
+PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/dblib.sh
@@ -11,11 +12,9 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name  Nom de la base à supprimer.
-	[-y]      No confirmation.
 "
 
 typeset db=undef
-typeset	confirm=-confirm
 
 while [ $# -ne 0 ]
 do
@@ -27,11 +26,6 @@ do
 
 		-db=*)
 			db=$(to_upper ${1##*=})
-			shift
-			;;
-
-		-y)
-			confirm=""
 			shift
 			;;
 
@@ -52,39 +46,53 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
+exit_if_database_not_exists $db
+
 function error_msg_on_script_failed
 {
 	LN
-	line_separator
+	info "Problème survenant lors de problèmes de synchronisation NTP en"
+	info "particulier sur les RAC."
+	LN
+	info "1) Vérifier la synchro NTP puis recommencer."
+	info "2) Si l'ORACLE_HOME est sur OCFS2 faire un fsck.ocfs2 sur tous les nœuds."
+	LN
+
+	info "Si 1 et 2 sont OK, alors :"
 	info "Si le nom de la base $db et le mot de passe sys $oracle_password sont correctes,"
 	info "exécuter avec le compte root :"
-	LN
 	info "$ cd ~/plescripts/db"
 	info "$ ./remove_all_files_for_db.sh -db=$db"
 	LN
 }
 
-line_separator
+typeset dbfs=no
 while read res_name
 do
 	[ x"$res_name" == x ] && continue || true
 
+	if [ $dbfs == no ]
+	then
+		dbfs=yes
+		line_separator
+	fi
+
 	pdbName=$(cut -d. -f2<<<$res_name)
 	info "Drop dbfs for pdb $pdbName"
-	exec_cmd -c  "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdbName"
+	exec_cmd -c  "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdbName	\
+													-skip_drop_user</dev/tty"
 	LN
 done<<<"$(crsctl stat res -t | grep -E ".*\.dbfs$")"
+
+#	Il faut supprimer le wallet, sinon il y aura des problèmes de connexion
+#	après la création d'une base.
+[ $dbfs == yes ] && exec_cmd ~/plescripts/db/wallet/drop_wallet.sh || true
 
 line_separator
 info "Delete services :"
 exec_cmd "~/plescripts/db/drop_all_services.sh -db=$db"
 LN
 
-# Les problèmes de suppression d'une base étaient du à la désynchronisation NTP,
-# ces problèmes ne devraient plus se produire, cf readme.md du répertoire ntp.
-#
-# Avec OCFS2 la suppression peut échouée ==> FS corrompu ! (à cause NTP je pense)
-# Il vaut mieux réparer le FS.
 trap '[ "$?" -ne 0 ] && error_msg_on_script_failed' EXIT
 
 line_separator
@@ -96,7 +104,7 @@ add_dynamic_cmd_param "    -sourcedb       $db"
 add_dynamic_cmd_param "    -sysDBAUserName sys"
 add_dynamic_cmd_param "    -sysDBAPassword $oracle_password"
 add_dynamic_cmd_param "    -silent"
-exec_dynamic_cmd $confirm "dbca"
+exec_dynamic_cmd dbca
 LN
 
 typeset -r rm_1="rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*"

@@ -5,13 +5,8 @@
 instance=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|ASM" | cut -d_ -f3-4)
 if [ x"$instance" != x ]
 then
-    grep "$instance" /etc/oratab >/dev/null 2>&1
-    if [ $? -eq 0 ]
-    then
-		echo "$instance"
-		exit 0
-    fi
+	echo "$instance"
+	exit 0
 fi
 
 exit 1
-
