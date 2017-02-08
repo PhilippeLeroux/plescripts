@@ -103,9 +103,8 @@ function enable_archivelog_with_GI
 	LN
 
 	info "Start instance $ORACLE_SID"
-	exec_cmd srvctl start instance	-db $db					\
-									-instance $ORACLE_SID	\
-									-startoption mount
+	sqlplus_cmd "$(set_sql_cmd "startup mount")"
+	LN
 
 	info "Enable archivelog :"
 	sqlplus_cmd "$(sqlcmd_enable_archivelog_with_GI)"
