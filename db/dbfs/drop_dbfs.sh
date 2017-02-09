@@ -11,8 +11,6 @@ typeset -r ME=$0
 
 typeset db=undef
 typeset pdb=undef
-typeset drop_wallet=no
-typeset	wallet_path=$ORACLE_HOME/oracle/wallet
 typeset	drop_user=yes
 
 typeset -r str_usage=\
@@ -20,8 +18,6 @@ typeset -r str_usage=\
 	-db=name
 	-pdb=name
 	[-skip_drop_user]	Utile si le pdb va être supprimé.
-	[-wallet_path=$wallet_path]
-	[-drop_wallet=$drop_wallet] yes|no
 "
 
 while [ $# -ne 0 ]
@@ -47,16 +43,6 @@ do
 			shift
 			;;
 
-		-drop_wallet=*)
-			drop_wallet=${1##*=}
-			shift
-			;;
-
-		-wallet_path=*)
-			wallet_path=${1##*=}
-			shift
-			;;
-
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -78,8 +64,6 @@ exit_if_ORACLE_SID_not_defined
 
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
-
-exit_if_param_invalid drop_wallet "yes no" "$str_usage"
 
 typeset	-r	dbfs_cfg_file=~/${pdb}_dbfs.cfg
 
@@ -122,40 +106,8 @@ then
 fi
 
 line_separator
-info "Remove credential for service $service"
-cat<<EOS>/tmp/deletecred.sh
-#!/bin/bash
-echo mkstore -wrl $wallet_path -deleteCredential $service
-mkstore -wrl $wallet_path -deleteCredential $service<<EOP
-$oracle_password
-EOP
-EOS
-chmod u+x /tmp/deletecred.sh
-
-exec_cmd /tmp/deletecred.sh
+exec_cmd "~/plescripts/db/wallet/delete_credential.sh -tnsalias=$service"
 LN
-
-if [ $gi_count_nodes -ne 1 ]
-then
-	exec_cmd touch $wallet_path/is_cfs
-	ssh ${gi_node_list[0]} test -f $wallet_path/is_cfs
-	if [ $? -ne 0 ]
-	then # ce n'est pas un CFS
-		for node in ${gi_node_list[*]}
-		do
-			exec_cmd scp /tmp/deletecred.sh ${node}:/tmp/deletecred.sh
-			exec_cmd "ssh ${node} '. .bash_profile; /tmp/deletecred.sh'"
-			LN
-		done
-	fi
-	exec_cmd rm $wallet_path/is_cfs
-	LN
-fi
-
-if [ $drop_wallet == yes ]
-then
-	exec_cmd "~/plescripts/db/wallet/drop_wallet.sh -wallet_path=$wallet_path"
-fi
 
 execute_on_all_nodes "rm -f $dbfs_cfg_file"
 LN

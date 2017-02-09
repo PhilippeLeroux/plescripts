@@ -8,8 +8,9 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-service=name   Nom du service qui sera aussi le nom de l'alias
-	-host_name=name Nom de l'hôte.
+	-service=name    Nom du service qui sera aussi le nom de l'alias
+	-host_name=name  Nom de l'hôte.
+	[-tnsalias=name] Nom de l'alias TNS, par défaut c'est le nom du service.
 	[-copy_server_list=] Copie avec scp le tnsnames sur la liste des servers.
 "
 
@@ -18,6 +19,7 @@ script_banner $ME $*
 typeset service=undef
 typeset host_name=undef
 typeset copy_server_list
+typeset tnsalias=undef
 
 while [ $# -ne 0 ]
 do
@@ -29,12 +31,17 @@ do
 			;;
 
 		-service=*)
-			service=$(to_upper ${1##*=})
+			service=${1##*=}
 			shift
 			;;
 
 		-host_name=*)
 			host_name=${1##*=}
+			shift
+			;;
+
+		-tnsalias=*)
+			tnsalias=${1##*=}
 			shift
 			;;
 
@@ -62,15 +69,17 @@ exit_if_param_undef service		"$str_usage"
 exit_if_param_undef host_name	"$str_usage"
 
 #	Affiche sur la sortie standard la configuration de l'alias TNS.
-#	$1	service qui sera aussi le nom de l'alias.
-#	$2	nom du serveur
+#	$1	nom de l'alias
+#	$2	nom du service
+#	$3	nom du serveur
 function get_alias_for
 {
-	typeset	-r	service=$1
-	typeset	-r	host_name=$2
+	typeset	-r	tnsalias=$1
+	typeset	-r	service=$2
+	typeset	-r	host_name=$3
 cat<<EOA
 
-$service =
+$tnsalias =
 	(DESCRIPTION =
 		(ADDRESS =
 			(PROTOCOL = TCP)
@@ -93,11 +102,13 @@ then
 	exit 1
 fi
 
-exec_cmd "~/plescripts/db/delete_tns_alias.sh -alias_name=$service"
+[ $tnsalias == undef ] && tnsalias=$service || true
+
+exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias"
 LN
 
-info "Append new alias : $service"
-get_alias_for $service $host_name >> $tnsnames_file
+info "Append new alias : $tnsalias"
+get_alias_for $tnsalias $service $host_name >> $tnsnames_file
 LN
 
 for server_name in $copy_server_list

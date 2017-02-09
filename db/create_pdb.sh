@@ -166,3 +166,6 @@ then
 		LN
 	done
 fi
+
+line_separator
+exec_cmd "~/plescripts/db/add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb"

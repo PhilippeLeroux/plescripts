@@ -703,8 +703,8 @@ function exec_cmd
 
 	typeset -i	eval_return
 
-	typeset		simplified_cmd=$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:])
-	simplified_cmd=${simplified_cmd/$HOME/~}
+	typeset		simplified_cmd=$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:] |\
+																sed "s,$HOME,~,")
 
 	case $EXEC_CMD_ACTION in
 		NOP)

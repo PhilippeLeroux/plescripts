@@ -607,7 +607,7 @@ sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
 LN
 
 line_separator
-info "Stave PDB state"
+info "Save PDB state"
 #	Je n'ai pas compris l'intérêt de cette commande ??
 sqlplus_cmd "$(set_sql_cmd "alter pluggable database all save state;")"
 LN
@@ -645,6 +645,13 @@ if [ $backup == yes ]
 then
 	info "Backup database"
 	exec_cmd "~/plescripts/db/image_copy_backup.sh"
+	LN
+fi
+
+if [[ $cdb == yes && $pdb != undef ]]
+then
+	line_separator
+	exec_cmd ./add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb
 	LN
 fi
 

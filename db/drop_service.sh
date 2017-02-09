@@ -72,5 +72,4 @@ fi
 exec_cmd srvctl remove service -db $db -service $service
 LN
 
-execute_on_all_nodes_v2 ~/plescripts/db/delete_tns_alias.sh -alias_name=$service
-LN
+execute_on_all_nodes_v2 ~/plescripts/db/delete_tns_alias.sh -tnsalias=$service

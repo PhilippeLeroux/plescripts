@@ -51,6 +51,10 @@ exit_if_database_not_exists $db
 function error_msg_on_script_failed
 {
 	LN
+	info "Si la base n'est pas démarrée, démarré là."
+	LN
+
+	info "Sinon :"
 	info "Problème survenant lors de problèmes de synchronisation NTP en"
 	info "particulier sur les RAC."
 	LN
@@ -84,9 +88,10 @@ do
 	LN
 done<<<"$(crsctl stat res -t | grep -E ".*\.dbfs$")"
 
-#	Il faut supprimer le wallet, sinon il y aura des problèmes de connexion
-#	après la création d'une base.
-[ $dbfs == yes ] && exec_cmd ~/plescripts/db/wallet/drop_wallet.sh || true
+line_separator
+exec_cmd ~/plescripts/db/wallet/delete_all_credentials.sh
+exec_cmd ~/plescripts/db/wallet/drop_wallet.sh
+LN
 
 line_separator
 info "Delete services :"

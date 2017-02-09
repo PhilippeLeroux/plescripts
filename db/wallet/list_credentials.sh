@@ -3,7 +3,6 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/db/wallet/walletlib.sh
-. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -37,13 +36,12 @@ do
 	esac
 done
 
-must_be_user oracle
+while read nu connect_string user
+do
+	[ x"$nu" == x ] && continue || true
 
-info "Remove wallet : $wallet_path"
-LN
-execute_on_all_nodes_v2 'sed -i "/WALLET_LOCATION/d" $TNS_ADMIN/sqlnet.ora'
-execute_on_all_nodes_v2 'sed -i "/SQLNET.WALLET_OVERRIDE/d" $TNS_ADMIN/sqlnet.ora'
-LN
-
-execute_on_all_nodes "rm -rf $wallet_path"
-LN
+	info "Connect string : $connect_string, user : $user"
+done<<<"$(mkstore -wrl $wallet_path -nologo -listCredential<<EOS|grep -E "^[0-9]*:"
+$oracle_password
+EOS
+)"

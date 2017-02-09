@@ -18,7 +18,6 @@ typeset service=auto
 typeset account_name=dbfsadm
 typeset	account_password=dbfs
 typeset	wallet=yes
-typeset	wallet_path=$ORACLE_HOME/oracle/wallet
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -27,7 +26,6 @@ typeset -r str_usage=\
 	[-service=$service]
 	[-account_name=$account_name]
 	[-account_password=$account_password]
-	[-wallet_path=$wallet_path]
 
 For dataguard must be executed first on the primary database.
 
@@ -55,11 +53,6 @@ do
 
 		-service=*)
 			service=${1##*=}
-			shift
-			;;
-
-		-wallet_path=*)
-			wallet_path=${1##*=}
 			shift
 			;;
 
@@ -160,66 +153,6 @@ function create_file_dbfs_config
 	fi
 }
 
-function create_wallet_store
-{
-	line_separator
-	if [ ! -d $wallet_path ]
-	then
-		exec_cmd ~/plescripts/db/wallet/create_wallet.sh -wallet_path=$wallet_path
-	else
-		info "$wallet_path exists."
-	fi
-	LN
-}
-
-function add_dbfs_user_to_wallet_store
-{
-	line_separator
-	info "Add $account_name to wallet"
-
-	fake_exec_cmd mkstore -wrl $wallet_path	\
-				-createCredential $service $account_name $account_password
-
-	mkstore -wrl $wallet_path	\
-			-createCredential $service $account_name $account_password<<-EOP
-	$oracle_password
-	EOP
-	LN
-}
-
-#	Si $wallet_path n'est pas sur un Cluster FS, il est copié sur tous les noeuds
-#	du cluster.
-function copy_store_if_not_cfs
-{
-	line_separator
-	info "Test if wallet on CFS."
-	typeset -r test_file=$wallet_path/is_cfs
-	exec_cmd "touch $test_file"
-	exec_cmd -c ssh ${gi_node_list[0]} test -f $test_file
-	typeset is_cfs=$?
-	exec_cmd "rm $test_file"
-	if [ $is_cfs -eq 0 ]
-	then
-		info "CFS : nothing to do."
-		LN
-		return 0
-	fi
-	LN
-
-	info "Copy wallet & sqlnet.ora to : ${gi_node_list[*]}"
-	for node in ${gi_node_list[*]}
-	do
-		info "copy wallet store to $node"
-		exec_cmd ssh ${node} mkdir -p $wallet_path
-		exec_cmd scp -pr $wallet_path/* ${node}:$wallet_path/
-		LN
-
-		info "copy sqlnet.ora to $node"
-		exec_cmd scp -pr $TNS_ADMIN/sqlnet.ora ${node}:$TNS_ADMIN/sqlnet.ora
-		LN
-	done
-}
-
 function create_password_file
 {
 	line_separator
@@ -279,7 +212,7 @@ function resume
 	info "DBFS user   : $account_name/$account_password"
 	if [ $wallet == yes ]
 	then
-		info "Wallet path : $wallet_path"
+		info "Wallet used."
 	else
 		info "Use password file : debug mode !"
 	fi
@@ -329,9 +262,11 @@ create_file_dbfs_config
 
 if [ $wallet == yes ]
 then
-	create_wallet_store
-	add_dbfs_user_to_wallet_store
-	[ $gi_count_nodes -ne 1 ] && copy_store_if_not_cfs || true
+	exec_cmd ~/plescripts/db/wallet/create_credential.sh	\
+									-tnsalias=$service		\
+									-user=$account_name		\
+									-password=$account_password
+	LN
 else
 	create_password_file
 fi
