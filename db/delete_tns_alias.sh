@@ -65,9 +65,7 @@ do
 		if grep -qiE "${tnsalias}\s{0,}=.*"<<<"$line"
 		then
 			alias_found=yes
-			[ $num -eq 1 ] && first_num=$num || first_num=$(( num - 1 ))
-			# num - 1 permet de supprimer la ligne vide au dessus de la 
-			# définition de l'alias. (Peut être qu'il serait prudent de le tester ?)
+			first_num=$num
 		fi
 	else
 		if [ x"$line" == x ]

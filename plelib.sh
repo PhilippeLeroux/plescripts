@@ -308,13 +308,13 @@ function my_echo
 #*> Print error message
 function error
 {
-	my_echo "${RED}${BLINK}" "✗ " " $@"
+	my_echo "${RED}${BLINK}" "✗ " "$@"
 }
 
 #*> Print warning message
 function warning
 {
-	my_echo "${LGREEN}${INVERT}" "< " " $@"
+	my_echo "${LGREEN}${INVERT}" "< " "$@"
 }
 
 #*> Affiche les informations de debug.

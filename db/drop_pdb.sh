@@ -165,8 +165,8 @@ fi
 stop_and_remove_dbfs
 
 line_separator
-#	TODO : remove TNS alias.
 info "Delete credential for sys"
+exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=sys${pdb}"
 exec_cmd "wallet/delete_credential.sh -tnsalias=sys${pdb}"
 LN
 

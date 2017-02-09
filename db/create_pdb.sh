@@ -169,3 +169,13 @@ fi
 
 line_separator
 exec_cmd "~/plescripts/db/add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb"
+if [ $dataguard == yes ]
+then
+	for (( i=0; i < ${#physical_list[@]}; ++i ))
+	do
+		exec_cmd "ssh ${stby_server_list[i]}	\
+			'. .bash_profile;	\
+			~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
+								-db=${physical_list[i]} -pdb=$pdb'"
+	done
+fi

@@ -77,7 +77,7 @@ exit_if_param_undef password	"$str_usage"
 
 if [ ! -d $wallet_path ]
 then
-	exec_cmd ~/plescripts/db/wallet/create_wallet.sh -wallet_path=$wallet_path
+	exec_cmd ~/plescripts/db/wallet/create_wallet.sh
 fi
 
 if ! tnsping $tnsalias >/dev/null 2>&1
