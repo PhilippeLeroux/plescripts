@@ -15,7 +15,7 @@ Si le wallet store n'existe pas il est créé.
 
 RAC : prend en charge un 'wallet store' non stocké sur un CFS.
 
-Dataguard : todo
+Dataguard : exécuter le script sur tous les nœuds.
 "
 
 script_banner $ME $*
@@ -24,7 +24,7 @@ typeset tnsalias=undef
 typeset user=undef
 typeset password=undef
 
-#	Dans le cas d'un RAC ou d'un Dataguard le script sera exécuté sur tous les
+#	Dans le cas d'un RAC le script sera exécuté sur tous les
 #	nœuds sauf si le flag -local_only est utilisé.
 typeset	local_only=no
 
@@ -103,6 +103,7 @@ then
 				~/plescripts/db/wallet/create_credential.sh	\
 									-tnsalias=$tnsalias		\
 									-user=$user				\
-									-password=$password"
+									-password=$password		\
+									-local_only"
 	fi
 fi

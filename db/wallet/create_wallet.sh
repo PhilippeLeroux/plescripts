@@ -13,8 +13,12 @@ typeset -r str_usage=\
 
 Chemin du wallet : $wallet_path
 
-Dans le cas dans RAC, si le wallet n'est pas syr un CFS, le wallet store et le
-fichier sqlnet.ora sont copiés sur les autres nœuds avec scp.
+RAC : prend en charge un 'wallet store' non stocké sur un CFS.
+
+Dataguard : exécuter le script sur tous les nœuds.
+
+Note : le script create_credential.sh appel ce script si le 'wallet store'
+n'existe pas.
 "
 
 script_banner $ME $*

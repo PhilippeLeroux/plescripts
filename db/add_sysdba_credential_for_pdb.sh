@@ -9,7 +9,11 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -db=name -pdb=name [-service=auto]"
+"Usage : $ME -db=name -pdb=name [-service=auto]
+
+Le script prend en charge les RACs.
+
+Pour un dataguard exécuter ce script sur tous les nœuds."
 
 script_banner $ME $*
 
@@ -81,6 +85,7 @@ then # Pour les RACs, l'alias TNS connecte sur le nœud locale.
 	done
 fi
 
+#	Pour les RACs create_credential.sh fait le nécessaire.
 exec_cmd ~/plescripts/db/wallet/create_credential.sh	\
 								-tnsalias=$tnsalias		\
 								-user=sys				\

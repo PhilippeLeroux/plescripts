@@ -13,7 +13,7 @@ typeset -r str_usage=\
 
 RAC : prend en charge un 'wallet store' non stocké sur un CFS.
 
-Dataguard : todo
+Dataguard : exécuter le script sur tous les nœuds.
 "
 
 script_banner $ME $*
