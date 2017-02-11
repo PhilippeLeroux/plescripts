@@ -1,7 +1,7 @@
 -- vim: ts=4:sw=4
 set lines 150
 col	instance_name	for	a10		head "Instance"
-col	name			for	a10		head "PDB name"
+col	name			for	a12		head "PDB name"
 col	open_mode					head "Open mode"
 select
     i.instance_name
@@ -15,8 +15,6 @@ from
     gv$containers c
     inner join gv$instance i
         on  c.inst_id = i.inst_id
-where
-	c.name != 'PDB$SEED'
 order by
     c.name
 ,   i.instance_name

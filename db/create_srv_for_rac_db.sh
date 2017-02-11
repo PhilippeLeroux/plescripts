@@ -12,9 +12,14 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
-	[-poolName=name]    For policy managed database.
 
-For single database used : create_srv_for_single_db.sh
+Options for policy managed database :
+	[-poolName=name]        Not defined => Administrator Managed Database.
+	[-cardinality=uniform]  uniform | singleton
+
+Options for administrator managed database :
+	[-preferred=name]       Default all instances.
+	[-available=name]       Default none.
 "
 
 script_banner $ME $*
@@ -22,7 +27,9 @@ script_banner $ME $*
 typeset db=undef
 typeset pdb=undef
 typeset poolName
-typeset preferredInstances
+typeset cardinality=uniform
+typeset preferred
+typeset available
 
 while [ $# -ne 0 ]
 do
@@ -48,6 +55,21 @@ do
 			shift
 			;;
 
+		-cardinality=*)
+			cardinality=${1##*=}
+			shift
+			;;
+
+		-preferred=*)
+			preferred=${1##*=}
+			shift
+			;;
+
+		-available=*)
+			available=${1##*=}
+			shift
+			;;
+
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -66,12 +88,7 @@ done
 exit_if_param_undef db				"$str_usage"
 exit_if_param_undef pdb				"$str_usage"
 
-line_separator
-warning "Les services sont créées à partir de notes rapides."
-warning "J'ai hacké pour que les services soient créées."
-warning "Le but principal étant de poser un mémo"
-warning "Donc ils sont foireux et à adapter...."
-LN
+exit_if_param_invalid cardinality "uniform singleton"	"$str_usage"
 
 # print all instances to stdout
 function get_all_instances
@@ -91,14 +108,41 @@ function get_scan_name
 	srvctl config scan | head -1 | sed "s/.*: \(.*-scan\),.*/\1/"
 }
 
+#	for administrator managed database add parameter -preferred and/or -available
+function add_param_preferred_available
+{
+	if [ "$preferred" == x ]
+	then # default on all instance.
+		add_dynamic_cmd_param "    -preferred      $(get_all_instances)"
+	else
+		add_dynamic_cmd_param "    -preferred      $preferred"
+		if [ "$available" == x ]
+		then
+			add_dynamic_cmd_param "    -available      $available"
+		fi
+	fi
+}
+
+#	for policy managed database.
+function add_param_serverpool
+{
+	add_dynamic_cmd_param "    -serverpool     $poolName"
+	add_dynamic_cmd_param "    -cardinality    $cardinality"
+}
+
 typeset -r oci_service=$(mk_oci_service $pdb)
 typeset -r java_service=$(mk_java_service $pdb)
 typeset	-r scan_name=$(get_scan_name)
 
+warning "Les services sont créées à partir de notes rapides."
+warning "J'ai hacké pour que les services soient créées."
+warning "Le but principal étant de poser un mémo"
+warning "Donc ils sont foireux et à adapter...."
+LN
+
 line_separator
 if [ x"$poolName" == x ]
 then
-	preferredInstances=$(get_all_instances)
 	info "Create service Administrator Managed $oci_service"
 else
 	info "Create service Policy Managed $oci_service"
@@ -120,13 +164,7 @@ LN
 
 add_dynamic_cmd_param "add service -service $oci_service"
 add_dynamic_cmd_param "    -pdb $pdb -db $db"
-if [ x"$poolName" == x ]
-then
-	add_dynamic_cmd_param "    -preferred      $preferredInstances"
-else
-	add_dynamic_cmd_param "    -serverpool     $poolName"
-	add_dynamic_cmd_param "    -cardinality    uniform"
-fi
+[ x"$poolName" == x ] && add_param_preferred_available || add_param_serverpool
 add_dynamic_cmd_param "    -policy         automatic"
 add_dynamic_cmd_param "    -failovertype   session"
 add_dynamic_cmd_param "    -failovermethod basic"
@@ -135,6 +173,7 @@ add_dynamic_cmd_param "    -rlbgoal        throughput"
 
 exec_dynamic_cmd srvctl
 LN
+
 exec_cmd srvctl start service -service $oci_service -db $db
 LN
 
@@ -156,13 +195,7 @@ LN
 
 add_dynamic_cmd_param "add service -service $java_service"
 add_dynamic_cmd_param "    -pdb $pdb -db $db"
-if [ x"$poolName" == x ]
-then
-	add_dynamic_cmd_param "    -preferred      $preferredInstances"
-else
-	add_dynamic_cmd_param "    -serverpool     $poolName"
-	add_dynamic_cmd_param "    -cardinality    uniform"
-fi
+[ x"$poolName" == x ] && add_param_preferred_available || add_param_serverpool
 add_dynamic_cmd_param "    -policy         automatic"
 add_dynamic_cmd_param "    -failovertype   transaction"
 add_dynamic_cmd_param "    -failovermethod basic"

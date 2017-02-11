@@ -13,6 +13,7 @@ script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef
+typeset	from_samples=no
 typeset admin_user=syspdb
 typeset admin_pass=$oracle_password
 
@@ -21,6 +22,7 @@ typeset -r str_usage=\
 $ME
 	-db=name
 	-pdb=name
+	[-from_samples]	Clone pdb from pdb_samples
 	[-admin_user=$admin_user]
 	[-admin_pass=$admin_pass]
 "
@@ -40,6 +42,11 @@ do
 
 		-pdb=*)
 			pdb=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-from_samples)
+			from_samples=yes
 			shift
 			;;
 
@@ -110,12 +117,25 @@ fi
 LN
 
 line_separator
-function ddl_create_pdb
-{
-	set_sql_cmd "whenever sqlerror exit 1;"
-	set_sql_cmd "create pluggable database $pdb admin user $admin_user identified by $admin_pass;"
-}
-sqlplus_cmd "$(ddl_create_pdb)"
+if [ $from_samples == no ]
+then
+	function ddl_create_pdb
+	{
+		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "create pluggable database $pdb admin user $admin_user identified by $admin_pass;"
+	}
+	sqlplus_cmd "$(ddl_create_pdb)"
+else
+	function clone_pdb_samples
+	{
+		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "alter pluggable database pdb_samples open read write;"
+		set_sql_cmd "create pluggable database $pdb from pdb_samples;"
+		set_sql_cmd "alter pluggable database pdb_samples close;"
+	}
+	sqlplus_cmd "$(clone_pdb_samples)"
+	[ $? -ne 0 ] && exit 1 || true
+fi
 LN
 
 for stby in ${physical_list[*]}

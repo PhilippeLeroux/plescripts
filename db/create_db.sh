@@ -59,35 +59,32 @@ add_usage "[-data=$data]"
 add_usage "[-fra=$fra]"
 add_usage "[-templateName=$templateName]"
 add_usage "[-db_type=SINGLE|RAC|RACONENODE]"		"(3)"
-add_usage "[-policyManaged]"						"Créer une base en 'Policy Managed' (4)"
-add_usage "[-serverPoolName=name]"					"Nom du pool à utiliser. (5)"
+add_usage "[-policyManaged]"						"Database Policy Managed (4)"
+add_usage "[-serverPoolName=name]"					"pool name. (5)"
 add_usage "[-enable_flashback=$enable_flashback]"	"yes|no"
-add_usage "[-no_backup]"							"Pas de backup après création de la base."
+add_usage "[-no_backup]"							"No backup."
 
 typeset -r str_usage=\
 "Usage :
 $ME
 $(print_usage)
 
-\t1 : Si vaut yes et que -pdb n'est pas précisé alors pdb == pdb01
-\t    Les services de la pdb seront : pdb01_oci & pdb01_java
-\t    Pour ne pas créer de pdb utiliser -pdb=no
+\t1 : -cdb=yes and -pdb not defined → -pdb=pdb01
 
-\t2 : Si -pdb est précisé -cdb vaut automatiquement yes
+\t2 : -pdb defined → -cdb set to yes.
+\t	-pdb=no : do not create a pdb, only cdb.
+\t	Add 2 services : pdb name postfixed by _oci & _java
 
-\t3 : Si db_type n'est pas préciser il sera déterminer en fonction du nombre
-\t    de nœuds, si 1 seul nœud c'est SINGLE sinon c'est RAC.
-\t    Donc pour créer un RAC One Node préciser : -db_type=RACONENODE
-\t    Le service Rac One Node sera ron_$(hostname -s)
+\t3 : db_type auto for single or RAC.
+\t	To create RAC One node used -db_type=RACONENODE
+\t	RAC One node service : ron_$(hostname -s)
 
-\t4 : Si la base est créée en 'Policy Managed' le pool 'poolAllNodes' sera
-\t    crée si -serverPoolName n'est pas précisé.
+\t4 : Default pool name : poolAllNodes
 
-\t5 : Active le flag -policyManaged
+\t5 : Enable flag -policyManaged
 
 \tDebug flag :
-\t[-skip_db_create] à utiliser si la base est crées pour exécuter uniquement
-\tles scripts post installations.
+\t	-skip_db_create : skip create database
 "
 
 script_banner $ME $*
@@ -580,6 +577,12 @@ remove_glogin
 
 [ "${db_type:0:3}" == "RAC" ] && update_rac_oratab || true
 
+if [ $sampleSchema == true ]
+then # Doit être exécute après la mise à jour de oratab pour les RACs.
+	exec_cmd ~/plescripts/db/create_pdb_samples_from.sh -db=$db -pdb=$pdb
+	LN
+fi
+
 [[ $cdb == yes && $pdb != undef ]] && create_services_for_pdb || true
 
 if [ $usefs == yes ]
@@ -606,11 +609,15 @@ info "Adjust FRA size"
 sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
 LN
 
-line_separator
-info "Save PDB state"
+#line_separator
+#info "Save PDB state"
 #	Je n'ai pas compris l'intérêt de cette commande ??
-sqlplus_cmd "$(set_sql_cmd "alter pluggable database all save state;")"
-LN
+#	Update :
+#		Doit être exécutée après chaque création de PDB
+#		Doit être exécutéé sur tous les noeuds d'un RAC
+#		==> aucun intérêt.
+#sqlplus_cmd "$(set_sql_cmd "alter pluggable database all save state;")"
+#LN
 
 line_separator
 info "Enable archivelog :"
