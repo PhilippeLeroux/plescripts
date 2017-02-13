@@ -1,7 +1,7 @@
 -- vim: ts=4:sw=4
 
 --	Je pars du principe que sur un serveur il n'y a qu'un seul CDB, donc
---	db_recovery_file_dest_size aura 80% de la taille de la FRA.
+--	db_recovery_file_dest_size aura max_percent (=90%) de la taille de la FRA.
 
 set ver off
 define username=ple
@@ -10,6 +10,8 @@ define tbs='&username.tbs'
 set serveroutput on size unlimited
 declare
 LN constant char(1) := chr(10);
+
+max_percent	constant number := 90;
 
 --	Constantes pour la fonction exec :
 on_error_raise		constant pls_integer := 1;
@@ -62,9 +64,9 @@ end get_dg_size_gb;
 
 --
 procedure main( dg_fra_name varchar2 ) as
-	fra_size_gb	constant number := round( get_dg_size_gb( dg_fra_name ) * 0.8 );
+	fra_size_gb	constant number := round( get_dg_size_gb( dg_fra_name ) * (max_percent/100) );
 begin
-	p( 'Recovery size 80% of '||dg_fra_name );
+	p( 'Recovery size '||max_percent||'% of '||dg_fra_name );
 	exec( 'alter system set db_recovery_file_dest_size='||fra_size_gb||'G scope=both sid=''*''' );
 end main;
 

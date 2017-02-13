@@ -60,12 +60,12 @@ function create_wallet_store
 	$oracle_password
 	$oracle_password
 	EOS
+	LN
 }
 
 function update_sqlnet_ora
 {
 	info "Update sqlnet.ora"
-	LN
 
 	if [ -f $TNS_ADMIN/sqlnet.ora ]
 	then # Efface la configuration si elle existe.

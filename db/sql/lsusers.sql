@@ -1,10 +1,12 @@
--- vim: ts=4:sw=4
+--	vim: ts=4:sw=4
+
 set lines 100
-col	username				for a10	head "User name"
+col	username				for a26	head "User name"
 col	user_id							head "Used ID"
 col default_tablespace		for a20 head "(*)tablespace"
 col temporary_tablespace	for a20	head "Temporary"
 col	account_status			for a10	head "Status"
+
 select
 	username
 ,	user_id
@@ -15,5 +17,5 @@ select
 from
 	dba_users
 where
-	username = 'PLE'
-/
+	oracle_maintained='N'
+;

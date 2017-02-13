@@ -70,16 +70,13 @@ function error_msg_on_script_failed
 	LN
 }
 
+info "Check DBFS"
 typeset dbfs=no
 while read res_name
 do
 	[ x"$res_name" == x ] && continue || true
 
-	if [ $dbfs == no ]
-	then
-		dbfs=yes
-		line_separator
-	fi
+	[ $dbfs == no ] && dbfs=yes || true
 
 	pdbName=$(cut -d. -f2<<<$res_name)
 	info "Drop dbfs for pdb $pdbName"
@@ -87,8 +84,14 @@ do
 													-skip_drop_user</dev/tty"
 	LN
 done<<<"$(crsctl stat res -t | grep -E ".*\.dbfs$")"
+if [ $dbfs == no ]
+then
+	info "no dbfs to remove."
+	LN
+fi
 
 line_separator
+info "Drop wallet."
 exec_cmd ~/plescripts/db/wallet/delete_all_credentials.sh
 exec_cmd ~/plescripts/db/wallet/drop_wallet.sh
 LN

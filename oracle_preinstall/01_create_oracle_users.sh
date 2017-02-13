@@ -13,7 +13,7 @@ typeset	-r	ME=$0
 typeset -r	str_usage=\
 "Usage $ME
 	-release=aa.bb.cc.dd
-	-db_type=[single|rac]
+	-db_type=[single|rac|single_fs]
 "
 
 #	ksh ou bash, mais ksh c'est trop chiant.
@@ -32,6 +32,12 @@ do
 			shift
 			;;
 
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
 		*)
 			error "'$1' invalid."
 			LN
@@ -41,7 +47,9 @@ do
 	esac
 done
 
-[ $ORACLE_RELEASE = undef ] &&	$ORACLE_RELEASE=$oracle_release
+exit_if_param_invalid db_type "single rac single_fs" "$str_usage"
+
+[ $ORACLE_RELEASE == undef ] &&	$ORACLE_RELEASE=$oracle_release || true
 
 ORCL_RELEASE=${ORACLE_RELEASE:0:2}
 
@@ -64,14 +72,6 @@ case $db_type in
 	single|single_fs)
 		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/grid/$ORACLE_RELEASE!\" ~/plescripts/oracle_preinstall/grid_env"
 		LN
-		;;
-
-	*)
-		error "type = '$db_type' invalid."
-		LN
-		info "$str_usage"
-		LN
-		exit 1
 		;;
 esac
 LN
@@ -213,7 +213,7 @@ LN
 exec_cmd mkdir -p $ORACLE_BASE
 exec_cmd mkdir -p $ORACLE_HOME
 exec_cmd chown -R oracle:oinstall $ORCL_ROOT
-[ $db_type == single_fs ] && exec_cmd chown -R oracle:oinstall $GRID_ROOT
+[ $db_type == single_fs ] && exec_cmd chown -R oracle:oinstall $GRID_ROOT || true
 LN
 
 #	============================================================================

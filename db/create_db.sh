@@ -223,6 +223,18 @@ do
 	esac
 done
 
+#	Return 0 if server pool $1 exists, else 1
+function serverpool_exists
+{
+	typeset -r serverPoolName=$1
+
+	info "Test if server pool $serverPoolName exists :"
+	exec_cmd -ci "srvctl status srvpool -serverpool $serverPoolName"
+	res=$?
+	LN
+	return $res
+}
+
 function make_dbca_args
 {
 	add_dynamic_cmd_param "-createDatabase -silent"
@@ -241,8 +253,10 @@ function make_dbca_args
 		add_dynamic_cmd_param "-policyManaged"
 		if [ $cdb == yes ]
 		then
-			test_if_serverpool_exists $serverPoolName
-			[ $? -ne 0 ] && add_dynamic_cmd_param "    -createServerPool"
+			if ! serverpool_exists $serverPoolName
+			then
+				add_dynamic_cmd_param "    -createServerPool"
+			fi
 			add_dynamic_cmd_param "    -serverPoolName $serverPoolName"
 		fi
 	fi
@@ -310,18 +324,6 @@ function make_dbca_args
 	fi
 
 	add_dynamic_cmd_param "$initParams"
-}
-
-#	Return 0 if server pool $1 exists, else 1
-function test_if_serverpool_exists
-{
-	typeset -r serverPoolName=$1
-
-	info "Test if server pool $serverPoolName exists :"
-	exec_cmd -ci "srvctl status srvpool -serverpool $serverPoolName"
-	res=$?
-	LN
-	return $res
 }
 
 #	Test si l'installation est de type RAC ou SINGLE.
@@ -524,7 +526,7 @@ function adjust_parameters
 
 function next_instructions
 {
-	if cfg_exists $db use_return_code
+	if cfg_exists $db use_return_code >/dev/null 2>&1
 	then
 		cfg_load_node_info $db 1
 		if [ "$cfg_standby" != none ]
@@ -579,7 +581,7 @@ remove_glogin
 
 if [ $sampleSchema == true ]
 then # Doit être exécute après la mise à jour de oratab pour les RACs.
-	exec_cmd ~/plescripts/db/create_pdb_samples_from.sh -db=$db -pdb=$pdb
+	exec_cmd ~/plescripts/db/clone_pdb_samples_from.sh -db=$db -pdb=$pdb
 	LN
 fi
 

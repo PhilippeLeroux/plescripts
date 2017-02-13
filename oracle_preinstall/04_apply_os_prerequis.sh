@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -8,7 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -db_type=<single|rac*>"
+typeset -r str_usage="Usage : $ME -db_type=single|rac|single_fs"
 
 typeset db_type=undef
 
@@ -19,6 +18,12 @@ do
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
 			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
 			;;
 
 		-db_type=*)
@@ -35,7 +40,7 @@ do
 	esac
 done
 
-exit_if_param_undef db_type	"$str_usage"
+exit_if_param_invalid db_type "single rac single_fs"	"$str_usage"
 
 # $1 size in Kb
 function fmt_kb2mb

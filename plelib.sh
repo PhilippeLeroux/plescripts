@@ -497,6 +497,29 @@ function confirm_or_exit
 #	Fonctions permettant d'exécuter des commandes ou scripts.
 ################################################################################
 
+#	Modifie '$@' et affiche le résultat sur stdout.
+#		Remplace le chemin correspondand à HOME par ~
+#		Remplace le chemin correspondand à TNS_ADMIN par $TNS_ADMIN
+#		Remplace le chemin correspondand à ORACLE_HOME par $ORACLE_HOME
+#		Remplace le chemin correspondand à ORACLE_BASE par $ORACLE_BASE
+function replace_paths_by_shell_vars
+{
+	typeset s=$(sed "s,$HOME,~,"<<<"$@")
+
+	[ -v TNS_ADMIN ] && s=$(sed "s,$TNS_ADMIN,\$TNS_ADMIN,"<<<"$s") || true
+
+	[ -v ORACLE_HOME ] && s=$(sed "s,$ORACLE_HOME,\$ORACLE_HOME,"<<<"$s") || true
+
+	[ -v ORACLE_BASE ] && s=$(sed "s,$ORACLE_BASE,\$ORACLE_BASE,"<<<"$s") || true
+
+	echo "$s"
+}
+
+function simplify_cmd
+{
+	replace_paths_by_shell_vars "$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:])"
+}
+
 #*> Fake exec_cmd command
 #*> Command printed but not executed.
 #*> return :
@@ -504,14 +527,15 @@ function confirm_or_exit
 #*>    0 if EXEC_CMD_ACTION = EXEC
 function fake_exec_cmd
 {
+	typeset -r	simplified_cmd=$(replace_paths_by_shell_vars "$*")
 	case $EXEC_CMD_ACTION in
 		NOP)
-			my_echo "${YELLOW}" "${INVERT}nop  >${NORM} " "$@"
+			my_echo "${YELLOW}" "${INVERT}nop  >${NORM} " "$simplified_cmd"
 			return 1
 			;;
 
 		EXEC)
-			my_echo "${YELLOW}" "${STRIKE}$(date +"%Hh%M")>${NORM} " "$@"
+			my_echo "${YELLOW}" "${STRIKE}$(date +"%Hh%M")>${NORM} " "$simplified_cmd"
 			return 0
 	esac
 }
@@ -703,8 +727,7 @@ function exec_cmd
 
 	typeset -i	eval_return
 
-	typeset		simplified_cmd=$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:] |\
-																sed "s,$HOME,~,")
+	typeset -r	simplified_cmd=$(simplify_cmd $*)
 
 	case $EXEC_CMD_ACTION in
 		NOP)
@@ -775,10 +798,19 @@ typeset -i	ple_dyn_param_max_len=0
 #	7	correspond à la largeur de l'horodatage devant les commandes exécutées, exemple : '10h44 >'
 #	4	les paramètres seront 'tabulés' de 4 espaces par rapport à la commande.
 typeset -ri	ple_param_margin=$((4+7))
-#*> $1 parameter to add.
+
+#*>	[-nvsr]	No Var Shell replacement
+#*> $@ parameter to add.
 function add_dynamic_cmd_param
 {
-	typeset -r	param="$1"
+	if [ "$1" == "-nvsr" ]
+	then
+		shift
+		typeset -r param="$@"
+	else
+		typeset -r param="$(replace_paths_by_shell_vars "$*")"
+	fi
+
 	typeset -ri	len=${#param}
 	ple_dyn_param_cmd+=( "$param" )
 
@@ -812,7 +844,7 @@ function exec_dynamic_cmd
 		esac
 	done
 
-	typeset -r cmd_name="$@"
+	typeset -r cmd_name=$(replace_paths_by_shell_vars $@)
 
 	ple_dyn_param_max_len=ple_dyn_param_max_len+2
 

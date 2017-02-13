@@ -80,7 +80,7 @@ function load_node_cfg # $1 inode
 {
 	typeset	-ri	inode=$1
 
-	info "Load node $inode"
+	info "Load node #${inode}"
 	cfg_load_node_info $db $inode
 
 	if [[ $inode -eq $max_nodes && $cfg_standby != none ]]
@@ -112,7 +112,7 @@ function load_node_cfg # $1 inode
 function create_response_file
 {
 	line_separator
-	info "Create response file for the Oracle software."
+	info "Create response file for Oracle software."
 	exit_if_file_not_exists template_oracle_${oracle_release%.*.*}.rsp
 	exec_cmd cp -f template_oracle_${oracle_release%.*.*}.rsp $rsp_file
 	LN
@@ -137,9 +137,9 @@ function create_response_file
 	if [ $max_nodes -gt 1 ]
 	then
 		server_list=${node_names[0]}
-		for (( idxnode=1; idxnode <= max_nodes; ++idxnode ))
+		for (( inode=1; inode < max_nodes; ++inode ))
 		do
-			server_list=$server_list","${node_names[$idxnode]}
+			server_list=$server_list","${node_names[inode]}
 		done
 
 		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
@@ -167,7 +167,7 @@ function start_oracle_installation
 {
 	line_separator
 	info "Start Oracle installation (~30mn)"
-	info "Log here : $ORA_INVENTORY/logs"
+	info "Logs : $ORA_INVENTORY/logs"
 	add_dynamic_cmd_param "\"LANG=C /mnt/oracle_install/database/runInstaller"
 	add_dynamic_cmd_param "      -silent"
 	add_dynamic_cmd_param "      -showProgress"
@@ -179,20 +179,20 @@ function start_oracle_installation
 	[ $ret -gt 250 ] && exit 1
 }
 
-function exec_post_install_root_scripts_on_node	# $1 No node
+function exec_post_install_root_scripts_on_node	# $1 node name
 {
-	typeset  -ri idxnode=$1
-	[ $# -eq 0 ] && error "$0 <node number>" && exit 1
+	typeset  -r node_name=$1
 
 	typeset -r script_root_sh="/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
-	exec_cmd "ssh -t -t root@${node_names[$idxnode]} \"LANG=C $script_root_sh\" </dev/null"
+	exec_cmd "ssh -t -t root@${node_name} \"LANG=C $script_root_sh\" </dev/null"
 	LN
 
 	# Je viens de découvrir ça :
 	# 8.3.1 Creating a Backup of the root.sh Script
 	info "Backup the root.sh script to $backup_script_root_sh"
+	exec_cmd "ssh -t -t root@${node_name} 'cp $script_root_sh $backup_script_root_sh'"
 	LN
 }
 
@@ -281,11 +281,9 @@ mount_install_directory
 
 start_oracle_installation
 
-typeset -i idxnode=0
-while [ $idxnode -lt $max_nodes ]
+for node in ${node_names[*]}
 do
-	exec_post_install_root_scripts_on_node $idxnode
-	idxnode=idxnode+1
+	exec_post_install_root_scripts_on_node $node
 	LN
 done
 

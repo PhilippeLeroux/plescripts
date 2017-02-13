@@ -138,7 +138,7 @@ function create_local_resource
 	info "create local resource $resource_name"
 
 	add_dynamic_cmd_param "-type local_resource"
-	add_dynamic_cmd_param "-attr \"ACTION_SCRIPT='$script_name'"
+	add_dynamic_cmd_param -nvsr "-attr \"ACTION_SCRIPT='$script_name'"
 	add_dynamic_cmd_param "     ,CHECK_INTERVAL=3600,RESTART_ATTEMPTS=10"
 	add_dynamic_cmd_param "     ,START_DEPENDENCIES='pullup:always($ora_service)'"
 	add_dynamic_cmd_param "     ,STOP_DEPENDENCIES='hard(intermediate:ora.${db}.db)'"

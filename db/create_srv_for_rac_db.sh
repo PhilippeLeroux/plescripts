@@ -85,8 +85,8 @@ do
 	esac
 done
 
-exit_if_param_undef db				"$str_usage"
-exit_if_param_undef pdb				"$str_usage"
+exit_if_param_undef db	"$str_usage"
+exit_if_param_undef pdb	"$str_usage"
 
 exit_if_param_invalid cardinality "uniform singleton"	"$str_usage"
 
@@ -111,8 +111,8 @@ function get_scan_name
 #	for administrator managed database add parameter -preferred and/or -available
 function add_param_preferred_available
 {
-	if [ "$preferred" == x ]
-	then # default on all instance.
+	if [ x"$preferred" == x ]
+	then # default on all instances.
 		add_dynamic_cmd_param "    -preferred      $(get_all_instances)"
 	else
 		add_dynamic_cmd_param "    -preferred      $preferred"

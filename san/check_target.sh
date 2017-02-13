@@ -66,11 +66,12 @@ then
 	restart_target
 
 	lv_errors=$(count_lv_errors)
+
+	error "LV errors after restart : $lv_errors"
+	LN
+
 	if [ $lv_errors -ne 0 ]
 	then
-		error "$lv_errors LV(s) errors"
-		LN
-
 		typeset -i lv_corrected=0
 		while read lv_name vg_name rem
 		do
@@ -89,6 +90,7 @@ then
 			fi
 		done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
 
+		info "LV corrected $lv_corrected"
 		if [ $lv_corrected -eq $lv_errors ]
 		then
 			info "target [$OK]"

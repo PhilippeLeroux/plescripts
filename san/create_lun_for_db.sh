@@ -1,22 +1,22 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 #	Ne pas utiliser directement sert au script : ~/plescripts/clone_master/setup_master.sh
-#	TODO : déplacer ce script !!!!!
 
 . ~/plescripts/plelib.sh
-EXEC_CMD_ACTION=EXEC
-
 . ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME [-emul]
-		[-create_lv]   : les disques seront crées dans le vg asm01
-		-db=<str>      : identifiant de la base.
-		-node=<#>      : n° du serveur.
-		-vg_name=<str> : nom du VG sur le SAN.
+"Usage : $ME
+	[-emul]
+	[-create_lv]   : les disques sont crées dans le vg définie par -vg_name (1).
+	-db=name       : identifiant de la base.
+	-node=#        : n° du serveur.
+	-vg_name=name  : nom du VG sur le SAN.
+
+(1) Sinon c'est que les LVs existes, ils seront juste exporté sur le réseau.
 
 Ne sert que lors de la création d'un serveur.
 Ce script n'est utilisé que par ~/plescripts/database_servers/clone_master.sh"

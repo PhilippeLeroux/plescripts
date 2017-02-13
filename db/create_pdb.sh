@@ -13,8 +13,9 @@ script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef
+typeset from_pdb=default
 typeset	from_samples=no
-typeset admin_user=syspdb
+typeset admin_user=pdbadmin
 typeset admin_pass=$oracle_password
 
 typeset -r str_usage=\
@@ -22,7 +23,8 @@ typeset -r str_usage=\
 $ME
 	-db=name
 	-pdb=name
-	[-from_samples]	Clone pdb from pdb_samples
+	[-from_samples]	 Clone pdb from pdb_samples
+	[-from_pdb=name] Clone pdb from name
 	[-admin_user=$admin_user]
 	[-admin_pass=$admin_pass]
 "
@@ -42,6 +44,11 @@ do
 
 		-pdb=*)
 			pdb=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-from_pdb=*)
+			from_pdb=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -84,6 +91,44 @@ exit_if_database_not_exists $db
 
 exit_if_ORACLE_SID_not_defined
 
+function clone_pdb_pdbseek
+{
+	function ddl_create_pdb
+	{
+		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "create pluggable database $pdb admin user $admin_user identified by $admin_pass;"
+	}
+	sqlplus_cmd "$(ddl_create_pdb)"
+	[ $? -ne 0 ] && exit 1 || true
+}
+
+function clone_pdb_samples
+{
+	function ddl_clone_pdb_samples
+	{
+		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "alter pluggable database pdb_samples open read write instances=all;"
+		set_sql_cmd "create pluggable database $pdb from pdb_samples;"
+		set_sql_cmd "alter pluggable database pdb_samples close instances=all;"
+	}
+	sqlplus_cmd "$(ddl_clone_pdb_samples)"
+	[ $? -ne 0 ] && exit 1 || true
+
+}
+
+# $1 pdb name
+function clone_from_pdb
+{
+	function ddl_clone_from_pdb
+	{
+		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "create pluggable database $pdb from $1;"
+	}
+	sqlplus_cmd "$(ddl_clone_from_pdb $1)"
+	[ $? -ne 0 ] && exit 1 || true
+
+}
+
 typeset	-r dataguard=$(dataguard_config_available)
 
 if [[ $dataguard == yes && $gi_count_nodes -gt 1 ]]
@@ -119,22 +164,9 @@ LN
 line_separator
 if [ $from_samples == no ]
 then
-	function ddl_create_pdb
-	{
-		set_sql_cmd "whenever sqlerror exit 1;"
-		set_sql_cmd "create pluggable database $pdb admin user $admin_user identified by $admin_pass;"
-	}
-	sqlplus_cmd "$(ddl_create_pdb)"
+	[ $from_pdb == default ] && clone_pdb_pdbseek || clone_from_pdb $from_pdb
 else
-	function clone_pdb_samples
-	{
-		set_sql_cmd "whenever sqlerror exit 1;"
-		set_sql_cmd "alter pluggable database pdb_samples open read write;"
-		set_sql_cmd "create pluggable database $pdb from pdb_samples;"
-		set_sql_cmd "alter pluggable database pdb_samples close;"
-	}
-	sqlplus_cmd "$(clone_pdb_samples)"
-	[ $? -ne 0 ] && exit 1 || true
+	clone_pdb_samples
 fi
 LN
 

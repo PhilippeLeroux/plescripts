@@ -41,7 +41,11 @@ must_be_executed_on_server "$client_hostname"
 
 typeset -r backup_name="yum_repo.tar.gz"
 typeset -r full_backup_name="$iso_olinux_path/$backup_name"
-[ -f "$full_backup_name" ] && confirm_or_exit "Backup exists. Remove"
+if [ -f "$full_backup_name" ]
+then
+	exec_cmd ls -l $full_backup_name
+	confirm_or_exit "Backup exists. Remove"
+fi
 
 exec_cmd "ssh ${infra_conn} \"cd /repo; tar cf - OracleLinux | gzip -c > $backup_name\""
 exec_cmd "scp ${infra_conn}:/repo/$backup_name $full_backup_name"

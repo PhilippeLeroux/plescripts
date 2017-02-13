@@ -142,7 +142,8 @@ function run_oracle_preinstall
 	#	Source .bash_profile pour éviter les erreurs du script oracle_preinstall/02_install_some_rpms.sh
 	#	Voir dans le script la section "NFS problem workaround"
 	#	Note je ne sais pas si c'est efficace, c'est un teste.
-	ssh_server ". .bash_profile; plescripts/oracle_preinstall/run_all.sh $db_type"
+	ssh_server ". .bash_profile;	\
+					plescripts/oracle_preinstall/run_all.sh -db_type=$db_type"
 	LN
 
 	line_separator

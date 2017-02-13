@@ -154,7 +154,7 @@ function load_node_cfg # $1 inode
 {
 	typeset	-ri	inode=$1
 
-	info "Load node $inode"
+	info "Load node #${inode}"
 	cfg_load_node_info $db $inode
 
 	if [ x"$clusterNodes" = x ]
@@ -278,7 +278,7 @@ function start_grid_installation
 	add_dynamic_cmd_param "      -waitforcompletion"
 	add_dynamic_cmd_param "      -responseFile /home/grid/grid_$db.rsp\""
 	exec_dynamic_cmd -c "ssh -t grid@${node_names[0]}"
-	if [ $? -gt 250 ]
+	if [[ $? -gt 250 || $? -eq 127 ]]
 	then
 		error "To check errors :"
 		error "cd /mnt/oracle_install/grid"
@@ -288,28 +288,30 @@ function start_grid_installation
 	LN
 }
 
-function run_post_install_root_scripts_on_node	# $1 server_name
+function run_post_install_root_scripts_on_node	# $1 node# $2 server_name
 {
-	typeset  -r server_name=$1
+	typeset	-ri	nr_node=$1
+	typeset	-r	server_name=$2
 
 	line_separator
-	info "Run post install scripts on node $server_name (~10mn)"
+	info "Run post install scripts on node #${nr_node} $server_name (~10mn)"
 	LN
 
 	exec_cmd "ssh -t root@$server_name	\
 				\"${ORACLE_BASE%/*/*}/app/oraInventory/orainstRoot.sh\""
 	LN
 
-	exec_cmd -c "ssh -t root@$server_name \". .bash_profile;	\
+	exec_cmd -c "ssh -t -t root@$server_name \". .bash_profile;	\
 											$ORACLE_HOME/root.sh\""
 	return $?
 }
 
+# $1 inode
 function print_manual_workaround
 {
-	#	idxnode est déclaré dans la fonction appelante : run_post_install_root_scripts
+	typeset -i inode=$1
 	info "Manual workaround"
-	info "> ssh root@${node_names[$idxnode]}"
+	info "> ssh root@${node_names[inode]}"
 	info "> $ORACLE_HOME/root.sh"
 	info "log $OK : ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
 	info "log $KO : reboot servers, wait crs up and"
@@ -319,29 +321,31 @@ function print_manual_workaround
 
 function run_post_install_root_scripts
 {
-	typeset -i idxnode=0
-	while [ $idxnode -lt $max_nodes ]
+	typeset -i inode
+	for (( inode=0; inode < max_nodes; ++inode ))
 	do
-		run_post_install_root_scripts_on_node ${node_names[$idxnode]}
+		typeset node_name=${node_names[inode]}
+
+		run_post_install_root_scripts_on_node $((inode+1)) $node_name
 		typeset -i ret=$?
 		LN
 
 		if [ $ret -ne 0 ]
 		then
-			error "root scripts on server ${node_names[$idxnode]} failed."
-			[ $idxnode -eq 0 ] && exit 1
+			error "root scripts on server $node_names failed."
+			[ $inode -eq 0 ] && exit 1
 
 			LN
 			warning "Workaround :"
 			LN
 
-			run_post_install_root_scripts_on_node ${node_names[0]}
+			run_post_install_root_scripts_on_node 0 ${node_names[0]}
 			LN
 
 			timing 10
 			LN
 
-			run_post_install_root_scripts_on_node ${node_names[$idxnode]}
+			run_post_install_root_scripts_on_node $((inode+1)) $node_name
 			typeset -i ret=$?
 			LN
 
@@ -349,18 +353,16 @@ function run_post_install_root_scripts
 			then
 				error "Workaround failed."
 				LN
-				print_manual_workaround
+				print_manual_workaround $inode
 				exit 1
 			fi
 		fi
 
-		if [[ $max_nodes -gt 1 && $idxnode -eq 0 ]]
+		if [[ $max_nodes -gt 1 && $inode -eq 0 ]]
 		then
 			timing 10
 			LN
 		fi
-
-		idxnode=idxnode+1
 	done
 }
 
@@ -457,7 +459,7 @@ function remove_tfa_on_all_nodes
 	disclaimer
 	for (( i=0; i < max_nodes; ++i ))
 	do
-		exec_cmd -c ssh -t root@${node_names[$i]} \
+		exec_cmd -c ssh -t root@${node_names[i]} \
 				". /root/.bash_profile \; tfactl uninstall"
 	done
 }
