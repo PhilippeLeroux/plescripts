@@ -91,7 +91,7 @@ exit_if_database_not_exists $db
 
 exit_if_ORACLE_SID_not_defined
 
-function clone_pdb_pdbseek
+function clone_pdb_pdbseed
 {
 	function ddl_create_pdb
 	{
@@ -164,7 +164,7 @@ LN
 line_separator
 if [ $from_samples == no ]
 then
-	[ $from_pdb == default ] && clone_pdb_pdbseek || clone_from_pdb $from_pdb
+	[ $from_pdb == default ] && clone_pdb_pdbseed || clone_from_pdb $from_pdb
 else
 	clone_pdb_samples
 fi
