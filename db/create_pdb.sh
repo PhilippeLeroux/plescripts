@@ -87,6 +87,13 @@ must_be_user oracle
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
+if [[ $from_samples == yes && $from_pdb != default ]]
+then
+	error "Used -from_samples or -from_pdb"
+	LN
+	exit 1
+fi
+
 exit_if_database_not_exists $db
 
 exit_if_ORACLE_SID_not_defined
@@ -100,20 +107,6 @@ function clone_pdb_pdbseed
 	}
 	sqlplus_cmd "$(ddl_create_pdb)"
 	[ $? -ne 0 ] && exit 1 || true
-}
-
-function clone_pdb_samples
-{
-	function ddl_clone_pdb_samples
-	{
-		set_sql_cmd "whenever sqlerror exit 1;"
-		set_sql_cmd "alter pluggable database pdb_samples open read write instances=all;"
-		set_sql_cmd "create pluggable database $pdb from pdb_samples;"
-		set_sql_cmd "alter pluggable database pdb_samples close instances=all;"
-	}
-	sqlplus_cmd "$(ddl_clone_pdb_samples)"
-	[ $? -ne 0 ] && exit 1 || true
-
 }
 
 # $1 pdb name
@@ -162,12 +155,9 @@ fi
 LN
 
 line_separator
-if [ $from_samples == no ]
-then
-	[ $from_pdb == default ] && clone_pdb_pdbseed || clone_from_pdb $from_pdb
-else
-	clone_pdb_samples
-fi
+[ $from_samples == yes ] && from_pdb=pdb_samples || true
+
+[ $from_pdb == default ] && clone_pdb_pdbseed || clone_from_pdb $from_pdb
 LN
 
 for stby in ${physical_list[*]}
@@ -229,5 +219,6 @@ then
 			'. .bash_profile;	\
 			~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
 								-db=${physical_list[i]} -pdb=$pdb'"
+		LN
 	done
 fi

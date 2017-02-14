@@ -61,3 +61,6 @@ alias ll='ls -rtl'
 alias sugrid='sudo -u grid -i'
 
 . rlwrap.alias
+
+alias lsdiag="sp @\"$HOME/db/sql/lsdiag\""
+alias lspdbs="sp @\"$HOME/db/sql/lspdbs\""

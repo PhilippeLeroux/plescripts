@@ -56,4 +56,14 @@ info "Load env for ORACLE_SID=$ORACLE_SID"
 ORAENV_ASK=NO . oraenv
 LN
 
-sqlplus_cmd "$(set_sql_cmd "create pluggable database pdb_samples from $pdb;")"
+function ddl_create_pdb_samples
+{
+	#	Sur un dataguard le PDB doit être ouvert, pour pouvoir être cloné
+	#	le PDB doit être en lecture. Il n'y aura pas de service pour ce PDB
+	#	donc on sauvegarde son état.
+	set_sql_cmd "create pluggable database pdb_samples from $pdb;"
+	set_sql_cmd "alter pluggable database pdb_samples open read only instances=all;"
+	set_sql_cmd "alter pluggable database pdb_samples save state instances=all;"
+}
+
+sqlplus_cmd "$(ddl_create_pdb_samples)"

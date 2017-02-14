@@ -4,6 +4,7 @@
 PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
+. ~/plescripts/db/wallet/walletlib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 #PAUSE=ON
@@ -138,7 +139,7 @@ function sqlplus_cmd_on_standby
 {
 	fake_exec_cmd sqlplus -s sys/$oracle_password@${standby} as sysdba
 	printf "${SPOOL}set echo off\nset timin on\n$@\n" |\
-		 sqlplus -s sys/$oracle_password@${standby} as sysdba
+		sqlplus -s sys/$oracle_password@${standby} as sysdba
 	LN
 }
 
@@ -163,9 +164,9 @@ function read_flashback_value
 {
 typeset -r query=\
 "select
-    flashback_on
+	flashback_on
 from
-    v\$database
+	v\$database
 ;"
 
 	sqlplus_exec_query "$query" | tail -1
@@ -579,7 +580,7 @@ from
 		on  c.inst_id = i.inst_id
 	where
 		i.instance_name = '$primary'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' );
+	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT', 'PDB_SAMPLES' );
 "
 
 	line_separator
@@ -618,9 +619,9 @@ from
 		LN
 
 		if [ $create_primary_cfg == yes ]
-		then #(1) Il faut stopper les services stdby maintenant sur la primary.
-			 #    Les services stdby démarreront automatiquement lors de
-			 #	  l'ouverture de la stdby en RO.
+		then	#(1) Il faut stopper les services stdby sur la primary.
+				#	Les services stdby démarreront automatiquement lors de
+				#	l'ouverture de la stdby en RO.
 			info "(1) Stop stby services on primary $primary :"
 			exec_cmd "srvctl stop service -db $primary	\
 										-service $(mk_oci_stby_service $pdb)"
@@ -628,6 +629,16 @@ from
 										-service $(mk_java_stby_service $pdb)"
 			LN
 		fi
+
+		if [ -d $wallet_path ]
+		then
+			info "Wallet add sys for $pdb to wallet"
+			exec_cmd "ssh -t $standby_host '. .bash_profile;				\
+						~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
+													-db=$standby -pdb=$pdb'"
+			LN
+		fi
+
 	done<<<"$(sqlplus_exec_query "$query")"
 }
 
@@ -654,7 +665,7 @@ function check_ssh_prereq_and_if_stby_exist
 
 	if [ $ret -ne 0 ]
 	then
-		info "From server $client_hostname :"
+		info "From host $client_hostname :"
 		info "$ cd ~/plescripts/ssh"
 		info "$ ./setup_ssh_equivalence.sh -user1=oracle -server1=$primary_host -server2=$standby_host"
 		LN
@@ -709,9 +720,9 @@ function check_log_mode
 {
 typeset -r query=\
 "select
-    log_mode
+	log_mode
 from
-    v\$database
+	v\$database
 ;"
 
 	line_separator

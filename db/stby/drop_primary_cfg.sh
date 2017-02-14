@@ -114,7 +114,7 @@ from
 		on  c.inst_id = i.inst_id
 	where
 		i.instance_name = '$db'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' );
+	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT', 'PDB_SAMPLES' );
 "
 
 	while read pdb

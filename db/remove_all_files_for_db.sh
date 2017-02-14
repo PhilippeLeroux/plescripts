@@ -100,6 +100,10 @@ execute_on_other_nodes "$clean_oratab_cmd2"
 LN
 
 line_separator
+execute_on_all_nodes "su - oracle -c '~/plescripts/db/wallet/drop_wallet.sh'"
+LN
+
+line_separator
 info "Remove database files from ASM"
 exec_cmd -c "su - grid -c \"asmcmd rm -rf DATA/$db\""
 exec_cmd -c "su - grid -c \"asmcmd rm -rf FRA/$db\""
