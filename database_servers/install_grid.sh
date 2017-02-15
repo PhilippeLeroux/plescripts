@@ -306,12 +306,12 @@ function run_post_install_root_scripts_on_node	# $1 node# $2 server_name
 	return $?
 }
 
-# $1 inode
+# $1 node name
 function print_manual_workaround
 {
-	typeset -i inode=$1
+	typeset node_name=$1
 	info "Manual workaround"
-	info "> ssh root@${node_names[inode]}"
+	info "> ssh root@${node_name}"
 	info "> $ORACLE_HOME/root.sh"
 	info "log $OK : ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
 	info "log $KO : reboot servers, wait crs up and"
@@ -332,7 +332,7 @@ function run_post_install_root_scripts
 
 		if [ $ret -ne 0 ]
 		then
-			error "root scripts on server $node_names failed."
+			error "root scripts on server $node_name failed."
 			[ $inode -eq 0 ] && exit 1
 
 			LN
@@ -353,7 +353,7 @@ function run_post_install_root_scripts
 			then
 				error "Workaround failed."
 				LN
-				print_manual_workaround $inode
+				print_manual_workaround $node_name
 				exit 1
 			fi
 		fi
@@ -461,6 +461,7 @@ function remove_tfa_on_all_nodes
 	do
 		exec_cmd -c ssh -t root@${node_names[i]} \
 				". /root/.bash_profile \; tfactl uninstall"
+		LN
 	done
 }
 
