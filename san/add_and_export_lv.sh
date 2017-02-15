@@ -11,21 +11,20 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-export_to=\"srv1 srv2 ...\" : Liste des serveurs, séparés par un espace, ou doivent être exportées les LUNs (1)
-	-initiator_name=<str>      : nom de l'initiateur si export_to n'est pas spécifié.
-	-vg_name=<str>             : nom du VG.
-	-prefix=<str>              : préfixe du LV si export_to n'est pas spécifié.
-	-count=<#>                 : nombre de LV à ajouter dans le VG $vg_name
-	[-size_gb=<#>]             : taille des LV, si omis prend la taille de la dernière LUN
+	-initiator_name=name         : nom de l'initiateur si export_to n'est pas spécifié.
+	-vg_name=name                : nom du VG.
+	-prefix=name                 : préfixe du LV si export_to n'est pas spécifié.
+	-count=#                     : nombre de LV à ajouter dans le VG $vg_name
+	[-size_gb=#]                 : taille des LV, si omis prend la taille de la dernière LUN
 
-	[-no_backup]               : A utiliser quand le backup est effectué par un autre script qui effectura le backup.
+	[-no_backup]                 : A utiliser quand le backup est effectué par un autre script.
 
 
 	(1) Si -export_to est spécifié les paramètres -initiator_name et -prefix
 	seront obtenu grâce au nom du serveur.
-	Si plus de 1 serveur, les noms doivent correspondent aux noms des nœuds d'un RAC
-	-export_to est utilisé manuellement, alors que -initiator_name et -prefix sont
-	utilisés par les autres scripts.
+	Si plus de 1 serveur, les noms doivent correspondre aux noms des nœuds d'un RAC.
 
+Actions :
 	1) Création des LV dans le VG.
 	2) Export des LV"
 
@@ -116,7 +115,7 @@ function get_vg_free_gb # $1 vg_name
 #	============================================================
 if [ "$export_to" != undef ]
 then	#	Déduction du préfixe à partir du nom du premier serveur.
-	typeset -r first_server_name=$(echo $export_to | cut -d' ' -f1)
+	typeset -r first_server_name=$(echo $export_to | cut -d\  -f1)
 	read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$first_server_name" )"
 	info "Deducted prefix '$prefix' from '$first_server_name'"
 fi
@@ -132,9 +131,9 @@ load_lv_info $vg_name $prefix
 [ $size_gb -ne -1 ] && lv_size_gb=$size_gb
 
 if [ $lv_nb -eq 0 ]
-then
+then	# Il n'existe pas de LV.
 	if [ $size_gb -eq -1 ]
-	then
+	then	# Donc la taille des disques à créer doit être précisée.
 		error "No existing LUNs : use -size_gb"
 		exit 1
 	fi

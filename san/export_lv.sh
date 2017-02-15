@@ -1,12 +1,10 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/san/targetclilib.sh
-EXEC_CMD_ACTION=EXEC
-
 . ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
@@ -17,7 +15,7 @@ typeset -r str_usage=\
 		-first_no       : N° du premier LV.
 		-count          : nombre de LV à exporter
 
-		[-no_backup]    : A utiliser quand le backup est effectué par un autre script qui effectura le backup.
+		[-no_backup]    : A utiliser quand le backup est effectué par un autre script.
 
 Note : les disques doivent avoir été crées avec create_lv.sh"
 
