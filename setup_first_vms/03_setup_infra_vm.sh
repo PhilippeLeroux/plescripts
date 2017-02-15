@@ -9,9 +9,43 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 
 typeset -r str_usage=\
-"Usage : $ME
+"Usage : $ME [-nm_workaround]
+
+-nm_workaround : servait lors Network Manager était bugé est que les zones
+était perdus au démarrage.
+
 Doit être exécuté sur le serveur d'infrastructure : $infra_hostname
 "
+
+typeset nm_workaround=no
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-nm_workaround)
+			nm_workaround=yes
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
 
 script_banner $ME $*
 
@@ -84,8 +118,11 @@ exec_cmd ~/plescripts/dns/add_server_2_dns.sh	-name=$master_hostname		\
 exec_cmd ~/plescripts/dns/show_dns.sh
 LN
 
-exec_cmd ~/plescripts/nm_workaround/create_service.sh -role=infra
-LN
+if [ $nm_workaround == yes ]
+then
+	exec_cmd ~/plescripts/nm_workaround/create_service.sh -role=infra
+	LN
+fi
 
 exec_cmd ~/plescripts/shell/set_plymouth_them
 LN

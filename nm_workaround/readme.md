@@ -15,5 +15,7 @@ Avec la version `3.8.13-118.16.2.el7uek.x86_64` d'OL7.3 le bug est corrigé, le
 service qui corrige le bug n'est donc plus nécessaire.
 
 Testé le 07/02/2017 :
-Le service est désactivé sur `K2`, voir si le workaround peut être annulé (ajouter
-une variable dans `global.cfg`) lors de la création du serveur ?
+Le service est désactivé sur `K2`.
+
+15/02/2017 ajout du paramètre `-nm_workaround` au script 03_setup_infra_vm.sh.
+Pour réactiver le workaround. Par défaut le script n'est plus appelé.
