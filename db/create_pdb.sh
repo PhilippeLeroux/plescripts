@@ -15,6 +15,7 @@ typeset db=undef
 typeset pdb=undef
 typeset from_pdb=default
 typeset	from_samples=no
+typeset	create_wallet=yes
 typeset admin_user=pdbadmin
 typeset admin_pass=$oracle_password
 
@@ -25,6 +26,7 @@ $ME
 	-pdb=name
 	[-from_samples]	 Clone pdb from pdb_samples
 	[-from_pdb=name] Clone pdb from name
+	[-no_wallet]     Do not use Wallet Manager for pdb connection.
 	[-admin_user=$admin_user]
 	[-admin_pass=$admin_pass]
 "
@@ -54,6 +56,11 @@ do
 
 		-from_samples)
 			from_samples=yes
+			shift
+			;;
+
+		-no_wallet)
+			create_wallet=no
 			shift
 			;;
 
@@ -209,16 +216,19 @@ then
 	done
 fi
 
-line_separator
-exec_cmd "~/plescripts/db/add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb"
-if [ $dataguard == yes ]
+if [ $create_wallet == yes ]
 then
-	for (( i=0; i < ${#physical_list[@]}; ++i ))
-	do
-		exec_cmd "ssh ${stby_server_list[i]}	\
-			'. .bash_profile;	\
-			~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
-								-db=${physical_list[i]} -pdb=$pdb'"
-		LN
-	done
+	line_separator
+	exec_cmd "~/plescripts/db/add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb"
+	if [ $dataguard == yes ]
+	then
+		for (( i=0; i < ${#physical_list[@]}; ++i ))
+		do
+			exec_cmd "ssh ${stby_server_list[i]}	\
+				'. .bash_profile;	\
+				~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
+									-db=${physical_list[i]} -pdb=$pdb'"
+			LN
+		done
+	fi
 fi
