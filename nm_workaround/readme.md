@@ -17,5 +17,5 @@ service qui corrige le bug n'est donc plus nécessaire.
 Testé le 07/02/2017 :
 Le service est désactivé sur `K2`.
 
-15/02/2017 ajout du paramètre `-nm_workaround` au script 03_setup_infra_vm.sh.
-Pour réactiver le workaround. Par défaut le script n'est plus appelé.
+15/02/2017 ajout du paramètre `-nm_workaround` au script 03_setup_infra_vm.sh pour
+réactiver le workaround. Par défaut le script n'est plus appelé.
