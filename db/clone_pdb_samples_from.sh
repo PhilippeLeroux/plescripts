@@ -8,7 +8,7 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -db=name -pdb=name" 
+"Usage : $ME -db=name -pdb=name"
 
 script_banner $ME $*
 
@@ -61,7 +61,10 @@ function ddl_create_pdb_samples
 	#	Sur un dataguard le PDB doit être ouvert, pour pouvoir être cloné
 	#	le PDB doit être en lecture. Il n'y aura pas de service pour ce PDB
 	#	donc on sauvegarde son état.
+	set_sql_cmd "whenever sqlerror exit 1;"
 	set_sql_cmd "create pluggable database pdb_samples from $pdb;"
+	set_sql_cmd "alter pluggable database pdb_samples open read write instances=all;"
+	set_sql_cmd "alter pluggable database pdb_samples close instances=all;"
 	set_sql_cmd "alter pluggable database pdb_samples open read only instances=all;"
 	set_sql_cmd "alter pluggable database pdb_samples save state instances=all;"
 }
