@@ -40,20 +40,22 @@ typeset		backup=yes
 typeset		confirm="-confirm"
 typeset	-i	redoSize=64	# Unit Mb
 typeset		sampleSchema=true
+typeset		create_wallet=yes
 
 #	Permet au script database_severs/run_all.sh de valider les arguments.
 typeset		validate_params=no
 
 typeset		create_database=yes
 
-add_usage "-db=name"								"Database name"
-add_usage "[-lang=$lang]"							"Language"
+add_usage "-db=name"								"Database name."
+add_usage "[-lang=$lang]"							"Language."
 add_usage "[-sampleSchema=$sampleSchema]"			"true|false"
 add_usage "[-sysPassword=$sysPassword]"
 add_usage "[-totalMemory=$totalMemory]"				"Unit Mb"
 add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting."
 add_usage "[-cdb=$cdb]"								"yes|no (1)"
 add_usage "[-pdb=name]"								"pdb name (2)"
+add_usage "[-no_wallet]"							"Do not used Wallet Manager for pdb connection."
 add_usage "[-redoSize=$redoSize]"					"Redo size Mb."
 add_usage "[-data=$data]"
 add_usage "[-fra=$fra]"
@@ -115,6 +117,11 @@ do
 
 		-sampleSchema=*)
 			sampleSchema=${1##*=}
+			shift
+			;;
+
+		-no_wallet)
+			create_wallet=no
 			shift
 			;;
 
@@ -657,7 +664,7 @@ then
 	LN
 fi
 
-if [[ $cdb == yes && $pdb != undef ]]
+if [[ $create_wallet == yes && $cdb == yes && $pdb != undef ]]
 then
 	line_separator
 	exec_cmd ./add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb
