@@ -153,6 +153,13 @@ function load_vm_in_group
 	done<<<"$(VBoxManage list vms | cut -d\" -f2)"
 }
 
+# $1 vm name
+# return 0 if running, else 1
+function vm_running
+{
+	grep -q "$1"<<<"$(VBoxManage list runningvms)"
+}
+
 #	$1 vm name
 function stop_vm_name
 {
@@ -232,9 +239,15 @@ then
 	info "Stop dataguard members : ${dataguard_list[*]}"
 	for vm_name in ${dataguard_list[*]}
 	do
-		vm_list+=( $vm_name )
-		stop_vm_name "$vm_name"
-		LN
+		if vm_running $vm_name
+		then
+			vm_list+=( $vm_name )
+			stop_vm_name "$vm_name"
+			LN
+		else
+			info "$vm_name not running."
+			LN
+		fi
 	done
 fi
 

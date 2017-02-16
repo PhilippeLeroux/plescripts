@@ -115,6 +115,13 @@ function load_vm_list
 	[ ${#vm_list[@]} -eq 0 ] && exit 1 || true
 }
 
+# $1 vm name
+# return 0 if running, else 1
+function vm_running
+{
+	grep -q "$1"<<<"$(VBoxManage list runningvms)"
+}
+
 typeset -a vm_list
 typeset -i nr_vm_started=0
 typeset	-a vm_started_list
@@ -162,12 +169,17 @@ then
 	info "Start dataguard members : ${dataguard_list[*]}"
 	for vm_name in ${dataguard_list[*]}
 	do
-		vm_list+=( $vm_name )
-		exec_cmd -c "VBoxManage startvm $vm_name --type headless"
-		if [ $? -eq 0 ]
+		if vm_running $vm_name
 		then
-			vm_started_list+=( $vm_name )
-			((++nr_vm_started))
+			info "$vm_name is running."
+		else
+			vm_list+=( $vm_name )
+			exec_cmd -c "VBoxManage startvm $vm_name --type headless"
+			if [ $? -eq 0 ]
+			then
+				vm_started_list+=( $vm_name )
+				((++nr_vm_started))
+			fi
 		fi
 		LN
 	done
