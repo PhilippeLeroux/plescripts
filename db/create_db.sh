@@ -588,6 +588,7 @@ remove_glogin
 
 if [ $sampleSchema == true ]
 then # Doit être exécute après la mise à jour de oratab pour les RACs.
+	timing 2
 	exec_cmd ~/plescripts/db/clone_pdb_samples_from.sh -db=$db -pdb=$pdb
 	LN
 fi
@@ -617,16 +618,6 @@ line_separator
 info "Adjust FRA size"
 sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
 LN
-
-#line_separator
-#info "Save PDB state"
-#	Je n'ai pas compris l'intérêt de cette commande ??
-#	Update :
-#		Doit être exécutée après chaque création de PDB
-#		Doit être exécutéé sur tous les noeuds d'un RAC
-#		==> aucun intérêt.
-#sqlplus_cmd "$(set_sql_cmd "alter pluggable database all save state;")"
-#LN
 
 line_separator
 info "Enable archivelog :"

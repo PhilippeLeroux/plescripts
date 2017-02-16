@@ -5,21 +5,11 @@ PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME
-	-db=name             Identifiant de la base.
-	[-vmGroup=name]      Nom du groupe ou doit être enregistré la VM.
-	[-node=#]            N° du nœud si base de type RAC.
-	[-skip_os_update]    Ne fait pas la mise à jour de l'OS.
-
-Debug flag :
-	[-start_server_only] Le serveur est déjà cloné, uniquement le démarrer.
-	[-keep_kvmclock]     Par défaut, pour les RAC, kvmclock est désactivé.
-"
 
 script_banner $ME $*
 
@@ -27,9 +17,26 @@ typeset		db=undef
 typeset -i	node=-1
 typeset		vmGroup
 typeset		do_os_update=yes
+typeset		vg_name=asm01
 
 typeset		start_server_only=no
 typeset		kvmclock=disable
+
+add_usage "-db=name"			"Database name."
+add_usage "[-vmGroup=name]"		"VBox group name."
+add_usage "[-node=#]"           "For RAC server : node number."
+add_usage "[-skip_os_update]"	"No OS update."
+add_usage "[-vg_name=$vg_name]"	"VG name to use on $infra_hostname"
+
+typeset -r str_usage=\
+"Usage :
+$ME
+$(print_usage)
+
+Debug flag :
+	[-start_server_only] The server is cloned, only start it.
+	[-keep_kvmclock]     For RAC, kvmclock is disabled.
+"
 
 while [ $# -ne 0 ]
 do
@@ -91,15 +98,11 @@ exit_if_param_undef db 		"$str_usage"
 cfg_exists $db
 
 typeset -ri max_nodes=$(cfg_max_nodes $db)
-[ $node -eq -1 ] && [ $max_nodes -eq 1 ] && node=1
+
+# Pour un serveur standalone il n'est pas nécessaire de préciser le n° du nœud.
+[[ $node -eq -1 && $max_nodes -eq 1 ]] && node=1 || true
+
 exit_if_param_undef node	"$str_usage"
-
-cfg_load_node_info $db $node
-typeset -r server_name=$cfg_server_name
-
-typeset -r disk_type=$(cat $cfg_path_prefix/$db/disks | tail -1 | cut -d: -f1)
-
-typeset -r vg_name=asm01
 
 #	Exécute, via ssh, la commande '$@' sur le master
 function ssh_master
@@ -335,7 +338,7 @@ function create_disks_for_oracle_and_grid_softwares
 		LN
 
 		typeset action=create
-		[ $node -ne 1 ] && action=add
+		[ $node -ne 1 ] && action=add || true
 		ssh_server	plescripts/disk/create_fs_ocfs2.sh	\
 							-db=$db						\
 							-mount_point=/$ORCL_DISK	\
@@ -404,7 +407,7 @@ function configure_server
 	if [ $do_os_update == yes ]
 	then
 		test_if_rpm_update_available $server_name
-		[ $? -eq 0 ] && ssh_server "yum -y -q update"
+		[ $? -eq 0 ] && ssh_server "yum -y -q update" || true
 		LN
 	fi
 
@@ -532,7 +535,7 @@ function test_space_on_san
 	typeset	-ri	total_disk_mb=$(to_mb $(cfg_total_disk_size_gb $db)G)
 	typeset	-ri	san_free_space_mb=$(to_mb $(ssh $infra_conn LANG=C vgs $vg_name | tail -1 | awk '{ print $7 }'))
 
-	info -n "$db needs $(fmt_number $total_disk_mb)Mb of disk, available on $infra_hostname $(fmt_number $san_free_space_mb)Mb : "
+	info -n "Server $db needs $(fmt_number $total_disk_mb)Mb of disk, available on $infra_hostname $(fmt_number $san_free_space_mb)Mb : "
 	if [ $total_disk_mb -gt $san_free_space_mb ]
 	then
 		info -f "$KO"
@@ -548,6 +551,11 @@ function test_space_on_san
 #	MAIN
 #	============================================================================
 script_start
+
+cfg_load_node_info $db $node
+
+typeset -r server_name=$cfg_server_name
+typeset -r disk_type=$(cat $cfg_path_prefix/$db/disks | tail -1 | cut -d: -f1)
 
 if [ $node -eq 1 ]
 then
@@ -577,7 +585,7 @@ case $cfg_luns_hosted_by in
 	san)
 		if [ $node -eq 1 ]
 		then
-			[ "$disk_type" != FS ] && create_san_LUNs_and_attach_to_node1
+			[ "$disk_type" != FS ] && create_san_LUNs_and_attach_to_node1 || true
 		else
 			attach_existing_LUNs_on_node
 		fi
@@ -605,7 +613,7 @@ create_stats_services
 #	Pour utiliser chrony définir la variable RAC_NTP=chrony
 [[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
 
-info "Reboot nedeed : new kernel config form oracle-rdbms-server-12cR1-preinstall"
+info "Reboot needed : new kernel config from oracle-rdbms-server-12cR1-preinstall"
 reboot_server $server_name
 LN
 
