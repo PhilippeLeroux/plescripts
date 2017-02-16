@@ -91,7 +91,7 @@ then # On doit arrêter les serveurs de BDD pour arrêter le serveur d'infra.
 
 		for vm in ${running_db_server_list[*]}
 		do
-			exec_cmd stop_vm -server=$vm
+			exec_cmd stop_vm -server=$vm -dataguard=no
 		done
 		LN
 	fi
@@ -99,23 +99,23 @@ fi
 
 case $error_on_poweroff in
 	no)
-		exec_cmd stop_vm -server=$server
+		exec_cmd stop_vm -server=$server -dataguard=no
 		LN
 		;;
 	yes)
-		exec_cmd stop_vm -server=$server -error_on_poweroff
+		exec_cmd stop_vm -server=$server -error_on_poweroff -dataguard=no
 		LN
 		;;
 esac
 
-exec_cmd "start_vm $server -wait_os=no"
+exec_cmd "start_vm $server -wait_os=no -dataguard=no"
 LN
 
 if [ ${#running_db_server_list[@]} -ne 0 ]
 then
 	for vm in ${running_db_server_list[*]}
 	do
-		exec_cmd start_vm -server=$vm -wait_os=no
+		exec_cmd start_vm -server=$vm -wait_os=no -dataguard=no
 	done
 	LN
 fi

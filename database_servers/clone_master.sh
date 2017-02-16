@@ -369,7 +369,7 @@ function configure_server
 	fi
 
 	#	-wait_os=no car le nom du serveur n'a pas encore été changé.
-	exec_cmd "$vm_scripts_path/start_vm $server_name -wait_os=no"
+	exec_cmd "$vm_scripts_path/start_vm $server_name -wait_os=no -dataguard=no"
 
 	exec_cmd "wait_server $master_hostname"
 

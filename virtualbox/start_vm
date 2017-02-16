@@ -2,20 +2,26 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME <str>
-	[-server=<str>]	si non définie testera ID_DB (cf set_db)
-	[-wait_os=yes]  par défaut attend que l'OS de la VM ait démarré pour lancer la VM suivante.
-"
-
-script_banner $ME $@
 
 typeset server=undef
 typeset	wait_os=yes
+typeset dataguard=yes
+
+add_usage "[-server=name]"			"Si non définie testera ID_DB (cf set_db)"
+add_usage "[-dataguard=$dataguard]"	"yes|no, yes : démarre toutes les VMs du dataguard."
+add_usage "[-wait_os=$wait_os]"		"yes|no, yes : attend le démarrage complet de l'OS avant de poursuivre."
+
+typeset -r str_usage=\
+"Usage : $ME
+$(print_usage)
+"
+
+script_banner $ME $@
 
 while [ $# -ne 0 ]
 do
@@ -33,6 +39,11 @@ do
 
 		-wait_os=*)
 			wait_os=${1##*=}
+			shift
+			;;
+
+		-dataguard=*)
+			dataguard=${1##*=}
 			shift
 			;;
 
@@ -57,41 +68,84 @@ do
 	esac
 done
 
-[[ $server == undef && -v ID_DB ]] && server=$ID_DB
+[[ $server == undef && -v ID_DB ]] && server=$ID_DB || true
 exit_if_param_undef server	"$str_usage"
 
 exit_if_param_invalid wait_os "yes no" "$str_usage"
 
-#	============================================================================
-#	Mémorise le nom des VMs correspondant au pattern $server
-typeset -a vm_list
-while read vm_name
-do
-	[ x"$vm_name" != x ] && vm_list+=( $vm_name )
-done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+#	$1 vm name
+#	print group name to stdout
+function group_name_for_vm
+{
+	VBoxManage showvminfo "$1" | grep -E "^Groups:" | cut -d/ -f2-
+}
 
-info "${#vm_list[@]} server(s) found for pattern $server : ${vm_list[*]}"
-LN
-[ ${#vm_list[@]} -eq 0 ] && exit 1
+#	$1 group name
+#	$2 vm name to exclude
+#	register all VMs in group $1 to dataguard_list
+#	Declare dataguard_list before to call function : typeset -a dataguard_list
+function load_vm_in_group
+{
+	typeset -r search_group="$1"
+	typeset	-r exclude="$2"
+
+	while read vm_name
+	do
+		[[ x"$vm_name" == x || "$vm_name" == "$exclude" ]] && continue || true
+
+		if [ "$(group_name_for_vm $vm_name)" == "$search_group" ]
+		then
+			dataguard_list+=( $vm_name ) 
+		fi
+	done<<<"$(VBoxManage list vms | cut -d\" -f2)"
+}
+
+#	Load to vm_list all server who match $server
+#	exit 1 if no server found.
+function load_vm_list
+{
+	while read vm_name
+	do
+		[ x"$vm_name" != x ] && vm_list+=( $vm_name )
+	done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+
+	info "${#vm_list[@]} server(s) found for pattern $server : ${vm_list[*]}"
+	LN
+
+	[ ${#vm_list[@]} -eq 0 ] && exit 1 || true
+}
+
+typeset -a vm_list
+typeset -i nr_vm_started=0
+typeset	-a vm_started_list
+typeset	-a dataguard_list
+
+#	============================================================================
+load_vm_list
 
 #	============================================================================
 #	Démarre les VMs :
-typeset -i nr_vm_started=0
-typeset	-a vm_started_list
-
 for vm in ${vm_list[*]}
 do
 
 	if [[ "$vm" == "$infra_hostname" && "$INSTALLING_INFRA" != yes ]]
 	then
 		exec_cmd -c "~/plescripts/virtualbox/start_vm_infra"
-		[ $? -eq 0 ] && nr_vm_started=nr_vm_started+1
+		[ $? -eq 0 ] && ((++nr_vm_started)) || true
 	else
 		exec_cmd -c "VBoxManage startvm $vm --type headless"
 		if [ $? -eq 0 ]
 		then
-			nr_vm_started=nr_vm_started+1
+			((++nr_vm_started))
 			vm_started_list+=( $vm )
+			if [[ $dataguard == yes && ${#vm_list[@]} -eq 1 ]]
+			then # Actuellement seul les serveurs standalone sont en DG.
+				dg_group="$(group_name_for_vm $vm)"
+				if [ "${dg_group:0:2}" == "DG" ]
+				then
+					load_vm_in_group "$dg_group" "$vm"
+				fi
+			fi
 		else
 			error "Failed to start $vm" 
 		fi
@@ -101,7 +155,26 @@ do
 done
 
 #	============================================================================
-if [ $wait_os == yes ]
+#	Démarre les éventuelles autres VMs du dataguard.
+if [ ${#dataguard_list[@]} -ne 0 ]
+then
+	line_separator
+	info "Start dataguard members : ${dataguard_list[*]}"
+	for vm_name in ${dataguard_list[*]}
+	do
+		vm_list+=( $vm_name )
+		exec_cmd -c "VBoxManage startvm $vm_name --type headless"
+		if [ $? -eq 0 ]
+		then
+			vm_started_list+=( $vm_name )
+			((++nr_vm_started))
+		fi
+		LN
+	done
+fi
+
+#	============================================================================
+if [[ $EXEC_CMD_ACTION == EXEC && $wait_os == yes ]]
 then
 	line_separator
 	for vm in ${vm_started_list[*]}

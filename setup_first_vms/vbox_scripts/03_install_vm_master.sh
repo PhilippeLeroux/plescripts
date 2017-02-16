@@ -73,7 +73,7 @@ function master_ssh
 script_start
 
 #	La VM ne doit pas être démarrée.
-stop_vm $master_hostname
+stop_vm $master_hostname -dataguard=no
 LN
 
 line_separator
@@ -90,7 +90,7 @@ exec_cmd VBoxManage modifyvm $master_hostname --nictype3 virtio
 exec_cmd VBoxManage modifyvm $master_hostname --cableconnected3 on
 LN
 
-exec_cmd "$vm_scripts_path/start_vm $master_hostname"
+exec_cmd "$vm_scripts_path/start_vm $master_hostname -dataguard=no"
 LN
 wait_server $master_ip
 LN
@@ -127,7 +127,7 @@ LN
 master_ssh "~/plescripts/setup_first_vms/01_prepare_master_vm.sh"
 LN
 
-exec_cmd "$vm_scripts_path/stop_vm $master_hostname"
+exec_cmd "$vm_scripts_path/stop_vm $master_hostname -dataguard=no"
 LN
 
 info "Server $master_hostname ready."
