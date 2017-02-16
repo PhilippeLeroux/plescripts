@@ -232,3 +232,10 @@ then
 		done
 	fi
 fi
+
+if [ $from_samples == yes ]
+then
+	info "Unlock sample schemas."
+	exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh -db=$db -pdb=$pdb
+	LN
+fi

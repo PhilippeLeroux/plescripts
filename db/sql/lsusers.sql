@@ -1,6 +1,6 @@
 --	vim: ts=4:sw=4
 
-set lines 100
+set lines 120
 col	username				for a26	head "User name"
 col	user_id							head "Used ID"
 col default_tablespace		for a20 head "(*)tablespace"
@@ -17,5 +17,5 @@ select
 from
 	dba_users
 where
-	oracle_maintained='N'
+	oracle_maintained = 'N'
 ;

@@ -524,6 +524,8 @@ function adjust_parameters
 	then
 		numberOfPDBs=1
 		pdbAdminPassword=$sysPassword
+	else
+		sampleSchema=false
 	fi
 
 	#	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
@@ -594,6 +596,13 @@ then # Doit être exécute après la mise à jour de oratab pour les RACs.
 fi
 
 [[ $cdb == yes && $pdb != undef ]] && create_services_for_pdb || true
+
+if [ $sampleSchema == true ]
+then
+	info "Unlock sample schemas."
+	exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh -db=$db -pdb=$pdb
+	LN
+fi
 
 if [ $usefs == yes ]
 then
