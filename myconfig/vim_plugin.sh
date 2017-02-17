@@ -115,6 +115,7 @@ function install_plugin
 			then
 				exec_cmd "mkdir ~/.vim/bundle/vim-grammarous/misc"
 				exec_cmd "ln -s ~/LanguageTool-3.4 ~/.vim/bundle/vim-grammarous/misc/LanguageTool-3.4"
+			else
 				warning "~/LanguageTool-3.4 not exists."
 			fi
 			;;

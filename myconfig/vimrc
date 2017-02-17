@@ -112,8 +112,9 @@ source $HOME/vimfunc/ApplyConfigOnFileType.vim
 autocmd! BufRead * call ApplyConfigOnFileType()
 
 "	============================================================================
-source $HOME/vimfunc/FrDictionnaire.vim
+source $HOME/vimfunc/Dictionnaires.vim
 nnoremap <F2> :call FrDictionnaire()<CR>
+nnoremap <F4> :call USDictionnaire()<CR>
 
 "	============================================================================
 source $HOME/vimfunc/FrGrammaire.vim
