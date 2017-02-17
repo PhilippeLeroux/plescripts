@@ -16,7 +16,7 @@ script_banner $ME $*
 typeset		db=undef
 typeset -i	node=-1
 typeset		vmGroup
-typeset		do_os_update=yes
+typeset		update_os=no
 typeset		vg_name=asm01
 
 typeset		start_server_only=no
@@ -25,7 +25,7 @@ typeset		kvmclock=disable
 add_usage "-db=name"			"Database name."
 add_usage "[-vmGroup=name]"		"VBox group name."
 add_usage "[-node=#]"           "For RAC server : node number."
-add_usage "[-skip_os_update]"	"No OS update."
+add_usage "[-update_os]"		"Update OS."
 add_usage "[-vg_name=$vg_name]"	"VG name to use on $infra_hostname"
 
 typeset -r str_usage=\
@@ -66,8 +66,8 @@ do
 			shift
 			;;
 
-		-skip_os_update)
-			do_os_update=no
+		-update_os)
+			update_os=yes
 			shift
 			;;
 
@@ -404,7 +404,7 @@ function configure_server
 	#	de basculer sur le bon dépôt.
 	ssh_server ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"
 
-	if [ $do_os_update == yes ]
+	if [ $update_os == yes ]
 	then
 		test_if_rpm_update_available $server_name
 		[ $? -eq 0 ] && ssh_server "yum -y -q update" || true
