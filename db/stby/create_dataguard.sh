@@ -14,7 +14,7 @@ typeset -r str_usage=\
 "Usage : $ME
 	-standby=name             Nom de la base standby (sera créée)
 	-standby_host=name        Nom du serveur ou résidera la standby
-	[-create_primary_cfg=yes] Mettre 'no' si la configuration à déjà été faite.
+	[-create_primary_cfg=yes] Mettre 'no' si la configuration a déjà été faite.
 	[-no_backup]              Ne pas faire de backup.
 
 	Le script doit être exécuté sur le serveur de la base primaire et

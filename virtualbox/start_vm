@@ -122,10 +122,10 @@ function vm_running
 	grep -q "$1"<<<"$(VBoxManage list runningvms)"
 }
 
-typeset -a vm_list
-typeset -i nr_vm_started=0
-typeset	-a vm_started_list
-typeset	-a dataguard_list
+typeset -a vm_list			# Nom de toutes les VMs.
+typeset -i nr_vm_started=0	# Nombre de VM démarré.
+typeset	-a vm_started_list	# Nom des VMs démarrées.
+typeset	-a dataguard_list	# Nom des autres VMs dans le groupe dataguard.
 
 #	============================================================================
 load_vm_list

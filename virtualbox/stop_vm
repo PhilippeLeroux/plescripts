@@ -182,6 +182,8 @@ function stop_vm_name
 			then
 				error "Failed to poweroff $vm_to_stop"
 				((++count_errors))
+			else
+				vm_stopped_list+=( $vm_to_stop )
 			fi
 		fi
 	else
@@ -192,9 +194,9 @@ function stop_vm_name
 #===============================================================================
 #	Charge le nom des VMs dans vm_list
 
-typeset -a vm_list	#	Contient le nom de toutes les VMs
-typeset -a vm_stopped_list
-typeset	-a dataguard_list
+typeset -a vm_list			# Nom de toutes les VMs running
+typeset -a vm_stopped_list	# Nom des VMs stoppées.
+typeset	-a dataguard_list	# Nom des autres VMs dans le groupe dataguard.
 typeset -i count_errors=0
 
 while read vm_name
@@ -202,13 +204,10 @@ do
 	[ x"$vm_name" != x ] && vm_list+=( $vm_name )
 done<<<"$(VBoxManage list runningvms | grep "$server" | cut -d\" -f2)"
 
-typeset -i max_vms=${#vm_list[@]}
-info "$max_vms running VMs found for pattern $server : ${vm_list[@]}"
+info "${#vm_list[@]} running VMs found for pattern $server : ${vm_list[@]}"
 LN
 
-[ $max_vms -eq 0 ] && exit 0 || true
-
-unset max_vms # ne doit plus être utilisé, la taille de la liste pour varier.
+[ ${#vm_list[@]} -eq 0 ] && exit 0 || true
 
 #===============================================================================
 # Stop les VMs et mémorise leur nom dans vm_stopped_list
