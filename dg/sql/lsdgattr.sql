@@ -1,7 +1,7 @@
 set lines 150 pages 90
 col dg_name		for a8		head "DG name"
 col attr_name	for a16		head "Attr name"
-col value					head "Attr value"
+col value		for a12		head "Attr value"
 col	read_only				head "RO"
 break on dg_name skip 1;
 select
