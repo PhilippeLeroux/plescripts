@@ -55,7 +55,7 @@ LN
 # ipv4.method auto correspond à BOOTPROTP=dhcp
 exec_cmd nmcli connection modify			$if_net_name	\
 					ipv4.dns				$dns_ip			\
-					+ipv4.dns				192.168.1.1		\
+					+ipv4.dns				$dns_main		\
 					ipv4.method				auto			\
 					ipv4.ignore-auto-dns	yes				\
 					ipv4.dhcp-hostname		$infra_hostname	\
