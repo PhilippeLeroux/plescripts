@@ -12,11 +12,13 @@ script_banner $ME $*
 
 typeset		db=undef
 typeset		vmGroup
+typeset		clone_master_parameters
 
 typeset -r	str_usage=\
 "Usage : $ME
 	-db=name
 	[-vmGroup=name]
+	-other parameters transmit to clone_master.sh
 
 Create all servers.
 "
@@ -26,7 +28,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -47,6 +48,7 @@ do
 			;;
 
 		*)
+			clone_master_parameters="$@"
 			break
 			;;
 	esac
@@ -60,6 +62,6 @@ typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
 for (( inode=1; inode <= max_nodes; ++inode ))
 do
-	exec_cmd ./clone_master.sh -db=$db -node=$inode -vmGroup=\"$vmGroup\"
+	exec_cmd ./clone_master.sh -db=$db -node=$inode -vmGroup=\"$vmGroup\" "$clone_master_parameters"
 	LN
 done

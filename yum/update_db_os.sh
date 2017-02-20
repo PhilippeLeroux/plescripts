@@ -10,7 +10,8 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME [-emul]
-	Mise à jour de l'OS, tient compte des bases.
+	Database and crs are stopped, after update, server is bounced.
+	Script must be executed on all members of cluster dataguard or RAC.
 "
 
 script_banner $ME $*
@@ -20,7 +21,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -62,6 +62,8 @@ then
 	info "No update."
 	exit 0
 fi
+
+confirm_or_exit "Update available, update"
 
 if [ $gi_count_nodes -eq 1 ]
 then
