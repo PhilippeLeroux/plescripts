@@ -91,10 +91,11 @@ exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
 							-start=yes
 LN
 
-exec_cmd srvctl stop service -db $db -service $(mk_oci_service $pdb)
+#	Arrêt des services stdby.
+exec_cmd srvctl stop service -db $db -service $(mk_oci_stby_service $pdb)
 LN
 
-exec_cmd srvctl stop service -db $db -service $(mk_java_service $pdb)
+exec_cmd srvctl stop service -db $db -service $(mk_java_stby_service $pdb)
 LN
 
 exec_cmd "ssh -t $standby_host \". .bash_profile;				\
