@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
@@ -9,8 +8,6 @@ PLELIB_OUTPUT=FILE
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-
-script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef
@@ -85,6 +82,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 must_be_user oracle
 
@@ -280,5 +281,5 @@ LN
 
 info "ctrl-c to skip script execution."
 add_dynamic_cmd_param "\"plescripts/db/dbfs/configure_fuse_and_dbfs_mount_point.sh"
-add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service -call_crs_script\""
+add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service -nolog -call_crs_script\""
 exec_dynamic_cmd "su - root -c"

@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
@@ -10,8 +9,6 @@ PLELIB_OUTPUT=FILE
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-
-script_banner $ME $*
 
 typeset		db=undef
 typeset -i	node=-1
@@ -79,7 +76,6 @@ do
 		-h|-help|help)
 			info "$str_usage"
 			LN
-			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
@@ -92,6 +88,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 exit_if_param_undef db 		"$str_usage"
 

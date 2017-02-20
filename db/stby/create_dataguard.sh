@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/db/wallet/walletlib.sh
@@ -40,8 +39,6 @@ typeset -r str_usage=\
 			-skip_configure_dataguard passe cette étape.
 "
 
-script_banner $ME $*
-
 typeset standby=undef
 typeset standby_host=undef
 typeset create_primary_cfg=yes
@@ -59,7 +56,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -127,6 +123,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 exit_if_ORACLE_SID_not_defined
 typeset -r primary=$ORACLE_SID

@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
@@ -13,8 +12,6 @@ typeset -r str_usage=\
 $ME
 \t[-uninstall_fuse] uninstall fuse
 "
-
-script_banner $ME $*
 
 typeset uninstall_fuse=no
 
@@ -45,6 +42,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 must_be_user root
 

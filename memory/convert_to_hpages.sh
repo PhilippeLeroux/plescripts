@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/memory/memorylib.sh
 . ~/plescripts/global.cfg
@@ -9,16 +8,13 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME ...."
-
-script_banner $ME $*
+"Usage : $ME [-emul]"
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -36,6 +32,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 must_be_user root
 

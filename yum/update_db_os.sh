@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
@@ -13,8 +12,6 @@ typeset -r str_usage=\
 	Database and crs are stopped, after update, server is bounced.
 	Script must be executed on all members of cluster dataguard or RAC.
 "
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do
@@ -48,6 +45,10 @@ function update_oracle_asm_configuration
 	exec_cmd "~/plescripts/oracle_preinstall/configure_oracleasm.sh"
 	LN
 }
+
+ple_enable_log
+
+script_banner $ME $*
 
 test_if_cmd_exists olsnodes
 if [ $? -ne 0 ]

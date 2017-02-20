@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -12,8 +11,6 @@ typeset -r str_usage=\
 
 Initialise le dépôt yum sur le serveur $infra_hostname.
 Doit être exécuté depuis $client_hostname."
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do
@@ -37,6 +34,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 must_be_executed_on_server "$client_hostname"
 

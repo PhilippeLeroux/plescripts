@@ -1,7 +1,6 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
-PLELIB_OUTPUT=FILE
+
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
 
@@ -28,7 +27,7 @@ do
 	esac
 done
 
-PLELIB_LOG_FILE=system_info_$(hostname -s).log
+ple_enable_log
 
 exec_cmd "hostname"
 LN

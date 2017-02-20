@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
@@ -15,8 +14,6 @@ typeset -r str_usage=\
 	-db=name         Identifiant.
 	-action=install  Si config l'installation n'est pas lancée.
 "
-
-script_banner $ME $*
 
 typeset db=undef
 typeset action=install
@@ -42,7 +39,6 @@ do
 		-h|-help|help)
 			info "$str_usage"
 			LN
-			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
@@ -54,6 +50,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 exit_if_param_undef		db						"$str_usage"
 exit_if_param_invalid	action "install config" "$str_usage"

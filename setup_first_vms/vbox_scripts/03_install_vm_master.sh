@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
@@ -15,8 +14,6 @@ typeset -r str_usage=\
 Ce script doit être exécuté uniquement lorsque la VM d'infra est prête.
 "
 
-script_banner $ME $*
-
 while [ $# -ne 0 ]
 do
 	case $1 in
@@ -28,7 +25,6 @@ do
 		-h|-help|help)
 			info "$str_usage"
 			LN
-			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
@@ -69,6 +65,10 @@ function master_ssh
 		return 0
 	fi
 }
+
+ple_enable_log
+
+script_banner $ME $*
 
 script_start
 

@@ -1,14 +1,12 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
-
 
 typeset -r ME=$0
 typeset -r str_usage=\
@@ -32,7 +30,6 @@ typeset -r str_usage=\
 
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
 "
-script_banner $ME $*
 
 typeset	db=undef
 typeset	rsp_file_only=no
@@ -107,7 +104,6 @@ do
 		-h|-help|help)
 			info "$str_usage"
 			LN
-			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
@@ -119,6 +115,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 exit_if_param_undef	db	"$str_usage"
 

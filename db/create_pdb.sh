@@ -9,8 +9,6 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-script_banner $ME $*
-
 typeset db=undef
 typeset pdb=undef
 typeset from_pdb=default
@@ -88,6 +86,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 must_be_user oracle
 

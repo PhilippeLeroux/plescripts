@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
@@ -67,7 +66,6 @@ do
 		-h|-help|help)
 			info "$str_usage"
 			LN
-			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
@@ -79,6 +77,8 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
 
 exit_if_dir_not_exists $iso_olinux_path
 exit_if_file_not_exists $master_ks_cfg

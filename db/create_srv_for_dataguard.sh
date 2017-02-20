@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -90,10 +91,10 @@ exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
 							-start=yes
 LN
 
-exec_cmd srvctl stop service -db $db -service ${pdb}_stby_oci
+exec_cmd srvctl stop service -db $db -service $(mk_oci_service $pdb)
 LN
 
-exec_cmd srvctl stop service -db $db -service ${pdb}_stby_java
+exec_cmd srvctl stop service -db $db -service $(mk_java_service $pdb)
 LN
 
 exec_cmd "ssh -t $standby_host \". .bash_profile;				\

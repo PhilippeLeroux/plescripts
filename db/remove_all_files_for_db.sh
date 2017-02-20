@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
@@ -17,7 +16,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -34,6 +32,8 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
 
 exit_if_param_undef db	"$str_usage"
 

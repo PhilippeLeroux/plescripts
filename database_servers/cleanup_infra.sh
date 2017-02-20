@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
@@ -15,8 +14,6 @@ Usage : $ME
 	[-keep_vm]         keep VMs.
 	[-keep_cfg_files]  keep configuration files.
 "
-
-script_banner $ME $*
 
 typeset	db=undef
 typeset	delete_vms=yes
@@ -45,6 +42,12 @@ do
 			shift
 			;;
 
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
 		*)
 			error "Arg '$1' invalid."
 			LN
@@ -53,6 +56,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 exit_if_param_undef db	"$str_usage"
 

@@ -9,8 +9,6 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME ...."
 
-script_banner $ME $*
-
 typeset db=undef
 
 while [ $# -ne 0 ]
@@ -40,6 +38,10 @@ do
 			;;
 	esac
 done
+
+#ple_enable_log
+
+script_banner $ME $*
 
 [[ $db == undef && x"$ID_DB" == x ]] && db=$ID_DB
 exit_if_param_undef db	"$str_usage"

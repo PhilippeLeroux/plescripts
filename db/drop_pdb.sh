@@ -17,12 +17,10 @@ $ME
 	[-force]
 "
 
-script_banner $ME $*
-
 typeset db=undef
 typeset pdb=undef
 typeset	role=primary
-typeset	farg
+typeset	force_flag
 
 while [ $# -ne 0 ]
 do
@@ -48,7 +46,7 @@ do
 			;;
 
 		-force)
-			farg="-c"
+			force_flag="-c"
 			shift
 			;;
 
@@ -66,13 +64,6 @@ do
 			;;
 	esac
 done
-
-exit_if_param_undef db	"$str_usage"
-exit_if_param_undef pdb	"$str_usage"
-
-exit_if_param_invalid role "primary physical"	"$str_usage"
-
-exit_if_database_not_exists $db
 
 function exit_if_db_not_primary_database
 {
@@ -127,7 +118,8 @@ function drop_pdb_on_physical_standby_database
 
 	for i in $( seq 0 $(( ${#physical_list[@]} - 1 )) )
 	do
-		exec_cmd $farg "ssh -t -t ${stby_server_list[i]} \". .bash_profile;	\
+		exec_cmd $force_flag "ssh -t -t ${stby_server_list[i]}				\
+							\". .bash_profile;								\
 							cd plescripts/db;								\
 							./drop_pdb.sh	-db=${physical_list[i]}			\
 											-pdb=${pdb}						\
@@ -146,6 +138,17 @@ function stop_and_remove_dbfs
 
 	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb -skip_drop_user"
 }
+
+ple_enable_log
+
+script_banner $ME $*
+
+exit_if_param_undef db	"$str_usage"
+exit_if_param_undef pdb	"$str_usage"
+
+exit_if_param_invalid role "primary physical"	"$str_usage"
+
+exit_if_database_not_exists $db
 
 exit_if_ORACLE_SID_not_defined
 
@@ -166,7 +169,6 @@ stop_and_remove_dbfs
 
 line_separator
 info "Delete credential for sys"
-exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=sys${pdb}"
 exec_cmd "wallet/delete_credential.sh -tnsalias=sys${pdb}"
 LN
 

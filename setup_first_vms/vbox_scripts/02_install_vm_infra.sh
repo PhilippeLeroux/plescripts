@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
@@ -11,8 +10,6 @@ typeset -r ME=$0
 
 typeset -r str_usage=\
 "Usage : $ME [-emul]"
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do
@@ -25,7 +22,6 @@ do
 		-h|-help|help)
 			info "$str_usage"
 			LN
-			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
@@ -37,6 +33,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 script_start
 

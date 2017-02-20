@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
@@ -14,15 +13,16 @@ typeset -r str_usage=\
 	-db=name
 	-pdb=name
 	-service=auto	auto or service name.
+	[-nolog]
+	[-call_crs_script]
 "
-
-script_banner $ME $*
 
 typeset	db=undef
 typeset	pdb=undef
 typeset	service=undef
 typeset	local_only=no
 typeset call_crs_script=no
+typeset	log=yes
 
 while [ $# -ne 0 ]
 do
@@ -44,6 +44,11 @@ do
 
 		-service=*)
 			service=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-nolog)
+			log=no
 			shift
 			;;
 
@@ -72,6 +77,10 @@ do
 			;;
 	esac
 done
+
+[ $log == yes ] && ple_enable_log || true
+
+script_banner $ME $*
 
 must_be_user root
 
@@ -192,7 +201,7 @@ if [[ $gi_count_nodes -gt 1 && $local_only == no ]]
 then
 	line_separator
 	execute_on_other_nodes ". .bash_profile; ~/plescripts/db/dbfs/${ME##*/}	\
-												-db=$db -pdb=$pdb -local_only"
+											-db=$db -pdb=$pdb -local_only -nolog"
 	LN
 fi
 
@@ -211,7 +220,7 @@ then # Affiche l'info que sur le serveur ou a été lancé le script.
 	if [ $call_crs_script == yes ]
 	then
 		add_dynamic_cmd_param "\"plescripts/db/dbfs/create_crs_resource_for_dbfs.sh"
-		add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service\""
+		add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service -nolog\""
 		exec_dynamic_cmd "su - grid -c"
 	else
 		info "With user grid :"

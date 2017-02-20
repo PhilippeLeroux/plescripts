@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
@@ -25,8 +24,6 @@ typeset -r str_usage=\
 
 	Ajouter le flag '!' permet de ne pas effectuer une action avec le paramètre -all.
 "
-
-script_banner $ME $*
 
 typeset storage=ASM
 typeset action_list
@@ -125,7 +122,6 @@ do
 		-h|-help|help)
 			info "$str_usage"
 			LN
-			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
@@ -137,6 +133,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 must_be_user root
 

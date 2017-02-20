@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
@@ -16,15 +15,15 @@ typeset -r str_usage=\
 	-service=auto         auto or service name
 	[-update_script_only] Met uniquement à jour le script.
 	[-force]              Si le service existe, il est recréé.
+	[-nolog]              Pas de log.
 "
-
-script_banner $ME $*
 
 typeset db=undef
 typeset	pdb=undef
 typeset	service=auto
 typeset	create_crs_resource=yes
 typeset	force=no
+typeset log=yes
 
 while [ $# -ne 0 ]
 do
@@ -59,6 +58,11 @@ do
 			shift
 			;;
 
+		-nolog)
+			log=no
+			shift
+			;;
+
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -73,6 +77,10 @@ do
 			;;
 	esac
 done
+
+[ $log == yes ] && ple_enable_log || true
+
+script_banner $ME $*
 
 must_be_user grid
 

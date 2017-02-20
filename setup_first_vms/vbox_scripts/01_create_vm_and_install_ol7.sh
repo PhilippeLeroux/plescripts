@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -15,8 +14,6 @@ Création d'une VM avec une configuration minimal et installation de l'OS.
 Après l'installation la VM aura l'IP et le nom de la VM master.
 "
 
-script_banner $ME $*
-
 while [ $# -ne 0 ]
 do
 	case $1 in
@@ -28,7 +25,6 @@ do
 		-h|-help|help)
 			info "$str_usage"
 			LN
-			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
@@ -40,6 +36,10 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
+
+script_banner $ME $*
 
 script_start
 

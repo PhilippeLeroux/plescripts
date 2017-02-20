@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -12,6 +11,12 @@ typeset -r str_usage="Usage : $ME"
 while [ $# -ne 0 ]
 do
 	case $1 in
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
 		*)
 			error "Arg '$1' invalid."
 			LN
@@ -20,6 +25,8 @@ do
 			;;
 	esac
 done
+
+ple_enable_log
 
 line_separator
 exec_cmd sudo "systemctl enable rpcbind"

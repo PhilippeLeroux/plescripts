@@ -1,6 +1,6 @@
 # vim: ts=4:sw=4
 
-[ ! -z $plelib_banner ] && return 0
+[ ! -z $plelib_banner ] && return 0 || true
 
 #LANG=en_US.UTF-8
 umask 0002
@@ -9,7 +9,7 @@ umask 0002
 #	Initialisation de la lib.
 ################################################################################
 
-typeset -ri	plelib_release=3
+typeset -ri	plelib_release=4
 typeset -r	plelib_banner=$(printf "plelib V%02d" $plelib_release)
 
 #*< Active les effets visuels couleurs et autres.
@@ -56,6 +56,12 @@ function enable_markers
 
 	#	Clear End Of Line
 	CEOL="\e[K"
+
+	if [ ! -v OK ]
+	then # Le flag +r ne fonctionne pas, mais ce n'est pas gênant DISABLE n'est plus utilisé.
+		typeset -gr OK="${GREEN}ok${NORM}"
+		typeset -gr	KO="${RED}ko${NORM}"
+	fi
 }
 
 #*< Désactive les effets visuels couleurs et autres.
@@ -99,59 +105,75 @@ function disable_markers
 	BLINK=
 	ITALIC=
 	STRIKE=
+
+	if [ ! -v OK ]
+	then # Le flag +r ne fonctionne pas, mais ce n'est pas gênant DISABLE n'est plus utilisé.
+		typeset -gr OK="ok"
+		typeset -gr	KO="ko"
+	fi
 }
 
 #	============================================================================
-#	Valeurs de PLELIB_OUTPUT
-#		- ENABLE	: Effets d'affichage
-#		- DISABLE	: Aucun effets d'affichage
-#		- FILE		: Effet d'affichage et écriture dans la log définie par PLELIB_LOG_FILE
-#
-#	Si PLELIB_LOG_FILE est définie alors PLE_OUTPUT sera positionné à FILE
-[ x"$PLELIB_OUTPUT" = x ] && PLELIB_OUTPUT=ENABLE
+#	Gestion de la log.
 
-typeset -r PLELOG_ROOT=~/plescripts/logs
+#	Valeurs possible : ENABLE | DISABLE | FILE
+#	Par défault ENABLE
+#	TODO : DISABLE n'est plus utilisé depuis longtemps, le supprimer ?
+[ x"$PLELIB_OUTPUT" == x ] && typeset PLELIB_OUTPUT=ENABLE || true
+
+[ "$PLELIB_OUTPUT" == DISABLE ] && disable_markers || enable_markers
+
+typeset -r	PLELOG_ROOT=~/plescripts/logs
 if [ ! -d $PLELOG_ROOT ]
 then
 	mkdir $PLELOG_ROOT >/dev/null 2>&1
 	chmod ug=rwx,o=rx $PLELOG_ROOT >/dev/null 2>&1
 fi
 
+#	Un répertoire de log par jour.
 typeset -r PLELOG_PATH=$PLELOG_ROOT/$(date +"%Y-%m-%d")
 
-if [ "$PLELIB_OUTPUT" = "FILE" ] && [ x"$PLELIB_LOG_FILE" = x ]
-then
-	PLELIB_LOG_FILE=${0##*/}
-	PLELIB_LOG_FILE=$PLELOG_PATH/$(date +"%Hh%Mmn%S")_$(hostname -s)_${PLELIB_LOG_FILE%.*}.log
-fi
+#	Lecture du nom du script appelant.
+typeset	-r PLESCRIPT_NAME=${0##*/}
 
-[ x"$PLELIB_LOG_FILE" != x ] && PLELIB_OUTPUT=FILE
+# $1 log name facultatif, par défaut nom du script appelant.
+function ple_enable_log
+{
+	if [ "$#" -eq 0 ]
+	then # Construit le nom de la log à partir du nom du script.
+		PLELIB_LOG_FILE=$PLELOG_PATH/$(date +"%Hh%Mmn%S")_${USER}@$(hostname -s)_${PLESCRIPT_NAME%.*}.log
+	else
+		PLELIB_LOG_FILE="$1"
+	fi
 
-[ "$PLELIB_OUTPUT" = DISABLE ] && disable_markers || enable_markers
+	# Les markers sont activés avec FILE ou ENABLE, s'ils étaient désactivés ils
+	# sont activés.
+	[ "$PLELIB_OUTPUT" == DISABLE ] && enable_markers || true
+	PLELIB_OUTPUT=FILE
 
-typeset -r OK="${GREEN}ok${NORM}"
-typeset -r KO="${RED}ko${NORM}"
+	#	Le répertoire doit être créée !
+	if [ ! -d $PLELOG_PATH ]
+	then
+		echo "mkdir $PLELOG_PATH"
+		mkdir $PLELOG_PATH
 
-#	Le répertoire doit être créée !
-if [ ! -d $PLELOG_PATH ]
-then
-	echo "mkdir $PLELOG_PATH"
-	mkdir $PLELOG_PATH
-	chown kangs:users $PLELOG_PATH
-	chmod ug=rwx,o=rx $PLELOG_PATH
-	[ $? -ne 0 ] && exit 1
-fi
+		# common_user_name est définie dans global.cfg
+		chown $common_user_name:users $PLELOG_PATH
+		chmod ug=rwx,o=rx $PLELOG_PATH
+		[ $? -ne 0 ] && exit 1 || true
+	fi
 
-if [ ! -f $PLELIB_LOG_FILE ]
-then
-	touch $PLELIB_LOG_FILE >/dev/null 2>&1
-	chmod ug=rw,o=r $PLELIB_LOG_FILE >/dev/null 2>&1
-	[ $? -ne 0 ] && exit 1
-fi
+	if [ ! -f $PLELIB_LOG_FILE ]
+	then
+		touch $PLELIB_LOG_FILE >/dev/null 2>&1
+		chmod ug=rw,o=r $PLELIB_LOG_FILE >/dev/null 2>&1
+		[ $? -ne 0 ] && exit 1 || true
+	fi
+}
 
 #	============================================================================
 
-if [ ! -z PLE_SHOW_EXECUTION_TIME_AFTER ]
+if [ ! -v PLE_SHOW_EXECUTION_TIME_AFTER ]
 then	# Temps en secondes, le temps d'exécution des commandes est affiché s'il
 		# est supérieur à cette variable
 	typeset -i PLE_SHOW_EXECUTION_TIME_AFTER=60
@@ -182,9 +204,9 @@ function clean_plelib_log_file
 	clean_log_file "$PLELIB_LOG_FILE"
 }
 
-[ x"$PLELIB_LOG_FILE" != x ] && trap clean_plelib_log_file EXIT
+[ x"$PLELIB_LOG_FILE" != x ] && trap clean_plelib_log_file EXIT || true
 
-[ x"$EXEC_CMD_ACTION" = x ] && typeset EXEC_CMD_ACTION=NOP
+[ x"$EXEC_CMD_ACTION" == x ] && typeset EXEC_CMD_ACTION=NOP || true
 
 ################################################################################
 #	Fonctions agissants ou donnant des informations sur le terminal.
@@ -271,10 +293,10 @@ function script_banner
 function my_echo
 {
 	typeset	EOL="\n"
-	[ "$1" = "-n" ] && EOL="" && shift
+	[ "$1" == "-n" ] && EOL="" && shift || true
 	typeset -r	color="$1"
 	typeset		symbol="$2"
-	[ "$symbol" = no_symbol ] && symbol=""
+	[ "$symbol" == no_symbol ] && symbol="" || true
 	shift 2
 
 	# Laisser les 2 lignes, sinon l'affichaged de MSG est foireux.
@@ -308,13 +330,13 @@ function my_echo
 #*> Print error message
 function error
 {
-	my_echo "${RED}${BLINK}" "✗ " "$@"
+	my_echo "${RED}${BLINK}" "✗" " $@"
 }
 
 #*> Print warning message
 function warning
 {
-	my_echo "${LGREEN}${INVERT}" "< " "$@"
+	my_echo "${LGREEN}${INVERT}" "<" " $@"
 }
 
 #*> Affiche les informations de debug.
@@ -692,7 +714,7 @@ function exec_cmd
 		case "$1" in
 			"-f")
 				shift
-				if [ $EXEC_CMD_ACTION = NOP ]
+				if [ $EXEC_CMD_ACTION == NOP ]
 				then
 					EXEC_CMD_ACTION=EXEC
 					force=YES
@@ -940,7 +962,7 @@ function change_value
 {
 	typeset -r var_name=$(escape_slash "$1")
 	typeset -r file=$3
-	[ "$2" = "empty" ] && new_val="" || new_val=$(escape_slash "$2")
+	[ "$2" == "empty" ] && new_val="" || new_val=$(escape_slash "$2")
 
 	exec_cmd "sed -i 's/^\(${var_name}\s*=\s*\).*/\1$new_val/' $file"
 }
@@ -951,7 +973,7 @@ function change_value
 function add_value
 {
 	typeset -r var_name="$1"
-	[ "$2" = "empty" ] && new_val="" || new_val="$2"
+	[ "$2" == "empty" ] && new_val="" || new_val="$2"
 	typeset -r file="$3"
 
 	exec_cmd "echo \"$var_name=$new_val\" >> $file"
@@ -967,7 +989,7 @@ function add_value
 #*> If file doesn't exist script aborted.
 function update_value
 {
-	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exists "$3" "Call function update_value"
+	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$3" "Call function update_value"
 
 	typeset -r var_name="$1"
 	typeset -r var_value="$2"
@@ -990,7 +1012,7 @@ function update_value
 #*> If file doesn't exist script aborted.
 function remove_value
 {
-	[ $EXEC_CMD_ACTION = EXEC ] && exit_if_file_not_exists "$2" "Call function remove_value"
+	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$2" "Call function remove_value"
 
 	typeset -r var_name=$(escape_slash "$1")
 	typeset -r file="$2"
@@ -1015,7 +1037,7 @@ function exit_if_param_undef #var_name
 	typeset -r var_name=$1
 	typeset -r var_value=$(eval echo \$$var_name)
 
-	if [ "$var_value" = "undef" ] || [ "$var_value" = "-1" ] || [ x$"var_name" == x ]
+	if [[ "$var_value" == "undef" || "$var_value" == "-1" || x"$var_name" == x ]]
 	then
 		error "-$var_name missing"
 		shift
@@ -1177,7 +1199,7 @@ function pause_in_secs
 
 			show_cursor
 
-			[ "$PLELIB_OUTPUT" = "FILE" ] && printf "${max_secs}/${max_secs}s" >> $PLELIB_LOG_FILE
+			[ "$PLELIB_OUTPUT" == "FILE" ] && printf "${max_secs}/${max_secs}s" >> $PLELIB_LOG_FILE
 
 			if [[ $max_secs -lt 5 || $max_secs -gt 30 ]]
 			then
@@ -1295,7 +1317,7 @@ function compute
 
 	typeset	val=$(echo "$@" | bc $bc_args)
 	[ x"$scale" != x ] && val=$(LANG=C printf "%.${scale}f" $val)
-	[ $return_int = yes ] && echo ${val%%.*} || echo $val
+	[ $return_int == yes ] && echo ${val%%.*} || echo $val
 }
 
 #*> fmt_seconds <seconds>

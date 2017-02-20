@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-PLELIB_OUTPUT=FILE
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/usagelib.sh
@@ -42,9 +41,7 @@ typeset	-i	redoSize=64	# Unit Mb
 typeset		sampleSchema=true
 typeset		create_wallet=yes
 
-#	Permet au script database_severs/run_all.sh de valider les arguments.
-typeset		validate_params=no
-
+#	DEBUG :
 typeset		create_database=yes
 
 add_usage "-db=name"								"Database name."
@@ -88,8 +85,6 @@ $(print_usage)
 \tDebug flag :
 \t	-skip_db_create : skip create database
 "
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do
@@ -209,15 +204,9 @@ do
 			shift
 			;;
 
-		-validate_params)
-			validate_params=yes
-			shift
-			;;
-
 		-h|-help|help)
 			info "$str_usage"
 			LN
-			rm -f $PLELIB_LOG_FILE
 			exit 1
 			;;
 
@@ -554,6 +543,10 @@ function next_instructions
 #	============================================================================
 #	MAIN
 #	============================================================================
+ple_enable_log
+
+script_banner $ME $*
+
 script_start
 
 exit_if_param_undef		db								"$str_usage"
@@ -564,12 +557,6 @@ then
 fi
 exit_if_param_invalid	enable_flashback "yes no"		"$str_usage"
 exit_if_param_invalid	sampleSchema "true false"		"$str_usage"
-
-if [ $validate_params == yes ]
-then
-	rm -rf $PLELIB_LOG_FILE
-	exit 0
-fi
 
 adjust_parameters
 

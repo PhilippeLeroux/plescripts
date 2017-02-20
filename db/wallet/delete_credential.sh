@@ -66,13 +66,20 @@ then
 	$oracle_password
 	EOP
 
+	if [ "${tnsalias:0:3}" == "sys" ]
+	then # alias crée pour les connexions sys sur PDB sans mot de passe.
+		exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias"
+	fi
+	LN
+
 	if [[ $gi_count_nodes -gt 1 && $local_only == no ]] && ! wallet_store_on_cfs
 	then
-		execute_on_other_nodes -c	\
+		execute_on_other_nodes								\
 			". .bash_profile;								\
 				~/plescripts/db/wallet/delete_credential.sh	\
 										-tnsalias=$tnsalias	\
 										-local_only"
+		LN
 	fi
 fi
 
