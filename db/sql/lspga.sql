@@ -1,5 +1,6 @@
 --	vim: ts=4:sw=4
 set lines 100
+ttitle center "PGA usage (Mb)" skip
 col spid			for	a8		head 'spid'
 col stid			for a8		head 'stid'
 col	program			for a38		head 'Program'

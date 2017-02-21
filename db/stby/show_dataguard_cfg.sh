@@ -42,11 +42,7 @@ exit_if_ORACLE_SID_not_defined
 
 function exec_dgmgrl
 {
-	typeset -r cmd="$@"
-	fake_exec_cmd "dgmgrl -silent sys/$oracle_password"
-dgmgrl -silent -echo sys/$oracle_password<<EOS
-$cmd
-EOS
+	exec_cmd dgmgrl -silent -echo sys/$oracle_password "'$@'"
 }
 
 while read dbname dash role rem
@@ -54,10 +50,10 @@ do
 	case "$role" in
 		"Primary")	primary=$dbname ;;
 		"Physical")	standby_list="$standby_list$dbname ";;
-		*)	error "Cannot check database"
+		*)	error "No dataguard configuration."
 			exit 1
 	esac
-done<<<"$(dgmgrl -silent -echo sys/Oracle12 "show configuration" |\
+done<<<"$(dgmgrl -silent -echo sys/$oracle_password "show configuration" |\
 			grep -E "Primary|Physical")"
 
 line_separator

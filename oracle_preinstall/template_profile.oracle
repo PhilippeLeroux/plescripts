@@ -64,3 +64,8 @@ alias sugrid='sudo -u grid -i'
 
 alias lsdiag="sp @\"$HOME/db/sql/lsdiag\""
 alias lspdbs="sp @\"$HOME/db/sql/lspdbs\""
+alias lsconn="sp @\"$HOME/db/sql/lsconn\""
+alias lsdbrole="sp @\"$HOME/db/sql/lsdbrole\""
+alias lstbs="sp @\"$HOME/db/sql/lstbs\""
+alias lspga="sp @\"$HOME/db/sql/lspga\""
+alias lsstby="$HOME/db/stby/show_dataguard_cfg.sh"
