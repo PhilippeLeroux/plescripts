@@ -21,8 +21,8 @@ Tout type de serveurs de base de données peuvent être créé :
 
 Versions logiciels :
 - Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur K2.
-- La version Oracle utilisée et la 12.1.0.2 (la version 12.2 n'est pas disponible
-actuellement au public).
+- La version Oracle utilisée et la 12.1.0.2, les versions plus récentes ne sont
+plus disponibles en téléchargement public.
 
 La création des serveurs de base de données est 100 % automatisée, il n'y a pas
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
@@ -39,10 +39,10 @@ Si vous avez une configuration inférieure n'y pensez même pas.
 ### Télécharger les logiciels suivants :
 
 * VirtualBox
-  * Linux : zypper install [...] ou yum install [...] ou apt-get install [...] en fonction de la distribution.
-	(Testé uniquement avec tumbleweed)
-
-  * _Windows télécharger [Oracle VirtualBox](https://www.virtualbox.org/wiki/Downloads) (Windows n'est plus pris en compte pour le moment.)_
+  
+	zypper install [...] ou yum install [...] ou apt-get install [...] en fonction de la distribution.
+	
+	Testé uniquement avec openSUSE (tumbleweed).
 
 * Oracle Linux 7 : uniquement l'ISO [V100082-01.iso](https://edelivery.oracle.com/osdc/faces/SearchSoftware) est nécessaire. Rechercher Linux 7, puis décocher les autres ISO.
 
