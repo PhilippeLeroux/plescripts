@@ -22,7 +22,8 @@ Tout type de serveurs de base de données peuvent être créé :
 Versions logiciels :
 - Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur K2.
 - La version Oracle utilisée et la 12.1.0.2, les versions plus récentes ne sont
-plus disponibles en téléchargement public.
+plus disponibles en téléchargement public. Si vous souhaitez utiliser une 12.2
+consultez le [blog de Tim Hall](https://oracle-base.com/blog/2017/01/08/how-to-get-started-with-oracle-database-12c-release-2-12-2-today/)
 
 La création des serveurs de base de données est 100 % automatisée, il n'y a pas
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
