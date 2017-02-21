@@ -11,24 +11,24 @@ les disques sont exportés sur le réseau via le protocole iSCSI.
 - la GATEWAY qui centralise l'accès à internet des serveurs, par défaut aucun
 serveur de base de données ne peut accéder à internet. Le firewall et SELinux sont
 activés sur ce serveur.
-- la gestion du dépôt des rpms.
+- la gestion du dépôt rpm : synchronisation des dépôts Oracle sur ce serveur.
 - de synchroniser l'horloge des serveurs de base de données.
 
-Tout type de serveurs de base de données peuvent être créé :
+Type de serveurs de base de données pouvant être créé :
 - Base de données sur un serveur standalone.
 - Base de données en RAC (pas de RAC étendue, uniquement MAA)
 - Mise en dataguard de 2 serveurs standalone.
 
 Versions logiciels :
-- Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur K2.
-- La version Oracle utilisée et la 12.1.0.2, les versions plus récentes ne sont
+- Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
+- La version Oracle utilisée est la 12.1.0.2, les versions plus récentes ne sont
 plus disponibles en téléchargement public. Si vous souhaitez utiliser une 12.2
 consultez le [blog de Tim Hall](https://oracle-base.com/blog/2017/01/08/how-to-get-started-with-oracle-database-12c-release-2-12-2-today/)
 
-La création des serveurs de base de données est 100 % automatisée, il n'y a pas
+La création des serveurs de base de données est 100% automatisée, il n'y a pas
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
 
-La version 12c d'oracle est particulièrement consommatrice en ressources mémoire
+La version 12cR1 d'oracle est particulièrement consommatrice en ressources mémoire
 et CPU, un certain nombre de hacks sont mis en œuvre pour pouvoir installer
 une base en SINGLE ou RAC sur un PC possédant au moins 8 Gb de RAM et un processeur
 équivalent à un i5 4ème génération.
@@ -49,16 +49,18 @@ Si vous avez une configuration inférieure n'y pensez même pas.
 
 * [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 
-* plescripts qui doit être extrait dans $HOME.
-	* Avec git : `$ git clone https://github.com/PhilippeLeroux/plescripts.git`
-	* Ou télécharger le zip en cliquant sur le boutton vert "Clone or download" en haut de la page.
+* Le dépôt `plescripts` doit être cloné dans $HOME :
+	```
+	$ cd $HOME
+	$ git clone https://github.com/PhilippeLeroux/plescripts.git
+	```
 
 --------------------------------------------------------------------------------
 
-### Création des VMs orclmaster et K2.
+### Création des VMs `orclmaster` et `K2`.
 2 VMs sont nécessaires pour commencer : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Création-des-VMs-orclmaster-et-K2)
- - orclmaster qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle
- - K2 qui est le serveur d'infrastructure (DNS, SAN, Gateway, NTP server, ...)
+ - `orclmaster` qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle, pas besoins de réinstaller OL7.
+ - `K2` qui est le serveur d'infrastructure (DNS, SAN, Gateway, NTP server, ...)
 
 --------------------------------------------------------------------------------
 
@@ -68,7 +70,7 @@ Si vous avez une configuration inférieure n'y pensez même pas.
 
 * Installation du Grid Infra & d'Oracle : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Installation-:-Grid-infra-&-Oracle)
 
-* Création d'une base : [instructions](https://github.com/PhilippeLeroux/plescripts/tree/master/db/README.md)
+* Création d'une base : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-d'une-base-de-donn%C3%A9e)
 
 * Mise en dataguard de 2 serveurs standalones : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Create-dataguard)
 
@@ -101,10 +103,6 @@ create_db.sh		|	daisy				|	42mn29s
 --------------------------------------------------------------------------------
 
 ![Screenshot](https://github.com/PhilippeLeroux/plescripts/wiki/virtualbox_manager.png)
-
---------------------------------------------------------------------------------
-
-[Mes notes](https://github.com/PhilippeLeroux/plescripts/wiki)
 
 --------------------------------------------------------------------------------
 
