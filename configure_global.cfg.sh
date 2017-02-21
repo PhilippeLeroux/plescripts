@@ -88,9 +88,9 @@ function read_dns_main_ip
 	typeset outp=$(cat /etc/resolv.conf | grep -E "^nameserver" | grep -Ev "$infra_ip")
 	if [ $(wc -l<<<"$outp") -eq 1 ]
 	then
-		echo $dns_main
-	else
 		cut -d\  -f2<<<"$outp"
+	else
+		echo $dns_main
 	fi
 }
 
