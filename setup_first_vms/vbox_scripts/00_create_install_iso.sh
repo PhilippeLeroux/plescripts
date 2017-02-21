@@ -230,12 +230,16 @@ then
 fi
 
 if [ "$timezone" == detect ]
-then
-	timezone=$(LANC=C timedatectl | grep "Time zone" | awk '{ print $3 }')
-	if [ "$timezone" == "n/a" ]                                                  
-	then                                                                         
-		error "Cannot detect your timezone."                                     
-		exit 1                                                                   
+then # Le label peut être 'Timezone' ou 'Time zone' celon la distribution.
+	timezone=$(LANC=C timedatectl | grep -E "Time\s{0,1}zone" | cut -d: -f2 | awk '{ print $1 }')
+	if [[ "$timezone" == "n/a" || x"$timezone" == x ]]
+	then
+		exec_cmd timedatectl
+		LN
+
+		error "Cannot detect your timezone, use parameter -timezone=\"your timezone\""
+		LN
+		exit 1
 	fi
 	confirm_detect=yes
 fi
@@ -247,7 +251,7 @@ then # Au moins un paramètre a été détecté, il faut confirmer.
 	info "Locale    = $locale"
 	info "Time zone = $timezone"
 	LN
-	confirm_or_exit "Loaded settings from your configuration is correct :"
+	confirm_or_exit "Loaded settings from your configuration are correct :"
 fi
 
 line_separator

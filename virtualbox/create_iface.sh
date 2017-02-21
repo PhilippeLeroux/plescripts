@@ -72,14 +72,14 @@ typeset	-a	ifaces_to_remove
 while [ 0 -eq 0 ]	#	For ever
 do
 	typeset iface_name=$(VBoxManage hostonlyif create | tail -1 | sed "s/.*'\(.*\)'.*$/\1/g")
-	[ $? -ne 0 ] && ( error "Return $?"; exit 1 )
+	[ x"$iface_name" == x ] && error "Command VBoxManage failed." && exit 1 || true
 
 	if [ $force_iface_name == undef ]
-	then	# Le nom de l'interface n'est pas important.
+	then # Le nom de l'interface n'est pas important.
 		config_iface $iface_name
 		exit 0
-	else	# Le nom de l'interface est spécifié.
-		if [ $force_iface_name == $iface_name ]
+	else # Le nom de l'interface est spécifié.
+		if [ $force_iface_name == "$iface_name" ]
 		then	#	OK, $iface_name a été crées : configuration.
 			config_iface $iface_name
 			ret=$?

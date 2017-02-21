@@ -83,6 +83,17 @@ function ask_for_variable
 	eval "$var_name=$(echo -E '$var_value')"
 }
 
+function read_dns_main_ip
+{
+	typeset outp=$(cat /etc/resolv.conf | grep -E "^nameserver" | grep -Ev "$infra_ip")
+	if [ $(wc -l<<<"$outp") -eq 1 ]
+	then
+		echo $dns_main
+	else
+		cut -d\  -f2<<<"$outp"
+	fi
+}
+
 test_if_cmd_exists VBoxManage
 if [ $? -eq 0 ]
 then
@@ -95,7 +106,7 @@ fi
 
 ask_for_variable full_linux_iso_n "Full path for Oracle Linux 7 ISO (...V100082-01.iso) :"
 
-dns_main_n=$dns_main
+dns_main_n=$(read_dns_main_ip)
 ask_for_variable dns_main_n "Main DNS/box IP :"
 
 line_separator
