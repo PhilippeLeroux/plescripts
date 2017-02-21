@@ -521,6 +521,8 @@ function create_stats_services
 
 	ssh_server "plescripts/stats/create_service_memory_stats.sh"
 
+	ssh_server "plescripts/stats/create_service_ifpub_stats.sh"
+
 	ssh_server "plescripts/stats/create_service_ifiscsi_stats.sh"
 
 	if [ $max_nodes -gt 1 ]

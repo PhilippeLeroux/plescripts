@@ -28,7 +28,7 @@ do
 	esac
 done
 
-typeset -r service=pleiscsistats
+typeset -r service=pleifpubstats
 typeset -r service_file=/usr/lib/systemd/system/$service.service
 
 if [ -f $service_file ]
@@ -43,14 +43,14 @@ info "Create systemd service $service"
 
 cat <<EOS > $service_file
 [Unit]
-Description=PLE iSCSI Statistics
+Description=PLE Iface pub Statistics
 Wants=nfs.target
 After=nfs.target
 
 [Service]
 Type=simple
-ExecStart=/root/plescripts/stats/ifstats.sh -title=$(hostname -s) -ifname=$if_iscsi_name
-ExecStop=/root/plescripts/stats/ifstats.sh -stop -title=$(hostname -s) -ifname=$if_iscsi_name
+ExecStart=/root/plescripts/stats/ifstats.sh -title=$(hostname -s) -ifname=$if_pub_name
+ExecStop=/root/plescripts/stats/ifstats.sh -stop -title=$(hostname -s) -ifname=$if_pub_name
 TimeoutStopSec=5
 
 [Install]
@@ -69,7 +69,7 @@ LN
 
 [ x"$PLE_STATISTICS" == x ] && PLE_STATISTICS=$PLESTATISTICS || true
 
-if grep -q IFISCSI <<< "$PLE_STATISTICS"
+if grep -q IFPUB <<< "$PLE_STATISTICS"
 then
 	info "Enable service"
 	exec_cmd "systemctl enable $service"

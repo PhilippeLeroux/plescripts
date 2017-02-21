@@ -21,6 +21,7 @@ typeset	range_mn=5
 
 typeset -r str_usage=\
 "Usage : $ME
+		[-ifname=iface]      iface name : eth0 | eth1 | eth2
 		[-node=<#>]
 		[-range_mn=$range_mn]
 		[-no_loop]
@@ -202,10 +203,11 @@ fi
 make_log_names
 
 #	Lecture de l'heure de début des mesures
-typeset -r	start_time=$(sed -n "2p" ${log_if} | cut -d' ' -f1)
+#	Lire la première ligne peut fausser le résulat donc lecture de la ligne 2 (là 3 avec le labe)
+typeset -r	start_time=$(sed -n "3p" ${log_if} | cut -d' ' -f1)
 
 # Lecture de la seconde mesure (ligne 3 donc) pour déterminer le refresh rate.
-typeset -r	second_time=$(sed -n "3p" ${log_if} | cut -d' ' -f1)
+typeset -r	second_time=$(sed -n "4p" ${log_if} | cut -d' ' -f1)
 
 # Fréquence de rafraîchissement :
 debug "start_time  = $start_time"
