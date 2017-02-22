@@ -39,9 +39,7 @@ Si vous avez une configuration inférieure n'y pensez même pas.
 
 ### Télécharger les logiciels suivants :
 
-* VirtualBox
-  
-	zypper install [...] ou yum install [...] ou apt-get install [...] en fonction de la distribution.
+* VirtualBox : `zypper install [...]` ou `yum install [...]` ou `apt-get install [...]` en fonction de la distribution.
 	
 	Testé uniquement avec openSUSE (tumbleweed).
 
@@ -49,11 +47,7 @@ Si vous avez une configuration inférieure n'y pensez même pas.
 
 * [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 
-* Le dépôt `plescripts` doit être cloné dans $HOME :
-	```
-	$ cd $HOME
-	$ git clone https://github.com/PhilippeLeroux/plescripts.git
-	```
+* Cloner le dépôt `plescripts` dans le répertoire $HOME (instructions fournies plus loin).
 
 --------------------------------------------------------------------------------
 
