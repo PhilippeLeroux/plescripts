@@ -72,6 +72,7 @@ function ask_for_variable
 	then
 		str=$(escape_anti_slash "$var_value")
 		info "Press <enter> to select : $str"
+		info -n "Or new value : "
 	fi
 	read -r keyboard
 
