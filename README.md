@@ -4,7 +4,7 @@
 Simuler une infrastructure de VMs pour créer des serveurs de base de données
 dans les conditions proches de ce que l'on peut trouver en entreprise.
 
-Le serveur central se nomme K2 et à en charge :
+Le serveur central se nomme K2 et a en charge :
 - la gestion du DNS via bind.
 - la gestion du SAN via target (qui est présent sur les distributions de type Redhat),
 les disques sont exportés sur le réseau via le protocole iSCSI.
