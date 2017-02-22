@@ -41,6 +41,22 @@ must_be_user root
 
 typeset -r lower_db=$(to_lower $db)
 
+info "Check DBFS ressource"
+while read res_name
+do
+	[ x"$res_name" == x ] && continue || true
+
+	exec_cmd -c "crsctl delete res $res_name -f"
+	LN
+done<<<"$(crsctl stat res -t | grep -E ".*\.dbfs$")"
+LN
+
+line_separator
+info "Drop wallet."
+exec_cmd "su - oracle -c '~/plescripts/db/wallet/delete_all_credentials.sh'"
+exec_cmd "su - oracle -c '~/plescripts/db/wallet/drop_wallet.sh'"
+LN
+
 line_separator
 #	Supprime la base du GI :
 exec_cmd -c "srvctl stop database -db $db -stopoption ABORT -force"
@@ -78,6 +94,7 @@ oracle_rm_1="su - oracle -c \"rm -rf \\\$ORACLE_BASE/cfgtoollogs/dbca/${db}*\""
 oracle_rm_2="su - oracle -c \"rm -rf \\\$ORACLE_BASE/diag/rdbms/$lower_db\""
 oracle_rm_3="su - oracle -c \"rm -rf \\\$ORACLE_HOME/dbs/*${db}*\""
 oracle_rm_4="su - oracle -c \"rm -rf \\\$ORACLE_BASE/admin/$db\""
+oracle_rm_5="su - oracle -c \"rm -rf \\\$TNS_ADMIN/tnsnames.ora\""
 
 clean_oratab_cmd1="sed  \"/$db[_|0-9].*/d\" /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
@@ -89,6 +106,8 @@ LN
 execute_on_all_nodes "$oracle_rm_3"
 LN
 execute_on_all_nodes "$oracle_rm_4"
+LN
+execute_on_all_nodes "$oracle_rm_5"
 LN
 
 exec_cmd -c "$clean_oratab_cmd1"

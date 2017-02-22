@@ -76,7 +76,6 @@ function sqlcmd_drop_primary_cfg
 	set_sql_cmd "alter database no force logging;"
 
 	set_sql_cmd "shutdown immediate"
-	set_sql_cmd "startup"
 }
 
 function remove_broker_cfg
@@ -144,4 +143,6 @@ create_services
 
 line_separator
 sqlplus_cmd "$(sqlcmd_drop_primary_cfg)"
+# startup avec sqlplus ne fonctionne pas avec le wallet.
+exec_cmd srvctl start database -db=$db
 LN
