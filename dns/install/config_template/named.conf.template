@@ -15,17 +15,22 @@ options {
 	statistics-file "/var/named/data/named_stats.txt";
 	memstatistics-file "/var/named/data/named_mem_stats.txt";
 	allow-query     { localhost; MY_NETWORK.0/MY_MASK; };
-    allow-transfer { none; };
-	
-	/* 
+	allow-transfer { none; };
+
+	# SELinux :
+	# https://www.mail-archive.com/bind-users@lists.isc.org/msg18593.html
+	avoid-v4-udp-ports { 1935; 2605; 4321; 6514; range 8610 8614; };
+	avoid-v6-udp-ports { 1935; 2605; 4321; 6514; range 8610 8614; };
+
+	/*
 	 - If you are building an AUTHORITATIVE DNS server, do NOT enable recursion.
-	 - If you are building a RECURSIVE (caching) DNS server, you need to enable 
-	   recursion. 
-	 - If your recursive DNS server has a public IP address, you MUST enable access 
+	 - If you are building a RECURSIVE (caching) DNS server, you need to enable
+	   recursion.
+	 - If your recursive DNS server has a public IP address, you MUST enable access
 	   control to limit queries to your legitimate users. Failing to do so will
-	   cause your server to become part of large scale DNS amplification 
+	   cause your server to become part of large scale DNS amplification
 	   attacks. Implementing BCP38 within your network would greatly
-	   reduce such attack surface 
+	   reduce such attack surface
 	*/
 	recursion yes;
 
@@ -42,10 +47,10 @@ options {
 };
 
 logging {
-        channel default_debug {
-                file "data/named.run";
-                severity dynamic;
-        };
+	channel default_debug {
+		file "data/named.run";
+		severity dynamic;
+	};
 };
 
 /* ne pas utiliser pour un dns privée.
@@ -65,7 +70,7 @@ zone "DOMAIN_NAME" IN {
 };
 
 zone "REVERSED_NETWORK.in-addr.arpa." IN {
-        type master;
-        file "reverse.DOMAIN_NAME";
-        allow-update { none; };
+	type master;
+	file "reverse.DOMAIN_NAME";
+	allow-update { none; };
 };
