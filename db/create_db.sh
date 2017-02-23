@@ -575,29 +575,6 @@ remove_glogin
 
 [ "${db_type:0:3}" == "RAC" ] && update_rac_oratab || true
 
-if [ $sampleSchema == true ]
-then # Doit être exécute après la mise à jour de oratab pour les RACs.
-	timing 2
-	exec_cmd ~/plescripts/db/clone_pdb_samples_from.sh -db=$db -pdb=$pdb
-	LN
-fi
-
-[[ $cdb == yes && $pdb != undef ]] && create_services_for_pdb || true
-
-if [ $sampleSchema == true ]
-then
-	info "Unlock sample schemas."
-	exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh -db=$db -pdb=$pdb
-	LN
-fi
-
-if [ $usefs == yes ]
-then
-	setup_fs_database
-
-	exit 0	#	Pour les base sur FS le reste du script est incompatible.
-fi
-
 line_separator
 ORACLE_SID=$(~/plescripts/db/get_active_instance.sh)
 if [ x"$ORACLE_SID" == x ]
@@ -609,6 +586,30 @@ fi
 info "Load env for $ORACLE_SID"
 ORAENV_ASK=NO . oraenv
 LN
+
+if [ $usefs == yes ]
+then
+	setup_fs_database
+
+	exit 0	#	Pour les base sur FS le reste du script est incompatible.
+fi
+
+[[ $cdb == yes && $pdb != undef ]] && create_services_for_pdb || true
+
+if [ $sampleSchema == true ]
+then # Doit être exécute après la mise à jour de oratab pour les RACs.
+	timing 2
+	exec_cmd ~/plescripts/db/create_pdb.sh	\
+						-db=$db				\
+						-pdb=pdb_samples	\
+						-from_pdb=$pdb		\
+						-is_seed
+	LN
+
+	info "Unlock sample schemas."
+	exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh -db=$db -pdb=$pdb
+	LN
+fi
 
 line_separator
 info "Adjust FRA size"
@@ -625,14 +626,22 @@ if [ $enable_flashback == yes ]
 then
 	line_separator
 	info "Enable flashback :"
-	sqlplus_cmd "$(set_sql_cmd "alter database flashback on;")"
+	function alter_database_flashback_on
+	{
+		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "alter database flashback on;"
+	}
+	sqlplus_cmd "$(alter_database_flashback_on)"
+	[ $? -ne 0 ] && exit 1 || true
 	LN
 fi
 
 line_separator
 info "Database config :"
 exec_cmd "srvctl config database -db $lower_db"
+exec_cmd "srvctl status service -db $lower_db"
 LN
+
 line_separator
 exec_cmd "crsctl stat res ora.$lower_db.db -t"
 LN

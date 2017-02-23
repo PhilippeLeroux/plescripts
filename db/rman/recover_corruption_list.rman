@@ -1,0 +1,2 @@
+select * from v$database_block_corruption;
+recover corruption list;

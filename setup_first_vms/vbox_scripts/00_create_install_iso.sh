@@ -158,7 +158,7 @@ function setup_ks_file
 {
 	info "Configure kickstart file."
 
-	info -n "Define root password for VM : "
+	info -n "Define root password for VM (Press enter for : R00T_P@SSW0RD) : "
 	read root_password
 	if [ x"$root_password" == x ]
 	then

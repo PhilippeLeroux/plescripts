@@ -222,7 +222,7 @@ function resume
 
 resume
 
-exit_if_service_not_exists $db $service
+exit_if_service_not_running $db $service
 
 if [ "$(dataguard_config_available)" == yes ]
 then

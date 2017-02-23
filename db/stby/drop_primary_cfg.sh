@@ -10,8 +10,6 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME -db=name"
 
-script_banner $ME $*
-
 typeset db=undef
 
 while [ $# -ne 0 ]
@@ -42,6 +40,10 @@ do
 			;;
 	esac
 done
+
+script_banner $ME $*
+
+ple_enable_log
 
 exit_if_param_undef db		"$str_usage"
 
@@ -144,5 +146,5 @@ create_services
 line_separator
 sqlplus_cmd "$(sqlcmd_drop_primary_cfg)"
 # startup avec sqlplus ne fonctionne pas avec le wallet.
-exec_cmd srvctl start database -db=$db
+exec_cmd srvctl start database -db $db
 LN

@@ -521,12 +521,14 @@ function register_standby_to_GI
 	info "$standby : mount & start recover :"
 	sqlplus_cmd_on_standby "$(sql_mount_db_and_start_recover)"
 	timing 10 "Wait recover"
+	LN
 }
 
 function create_dataguard_config
 {
 	info "Create data guard configuration."
 	timing 10 "Wait data guard broker"
+	LN
 	dgmgrl -silent -echo sys/$oracle_password<<-EOS | tee -a $PLELIB_LOG_FILE
 	create configuration 'DGCONF' as primary database is $primary connect identifier is $primary;
 	enable configuration;
@@ -557,6 +559,7 @@ function configure_dataguard
 	add_standby_to_dataguard_config
 
 	timing 10 "Waiting recover"
+	LN
 
 	# Remarque : si la base n'est pas en 'Real Time Query' relancer la base
 	# pour que le 'temporary file' soit crée.
@@ -635,7 +638,7 @@ from
 			info "Wallet add sys for $pdb to wallet"
 			exec_cmd "ssh -t $standby_host '. .bash_profile;				\
 						~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
-													-db=$standby -pdb=$pdb'"
+										-db=$standby -pdb=$pdb'</dev/null"
 			LN
 		fi
 

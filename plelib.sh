@@ -141,7 +141,7 @@ function ple_enable_log
 {
 	if [ "$#" -eq 0 ]
 	then # Construit le nom de la log à partir du nom du script.
-		PLELIB_LOG_FILE=$PLELOG_PATH/$(date +"%Hh%Mmn%S")_${USER}@$(hostname -s)_${PLESCRIPT_NAME%.*}.log
+		PLELIB_LOG_FILE=$PLELOG_PATH/$(date +"%Hh%Mmn%S")_${USER}_on_$(hostname -s)_${PLESCRIPT_NAME%.*}.log
 	else
 		PLELIB_LOG_FILE="$1"
 	fi

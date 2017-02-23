@@ -172,7 +172,7 @@ function create_local_resource
 	fi
 }
 
-exit_if_service_not_exists $db $service
+exit_if_service_not_running $db $service
 
 create_script
 

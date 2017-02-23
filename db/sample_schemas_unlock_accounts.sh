@@ -79,7 +79,7 @@ function ddl_unlock_all_accounts
 }
 
 typeset -r service=$(mk_oci_service $pdb)
-exit_if_service_not_exists $db $service
+exit_if_service_not_running $db $service
 
 sqlplus_cmd_with sys/$oracle_password@$service as sysdba	\
 								"$(ddl_unlock_all_accounts)"
