@@ -112,10 +112,6 @@ function validate_NFS_exports
 	then
 		info "\tadd to /etc/exports : $HOME/oracle_install/12.1 $network/$if_pub_prefix (ro,$nfs_options)"
 	fi
-	if ! _is_exported $iso_olinux_path
-	then
-		info "\tadd to /etc/exports : $iso_olinux_path $network/$if_pub_prefix (ro,$nfs_options)"
-	fi
 	LN
 }
 

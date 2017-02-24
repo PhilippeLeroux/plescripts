@@ -57,11 +57,9 @@ export_options="sync,no_root_squash,no_subtree_check"
 export_network=${infra_network}$(get_network_end $if_pub_prefix)/$if_pub_prefix
 export_file=/etc/exports
 mkdir -p $HOME/${oracle_install}
-mkdir -p ${iso_olinux_path}
 sudo -i <<EOS
 echo "$HOME/plescripts ${export_network}(rw,$export_options)" >> $export_file
 echo "$HOME/${oracle_install} ${export_network}(ro,$export_options)" >> $export_file
-echo "${iso_olinux_path} ${export_network}(ro,$export_options)" >> $export_file
 exportfs -au
 exportfs -a
 EOS
