@@ -151,16 +151,16 @@ function pdb_seed_ro_and_save_state
 	#	Il sera donc un RO comme PDB$SEED.
 	#	Il n'a pas de services, donc son état doit être sauvegardé sur toutes
 	#	les bases d'un dataguard.
-	set_sql_cmd "prompt Ferme la PDB pour être sur de son état."
-	set_sql_cmd "alter pluggable database pdb_samples close instances=all;"
+	set_sql_cmd "alter pluggable database $pdb close instances=all;"
 	set_sql_cmd "whenever sqlerror exit 1;"
 	if [ "$1" != -physical ]
 	then
-		set_sql_cmd "alter pluggable database pdb_samples open read write instances=all;"
-		set_sql_cmd "alter pluggable database pdb_samples close instances=all;"
+		set_sql_cmd "alter pluggable database $pdb open read write instances=all;"
+		set_sql_cmd "alter pluggable database $pdb close instances=all;"
 	fi
-	set_sql_cmd "alter pluggable database pdb_samples open read only instances=all;"
-	set_sql_cmd "alter pluggable database pdb_samples save state instances=all;"
+	set_sql_prompt "Open seed pdb $pdb RO and save state"
+	set_sql_cmd "alter pluggable database $pdb open read only instances=all;"
+	set_sql_cmd "alter pluggable database $pdb save state instances=all;"
 }
 
 function create_pdb_services
@@ -298,12 +298,16 @@ done
 
 if [ $from_pdb != default ]
 then
+	info "Remove services cloned from $from_pdb on $pdb"
 	sqlplus_cmd "$(sqlcmd_remove_services_from_cloned_pdb)"
+	LN
 fi
 
 if [ $is_seed == yes ]
 then
+	info "Open RO $pdb and save state (no services on seed PDB)."
 	sqlplus_cmd "$(pdb_seed_ro_and_save_state)"
+	LN
 else
 	create_pdb_services
 fi

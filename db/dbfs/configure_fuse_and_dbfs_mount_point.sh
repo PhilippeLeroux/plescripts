@@ -108,7 +108,7 @@ IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent"	\
 															/etc/oratab)"
 
 info "ORACLE_HOME = '$ORACLE_HOME'"
-exit_if_service_not_running $db $service
+exit_if_service_not_exists $db $service
 
 line_separator
 info "Install fuse :"

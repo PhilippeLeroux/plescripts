@@ -10,7 +10,9 @@ fi
 
 typeset -r	SQL_PROMPT="prompt SQL>"
 
-function init_var_spool
+# Si PLELIB_OUTPUT == FILE alors sqlplus log sa sortie dans $PLELIB_LOG_FILE
+# Initialise la variable SPOOL
+function sqlplus_init_spool
 {
 	#	La variable SPOOL permet de loger la sortie de sqplus.
 	if [ "$PLELIB_OUTPUT" == FILE ]
@@ -19,6 +21,15 @@ function init_var_spool
 	else
 		SPOOL=""
 	fi
+}
+
+#	Call oraenv with ORACLE_SID=$1
+function load_oraenv_for
+{
+	ORACLE_SID=$(to_upper $1)
+	info "Load oracle environment for $ORACLE_SID"
+	ORAENV_ASK=NO . oraenv
+	LN
 }
 
 #*> $1 database name
@@ -85,6 +96,14 @@ function read_primary_name
 				grep "Primary database" | awk '{ print $1 }'
 }
 
+function set_sql_prompt
+{
+	cat<<-WT
+	prompt
+	prompt $@
+	WT
+}
+
 #*>	$@ contient une commande à exécuter.
 #*>	La fonction n'exécute pas la commande elle :
 #*>		- affiche le prompt SQL> suivi de la commande.
@@ -118,7 +137,7 @@ function sqlplus_cmd_with
 		shift 2
 	fi
 
-	init_var_spool
+	sqlplus_init_spool
 
 	typeset	-r	db_cmd="$*"
 	fake_exec_cmd sqlplus -s "$connect_string"
@@ -150,7 +169,7 @@ function sqlplus_cmd
 #*>    0 if EXEC_CMD_ACTION = EXEC
 function sqlplus_asm_cmd
 {
-	init_var_spool
+	sqlplus_init_spool
 	fake_exec_cmd sqlplus -s / as sysasm
 	if [ $? -eq 0 ]
 	then
@@ -180,7 +199,7 @@ function sqlplus_exec_query
 function sqlplus_print_query
 {
 	typeset -r	spq_query="$1"
-	init_var_spool
+	sqlplus_init_spool
 	fake_exec_cmd "sqlplus -s sys/$oracle_password as sysdba"
 	info "$query"
 	printf "${SPOOL}whenever sqlerror exit 1\n$spq_query" | \
@@ -199,6 +218,27 @@ function service_exists
 		return 1
 	else
 		return 0
+	fi
+}
+
+#*> $1	db name
+#*> $2	service name
+#*>
+#*> exit 1 if service name not running else return 0
+function exit_if_service_not_exists
+{
+	typeset	-r	db_name_l="$1"
+	typeset	-r	service_name_l="$2"
+
+	info -n "Database $db_name_l, service $service_name_l exists "
+	if service_exists $db_name_l $service_name_l
+	then
+		info -f "$OK"
+		LN
+	else
+		info -f "$KO"
+		LN
+		exit 1
 	fi
 }
 

@@ -179,13 +179,9 @@ if [[ $dataguard == no || $role == primary ]]
 then
 	function sql_drop_pdb
 	{
-		set_sql_cmd "alter pluggable database $pdb close immediate;"
+		set_sql_cmd "alter pluggable database $pdb close immediate instances=all;"
 		set_sql_cmd "drop pluggable database $pdb including datafiles;"
 	}
-
-	execute_on_other_nodes ". .bash_profile;								\
-					echo 'alter pluggable database $pdb close immediate;'	|\
-					sqlplus -s sys/$oracle_password as sysdba"
 
 	sqlplus_cmd "$(sql_drop_pdb)"
 else

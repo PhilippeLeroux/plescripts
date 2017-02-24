@@ -7,10 +7,16 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+
 typeset -r str_usage=\
-"Usage : $ME -db=name"
+"Usage :
+$ME
+	-db=name               Database name.
+	-role=primary|physical Database role.
+"
 
 typeset db=undef
+typeset role=undef
 
 while [ $# -ne 0 ]
 do
@@ -23,6 +29,11 @@ do
 
 		-db=*)
 			db=$(to_upper ${1##*=})
+			shift
+			;;
+
+		-role=*)
+			role=${1##*=}
 			shift
 			;;
 
@@ -47,7 +58,9 @@ ple_enable_log
 
 exit_if_param_undef db		"$str_usage"
 
-function sqlcmd_drop_primary_cfg
+exit_if_param_invalid role "primary physical" "$str_usage"
+
+function sqlcmd_reset_dataguard_cfg
 {
 	set_sql_cmd "alter system reset standby_file_management scope=spfile sid='*';"
 
@@ -83,11 +96,26 @@ function sqlcmd_drop_primary_cfg
 function remove_broker_cfg
 {
 	line_separator
-dgmgrl -silent -echo<<EOS 
-connect sys/$oracle_password
-disable configuration;
-remove configuration;
-EOS
+	dgmgrl -silent -echo<<-EOS 
+	connect sys/$oracle_password
+	disable configuration;
+	remove configuration;
+	EOS
+	LN
+
+	line_separator
+	exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
+	LN
+}
+
+function remove_database_from_broker
+{
+	line_separator
+	dgmgrl -silent -echo<<-EOS 
+	connect sys/$oracle_password
+	disable database $db;
+	remove database $db;
+	EOS
 	LN
 
 	line_separator
@@ -98,9 +126,16 @@ EOS
 function remove_SRLs
 {
 	line_separator
-	sqlplus -s sys/$oracle_password as sysdba<<EOS
+	sqlplus -s sys/$oracle_password as sysdba<<-EOS
 	@drop_standby_redolog.sql
-EOS
+	EOS
+	LN
+}
+
+function drop_services
+{
+	line_separator
+	exec_cmd -c ~/plescripts/db/drop_all_services.sh -db=$db
 	LN
 }
 
@@ -128,23 +163,48 @@ from
 	done<<<"$(sqlplus_exec_query "$query")"
 }
 
-info "Load env for $db"
-ORACLE_SID=$db
-ORAENV_ASK=NO . oraenv
-LN
+exit_if_database_not_exists $db
 
-remove_broker_cfg
+load_oraenv_for $db
+
+typeset -r role_cfg=$(read_database_role $(to_lower $db))
+
+info "$db role=$role, read role from configuration : $role_cfg"
+
+if [[ x"$role_cfg" != x && "$role" != "$role_cfg" ]]
+then
+	error "role $role invalid ?"
+	LN
+fi
+
+[ $role == primary ] && remove_broker_cfg || remove_database_from_broker
 
 remove_SRLs
 
-line_separator
-exec_cmd -c ~/plescripts/db/drop_all_services.sh -db=$db
-LN
+drop_services
 
 create_services
 
 line_separator
-sqlplus_cmd "$(sqlcmd_drop_primary_cfg)"
+if [ $role == physical ]
+then
+	function convert_to_primary
+	{
+		set_sql_cmd "alter database recover managed standby database cancel;"
+		set_sql_cmd "alter database recover managed standby database finish;"
+		set_sql_cmd "alter database commit to switchover to primary with session shutdown;"
+		set_sql_cmd "alter database open;"
+	}
+	exec_cmd srvctl stop database -db $db
+	exec_cmd srvctl start database -db $db -startoption mount
+	sqlplus_cmd "$(convert_to_primary)"
+fi
+sqlplus_cmd "$(sqlcmd_reset_dataguard_cfg)"
+if [ $role == physical ]
+then
+	exec_cmd srvctl modify database -db $db -startoption open
+	exec_cmd srvctl modify database -db $db -role primary
+fi
 # startup avec sqlplus ne fonctionne pas avec le wallet.
 exec_cmd srvctl start database -db $db
 LN

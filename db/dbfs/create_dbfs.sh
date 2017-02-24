@@ -222,9 +222,8 @@ function resume
 
 resume
 
-exit_if_service_not_running $db $service
-
-if [ "$(dataguard_config_available)" == yes ]
+typeset -r dg_cfg_available="$(dataguard_config_available)"
+if [ "$dg_cfg_available" == yes ]
 then
 	if [[  $gi_count_nodes -gt 1 ]]
 	then
@@ -238,6 +237,8 @@ fi
 
 if [ $role == primary ]
 then
+	exit_if_service_not_running $db $service
+
 	create_user_dbfs
 
 	create_dbfs
@@ -250,6 +251,8 @@ else
 		select username from dba_users where username='$account_name';
 		EOSQL
 	}
+
+	exit_if_service_not_exists $db $service
 
 	if [ "$(read_user)" != $account_name ]
 	then
@@ -283,3 +286,14 @@ info "ctrl-c to skip script execution."
 add_dynamic_cmd_param "\"plescripts/db/dbfs/configure_fuse_and_dbfs_mount_point.sh"
 add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service -nolog -call_crs_script\""
 exec_dynamic_cmd "su - root -c"
+LN
+
+if [[ $dg_cfg_available == yes && $role == primary ]]
+then
+	typeset -a physical_list
+	typeset -a stby_server_list
+	load_stby_database
+	warning "Execute script on servers ${stby_server_list[*]}"
+	info "Script $ME -db=<stby name> -pdb=$pdb -service=$service"
+	LN
+fi

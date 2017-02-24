@@ -56,7 +56,6 @@ do
 done<<<"$(dgmgrl -silent -echo sys/$oracle_password "show configuration" |\
 			grep -E "Primary|Physical")"
 
-line_separator
 exec_dgmgrl "show configuration"
 
 line_separator
