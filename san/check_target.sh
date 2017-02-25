@@ -56,6 +56,8 @@ function backstore_exists
 	targetcli ls backstores/block/$1 >/dev/null 2>&1
 }
 
+ple_enable_log san_status.log
+
 typeset -i lv_errors=$(count_lv_errors)
 if [ $lv_errors -ne 0 ]
 then
@@ -67,42 +69,45 @@ then
 
 	lv_errors=$(count_lv_errors)
 
+	if [ $lv_errors -eq 0 ]
+	then
+		info "restart target [$OK]"
+		exit 0
+	fi
+
 	error "LV errors after restart : $lv_errors"
 	LN
 
-	if [ $lv_errors -ne 0 ]
-	then
-		typeset -i lv_corrected=0
-		while read lv_name vg_name rem
-		do
-			typeset backstore_name=${vg_name}_${lv_name}
-			if ! backstore_exists $backstore_name
-			then
-				info "Backstore $backstore_name not exists."
-				info "remove lv $lv_name from vg $vg_name"
-				read prefix no <<<$(sed "s/lv\(.*\)\([0-9]\{2\}\)/\1 \2/g"<<<"$lv_name")
-				exec_cmd -c ~/plescripts/san/remove_lv.sh		\
-											-vg_name=$vg_name	\
-											-prefix=$prefix		\
-											-first_no=$no
-				[ $? -eq 0 ] && ((lv_corrected++)) || true
-				LN
-			fi
-		done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
-
-		info "LV corrected $lv_corrected"
-		if [ $lv_corrected -eq $lv_errors ]
+	typeset -i lv_corrected=0
+	while read lv_name vg_name rem
+	do
+		typeset backstore_name=${vg_name}_${lv_name}
+		if ! backstore_exists $backstore_name
 		then
-			info "target [$OK]"
-			exit 0
-		else
-			show_lv_errors
+			info "Backstore $backstore_name not exists."
+			info "remove lv $lv_name from vg $vg_name"
+			read prefix no <<<$(sed "s/lv\(.*\)\([0-9]\{2\}\)/\1 \2/g"<<<"$lv_name")
+			exec_cmd -c ~/plescripts/san/remove_lv.sh		\
+										-vg_name=$vg_name	\
+										-prefix=$prefix		\
+										-first_no=$no
+			[ $? -eq 0 ] && ((lv_corrected++)) || true
 			LN
-			print_error_help
-			LN
-			info "target [$KO]"
-			exit 1
 		fi
+	done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
+
+	info "LV corrected $lv_corrected"
+	if [ $lv_corrected -eq $lv_errors ]
+	then
+		info "target [$OK]"
+		exit 0
+	else
+		show_lv_errors
+		LN
+		print_error_help
+		LN
+		info "target [$KO]"
+		exit 1
 	fi
 else
 	exec_cmd -c "systemctl status target" >/dev/null 2>&1

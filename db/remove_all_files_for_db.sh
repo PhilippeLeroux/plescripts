@@ -81,7 +81,7 @@ exec_cmd -c "su - oracle -c /tmp/stop_orcl.sh"
 LN
 
 line_separator
-exec_cmd -c "kill -9 $(ps -ef| grep -E \"[${db:0:1}]${db:1}\" | tr -s [:space:] | cut -d\  -f2 | xargs)"
+exec_cmd -c "kill -9 $(ps -ef| grep -iE "ora_.*[${db:0:1}]${db:1}" | tr -s [:space:] | cut -d\  -f2 | xargs)"
 if [ $? -eq 0 ]
 then	# Si le kill est effectif on aura un problème avec ASM il faut lui laisser
 		# le temps de prendre en compte le kill.

@@ -125,6 +125,10 @@ line_separator
 exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
 LN
 
+if [ 0 -eq 1 ]; then
+# --hostiocache on : la CPU et le SWAP du virtual-host explose et les
+# gains/pertes en IO deviennent extrêment aléatoire, c'était une très
+# mauvaise idée.
 line_separator
 # VBox 5.1.14 : utilise le cache sinon trop de blocs fracturés ou corrompus lors
 # des sauvegardes et lenteurs excessives d'IO disques.
@@ -133,6 +137,7 @@ line_separator
 # Les temps IOs sont meilleures, mais ne sont pas au niveau des versions précédentes.
 exec_cmd VBoxManage storagectl $infra_hostname --name SATA --hostiocache on
 LN
+fi # [ 0 -eq 1 ]; then
 
 line_separator
 info "Add disk for SAN storage (targetcli)"

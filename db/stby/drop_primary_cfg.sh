@@ -13,6 +13,8 @@ typeset -r str_usage=\
 $ME
 	-db=name               Database name.
 	-role=primary|physical Database role.
+
+Note -role=physical convert database to normal database.
 "
 
 typeset db=undef
@@ -96,7 +98,7 @@ function sqlcmd_reset_dataguard_cfg
 function remove_broker_cfg
 {
 	line_separator
-	dgmgrl -silent -echo<<-EOS 
+	dgmgrl -silent -echo<<-EOS  | tee -a $PLELIB_LOG_FILE
 	connect sys/$oracle_password
 	disable configuration;
 	remove configuration;
@@ -111,7 +113,7 @@ function remove_broker_cfg
 function remove_database_from_broker
 {
 	line_separator
-	dgmgrl -silent -echo<<-EOS 
+	dgmgrl -silent -echo<<-EOS | tee -a $PLELIB_LOG_FILE
 	connect sys/$oracle_password
 	disable database $db;
 	remove database $db;
@@ -126,10 +128,14 @@ function remove_database_from_broker
 function remove_SRLs
 {
 	line_separator
+	sqlplus_cmd "@drop_standby_redolog.sql"
+	LN
+if [ 0 -eq 1 ]; then
 	sqlplus -s sys/$oracle_password as sysdba<<-EOS
 	@drop_standby_redolog.sql
 	EOS
 	LN
+fi # [ 0 -eq 1 ]; then
 }
 
 function drop_services
@@ -169,7 +175,7 @@ load_oraenv_for $db
 
 typeset -r role_cfg=$(read_database_role $(to_lower $db))
 
-info "$db role=$role, read role from configuration : $role_cfg"
+info "$db role=$role, role read from configuration : $role_cfg"
 
 if [[ x"$role_cfg" != x && "$role" != "$role_cfg" ]]
 then
@@ -177,15 +183,6 @@ then
 	LN
 fi
 
-[ $role == primary ] && remove_broker_cfg || remove_database_from_broker
-
-remove_SRLs
-
-drop_services
-
-create_services
-
-line_separator
 if [ $role == physical ]
 then
 	function convert_to_primary
@@ -198,7 +195,19 @@ then
 	exec_cmd srvctl stop database -db $db
 	exec_cmd srvctl start database -db $db -startoption mount
 	sqlplus_cmd "$(convert_to_primary)"
+
+	remove_database_from_broker
+else
+	remove_broker_cfg
 fi
+
+remove_SRLs
+
+drop_services
+
+create_services
+
+line_separator
 sqlplus_cmd "$(sqlcmd_reset_dataguard_cfg)"
 if [ $role == physical ]
 then

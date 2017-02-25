@@ -136,14 +136,14 @@ typeset -r PLELOG_PATH=$PLELOG_ROOT/$(date +"%Y-%m-%d")
 #	Lecture du nom du script appelant.
 typeset	-r PLESCRIPT_NAME=${0##*/}
 
-# $1 log name facultatif, par défaut nom du script appelant.
+# $1 nom de la log sans le chemin (facultatif), par défaut nom du script appelant.
 function ple_enable_log
 {
 	if [ "$#" -eq 0 ]
 	then # Construit le nom de la log à partir du nom du script.
 		PLELIB_LOG_FILE=$PLELOG_PATH/$(date +"%Hh%Mmn%S")_${USER}_on_$(hostname -s)_${PLESCRIPT_NAME%.*}.log
 	else
-		PLELIB_LOG_FILE="$1"
+		PLELIB_LOG_FILE="$PLELOG_PATH/$(date +"%Hh%Mmn%S")_${USER}_on_$(hostname -s)_$1"
 	fi
 
 	# Les markers sont activés avec FILE ou ENABLE, s'ils étaient désactivés ils
