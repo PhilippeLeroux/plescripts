@@ -51,6 +51,14 @@ Si vous avez une configuration inférieure n'y pensez même pas.
 
 --------------------------------------------------------------------------------
 
+### Configuration du poste exécutant VirtualBox
+
+Avant de créer les VMs il est nécessaire de configurer le poste exécutant VirualBox.
+
+Suivre les [instructions ici](https://github.com/PhilippeLeroux/plescripts/wiki/Configuration-du-virtual-host)
+
+--------------------------------------------------------------------------------
+
 ### Création des VMs `orclmaster` et `K2`.
 2 VMs sont nécessaires pour commencer : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Création-des-VMs-orclmaster-et-K2)
  - `orclmaster` qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle, pas besoins de réinstaller OL7.
