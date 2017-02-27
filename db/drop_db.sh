@@ -116,6 +116,16 @@ add_dynamic_cmd_param "    -silent"
 exec_dynamic_cmd dbca
 LN
 
+if ps -ef|grep -q [p]mon_$db
+then
+	error "dbca failed."
+	LN
+	info "L'affichage de dbca et son code retour peuvent laissé croire"
+	info "que tout c'est bien passé sauf que parfois dbca redémarre (cf log)"
+	LN
+	exit 1
+fi
+
 typeset -r rm_1="rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*"
 typeset -r rm_2="rm -rf $ORACLE_BASE/diag/rdbms/$(to_lower $db)"
 typeset -r rm_3="rm -rf $ORACLE_BASE/admin/$db"

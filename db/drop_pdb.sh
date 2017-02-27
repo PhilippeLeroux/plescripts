@@ -154,6 +154,9 @@ exit_if_ORACLE_SID_not_defined
 
 typeset	-r dataguard=$(dataguard_config_available)
 
+info "Dataguard : $dataguard"
+LN
+
 if [ $dataguard == yes ]
 then
 	if [ $role == primary ]
@@ -163,6 +166,10 @@ then
 	else
 		exit_if_db_not_physical_standby_database
 	fi
+elif [ $role == physical ]
+then
+	error "role = physical and no dataguard ?"
+	exit 1
 fi
 
 stop_and_remove_dbfs
@@ -184,7 +191,7 @@ then
 	}
 
 	sqlplus_cmd "$(sql_drop_pdb)"
-else
+else # physical standby
 	sqlplus_cmd	\
 		"$(set_sql_cmd "alter pluggable database $pdb close immediate;")"
 fi

@@ -1,5 +1,7 @@
 configure snapshot controlfile name to '+DATA/snapshot_ctrl_file.f';
 configure rman output to keep for 2 days;
-configure retention policy to redundancy 2;
+configure retention policy to redundancy 1;
 configure backup optimization on;
 configure controlfile autobackup on;
+# Oracle Advanced Compression option
+configure compression algorithm 'medium' as of release 'default' optimize for load true;

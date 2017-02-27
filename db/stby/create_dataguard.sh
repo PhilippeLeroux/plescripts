@@ -197,7 +197,7 @@ function sqlcmd_create_standby_redo_logs
 #	 - TODO : la suppression d'un SID_LIST_LISTENER devrait être facilement faisable.
 #		grep -n "# Added by bibi : $sid_name" pour la première ligne.
 #		grep -n "End bibi : $sid_name" pour la dernière ligne.
-function get_sid_list_listener_for
+function make_sid_list_listener_for
 {
 	typeset	-r	g_dbname=$1
 	typeset -r	sid_name=$2
@@ -226,7 +226,7 @@ EOL
 #	Ajoute une entrée statique au listener de la primaire.
 function primary_listener_add_static_entry
 {
-	typeset -r primary_sid_list=$(get_sid_list_listener_for $primary $primary "$ORACLE_HOME")
+	typeset -r primary_sid_list=$(make_sid_list_listener_for $primary $primary "$ORACLE_HOME")
 	info "Add static listeners on $primary_host : "
 	info "On SINGLE GLOBAL_DBNAME == SID_NAME"
 
@@ -255,7 +255,7 @@ EOS
 #	Ajoute une entrée statique au listener de la secondaire.
 function standby_listener_add_static_entry
 {
-	typeset -r standby_sid_list=$(get_sid_list_listener_for $standby $standby "$ORACLE_HOME")
+	typeset -r standby_sid_list=$(make_sid_list_listener_for $standby $standby "$ORACLE_HOME")
 	info "Add static listeners on $standby_host : "
 	info "On SINGLE GLOBAL_DBNAME == SID_NAME"
 typeset -r script=/tmp/setup_listener.sh
@@ -368,6 +368,7 @@ run {
 	allocate auxiliary channel stby1 type disk;
 	allocate auxiliary channel stby2 type disk;
 	duplicate target database for standby from active database
+	using compressed backupset
 	spfile
 		parameter_value_convert '$primary','$standby'
 		set db_unique_name='$standby'
@@ -747,14 +748,20 @@ function check_prereq
 {
 	typeset errors=no
 
-	check_ssh_prereq_and_if_stby_exist
-	[ $? -ne 0 ] && errors=yes
+	if ! check_ssh_prereq_and_if_stby_exist
+	then
+		errors=yes
+	fi
 
-	check_params
-	[ $? -ne 0 ] && errors=yes
+	if ! check_params
+	then
+		errors=yes
+	fi
 
-	check_log_mode
-	[ $? -ne 0 ] && errors=yes
+	if ! check_log_mode
+	then
+		errors=yes
+	fi
 
 	line_separator
 	if [ $errors == yes ]
@@ -792,7 +799,7 @@ function backup_standby
 
 	if [ $backup == yes ]
 	then
-		exec_cmd "ssh $standby_host	\
+		exec_cmd "ssh -t $standby_host	\
 			'. .bash_profile; ~/plescripts/db/image_copy_backup.sh'"
 		LN
 	fi
@@ -803,23 +810,23 @@ typeset	-r	primary_host=$(hostname -s)
 script_start
 
 info "Create dataguard :"
-info "	- between database $primary on $primary_host"
-info "	- and database $standby on $standby_host"
+info "	- Primary database          : $primary on $primary_host"
+info "	- Physical standby database : $standby on $standby_host"
 LN
 
 check_prereq
 
-[ $_setup_network == yes ] && setup_network
+[ $_setup_network == yes ] && setup_network || true
 
-[ $_setup_primary == yes ] && setup_primary
+[ $_setup_primary == yes ] && setup_primary || true
 
-[ $_duplicate == yes ] && duplicate
+[ $_duplicate == yes ] && duplicate || true
 
-[ $_register_standby_to_GI == yes ] && register_standby_to_GI
+[ $_register_standby_to_GI == yes ] && register_standby_to_GI || true
 
-[ $_create_dataguard_services == yes ] && create_dataguard_services
+[ $_create_dataguard_services == yes ] && create_dataguard_services || true
 
-[ $_configure_dataguard == yes ] && configure_dataguard
+[ $_configure_dataguard == yes ] && configure_dataguard || true
 
 if [ "$(read_flashback_value)" == YES ]
 then

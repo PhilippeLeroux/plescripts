@@ -11,26 +11,26 @@ function count_lv_errors
 
 function show_lv_errors
 {
-	lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$"
+	exec_cmd "lvs 2>/dev/null| grep -E \"*asm01 .*\-a\-.*$\""
 }
 
 function cmd_restore_vg_link
 {
-	echo "    $ ssh root@K2"
-	echo "    $ cd ~/scan"
-	echo "    $ ./restore_vg_links.sh -vg_name='vg name'"
+	info "    $ ssh root@K2"
+	info "    $ cd ~/scan"
+	info "    $ ./restore_vg_links.sh -vg_name='vg name'"
 }
 
 function print_error_help
 {
-	echo "Solutions :"
-	echo "1 : reboot server $(hostname -s)"
-	echo "From host :"
-	echo "    $ reboot_vm $(hostname -s)"
-	echo
-	echo "2 : restore links"
+	info "Solutions :"
+	info "1 : reboot server $(hostname -s)"
+	info "From host :"
+	info "    $ reboot_vm $(hostname -s)"
+	info
+	info "2 : restore links"
 	cmd_restore_vg_link
-	echo
+	info
 }
 
 function restart_target
@@ -91,7 +91,7 @@ then
 										-vg_name=$vg_name	\
 										-prefix=$prefix		\
 										-first_no=$no
-			[ $? -eq 0 ] && ((lv_corrected++)) || true
+			[ $? -eq 0 ] && ((++lv_corrected)) || true
 			LN
 		fi
 	done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
@@ -110,8 +110,9 @@ then
 		exit 1
 	fi
 else
+	# La sortie de la commande sera dans la log, mais pas à l'écran.
 	exec_cmd -c "systemctl status target" >/dev/null 2>&1
 	[ $? -ne 0 ] && restart_target || true
-	info "target [$OK]"
+	info "status target [$OK]"
 	exit 0
 fi

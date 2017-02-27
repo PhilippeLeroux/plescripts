@@ -115,14 +115,25 @@ function remove_database_from_broker
 	line_separator
 	dgmgrl -silent -echo<<-EOS | tee -a $PLELIB_LOG_FILE
 	connect sys/$oracle_password
-	disable database $db;
 	remove database $db;
 	EOS
 	LN
 
-	line_separator
 	exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
 	LN
+}
+
+function convert_physical_to_primary
+{
+	function sql_convert_to_primary
+	{
+		set_sql_cmd "recover managed standby database finish;"
+		set_sql_cmd "alter database commit to switchover to primary with session shutdown;"
+		set_sql_cmd "alter database open;"
+	}
+	exec_cmd srvctl stop database -db $db
+	exec_cmd srvctl start database -db $db -startoption mount
+	sqlplus_cmd "$(sql_convert_to_primary)"
 }
 
 function remove_SRLs
@@ -138,14 +149,14 @@ if [ 0 -eq 1 ]; then
 fi # [ 0 -eq 1 ]; then
 }
 
-function drop_services
+function drop_all_services
 {
 	line_separator
 	exec_cmd -c ~/plescripts/db/drop_all_services.sh -db=$db
 	LN
 }
 
-function create_services
+function create_services_for_single_db
 {
 typeset -r query=\
 "select
@@ -185,16 +196,7 @@ fi
 
 if [ $role == physical ]
 then
-	function convert_to_primary
-	{
-		set_sql_cmd "alter database recover managed standby database cancel;"
-		set_sql_cmd "alter database recover managed standby database finish;"
-		set_sql_cmd "alter database commit to switchover to primary with session shutdown;"
-		set_sql_cmd "alter database open;"
-	}
-	exec_cmd srvctl stop database -db $db
-	exec_cmd srvctl start database -db $db -startoption mount
-	sqlplus_cmd "$(convert_to_primary)"
+	convert_physical_to_primary
 
 	remove_database_from_broker
 else
@@ -203,9 +205,9 @@ fi
 
 remove_SRLs
 
-drop_services
+drop_all_services
 
-create_services
+create_services_for_single_db
 
 line_separator
 sqlplus_cmd "$(sqlcmd_reset_dataguard_cfg)"

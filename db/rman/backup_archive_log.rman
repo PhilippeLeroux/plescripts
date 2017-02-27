@@ -1,0 +1,3 @@
+# Evite des erreurs si des archive logs ont été effacées manuellement.
+crosscheck archivelog all;
+backup tag 'backup_archlog' archivelog all not backed up delete all input;

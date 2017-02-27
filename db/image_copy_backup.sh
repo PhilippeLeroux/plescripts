@@ -39,5 +39,11 @@ done
 exit_if_ORACLE_SID_not_defined
 
 exec_cmd cd ~/plescripts/db/rman
-exec_cmd "rman target sys/$oracle_password @image_copy_level1.rman"
+
+line_separator
+exec_cmd "rman target sys/$oracle_password @image_copy.rman"
+LN
+
+line_separator
+exec_cmd "rman target sys/$oracle_password @backup_archive_log.rman"
 LN
