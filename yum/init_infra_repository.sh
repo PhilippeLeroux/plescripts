@@ -6,6 +6,9 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+
+typeset infra_install=no
+
 typeset -r str_usage=\
 "Usage : $ME
 
@@ -17,6 +20,12 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-infra_install)
+			infra_install=yes
+			pass_arg="-infra_install"
 			shift
 			;;
 
@@ -35,7 +44,7 @@ do
 	esac
 done
 
-ple_enable_log
+[ $infra_install == no ] && ple_enable_log || true
 
 script_banner $ME $*
 
@@ -48,7 +57,8 @@ if [ ! -f $full_backup_name ]
 then # Pas de backup de dépôt, la synchronisation sera longue.
 	line_separator
 	info "Cloning OL7 repository on $infra_hostname"
-	exec_cmd "ssh -t root@$infra_ip '~/plescripts/yum/sync_oracle_repository.sh'"
+	exec_cmd "ssh -t root@$infra_ip	\
+			'~/plescripts/yum/sync_oracle_repository.sh $pass_arg'"
 	LN
 else # Le dépôt sera initialisé avec $full_backup_name
 	line_separator
@@ -62,5 +72,5 @@ else # Le dépôt sera initialisé avec $full_backup_name
 	info "Restore OL7 repository on $infra_hostname"
 	exec_cmd "ssh -t root@$infra_ip	\
 				'~/plescripts/yum/sync_oracle_repository.sh	\
-								-use_tar=/$backup_name'"
+							-use_tar=/$backup_name' $pass_arg"
 fi

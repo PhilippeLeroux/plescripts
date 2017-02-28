@@ -47,7 +47,18 @@ then
 	confirm_or_exit "Backup exists. Remove"
 fi
 
+info "Create $backup_name on $infra_hostname"
 exec_cmd "ssh ${infra_conn} \"cd /repo; tar cf - OracleLinux | gzip -c > $backup_name\""
+LN
+
+info "Copy $backup_name to $client_hostname"
 exec_cmd "scp ${infra_conn}:/repo/$backup_name $full_backup_name"
+LN
+
+info "Validate $backup_name"
+exec_cmd "gzip -dc $full_backup_name > /dev/null"
+LN
+
+info "Remove $backup_name from $infra_hostname"
 exec_cmd "ssh ${infra_conn} \"rm -rf /repo/$backup_name\""
 LN

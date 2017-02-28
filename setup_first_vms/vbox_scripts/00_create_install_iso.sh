@@ -150,7 +150,7 @@ function update_isolinux_cfg
 
 	info "Change default menu"
 	sed -i "/menu default/d" $isolinux_cfg
-	sed -i "/  menu label ^Install Oracle Linux 7.2/a \ \ menu default" $isolinux_cfg
+	sed -i "/  menu label ^Install Oracle Linux $OL7_LABEL/a \ \ menu default" $isolinux_cfg
 	LN
 }
 
@@ -291,7 +291,7 @@ test_pause "Setup ISO copy done."
 
 info "Create bootable ISO ${iso_name} from $iso_copy"
 add_dynamic_cmd_param "-quiet"
-add_dynamic_cmd_param '-r -V "OL-7.2 Server.x86_64" -cache-inodes -J -l'
+add_dynamic_cmd_param "-r -V \"OL-$OL7_LABEL Server.x86_64\" -cache-inodes -J -l"
 add_dynamic_cmd_param '-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot'
 add_dynamic_cmd_param "-boot-load-size 4 -boot-info-table -o ${iso_name} $iso_copy/"
 exec_dynamic_cmd "sudo genisoimage"

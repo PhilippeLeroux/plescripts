@@ -47,12 +47,13 @@ do
 	esac
 done
 
+typeset	-r	domain=$(hostname -d)
 typeset -i	prev_ip_node=0
 typeset	-i	ip_found=0
 
 while read ip_node rem
 do
-	[ $ip_node -lt $min_ip_node ] && continue
+	[[ x"$ip_node" == x || $ip_node -lt $min_ip_node ]] && continue
 
 	debug "IP used is $ip_node"
 	if [ $prev_ip_node -eq 0 ]
@@ -88,9 +89,9 @@ do
 	prev_ip_node=$ip_node
 
 	[ "$DEBUG_MODE" == ENABLE ] && LN
-done<<<"$(cat /var/named/reverse.orcl	|\
-				grep "^[0-9]"			|\
-				grep -v arpa			|\
+done<<<"$(cat /var/named/reverse.$domain	|\
+				grep "^[0-9]"				|\
+				grep -v arpa				|\
 				sort -n)"
 
 [ "$DEBUG_MODE" == ENABLE ] && LN

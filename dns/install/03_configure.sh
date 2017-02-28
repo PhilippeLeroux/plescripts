@@ -56,9 +56,6 @@ case $EXEC_CMD_ACTION in
 		;;
 esac
 
-typeset -r hostn=$(hostname -s)
-typeset -r domain_name=$(hostname -d)
-
 IFS='.' read ip1 ip2 ip3 rem<<<"$dns_ip"
 typeset -r reversed_network="$ip3.$ip2.$ip1"
 
@@ -67,22 +64,20 @@ typeset -r name_domain_template=~/plescripts/dns/install/config_template/named.d
 typeset -r reverse_domain_template=~/plescripts/dns/install/config_template/reverse.domain.template
 
 typeset -r named_conf=$etc_path/named.conf
-typeset -r named_domain=$var_named_path/named.${domain_name}
-typeset -r reverse_domain=$var_named_path/reverse.${domain_name}
+typeset -r named_domain=$var_named_path/named.${infra_domain}
+typeset -r reverse_domain=$var_named_path/reverse.${infra_domain}
 
 info "DNS :"
-info "	server   $hostn"
+info "	server   $infra_hostname"
 info "	ip       $dns_ip"
-info "	domain   $domain_name"
+info "	domain   $infra_domain"
 info "	reversed $reversed_network"
 LN
-
-[ x"$domain_name" = x ] && error "Vérifier la configuration de /etc/hostname" && exit 1
 
 info "Configuration de $named_conf :"
 copy $named_conf_template $named_conf
 replace DNS_IP				$dns_ip				$named_conf
-replace DOMAIN_NAME			$domain_name		$named_conf
+replace DOMAIN_NAME			$infra_domain		$named_conf
 replace	REVERSED_NETWORK	$reversed_network	$named_conf
 replace MY_NETWORK			$infra_network		$named_conf
 replace MY_MASK				$if_pub_prefix		$named_conf
@@ -90,14 +85,14 @@ LN
 
 info "Configuration de $named_domain"
 copy $name_domain_template $named_domain
-replace DNS_NAME	$hostn	$named_domain
-replace DNS_IP		$dns_ip	$named_domain
+replace DNS_NAME	$infra_hostname	$named_domain
+replace DNS_IP		$dns_ip			$named_domain
 LN
 
 info "Configuration de $reverse_domain"
 copy $reverse_domain_template $reverse_domain
-replace DNS_NAME			$hostn				$reverse_domain
-replace DOMAIN_NAME			$domain_name		$reverse_domain
+replace DNS_NAME			$infra_hostname		$reverse_domain
+replace DOMAIN_NAME			$infra_domain		$reverse_domain
 replace REVERSED_NETWORK	$reversed_network	$reverse_domain
 replace DNS_IP_NODE			$dns_ip_node		$reverse_domain
 LN

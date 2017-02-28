@@ -18,5 +18,7 @@ case $1 in
 	;;
 esac
 
-cat /var/named/named.orcl | grep -Eq "^[a-z].*\.$1$"
+typeset -r	domain=$(hostname -d)
+
+cat /var/named/named.$domain | grep -Eq "^[a-z].*\.$1$"
 [ $? -eq 0 ] && exit 1 || exit 0

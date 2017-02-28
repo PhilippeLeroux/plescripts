@@ -9,26 +9,19 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 
 typeset -r str_usage=\
-"Usage : $ME [-nm_workaround]
-
--nm_workaround : servait lors Network Manager était bugé est que les zones
-était perdus au démarrage.
+"Usage : $ME
 
 Doit être exécuté sur le serveur d'infrastructure : $infra_hostname
 "
 
-typeset nm_workaround=no
+# Fixé en dur bug aléatoire.
+typeset -r nm_workaround=yes
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			shift
-			;;
-
-		-nm_workaround)
-			nm_workaround=yes
 			shift
 			;;
 
@@ -48,8 +41,6 @@ do
 done
 
 script_banner $ME $*
-
-must_be_executed_on_server "$infra_hostname"
 
 line_separator
 #	Le serveur sert de gateway sur internet.

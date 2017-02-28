@@ -51,13 +51,15 @@ exec_cmd "cat ~/.ssh/known_hosts | sort | uniq > /tmp/d.$$"
 exec_cmd "mv /tmp/d.$$ ~/.ssh/known_hosts"
 LN
 
+typeset -r named_file_name="/var/named/named.$(hostname -d)"
+
 while read name rem
 do
 	info "Read $name"
 	if $(begin_with_number $name)
 	then
 		info "$name is an IP."
-		exec_cmd -f -ci "ssh $dns_conn \"grep \\\"\<$name\>$\\\" /var/named/named.orcl\" </dev/null >/dev/null 2>&1"
+		exec_cmd -f -ci "ssh $dns_conn \"grep \\\"\<$name\>$\\\" $named_file_name\" </dev/null >/dev/null 2>&1"
 		if [ $? -ne 0 ]
 		then
 			count_bads=count_bads+1
@@ -76,7 +78,7 @@ do
 		else
 			info "$name is server name"
 		fi
-		exec_cmd -f -ci "ssh $dns_conn \"grep -i \\\"\<$name\> \\\" /var/named/named.orcl\" </dev/null >/dev/null 2>&1"
+		exec_cmd -f -ci "ssh $dns_conn \"grep -i \\\"\<$name\> \\\" $named_file_name\" </dev/null >/dev/null 2>&1"
 		if [ $? -ne 0 ]
 		then
 			count_bads=count_bads+1

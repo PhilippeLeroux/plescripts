@@ -15,9 +15,13 @@ must_be_executed_on_server "$master_hostname"
 #	Ce script doit être exécuté uniquement si le serveur d'infra existe.
 
 line_separator
+exec_cmd nmcli connection show
+# xargs supprimme les éventuelles espaces de début et/ou de fin.
+conn_name="$(nmcli connection show | grep $if_pub_name | cut -d\  -f1-2 | xargs)"
+info "Connection name : $conn_name"
 info "Update Iface $if_pub_name :"
 #	Le serveur sera cloné, il ne faut donc pas d'adresse mac ou d'uuid de définie.
-exec_cmd nmcli connection modify		System\\\ $if_pub_name		\
+exec_cmd nmcli connection modify		"'$conn_name'"				\
 				ipv4.method				manual						\
 				ipv4.addresses			$master_ip/$if_pub_prefix	\
 				ipv4.dns				$dns_ip						\

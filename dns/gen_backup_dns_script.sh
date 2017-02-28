@@ -7,11 +7,13 @@ EXEC_CMD_ACTION=EXEC
 echo "#!/bin/bash" > ~/plescripts/tmp/restore_dns.sh
 echo "cd ~/plescripts/dns" >> ~/plescripts/tmp/restore_dns.sh
 
+typeset -r	domain=$(hostname -d)
+
 #	Trié par rapport à l'ip node.
-cat /var/named/named.orcl	|\
-	grep "^[[:alpha:]].*"	|\
-	grep -v localhost		|\
-	sort -n -t "." -k 4		|\
+cat /var/named/named.$domain	|\
+	grep "^[[:alpha:]].*"		|\
+	grep -v localhost			|\
+	sort -n -t "." -k 4			|\
 while read server_name f2 f3 server_ip
 do
 	echo "./add_server_2_dns.sh -name=$server_name -ip=$server_ip -not_restart_named"

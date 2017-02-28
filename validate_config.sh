@@ -57,6 +57,7 @@ function scripts_exists
 function runInstaller_exists
 {
 	line_separator
+	info "Oracle extracted :"
 	info -n "Exist '$HOME/$oracle_install/database/runInstaller' "
 	if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
 	then
@@ -69,6 +70,7 @@ function runInstaller_exists
 		LN
 	fi
 
+	info "Grid extracted :"
 	info -n "Exist '$HOME/$oracle_install/grid/runInstaller' "
 	if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
 	then
@@ -106,11 +108,11 @@ function validate_NFS_exports
 	info "Validate NFS exports from $client_hostname on network ${network} :"
 	if ! _is_exported $HOME/plescripts
 	then
-		info "\tadd to /etc/exports : $HOME/plescripts $network/$if_pub_prefix (rw,$nfs_options)"
+		info "\tadd to /etc/exports : $HOME/plescripts $network/$if_pub_prefix(rw,async,no_root_squash,no_subtree_check)"
 	fi
 	if ! _is_exported $HOME/$oracle_install
 	then
-		info "\tadd to /etc/exports : $HOME/oracle_install/12.1 $network/$if_pub_prefix (ro,$nfs_options)"
+		info "\tadd to /etc/exports : $HOME/oracle_install/12.1 $network/$if_pub_prefix(ro,async,no_root_squash,no_subtree_check)"
 	fi
 	LN
 }
@@ -118,7 +120,7 @@ function validate_NFS_exports
 function ISO_OLinux7_exists
 {
 	line_separator
-	info -n "ISO Oracle Linux 7 exists $full_linux_iso_name "
+	info -n "ISO Oracle Linux $OL7_LABEL exists $full_linux_iso_name"
 	if [ ! -f "$full_linux_iso_name" ]
 	then
 		info -f "[$KO]"
@@ -150,7 +152,7 @@ function validate_resolv_conf
 	info "Validate resolv.conf "
 
 	info -n " - Test : search $infra_domain "
-	if  grep -q "search\s*$infra_domain" /etc/resolv.conf
+	if grep search /etc/resolv.conf | grep -q $infra_domain
 	then
 		info -f "[$OK]"
 	else
@@ -159,7 +161,7 @@ function validate_resolv_conf
 	fi
 
 	info -n " - Test : nameserver $infra_ip "
-	if  grep -q ${infra_ip} /etc/resolv.conf
+	if grep -q ${infra_ip} /etc/resolv.conf
 	then
 		info -f "[$OK]"
 	else
@@ -238,7 +240,7 @@ function test_if_configure_global_cfg_executed
 	typeset	errors_msg
 	typeset -i exec_global=0
 	
-	hn=$(hostname -s)
+	typeset	hn=$(hostname -s)
 	if [ "$hn" != "$client_hostname" ]
 	then
 		((++count_errors))

@@ -40,10 +40,13 @@ Si vous avez une configuration inférieure n'y pensez même pas.
 ### Télécharger les logiciels suivants :
 
 * VirtualBox : `zypper install [...]` ou `yum install [...]` ou `apt-get install [...]` en fonction de la distribution.
-	
-	Testé uniquement avec openSUSE (tumbleweed).
 
-* Oracle Linux 7 : uniquement l'ISO [V100082-01.iso](https://edelivery.oracle.com/osdc/faces/SearchSoftware) est nécessaire. Rechercher Linux 7, puis décocher les autres ISO.
+* Oracle Linux 7.2 : uniquement la première image ISO [V100082-01.iso](https://edelivery.oracle.com/osdc/faces/SearchSoftware) est nécessaire.
+
+  Rechercher Oracle Linux 7.2, puis décocher les autres ISO.
+
+  L'image de l'ISO Oracle Linux 7.3 ne fonctionne pas (V834394-01.iso), java plante lors de l'installation. En partant d'une 7.2
+  je mets à jour sur une 7.3 mais en conservant le noyau linux 3.8.
 
 * [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 

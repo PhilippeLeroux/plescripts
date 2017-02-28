@@ -15,11 +15,8 @@ typeset -r str_usage=\
 Update OS & sync local repository
 "
 
-script_banner $ME $*
-
-must_be_executed_on_server "$infra_hostname"
-
 typeset	use_tar=none
+typeset infra_install=no
 typeset	release=$default_yum_repository_release
 
 while [ $# -ne 0 ]
@@ -32,6 +29,11 @@ do
 
 		-use_tar=*)
 			use_tar=${1##*=}
+			shift
+			;;
+
+		-infra_install)
+			infra_install=yes
 			shift
 			;;
 
@@ -54,6 +56,8 @@ do
 			;;
 	esac
 done
+
+script_banner $ME $*
 
 exit_if_param_invalid	release	"latest R3 R4"	"$str_usage"
 
@@ -96,9 +100,28 @@ function sync_repo
 	then
 		exec_cmd mkdir -p $infra_olinux_repository_path/$repo_name
 	fi
-	exec_cmd reposync	--newest-only									\
-						--download_path=$infra_olinux_repository_path	\
-						--repoid=$repo_name
+	exec_cmd -c reposync	--newest-only									\
+							--download_path=$infra_olinux_repository_path	\
+							--repoid=$repo_name
+	if [ $? -ne 0 ]
+	then
+		if [ $infra_install == yes ]
+		then
+			# BUG : après installation du serveur d'infra le premier appel à
+			# reposyn échoue (erreur python comme d'habitude), le second se passe
+			# bien.
+
+			# Il faut impérativement appelé abrt-cli pour contourner le bug.
+			exec_cmd abrt-cli list
+			LN
+
+			exec_cmd reposync	--newest-only									\
+								--download_path=$infra_olinux_repository_path	\
+		 						--repoid=$repo_name
+		else
+			exit 1
+		fi
+	fi
 	LN
 
 	info "Update repository : $repo_name"
@@ -108,7 +131,7 @@ function sync_repo
 	LN
 }
 
-must_be_executed_on_server "$infra_hostname"
+[ $infra_install == no ] && must_be_executed_on_server "$infra_hostname" || true
 
 line_separator
 if [ ! -d $infra_olinux_repository_path ]

@@ -9,7 +9,9 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 
 typeset -r str_usage=\
-"Usage : $ME [-emul]"
+"Usage : $ME
+	[-emul]
+"
 
 while [ $# -ne 0 ]
 do
@@ -34,34 +36,6 @@ do
 	esac
 done
 
-ple_enable_log
-
-script_banner $ME $*
-
-script_start
-
-line_separator
-exec_cmd ~/plescripts/shell/remove_from_known_host.sh		\
-									-host=${infra_hostname}	\
-									-ip=${infra_ip}
-LN
-
-line_separator
-info "Flush DNS cache, usefull during tests..."
-exec_cmd -ci "sudo systemctl restart nscd.service"
-LN
-
-line_separator
-exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"
-if [ $? -ne 0 ]
-then
-	cat /tmp/vc
-	rm -f /tmp/vc
-	exit 1
-fi
-rm -f /tmp/vc
-
-#===============================================================================
 function master_ip_is_pingable
 {
 	ping -c 1 $master_ip > /dev/null 2>&1
@@ -84,6 +58,36 @@ function ssh_infra
 {
 	exec_ssh root@${infra_ip} "$@"
 }
+
+ple_enable_log
+
+script_banner $ME $*
+
+script_start
+
+#	Le script start_vm ignore les actions spécifique du serveur d'infra.
+export INSTALLING_INFRA=yes
+
+line_separator
+exec_cmd ~/plescripts/shell/remove_from_known_host.sh		\
+									-host=${infra_hostname}	\
+									-ip=${infra_ip}
+LN
+
+line_separator
+info "Flush DNS cache, usefull during tests..."
+exec_cmd -ci "sudo systemctl restart nscd.service"
+LN
+
+line_separator
+exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc 2>&1"
+if [ $? -ne 0 ]
+then
+	cat /tmp/vc
+	rm -f /tmp/vc
+	exit 1
+fi
+rm -f /tmp/vc
 
 master_ip_is_pingable
 if [ $? -eq 0 ]
@@ -153,9 +157,6 @@ info "Move $infra_hostname to group Infra"
 exec_cmd VBoxManage modifyvm "$infra_hostname" --groups "/Infra"
 LN
 
-#	Le script start_vm ignore les actions spécifique du serveur d'infra.
-export INSTALLING_INFRA=yes
-
 line_separator
 info "Start VM $infra_hostname"
 exec_cmd "$vm_scripts_path/start_vm $infra_hostname -wait_os=no -dataguard=no"
@@ -166,8 +167,13 @@ exec_cmd wait_server $master_ip
 LN
 
 line_separator
+# OL 7.3 affiche le nom en francais, 'System eth0' devient 'Système eth0'
+# Lecture du nom de la première connexion.
+ssh_master nmcli connection show
+conn_name="$(ssh root@${master_ip} "nmcli connection show | nmcli connection show | grep $if_pub_name | cut -d\  -f1-2")"
+info "Connection name : $conn_name"
 info "Add public Iface $if_pub_name, change ip to $infra_ip"
-ssh_master	nmcli connection modify			System\\\ $if_pub_name		\
+ssh_master	nmcli connection modify			"'$conn_name'"				\
 					ipv4.addresses			$infra_ip/$if_pub_prefix	\
 					ipv4.dns				$dns_ip						\
 					connection.zone			trusted						\
@@ -180,6 +186,7 @@ LN
 info "Restart VM $infra_hostname, new network config take effect."
 exec_cmd "$vm_scripts_path/reboot_vm $infra_hostname"
 LN
+
 exec_cmd wait_server $infra_ip
 
 line_separator
@@ -198,7 +205,7 @@ ssh_infra "~/plescripts/setup_first_vms/01_prepare_infra_vm.sh"
 
 line_separator
 info "Create yum repository"
-exec_cmd "~/plescripts/yum/init_infra_repository.sh"
+exec_cmd "~/plescripts/yum/init_infra_repository.sh -infra_install"
 LN
 
 line_separator

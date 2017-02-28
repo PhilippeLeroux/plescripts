@@ -34,30 +34,23 @@ do
 	esac
 done
 
-if [ 0 -eq 1 ]; then
-typeset hostvm_type=undef
-info "Select hypervisor :"
-info "	1 : vbox for linux"
-while [ 0 -eq 0 ] # forever
-do
-	read -s -n 1 keyboard
-	case $keyboard in
-		1)	LN
-			info "==> VirtualBox for Linux"
-			hostvm_type=linux_virtualbox
-			full_linux_iso_n="$HOME/ISO/oracle_linux_7/V100082-01.iso"
-			break
-			;;
+typeset -r hostvm_type=linux_virtualbox
 
-		*)	error "$keyboard invalid."
-		;;
-	esac
-done
-LN
-else
-	hostvm_type=linux_virtualbox
-	full_linux_iso_n="$HOME/ISO/oracle_linux_7/V100082-01.iso"
-fi # [ 0 -eq 1 ]; then
+#	============================================================================
+#	Pré sélection de l'image Oracle Linux 7
+typeset -r OracleLinux72=V100082-01.iso
+typeset -r OracleLinux73=V834394-01.iso
+
+full_linux_iso_n="$HOME/ISO/oracle_linux_7/$OracleLinux72"
+OL7_LABEL_n=7.2
+
+if [ 0 -eq 1 ]; then
+# Oracle Linux 7.3 ne fonctionne pas du tout, java par en core dump plus autre
+# joyeusetées.
+full_linux_iso_n="$HOME/ISO/oracle_linux_7/$OracleLinux73"
+OL7_LABEL_n=7.3
+fi
+#	============================================================================
 
 #	$1 nom de la variable à renseigner
 #	$2 Message à afficher
@@ -98,14 +91,16 @@ function read_dns_main_ip
 test_if_cmd_exists VBoxManage
 if [ $? -eq 0 ]
 then
-	vm_p="$(VBoxManage list systemproperties | grep "Default machine folder:" | tr -s [:space:] | cut -d' ' -f4-)"
+	vm_p="$(VBoxManage list systemproperties	|\
+				grep "Default machine folder:"	|\
+				tr -s [:space:] | cut -d' ' -f4-)"
 	ask_for_variable vm_p "VMs folder :"
 else
 	error "VirtualBox not installed or VBoxManage not in PATH"
 	LN
 fi
 
-ask_for_variable full_linux_iso_n "Full path for Oracle Linux 7 ISO (...V100082-01.iso) :"
+ask_for_variable full_linux_iso_n "Full path for Oracle Linux $OL7_LABEL_n ISO $OracleLinux72 :"
 
 dns_main_n=$(read_dns_main_ip)
 ask_for_variable dns_main_n "Main DNS/box IP :"
@@ -127,8 +122,22 @@ LN
 exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"$vm_p\"~g' ~/plescripts/global.cfg"
 LN
 
+if [ "$HOME/ISO/oracle_linux_7/$OracleLinux73" == "$full_linux_iso_n" ]
+then
+	OL7_LABEL_n=7.3
+	line_separator
+	error "Oracle Linux $OL7_LABEL_n don't work."
+	error "Latest tested Release is Oracle Linux 7.2 ISO : $OracleLinux72"
+	LN
+	exit 1
+else
+	OL7_LABEL_n=7.2
+fi
+
+info "Setup Oracle Linux $OL7_LABEL_n"
 iso_path=${full_linux_iso_n%/*}
 iso_name=${full_linux_iso_n##*/}
+exec_cmd "sed -i 's/OL7_LABEL=.*/OL7_LABEL=$OL7_LABEL_n/g' ~/plescripts/global.cfg"
 exec_cmd "sed -i 's~iso_olinux_path=.*$~iso_olinux_path=\"$iso_path\"~g' ~/plescripts/global.cfg"
 exec_cmd "sed -i 's~full_linux_iso_name=.*$~full_linux_iso_name=\"\$iso_olinux_path/$iso_name\"~g' ~/plescripts/global.cfg"
 LN
