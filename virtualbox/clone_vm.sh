@@ -110,9 +110,6 @@ do
 		--description \"$(~/plescripts/virtualbox/get_vm_description -db=$db)\""
 	LN
 
-	exec_cmd VBoxManage modifyvm "$vm_name" --hpet on
-	LN
-
 	info "Move $vm_name to group $group_name"
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\"
 	LN

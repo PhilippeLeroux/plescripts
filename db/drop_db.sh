@@ -118,7 +118,8 @@ LN
 
 if ps -ef|grep -q [p]mon_$db
 then
-	error "dbca failed."
+	trap '' EXIT
+	error "dbca error !"
 	LN
 	info "L'affichage de dbca et son code retour peuvent laissé croire"
 	info "que tout c'est bien passé sauf que parfois dbca redémarre (cf log)"

@@ -80,6 +80,7 @@ exec_cmd VBoxManage modifyvm $master_hostname --cpus 2
 exec_cmd VBoxManage modifyvm $master_hostname --rtcuseutc on
 exec_cmd VBoxManage modifyvm $master_hostname --largepages on
 exec_cmd VBoxManage modifyvm $master_hostname --hpet on
+exec_cmd VBoxManage modifyvm $master_hostname --x2apic on
 LN
 
 line_separator

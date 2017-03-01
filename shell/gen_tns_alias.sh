@@ -94,7 +94,9 @@ function open_section_description
 	echo "		(LOAD_BALANCE=off)"
 }
 
+# Première ligne vide pour ne pas être collé à l'alias précédent
 cat<<EOS
+
 $(to_upper $alias_name) =
 $(open_section_description)
 		(ADDRESS_LIST=

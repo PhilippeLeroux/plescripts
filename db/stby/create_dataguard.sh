@@ -29,8 +29,8 @@ typeset -r str_usage=\
 		duplicate     : duplication de la base primaire.
 			-skip_duplicate passe cette étape.
 
-		register_standby_to_GI : finalise la configuration de la standby
-			-skip_register_standby_to_GI passe cette étape.
+		register_stby_to_GI : finalise la configuration de la standby
+			-skip_register_stby_to_GI passe cette étape.
 
 		create_dataguard_services : crée les services.
 			-skip_create_dataguard_services passe cette étape
@@ -47,7 +47,7 @@ typeset	backup=yes
 typeset _setup_primary=yes
 typeset _setup_network=yes
 typeset _duplicate=yes
-typeset	_register_standby_to_GI=yes
+typeset	_register_stby_to_GI=yes
 typeset	_create_dataguard_services=yes
 typeset	_configure_dataguard=yes
 
@@ -94,8 +94,8 @@ do
 			shift
 			;;
 
-		-skip_register_standby_to_GI)
-			_register_standby_to_GI=no
+		-skip_register_stby_to_GI)
+			_register_stby_to_GI=no
 			shift
 			;;
 
@@ -135,12 +135,9 @@ exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
 
 #	Exécute la commande "$@" avec sqlplus sur la standby
-function sqlplus_cmd_on_standby
+function sqlplus_cmd_on_stby
 {
-	fake_exec_cmd sqlplus -s sys/$oracle_password@${standby} as sysdba
-	printf "${SPOOL}set echo off\nset timin on\n$@\n" |\
-		sqlplus -s sys/$oracle_password@${standby} as sysdba
-	LN
+	sqlplus_cmd_with "sys/$oracle_password@${standby} as sysdba" "$@"
 }
 
 #	Lie et affiche la valeur du paramètre remote_login_passwordfile
@@ -148,11 +145,11 @@ function read_remote_login_passwordfile
 {
 typeset -r query=\
 "select
-    value
+	value
 from
-    v\$parameter
+	v\$parameter
 where
-    name = 'remote_login_passwordfile'
+	name = 'remote_login_passwordfile'
 ;"
 
 	sqlplus_exec_query "$query" | tail -1
@@ -176,7 +173,7 @@ from
 #	$1	nombre de SRLs à créer.
 #	$2	taille des SRLs
 #	Passer la sortie de cette fonction en paramètre de la fonction sqlplus_cmd
-function sqlcmd_create_standby_redo_logs
+function sqlcmd_create_stby_redo_logs
 {
 	typeset -ri nr=$1
 	typeset -r	redo_size_mb="$2"
@@ -253,7 +250,7 @@ EOS
 }
 
 #	Ajoute une entrée statique au listener de la secondaire.
-function standby_listener_add_static_entry
+function stby_listener_add_static_entry
 {
 	typeset -r standby_sid_list=$(make_sid_list_listener_for $standby $standby "$ORACLE_HOME")
 	info "Add static listeners on $standby_host : "
@@ -289,7 +286,7 @@ function sql_print_redo
 }
 
 #	Création des SRLs sur la base primaire.
-function add_standby_redolog
+function add_stby_redolog
 {
 	info "Add stdby redo log"
 
@@ -300,7 +297,7 @@ function add_standby_redolog
 	typeset -ri nr_stdby_redo=nr_redo+1
 	info "$primary : $nr_redo redo logs of $redo_size_mb"
 	info " --> Add $nr_stdby_redo SRLs of $redo_size_mb"
-	sqlplus_cmd "$(sqlcmd_create_standby_redo_logs $nr_stdby_redo $redo_size_mb)"
+	sqlplus_cmd "$(sqlcmd_create_stby_redo_logs $nr_stdby_redo $redo_size_mb)"
 	LN
 
 	sqlplus_print_query "$(sql_print_redo)"
@@ -331,7 +328,7 @@ function setup_tnsnames
 #		- copie du fichier 'password' de la primaire vers la standby
 #		- création du répertoire adump sur le serveur de la standby
 #		- puis démarre la standby uniquement avec le paramètre db_name
-function start_standby
+function start_stby
 {
 	info "Copie du fichier password."
 	exec_cmd scp $ORACLE_HOME/dbs/orapw${primary} ${standby_host}:$ORACLE_HOME/dbs/orapw${standby}
@@ -344,16 +341,19 @@ function start_standby
 
 	line_separator
 	info "Configure et démarre $standby sur $standby_host (configuration minimaliste.)"
-ssh -t -t $standby_host<<EOS | tee -a $PLELIB_LOG_FILE
+
+ssh -t -t $standby_host<<EO_SSH_STBY | tee -a $PLELIB_LOG_FILE
 rm -f $ORACLE_HOME/dbs/sp*${standby}* $ORACLE_HOME/dbs/init*${standby}*
 echo "db_name='$standby'" > $ORACLE_HOME/dbs/init${standby}.ora
 export ORACLE_SID=$standby
-\sqlplus -s sys/Oracle12 as sysdba<<XXX
+\sqlplus -s sys/Oracle12 as sysdba<<EO_SQL_DBSTARTUP
+whenever sqlerror exit 1;
 startup nomount
-XXX
-exit
-EOS
+EO_SQL_DBSTARTUP
+exit \$?
+EO_SSH_STBY
 
+	info "startup nomount return $?"
 	LN
 }
 
@@ -385,13 +385,9 @@ EOR
 					auxiliary sys/$oracle_password@$standby @/tmp/duplicate.rman"
 }
 
-#	Fabrique les commandes permettant :
-#		- de configurer un dataguard
-#		- faire le duplicate
-#	Toutes les commandes sont fabriquées avec la fonction set_sql_cmd.
-#	Passer la sortie de cette fonction en paramètre de la fonction sqlplus_cmd
+#	Fabrique les commandes permettant de configurer un dataguard
 #	EST INUTILE : log_archive_dest_2='service=$standby async valid_for=(online_logfiles,primary_role) db_unique_name=$standby'
-function sql_create_primary_cfg
+function sql_setup_primary_database
 {
 	set_sql_cmd "alter system set standby_file_management='AUTO' scope=both sid='*';"
 
@@ -420,7 +416,7 @@ function sql_create_primary_cfg
 }
 
 #	Supprime la standby de la configuration du dataguard.
-function dgmgrl_remove_standby
+function remove_stby_database_from_dataguard_config
 {
 	line_separator
 	info "Dataguard : remove standby $standby if exist."
@@ -438,14 +434,19 @@ function setup_primary
 	if [ $create_primary_cfg == yes ]
 	then
 		line_separator
-		add_standby_redolog
+		add_stby_redolog
 
 		line_separator
 		info "Setup primary database $primary for duplicate & dataguard."
-		sqlplus_cmd "$(sql_create_primary_cfg)"
+		sqlplus_cmd "$(sql_setup_primary_database)"
+		LN
+
+		info "Adjust rman config for dataguard."
+		exec_cmd "rman target sys/$oracle_password \
+			@$HOME/plescripts/db/rman/ajust_config_for_dataguard.rman"
 		LN
 	else
-		dgmgrl_remove_standby
+		remove_stby_database_from_dataguard_config
 		LN
 	fi
 }
@@ -454,14 +455,13 @@ function setup_primary
 #	Configuration des fichiers tnsnames.ora et listener.ora
 function setup_network
 {
-	line_separator
 	setup_tnsnames
 
 	line_separator
 	primary_listener_add_static_entry
 
 	line_separator
-	standby_listener_add_static_entry
+	stby_listener_add_static_entry
 }
 
 #	Effectue la duplication de la base.
@@ -472,7 +472,7 @@ function setup_network
 function duplicate
 {
 	line_separator
-	start_standby
+	start_stby
 
 	line_separator
 	info "Info :"
@@ -493,12 +493,12 @@ function sql_mount_db_and_start_recover
 	set_sql_cmd "recover managed standby database disconnect;"
 }
 
-#	Après que la duplication ait été faite finalise la configuration.
+#	Après que la duplication ait été faite, finalise la configuration.
 #	Actions :
 #		- backup de l'alertlog de la standby (pour ne plus avoir 50K de messages d'erreurs)
 #		- démarre la synchro
 #		- enregistre la standby dans le GI.
-function register_standby_to_GI
+function register_stby_to_GI
 {
 	line_separator
 	info "Backup standby alertlog :"
@@ -520,7 +520,7 @@ function register_standby_to_GI
 	LN
 
 	info "$standby : mount & start recover :"
-	sqlplus_cmd_on_standby "$(sql_mount_db_and_start_recover)"
+	sqlplus_cmd_on_stby "$(sql_mount_db_and_start_recover)"
 	timing 10 "Wait recover"
 	LN
 }
@@ -538,7 +538,7 @@ function create_dataguard_config
 	LN
 }
 
-function add_standby_to_dataguard_config
+function add_stby_to_dataguard_config
 {
 	info "Add standby $standby to data guard configuration."
 	dgmgrl -silent -echo sys/$oracle_password<<-EOS | tee -a $PLELIB_LOG_FILE
@@ -555,9 +555,9 @@ function add_standby_to_dataguard_config
 function configure_dataguard
 {
 	line_separator
-	[ $create_primary_cfg == yes ] && create_dataguard_config
+	[ $create_primary_cfg == yes ] && create_dataguard_config || true
 
-	add_standby_to_dataguard_config
+	add_stby_to_dataguard_config
 
 	timing 10 "Waiting recover"
 	LN
@@ -565,7 +565,7 @@ function configure_dataguard
 	# Remarque : si la base n'est pas en 'Real Time Query' relancer la base
 	# pour que le 'temporary file' soit crée.
 	info "Open read only $standby for Real Time Query"
-	sqlplus_cmd_on_standby "$(set_sql_cmd "alter database open read only;")"
+	sqlplus_cmd_on_stby "$(set_sql_cmd "alter database open read only;")"
 	LN
 }
 
@@ -775,26 +775,21 @@ function check_prereq
 	fi
 }
 
-function standby_configure_rman
+function stby_enable_block_change_traking
 {
-	line_separator
-	if [ $create_primary_cfg == yes ]
-	then
-		exec_cmd "rman target sys/$oracle_password \
-			@$HOME/plescripts/db/rman/ajust_config_for_dataguard.rman"
-	fi
-
-	exec_cmd "ssh $standby_host	\
-		'. .bash_profile; ~/plescripts/db/configure_backup.sh -with_standby'"
+	# Doit être activé sur la stby, ce paramètre est ignoré par le duplicate.
+	exec_cmd -c "ssh $standby_host								\
+			'. .bash_profile; rman target sys/$oracle_password	\
+				@$HOME/plescripts/db/rman/enable_block_change_tracking.sql'"
 	LN
 }
 
-function backup_standby
+function stby_backup
 {
 	#	Nécessaire sinon le backup échoue.
 	exec_cmd "ssh $standby_host						\
-		'. .bash_profile; cd ~/plescripts/db/rman;	\
-			rman target sys/$oracle_password @purge.rman'"
+		'. .bash_profile;							\
+		rman target sys/$oracle_password @$HOME/plescripts/db/rman/purge.rman'"
 	LN
 
 	if [ $backup == yes ]
@@ -822,7 +817,7 @@ check_prereq
 
 [ $_duplicate == yes ] && duplicate || true
 
-[ $_register_standby_to_GI == yes ] && register_standby_to_GI || true
+[ $_register_stby_to_GI == yes ] && register_stby_to_GI || true
 
 [ $_create_dataguard_services == yes ] && create_dataguard_services || true
 
@@ -832,11 +827,11 @@ if [ "$(read_flashback_value)" == YES ]
 then
 	line_separator
 	info "Enable flashback on $standby"
-	sqlplus_cmd_on_standby "$(sql_enable_flashback)"
+	sqlplus_cmd_on_stby "$(sql_enable_flashback)"
 fi
 
-standby_configure_rman
-backup_standby
+stby_enable_block_change_traking
+stby_backup
 
 info "Copy glogin.sql"
 exec_cmd "scp	$ORACLE_HOME/sqlplus/admin/glogin.sql	\

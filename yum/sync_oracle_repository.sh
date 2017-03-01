@@ -11,12 +11,14 @@ typeset -r str_usage=\
 "Usage : $ME
 \t[-use_tar=name] Initialise le dépôt avec \$use_tar
 \t[-release=$default_yum_repository_release]	latest|R3|R4
+\t[-skip_latest]
 
 Update OS & sync local repository
 "
 
 typeset	use_tar=none
 typeset infra_install=no
+typeset sync_repo_latest=yes
 typeset	release=$default_yum_repository_release
 
 while [ $# -ne 0 ]
@@ -39,6 +41,11 @@ do
 
 		-release=*)
 			release=${1##*=}
+			shift
+			;;
+
+		-skip_latest)
+			sync_repo_latest=no
 			shift
 			;;
 
@@ -152,7 +159,7 @@ then #	$use_tar contient le backup d'un dépôt OL7.
 	exec_cmd rm "${use_tar##*/}"
 	LN
 else
-	sync_repo ol7_latest
+	[ $sync_repo_latest == yes ] && sync_repo ol7_latest || true
 
 	case $release in
 		R3|R4)

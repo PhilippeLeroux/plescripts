@@ -45,19 +45,27 @@ done
 
 exit_if_ORACLE_SID_not_defined
 
-cd ~/plescripts/db
+exec_cmd "cd ~/plescripts/db"
+LN
 
-fake_exec_cmd rman target sys/$oracle_password
-rman target sys/$oracle_password<<EORMAN
-@rman/enable_block_change_tracking.sql
-@rman/set_config.rman
-EORMAN
+# Si le block change tracking est déjà activé le script n'est pas
+# interrompu.
+exec_cmd -c "rman target sys/$oracle_password	\
+									@rman/enable_block_change_tracking.sql"
+LN
+
+exec_cmd "rman target sys/$oracle_password	\
+									@rman/set_config.rman"
 
 if [ $with_standby == yes ]
 then
-	exec_cmd "rman target sys/$oracle_password @$HOME/plescripts/db/rman/ajust_config_for_dataguard.rman"
+	exec_cmd "rman target sys/$oracle_password \
+									@rman/ajust_config_for_dataguard.rman"
+	LN
 fi
 
+exec_cmd "cd -"
+LN
 
 info "Configuration done."
 info "Backup script : rman/image_copy_level1.rman"
