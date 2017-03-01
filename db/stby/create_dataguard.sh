@@ -535,7 +535,6 @@ function create_dataguard_config
 	enable configuration;
 	EOS
 	LN
-	LN
 }
 
 function add_stby_to_dataguard_config

@@ -24,6 +24,7 @@ typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=$(to_mb $shm_for_db)
 [ $totalMemory -eq 0 ] && totalMemory=640 || true
 typeset		shared_pool_size="256M"
+typeset		pga_aggregate_limit="1256M"
 typeset		data=DATA
 typeset		fra=FRA
 typeset		templateName=General_Purpose.dbc
@@ -49,7 +50,8 @@ add_usage "[-lang=$lang]"							"Language."
 add_usage "[-sampleSchema=$sampleSchema]"			"true|false"
 add_usage "[-sysPassword=$sysPassword]"
 add_usage "[-totalMemory=$totalMemory]"				"Unit Mb"
-add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting."
+add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting (6)"
+add_usage "[-pga_aggregate_limit=$pga_aggregate_limit" "0 to disable this setting (7)"
 add_usage "[-cdb=$cdb]"								"yes|no (1)"
 add_usage "[-pdb=name]"								"pdb name (2)"
 add_usage "[-no_wallet]"							"Do not use Wallet Manager for pdb connection."
@@ -81,6 +83,10 @@ $(print_usage)
 \t4 : Default pool name : poolAllNodes
 
 \t5 : Enable flag -policyManaged
+
+\t6 : 12.2.0.1 minimum 335M
+
+\t7 : 12.2.0.1 minimum 2048M
 
 \tDebug flag :
 \t	-skip_db_create : skip create database
@@ -137,6 +143,11 @@ do
 
 		-shared_pool_size=*)
 			shared_pool_size=${1##*=}
+			shift
+			;;
+
+		-pga_aggregate_limit=*)
+			pga_aggregate_limit=${1##*=}
 			shift
 			;;
 
@@ -306,8 +317,12 @@ function make_dbca_args
 		warning "totalMemoy (${totalMemory}M) > shm_for_db ($shm_for_db)"
 	fi
 
-	#	Ne jamais positionner pga_aggregate_limit en production.
-	typeset initParams="-initParams threaded_execution=true,pga_aggregate_limit=1256M"
+	typeset initParams="-initParams threaded_execution=true"
+	if [ $pga_aggregate_limit != "0" ]
+	then
+		# set pga_aggregate_limit for test not prod.
+		initParams="$initParams,pga_aggregate_limit=$pga_aggregate_limit"
+	fi
 	case $lang in
 		french)
 			initParams="$initParams,nls_language=FRENCH,NLS_TERRITORY=FRANCE"
