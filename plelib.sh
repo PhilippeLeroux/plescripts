@@ -836,7 +836,8 @@ function add_dynamic_cmd_param
 	typeset -ri	len=${#param}
 	ple_dyn_param_cmd+=( "$param" )
 
-	if [[ $len -gt $ple_dyn_param_max_len && $(( len + ple_param_margin )) -lt $(term_cols) ]]
+	if [[ $len -gt $ple_dyn_param_max_len &&
+							$(( len + ple_param_margin )) -lt $(term_cols) ]]
 	then
 		ple_dyn_param_max_len=$len
 	fi
@@ -867,6 +868,11 @@ function exec_dynamic_cmd
 	done
 
 	typeset -r cmd_name=$(replace_paths_by_shell_vars $@)
+
+	if [ $ple_dyn_param_max_len -gt $(term_cols) ]
+	then
+		ple_dyn_param_max_len=$(( $(term_cols) - 4 ))
+	fi
 
 	ple_dyn_param_max_len=ple_dyn_param_max_len+2
 
@@ -1475,6 +1481,12 @@ function fmt_bytesU_2_better
 
 #*> return 0 if cmd $1 exists else return 1
 function test_if_cmd_exists
+{
+	which $1 >/dev/null 2>&1
+}
+
+#*> return 0 if cmd $1 exists else return 1
+function command_exists
 {
 	which $1 >/dev/null 2>&1
 }

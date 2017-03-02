@@ -73,6 +73,13 @@ done
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
+if command_exists olsnodes
+then
+	typeset -r crs_used=yes
+else
+	typeset -r crs_used=no
+fi
+
 #	http://docs.oracle.com/database/121/RACAD/hafeats.htm#RACAD7026
 #	Creating Services for Application Continuity ssi -failovertype TRANSACTION
 #	-replay_init_time par défaut 300s
@@ -87,7 +94,7 @@ exit_if_param_undef pdb	"$str_usage"
 #	GRANT EXECUTE ON DBMS_APP_CONT;
 
 #	$1 service name
-function test_if_service_exist
+function test_if_service_exists
 {
 	typeset -r service=$1
 	exec_cmd -ci "srvctl status service -db $db	\
@@ -110,7 +117,7 @@ function oci_service
 	info "create service $service on pluggable $pdb."
 	LN
 
-	test_if_service_exist $service
+	test_if_service_exists $service
 	[ $? -eq 0 ] && action=modify || action=add
 
 	if [[ $action == modify && $role == undef ]]
@@ -170,7 +177,7 @@ function java_service
 	info "create service $service on pluggable $pdb."
 	LN
 
-	test_if_service_exist $service
+	test_if_service_exists $service
 	[ $? -eq 0 ] && action=modify || action=add
 
 	if [[ $action == modify && $role == undef ]]
@@ -212,6 +219,147 @@ function java_service
 	fi
 }
 
+#	============================================================================
+#	Gestion des services sans le crs (et c'est chiant)
+
+#	$1 service name
+function test_if_service_exists_no_crs
+{
+	typeset -r service=$1
+	exec_cmd -c "lsnrctl status | grep -q 'Service \"$service\" has .*'"
+}
+
+# Variable service defined by caller.
+function create_service_no_crs
+{
+	line_separator
+	info "create service $service on pluggable $pdb."
+	LN
+
+	test_if_service_exists_no_crs $service
+	[ $? -eq 0 ] && action=modify || action=add
+
+	if [ $action == modify ]
+	then
+		error "modify service without crs not implemanted."
+		LN
+		exit 1
+	fi
+
+	if [[ $action == modify && $role == undef ]]
+	then
+		error "Service $service exist and no role specified."
+		LN
+		info "$str_usage"
+		LN
+		exit 1
+	fi
+
+	function plsql_create_service
+	{
+		echo "set feed on echo on"
+		echo "begin"
+		echo "	dbms_service.create_service(	service_name=>'$service'"
+		echo "								,	network_name=>'$service' );"
+		echo "end;"
+		echo "/"
+
+	}
+
+	sqlplus_cmd "$(plsql_create_service)"
+
+	if [ $action == add ]
+	then
+		if [ $start == yes ]
+		then
+			info "Start service"
+			sqlplus_cmd "$(set_sql_cmd "exec dbms_service.start_service( '$service' );")"
+			LN
+		fi
+
+		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+						-service=$service -host_name=$(hostname -s)"
+		LN
+	fi
+}
+
+function oci_service_no_crs
+{
+	case "$role" in
+		primary|undef)
+			typeset -r service=$(mk_oci_service $pdb)
+			;;
+
+		physical_standby)
+			typeset -r service=$(mk_oci_stby_service $pdb)
+			;;
+	esac
+
+	create_service_no_crs $service
+}
+
+function java_service_no_crs
+{
+	case "$role" in
+		primary|undef)
+			typeset -r service=$(mk_java_service $pdb)
+			;;
+
+		physical_standby)
+			typeset -r service=$(mk_java_stby_service $pdb)
+			;;
+	esac
+
+	create_service_no_crs $service
+}
+
+function create_trigger_open_pdbs
+{
+	sqlplus -s sys/$oracle_password as sysdba<<EO_SQL
+create or replace
+trigger open_pdbs after startup on database 
+begin 
+
+	--	Open all pdbs with a service.
+	for c in (	select distinct
+					substr( network_name, 0, instr( network_name, '_' ) - 1 ) pdb
+				from dba_services
+				where network_name like '%_oci' or network_name like '%_java' )
+	loop
+		execute immediate 'alter pluggable database '||c.pdb||' open';
+	end loop;
+
+	--	start all services.
+	for s in (	select name from dba_services
+				where network_name like '%_oci' or network_name like '%_java' )
+	loop
+		dbms_service.start_service( s.name );
+	end loop;
+	
+end open_pdbs;
+/
+EO_SQL
+}
+
+function create_database_trigger_no_crs
+{
+typeset query=\
+"select
+	trigger_name
+from
+	dba_triggers
+where
+	trigger_name = 'OPEN_PDBS'
+;"
+	typeset trigger=$(sqlplus_exec_query "$query"|tail -1)
+	if [ "$trigger" != "OPEN_PDBS" ]
+	then
+		info "Create trigger open_pdbs"
+		create_trigger_open_pdbs
+		LN
+	fi
+}
+
 case "$role" in
 	primary|undef|physical_standby)
 		:
@@ -224,6 +372,15 @@ case "$role" in
 		exit 1
 esac
 
-oci_service
+if [ $crs_used == yes ]
+then
+	oci_service
 
-java_service
+	java_service
+else
+	create_database_trigger_no_crs
+
+	oci_service_no_crs
+
+	java_service_no_crs
+fi

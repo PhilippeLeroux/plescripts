@@ -50,7 +50,10 @@ add_usage "[-lang=$lang]"							"Language."
 add_usage "[-sampleSchema=$sampleSchema]"			"true|false"
 add_usage "[-sysPassword=$sysPassword]"
 add_usage "[-totalMemory=$totalMemory]"				"Unit Mb"
+# 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
+# minimum de 256M sinon la création échoue, sur un FS mettre 0 est OK
 add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting (6)"
+# 12.1 sur un RAC fixer une limite est important.
 add_usage "[-pga_aggregate_limit=$pga_aggregate_limit" "0 to disable this setting (7)"
 add_usage "[-cdb=$cdb]"								"yes|no (1)"
 add_usage "[-pdb=name]"								"pdb name (2)"
@@ -271,7 +274,7 @@ function make_dbca_args
 	add_dynamic_cmd_param "-gdbName $db"
 	add_dynamic_cmd_param "-characterSet AL32UTF8"
 
-	if [ "$usefs" = "no" ]
+	if [ $crs_used == yes ]
 	then
 		add_dynamic_cmd_param "-storageType ASM"
 		add_dynamic_cmd_param "    -diskGroupName     $data"
@@ -334,6 +337,11 @@ function make_dbca_args
 		initParams="$initParams,shared_pool_size=$shared_pool_size"
 	fi
 
+	if [ $crs_used == no ]
+	then # Bug ou pas ? même sur FS utilisation d'OMF.
+		initParams="$initParams,db_create_file_dest=$data"
+	fi
+
 	add_dynamic_cmd_param "$initParams"
 }
 
@@ -377,9 +385,9 @@ function check_if_ASM_used
 		test_if_cmd_exists olsnodes
 		if [ $? -eq 0 ]
 		then	# Si le GI est installé alors utilisation de ASM
-			usefs=no
+			crs_used=yes
 		else	# Pas de GI alors on est sur FS
-			usefs=yes
+			crs_used=no
 			if [[ "$data" == DATA && "$fra" == FRA ]]
 			then
 				data=/$GRID_DISK/app/oracle/oradata/data
@@ -443,15 +451,10 @@ function create_services_for_pdb
 			;;
 
 		SINGLE)
-			if [ $usefs == no ]
-			then
-				info "Create service for SINGLE database."
-				exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-											-db=$db -pdb=$pdb"
-				LN
-			else
-				warning "No services created for pdb, DIY"
-			fi
+			info "Create service for SINGLE database."
+			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
+										-db=$db -pdb=$pdb"
+			LN
 			;;
 	esac
 }
@@ -517,6 +520,9 @@ function setup_fs_database
 	fi
 
 	copy_glogin
+
+	info "With root, execute : database_servers/create_systemd_service_oracledb.sh"
+	LN
 }
 
 function adjust_parameters
@@ -581,7 +587,7 @@ typeset prefixInstance=${db:0:8}
 
 check_rac_or_single
 
-typeset	usefs=no
+typeset	crs_used=yes
 check_if_ASM_used
 
 remove_glogin
@@ -602,13 +608,6 @@ info "Load env for $ORACLE_SID"
 ORAENV_ASK=NO . oraenv
 LN
 
-if [ $usefs == yes ]
-then
-	setup_fs_database
-
-	exit 0	#	Pour les base sur FS le reste du script est incompatible.
-fi
-
 [[ $cdb == yes && $pdb != undef ]] && create_services_for_pdb || true
 
 if [ $sampleSchema == true ]
@@ -621,9 +620,22 @@ then # Doit être exécute après la mise à jour de oratab pour les RACs.
 						-is_seed
 	LN
 
-	info "Unlock sample schemas."
-	exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh -db=$db -pdb=$pdb
-	LN
+	if [ $crs_used == no ]
+	then
+		info "Unlock sample schemas."
+		exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh -db=$db -pdb=$pdb
+		LN
+	else
+		warning "Account locked on $pdb"
+		LN
+	fi
+fi
+
+if [ $crs_used == no ]
+then
+	setup_fs_database
+
+	exit 0	#	Pour les base sur FS le reste du script est incompatible.
 fi
 
 line_separator

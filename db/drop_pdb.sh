@@ -148,7 +148,10 @@ exit_if_param_undef pdb	"$str_usage"
 
 exit_if_param_invalid role "primary physical"	"$str_usage"
 
-exit_if_database_not_exists $db
+test_if_cmd_exists olsnodes
+[ $? -eq 0 ] && crs_used=yes || crs_used=no
+
+[ $crs_used == yes ] && exit_if_database_not_exists $db || true
 
 exit_if_ORACLE_SID_not_defined
 
@@ -172,7 +175,14 @@ then
 	exit 1
 fi
 
-stop_and_remove_dbfs
+if [ $crs_used == yes ]
+then
+	stop_and_remove_dbfs
+else
+	warning "NO CRS : credentials for dbfs not removed"
+	confirm_or_exit "Continue"
+	LN
+fi
 
 line_separator
 info "Delete credential for sys"

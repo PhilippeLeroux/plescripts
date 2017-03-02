@@ -115,7 +115,14 @@ must_be_user oracle
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
-exit_if_database_not_exists $db
+if test_if_cmd_exists olsnodes
+then
+	typeset -r crs_used=yes
+else
+	typeset -r crs_used=no
+fi
+
+[ $crs_used == yes ] && exit_if_database_not_exists $db || true
 
 exit_if_ORACLE_SID_not_defined
 
@@ -254,14 +261,20 @@ fi
 
 typeset	-r dataguard=$(dataguard_config_available)
 
-if [[ $dataguard == yes && $gi_count_nodes -gt 1 ]]
-then
-	error "RAC + Dataguard not supported."
-	exit 1
-fi
-
 if [ $dataguard == yes ]
 then
+	if [[ $gi_count_nodes -gt 1 ]]
+	then
+		error "RAC + Dataguard not supported."
+		exit 1
+	fi
+
+	if [ $crs_used == no ]
+	then
+		error "Dataguard supported only with crs."
+		exit 1
+	fi
+
 	typeset -r primary="$(read_primary_name)"
 	if [ "$primary" != "$db" ]
 	then
@@ -309,6 +322,12 @@ then
 	sqlplus_cmd "$(pdb_seed_ro_and_save_state)"
 	LN
 else
+	if [ $crs_used == no ]
+	then # Sans le CRS démarrer le service n'ouvre pas l'instance du PDB.
+		sqlplus_cmd "$(set_sql_cmd "alter pluggable database $pdb open;")"
+		LN
+	fi
+
 	create_pdb_services
 fi
 
