@@ -10,6 +10,9 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
+typeset -r	all_params="$*"
+
+typeset		rel=undef
 typeset		db=undef
 typeset		standby=none
 typeset -i	ip_node=-1
@@ -17,12 +20,13 @@ typeset -i	max_nodes=1
 typeset -i	size_dg_gb=$default_size_dg_gb
 typeset -i	size_lun_gb=$default_size_lun_gb
 typeset		dns_test=yes
-typeset 	storage=ASM
+typeset		storage=ASM
 typeset		luns_hosted_by=$disks_hosted_by
 # OH : ORACLE_HOME
 typeset		OH_FS=$rac_orcl_fs
 [ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
 
+add_usage "-rel=12.1|12.2"			"Oracle release"
 add_usage "-db=name"				"Database name."
 add_usage "[-standby=id]"			"ID for standby server."
 add_usage "[-max_nodes=1]"			"RAC #nodes"
@@ -51,6 +55,11 @@ do
 
 		-luns_hosted_by=*)
 			luns_hosted_by=${1##*=}
+			shift
+			;;
+
+		-rel=*)
+			rel=${1##*=}
 			shift
 			;;
 
@@ -110,11 +119,15 @@ do
 	esac
 done
 
+exit_if_param_invalid rel "12.1 12.2" "$str_usage"
+
 exit_if_param_undef db	"$str_usage"
 
 exit_if_param_invalid storage "ASM FS" "$str_usage"
 
 [[ $max_nodes -gt 1 && $db_type != rac ]] && db_type=rac || true
+
+[[ $storage == FS ]] && db_type=fs || true
 
 [[ $db_type == rac && $storage == FS ]] && error "RAC on FS not supported." && exit 1
 
@@ -125,6 +138,16 @@ then
 	error  "ORACLE_HOME on $OH_FS only for RAC."
 	LN
 	exit 1
+fi
+
+if [ $rel == "12.2" ]
+then
+	if [[ $max_nodes -gt 1 ]]
+	then
+		error "RAC 12.2 not supported."
+		LN
+		exit 1
+	fi
 fi
 
 function validate_config
@@ -254,7 +277,8 @@ function normalyse_asm_disks
 
 function normalyse_fs_disks
 {
-	echo "FS:$size_dg_gb:1:1" > $cfg_path/disks
+	echo "FSDATA:$size_dg_gb:1:1" > $cfg_path/disks
+	echo "FSFRA:$size_dg_gb:1:1" >> $cfg_path/disks
 }
 
 # Init variable ip_node
@@ -298,6 +322,17 @@ function next_instructions
 	fi
 }
 
+if [ "$rel" != "${oracle_release%.*.*}" ]
+then
+	info "Update Oracle Release"
+	exec_cmd ~/plescripts/switch_ora_release.sh -rel=$rel
+
+	info "Call with local config updated."
+	exec_cmd $ME $all_params
+	LN
+	exit 0
+fi
+
 validate_config
 
 line_separator
@@ -320,6 +355,9 @@ done
 [ $db_type == rac ] && normalyze_scan || true
 
 [ $storage == ASM ] && normalyse_asm_disks || normalyse_fs_disks
+
+info "Oracle version $oracle_release"
+LN
 
 ./show_info_server.sh -db=$db
 

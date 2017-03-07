@@ -7,7 +7,7 @@ typeset -r cfg_path_prefix=~/plescripts/database_servers
 function cfg_exists
 {
 	info -n "Configuration for $1 exist : "
-	if [ ! -d $cfg_path_prefix/$(to_lower $1) ]
+	if [[ x"$1" == x || ! -d $cfg_path_prefix/$(to_lower $1) ]]
 	then
 		info -f "[$KO]"
 		LN
@@ -29,7 +29,7 @@ function cfg_max_nodes
 #*> $1 db
 #*> $2 #node
 #*> Init variables :
-#*>		- cfg_db_type			std ou rac
+#*>		- cfg_db_type			std, rac ou fs
 #*>		- cfg_server_name		nom du serveur
 #*>		- cfg_server_ip			ip du serveur
 #*>		- cfg_server_vip		vip du serveur

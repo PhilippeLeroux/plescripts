@@ -10,15 +10,19 @@ typeset -r ME=$0
 script_banner $ME $*
 
 typeset switch_to=undef
-typeset	release=$default_yum_repository_release
+if [ "$(hostname -s)" == "$infra_hostname" ]
+then
+	typeset	release=$infra_yum_repository_release
+else
+	typeset	release=$orcl_yum_repository_release
+fi
 
 typeset -r str_usage=\
 "Usage : $ME
 	-local|-internet
-	[-release=$default_yum_repository_release]	latest|R3|R4
+	[-release=$release]	latest|R3|R4
 
-Permet d'activer des dépôts, il est fortement
-recommandé d'utiliser le dépôt $default_yum_repository_release.
+Activation d'un dépôt.
 
 Le flag -internet ne sert que pour des serveurs de tests.
 "

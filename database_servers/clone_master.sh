@@ -15,6 +15,7 @@ typeset -i	node=-1
 typeset		vmGroup
 typeset		update_os=no
 typeset		vg_name=asm01
+typeset		show_instructions=yes
 
 typeset		start_server_only=no
 typeset		kvmclock=disable
@@ -24,6 +25,7 @@ add_usage "[-vmGroup=name]"		"VBox group name."
 add_usage "[-node=#]"           "For RAC server : node number."
 add_usage "[-update_os]"		"Update OS."
 add_usage "[-vg_name=$vg_name]"	"VG name to use on $infra_hostname"
+add_usage "[-skip_instructions]" "Used by create_database_servers.sh"
 
 typeset -r str_usage=\
 "Usage :
@@ -70,6 +72,11 @@ do
 
 		-pause=*)
 			PAUSE=${1##*=}
+			shift
+			;;
+
+		-skip_instructions)
+			show_instructions=no
 			shift
 			;;
 
@@ -136,11 +143,17 @@ function run_oracle_preinstall
 	line_separator
 	info "Run oracle preinstall..."
 
-	typeset db_type=rac
-	if [ $max_nodes -eq 1 ]
-	then
-		[ $disk_type == FS ] && db_type=single_fs || db_type=single
-	fi
+	case $cfg_db_type in
+		std)
+			typeset -r db_type=single
+			;;
+		fs)
+			typeset -r db_type=single_fs
+			;;
+		rac)
+			typeset -r db_type=rac
+			;;
+	esac
 
 	#	Source .bash_profile pour éviter les erreurs du script oracle_preinstall/02_install_some_rpms.sh
 	#	Voir dans le script la section "NFS problem workaround"
@@ -155,10 +168,13 @@ function run_oracle_preinstall
 	ssh_server "ln -s plescripts/yum ~/yum"
 	LN
 
-	info "Create link for grid user."
-	ssh_server "ln -s /mnt/plescripts /home/grid/plescripts"
-	ssh_server "ln -s /home/grid/plescripts/dg /home/grid/dg"
-	LN
+	if [ $db_type != single_fs ]
+	then
+		info "Create link for grid user."
+		ssh_server "ln -s /mnt/plescripts /home/grid/plescripts"
+		ssh_server "ln -s /home/grid/plescripts/dg /home/grid/dg"
+		LN
+	fi
 
 	info "Create link for Oracle user."
 	ssh_server "ln -s /mnt/plescripts /home/oracle/plescripts"
@@ -250,11 +266,13 @@ function add_oracle_install_directory_to_fstab
 	LN
 }
 
-#	Sur le premier nœud les disques doivent être crées puis exportés.
-function create_san_LUNs_and_attach_to_node1
+# 1 create LUNs on SAN
+# 2 export LUNs to bdd server
+# 3 register LUNs on bdd server
+function create_and_export_san_LUNs
 {
 	line_separator
-	info "Setup SAN"
+	info "Create LUNs on $infra_hostname"
 
 	exec_cmd "ssh -t $san_conn											\
 						plescripts/san/create_lun_for_db.sh				\
@@ -266,23 +284,54 @@ function create_san_LUNs_and_attach_to_node1
 
 	ssh_server "plescripts/disk/discovery_target.sh"
 	LN
+}
 
-	ssh_server "plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
+# 2 export existing LUNs to bdd server
+# 3 register LUNs on bdd server
+function export_SAN_LUNs
+{
+	line_separator
+	info "Export LUN on $infra_hostname"
+	exec_cmd "ssh -t $san_conn	\
+		plescripts/san/create_lun_for_db.sh -vg_name=$vg_name -db=${db} -node=$node"
+	LN
+
+	ssh_server "plescripts/disk/discovery_target.sh"
 	LN
 }
 
-#	Dans le cas d'un RAC les autres nœuds vont se connecter au portail et
-#	appeler oracleasm pour accéder aux disques.
-function attach_existing_LUNs_on_node
+function create_database_fs_on_new_disks
 {
-	line_separator
-	info "Setup SAN"
-	exec_cmd "ssh -t $san_conn	\
-		plescripts/san/create_lun_for_db.sh -vg_name=$vg_name -db=${db} -node=$node"
-
-	ssh_server "plescripts/disk/discovery_target.sh"
-	ssh_server "oracleasm scandisks"
+	info "Create FS for DATA"
+	ssh_server "plescripts/disk/create_fs.sh					\
+							-mount_point=/$ORCL_DATA_FS_DISK	\
+							-suffix_vglv=oradata				\
+							-type_fs=$rdbms_fs_type				\
+							-netdev"
+	ssh_server "chown oracle:oinstall /$ORCL_DATA_FS_DISK"
+	ssh_server "chmod 775 /$ORCL_DATA_FS_DISK"
 	LN
+
+	info "Create FS for FRA"
+	ssh_server "plescripts/disk/create_fs.sh					\
+							-mount_point=/$ORCL_FRA_FS_DISK		\
+							-suffix_vglv=orafra					\
+							-type_fs=$rdbms_fs_type				\
+							-netdev"
+	ssh_server "chown oracle:oinstall /$ORCL_FRA_FS_DISK"
+	ssh_server "chmod 775 /$ORCL_FRA_FS_DISK"
+	LN
+}
+
+function create_oracle_disks_on_new_disks
+{
+	if [ "${oracle_release%.*.*}" == "12.1" ]
+	then
+		ssh_server "plescripts/disk/create_oracleasm_disks_on_new_disks.sh	\
+																-db=$db"
+		LN
+	fi
+	# A partir de la 12.2 se fait lors de l'installation du grid (AFD).
 }
 
 #	Permet au compte root du serveur de se connecter sur le SAN sans mot de passe.
@@ -304,22 +353,23 @@ function create_disks_for_oracle_and_grid_softwares
 {
 	line_separator
 
-	if [ $disk_type != FS ]
+	if [ $cfg_db_type == fs ]
 	then
-		info "Create mount point /$GRID_DISK for Grid"
-		ssh_server plescripts/disk/create_fs.sh		\
-						-mount_point=/$GRID_DISK	\
-						-suffix_vglv=grid			\
-						-type_fs=$rdbms_fs_type
-		LN
-	else
 		info "Create database FS"
 		ssh_server plescripts/disk/create_fs.sh		\
 					-type_fs=$rdbms_fs_type			\
-					-suffix_vglv=oradata			\
-					-mount_point=/$GRID_DISK
-
+					-suffix_vglv=orcl				\
+					-mount_point=/$ORCL_SW_FS_DISK
+		LN
+		return 0
 	fi
+
+	info "Create mount point /$GRID_DISK for Grid"
+	ssh_server plescripts/disk/create_fs.sh		\
+					-mount_point=/$GRID_DISK	\
+					-suffix_vglv=grid			\
+					-type_fs=$rdbms_fs_type
+	LN
 
 	if [[ $max_nodes -eq 1 || $cfg_oracle_home == $rdbms_fs_type ]]
 	then
@@ -404,7 +454,10 @@ function configure_server
 	#	de basculer sur le bon dépôt.
 	ssh_server ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"
 
-	if [ $update_os == yes ]
+	# Pour Oracle 12cR2 la version est la R4, il faut donc mettre à jour car
+	# par défaut c'est la R3 qui est activé et installée.
+	if [[ $update_os == yes ||
+			$infra_yum_repository_release != $orcl_yum_repository_release ]]
 	then
 		test_if_rpm_update_available $server_name
 		[ $? -eq 0 ] && ssh_server "yum -y -q update" || true
@@ -419,18 +472,22 @@ function configure_oracle_accounts
 {
 	run_oracle_preinstall
 
-	info "install bash completion for srvctl"
-	fake_exec_cmd cd ~/plescripts/tmp
-	cd ~/plescripts/tmp
-	exec_cmd rm -f srvctl.bash
-	exec_cmd -c wget https://raw.githubusercontent.com/PhilippeLeroux/oracle_bash_completion/master/srvctl.bash
-	if [ $? -eq 0 ]
+	if [ $cfg_db_type != fs ]
 	then
-		exec_cmd scp srvctl.bash root@$cfg_server_name:/etc/bash_completion.d/
+		info "install bash completion for srvctl"
+		typeset -r BACKUP_PWD="$PWD"
+		fake_exec_cmd "cd ~/plescripts/tmp"
+		cd ~/plescripts/tmp
+		exec_cmd rm -f srvctl.bash
+		exec_cmd -c wget https://raw.githubusercontent.com/PhilippeLeroux/oracle_bash_completion/master/srvctl.bash
+		if [ $? -eq 0 ]
+		then
+			exec_cmd scp srvctl.bash root@$cfg_server_name:/etc/bash_completion.d/
+		fi
+		fake_exec_cmd "cd -"
+		cd -
+		LN
 	fi
-	fake_exec_cmd cd -
-	cd -
-	LN
 
 	ssh_server "plescripts/gadgets/customize_logon.sh"
 	LN
@@ -459,7 +516,10 @@ function copy_color_file
 	info "Colors for light screen"
 	typeset -r DIR_COLORS=~/plescripts/myconfig/suse_dir_colors
 	exec_cmd "scp $DIR_COLORS root@$server_name:.dir_colors"
-	exec_cmd "scp $DIR_COLORS grid@$server_name:.dir_colors"
+	if [ $cfg_db_type != fs ]
+	then
+		exec_cmd "scp $DIR_COLORS grid@$server_name:.dir_colors"
+	fi
 	exec_cmd "scp $DIR_COLORS oracle@$server_name:.dir_colors"
 	LN
 }
@@ -497,9 +557,12 @@ function install_vim_plugin
 {
 	info "Install VIM plugins."
 
-	exec_cmd "ssh grid@$server_name \
+	if [ $cfg_db_type != fs ]
+	then
+		exec_cmd "ssh grid@$server_name \
 		\"[ ! -d ~/.vim ]	\
 			&& (gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf -) || true\""
+	fi
 
 	exec_cmd "ssh oracle@$server_name	\
 		\"[ ! -d ~/.vim ]	\
@@ -557,7 +620,6 @@ script_start
 cfg_load_node_info $db $node
 
 typeset -r server_name=$cfg_server_name
-typeset -r disk_type=$(cat $cfg_path_prefix/$db/disks | tail -1 | cut -d: -f1)
 
 if [ $node -eq 1 ]
 then
@@ -573,8 +635,9 @@ configure_oracle_accounts
 #	Équivalence entre le virtual-host et le serveur de bdd
 #	Permet depuis le virtual-host de se connecter sans mot de passe avec les
 #	comptes root, grid et oracle.
+[ $cfg_db_type == fs ] && arg="-no_grid_user"
 exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh	\
-													-remote_server=$server_name"
+						-remote_server=$server_name $arg"
 LN
 
 install_vim_plugin
@@ -587,23 +650,40 @@ case $cfg_luns_hosted_by in
 	san)
 		if [ $node -eq 1 ]
 		then
-			[ "$disk_type" != FS ] && create_san_LUNs_and_attach_to_node1 || true
+			create_and_export_san_LUNs
+			if [ $cfg_db_type != fs ]
+			then
+				create_oracle_disks_on_new_disks
+			else
+				create_database_fs_on_new_disks
+			fi
 		else
-			attach_existing_LUNs_on_node
+			export_SAN_LUNs
+			if [ "${oracle_release%.*.*}" == "12.1" ]
+			then
+				ssh_server "oracleasm scandisks"
+			fi
+			# A partir de la 12.2 se fait lors de l'installation du grid (AFD).
 		fi
-	;;
+		;;
 
 	vbox)
 		if [ $node -eq 1 ]
 		then
-			if [ $disk_type != FS ]
+			if [ $cfg_db_type != fs ]
 			then
-				ssh_server "plescripts/disk/create_oracleasm_disks_on_new_disks.sh -db=$db"
+				create_oracle_disks_on_new_disks
+			else
+				create_database_fs_on_new_disks
 			fi
 		else
-			ssh_server "oracleasm scandisks"
+			if [ "${oracle_release%.*.*}" == "12.1" ]
+			then
+				ssh_server "oracleasm scandisks"
+			fi
+			# A partir de la 12.2 se fait lors de l'installation du grid (AFD).
 		fi
-	;;
+		;;
 
 	*)
 		error "cfg_luns_hosted_by = '$cfg_luns_hosted_by' invalid."
@@ -629,15 +709,24 @@ then	# C'est le dernier nœud
 
 	script_stop $ME $db
 
-	if [ $disk_type == FS ]
+	if [ $show_instructions == yes ]
 	then
-		info "The Oracle RDBMS software can be installed."
-		info "./install_oracle.sh -db=$db"
-	else
-		info "The Grid infrastructure can be installed."
-		info "./install_grid.sh -db=$db"
+		if [ $cfg_db_type == fs ]
+		then
+			info "The Oracle RDBMS software can be installed."
+			info "./install_oracle.sh -db=$db"
+		else
+			if [ "${oracle_release}" == "12.2.0.1" ]
+			then
+				script_name=install_grid12cR2.sh
+			else
+				script_name=install_grid.sh
+			fi
+			info "The Grid infrastructure can be installed."
+			info "./$script_name -db=$db"
+		fi
+		LN
 	fi
-	LN
 elif [ $max_nodes -ne 1 ]
 then	# Ce n'est pas le dernier nœud et il y a plus de 1 nœud.
 	script_stop $ME $db

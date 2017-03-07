@@ -6,7 +6,7 @@ EXEC_CMD_ACTION=EXEC
 
 line_separator
 info "Configure oracleasm"
-fake_exec_cmd "/etc/init.d/oracleasm configure grid asmadmin y y"
+fake_exec_cmd "/etc/init.d/oracleasm configure <<< grid asmadmin y y"
 /etc/init.d/oracleasm configure <<EOS
 grid
 asmadmin

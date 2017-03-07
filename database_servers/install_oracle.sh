@@ -109,7 +109,7 @@ function load_node_cfg # $1 inode
 	LN
 }
 
-function create_response_file
+function create_response_file_12cR1
 {
 	line_separator
 	info "Create response file for Oracle software."
@@ -117,7 +117,13 @@ function create_response_file
 	exec_cmd cp -f template_oracle_${oracle_release%.*.*}.rsp $rsp_file
 	LN
 
-	typeset	-r	O_BASE=/$ORCL_DISK/app/oracle
+	if [ $cfg_db_type == fs ]
+	then
+		typeset	-r	O_BASE=/$ORCL_SW_FS_DISK/app/oracle
+	else
+		typeset	-r	O_BASE=/$ORCL_DISK/app/oracle
+	fi
+
 	typeset	-r	O_HOME=$O_BASE/$oracle_release/dbhome_1
 
 	update_value oracle.install.option				INSTALL_DB_SWONLY	$rsp_file
@@ -133,6 +139,49 @@ function create_response_file
 	update_value oracle.install.db.BACKUPDBA_GROUP	dba					$rsp_file
 	update_value oracle.install.db.DGDBA_GROUP		dba					$rsp_file
 	update_value oracle.install.db.KMDBA_GROUP		dba					$rsp_file
+
+	if [ $max_nodes -gt 1 ]
+	then
+		server_list=${node_names[0]}
+		for (( inode=1; inode < max_nodes; ++inode ))
+		do
+			server_list=$server_list","${node_names[inode]}
+		done
+
+		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
+	fi
+	LN
+}
+
+function create_response_file_12cR2
+{
+	line_separator
+	info "Create response file for Oracle software."
+	exit_if_file_not_exists template_oracle_${oracle_release%.*.*}.rsp
+	exec_cmd cp -f template_oracle_${oracle_release%.*.*}.rsp $rsp_file
+	LN
+
+	if [ $cfg_db_type == fs ]
+	then
+		typeset	-r	O_BASE=/$ORCL_SW_FS_DISK/app/oracle
+	else
+		typeset	-r	O_BASE=/$ORCL_DISK/app/oracle
+	fi
+
+	typeset	-r	O_HOME=$O_BASE/$oracle_release/dbhome_1
+
+	update_value oracle.install.option					INSTALL_DB_SWONLY	$rsp_file
+	update_value UNIX_GROUP_NAME						oinstall			$rsp_file
+	update_value INVENTORY_LOCATION						$ORA_INVENTORY		$rsp_file
+	update_value ORACLE_HOME							$O_HOME				$rsp_file
+	update_value ORACLE_BASE							$O_BASE				$rsp_file
+	update_value oracle.install.db.CLUSTER_NODES		empty				$rsp_file
+	update_value oracle.install.db.InstallEdition		EE					$rsp_file
+	update_value oracle.install.db.OSDBA_GROUP			dba					$rsp_file
+	update_value oracle.install.db.OSOPER_GROUP			oper				$rsp_file
+	update_value oracle.install.db.OSBACKUPDBA_GROUP	dba					$rsp_file
+	update_value oracle.install.db.OSDGDBA_GROUP		dba					$rsp_file
+	update_value oracle.install.db.OSKMDBA_GROUP		dba					$rsp_file
 
 	if [ $max_nodes -gt 1 ]
 	then
@@ -166,7 +215,7 @@ function mount_install_directory
 function start_oracle_installation
 {
 	line_separator
-	info "Start Oracle installation (~30mn)"
+	info "Start Oracle installation (~10mn)"
 	info "Logs : $ORA_INVENTORY/logs"
 	add_dynamic_cmd_param "\"LANG=C /mnt/oracle_install/database/runInstaller"
 	add_dynamic_cmd_param "      -silent"
@@ -183,16 +232,21 @@ function exec_post_install_root_scripts_on_node	# $1 node name
 {
 	typeset  -r node_name=$1
 
-	typeset -r script_root_sh="/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
+	if [ $cfg_db_type == fs ]
+	then
+		typeset -r script_root_sh="/$ORCL_SW_FS_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
+	else
+		typeset -r script_root_sh="/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
+	fi
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
-	exec_cmd "ssh -t -t root@${node_name} \"LANG=C $script_root_sh\" </dev/null"
+	exec_cmd -novar "ssh -t -t root@${node_name} \"LANG=C $script_root_sh\" </dev/null"
 	LN
 
 	# Je viens de découvrir ça :
 	# 8.3.1 Creating a Backup of the root.sh Script
 	info "Backup the root.sh script to $backup_script_root_sh"
-	exec_cmd "ssh -t -t root@${node_name} 'cp $script_root_sh $backup_script_root_sh'"
+	exec_cmd -novar "ssh -t -t root@${node_name} 'cp $script_root_sh $backup_script_root_sh'"
 	LN
 }
 
@@ -263,11 +317,28 @@ then
 		ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
 	fi
 else
-	ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
+	if [ $cfg_db_type == fs ]
+	then
+		ORA_INVENTORY=/$ORCL_SW_FS_DISK/app/oraInventory
+	else
+		ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
+	fi
 fi
 LN
 
-create_response_file
+case $oracle_release in
+	12.1.0.2)
+		create_response_file_12cR1
+		;;
+
+	12.2.0.1)
+		create_response_file_12cR2
+		;;
+
+	*)
+		error "Oracle $oracle_release not supported."
+		exit 1
+esac
 
 [ $action == config ] && exit 0	# Pas d'installation.
 
@@ -287,12 +358,15 @@ do
 	LN
 done
 
-typeset -r type_disks=$(cat $db_cfg_path/disks | tail -1 | cut -d: -f1)
-if [ "$type_disks" == FS ]
+if [ $cfg_db_type == fs ]
 then
 	exec_cmd "ssh -t root@${node_names[0]}	\
 		\"~/plescripts/database_servers/create_systemd_service_oracledb.sh\""
+	LN
 fi
+
+exec_cmd "~/plescripts/database_servers/install_sample_schema.sh -db=$db"
+LN
 
 stats_tt stop oracle_installation
 

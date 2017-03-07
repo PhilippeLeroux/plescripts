@@ -60,21 +60,25 @@ info "Create grid profile."
 exec_cmd "cp ~/plescripts/oracle_preinstall/grid_env.template ~/plescripts/oracle_preinstall/grid_env"
 LN
 
-exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=/$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
-exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
-
 case $db_type in
-	rac)
-		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/$ORACLE_RELEASE/grid!\" ~/plescripts/oracle_preinstall/grid_env"
+	rac|single)
+		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=/$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+		LN
+		if [ $db_type == rac ]
+		then
+			exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/$ORACLE_RELEASE/grid!\" ~/plescripts/oracle_preinstall/grid_env"
+		else
+			exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/grid/$ORACLE_RELEASE!\" ~/plescripts/oracle_preinstall/grid_env"
+		fi
 		LN
 		;;
 
-	single|single_fs)
-		exec_cmd "sed -i \"s!GRID_HOME=!GRID_HOME=$\GRID_ROOT/app/grid/$ORACLE_RELEASE!\" ~/plescripts/oracle_preinstall/grid_env"
+	single_fs)
+		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=undef!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_SW_FS_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
 		LN
-		;;
 esac
-LN
 
 . ~/plescripts/oracle_preinstall/grid_env
 
@@ -124,7 +128,7 @@ LN
 #	============================================================================
 #	Supprime les répertoires s'ils existent.
 line_separator
-exec_cmd "rm -rf $GRID_ROOT/*"
+[ $GRID_ROOT != undef ] && exec_cmd "rm -rf $GRID_ROOT/*" || true
 exec_cmd "rm -rf $ORCL_ROOT/*"
 LN
 
@@ -133,14 +137,13 @@ LN
 . ~/plescripts/oracle_preinstall/make_vimrc_file
 
 #	============================================================================
-line_separator
-info "create users grid"
-exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper \
-			-s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
-
 if [ $db_type != single_fs ]
-then	# Pour un FS le compte grid existe pour que les autres scripts fonctionnent
-		# correctement.
+then
+	line_separator
+	info "create users grid"
+	exec_cmd useradd -u 1100 -g oinstall -G dba,asmadmin,asmdba,asmoper \
+				-s /bin/${the_shell} -c \"Grid Infrastructure Owner\" grid
+
 	exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/grid/grid_env
 	exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/grid/rlwrap.alias
 
@@ -213,15 +216,21 @@ LN
 exec_cmd mkdir -p $ORACLE_BASE
 exec_cmd mkdir -p $ORACLE_HOME
 exec_cmd chown -R oracle:oinstall $ORCL_ROOT
-[ $db_type == single_fs ] && exec_cmd chown -R oracle:oinstall $GRID_ROOT || true
 LN
 
 #	============================================================================
 line_separator
-info "set full permission for owner & group on $GRID_ROOT & $ORCL_ROOT"
-exec_cmd chmod -R 775 $GRID_ROOT
-exec_cmd chmod -R 775 $ORCL_ROOT
-LN
+if [ $GRID_ROOT != undef ]
+then
+	info "set full permission for owner & group on $GRID_ROOT & $ORCL_ROOT"
+	exec_cmd chmod -R 775 $GRID_ROOT
+	exec_cmd chmod -R 775 $ORCL_ROOT
+	LN
+else
+	info "set full permission for owner & group on $ORCL_ROOT"
+	exec_cmd chmod -R 775 $ORCL_ROOT
+	LN
+fi
 
 #	============================================================================
 #	Le compte root source grid_env pour manipuler les commandes du Grid Infra.
@@ -230,18 +239,23 @@ make_vimrc_file "/root"
 LN
 exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /root/.bashrc
 LN
-grep grid_env /root/.bash_profile 1>/dev/null
-if [ $? -ne 0 ]
+
+if ! grep -q grid_env /root/.bash_profile
 then
 	line_separator
 	info "Update .bash_profile for root"
-	(	echo "if [ -f /home/grid/grid_env ]"
-		echo "then"
-		echo "    . /home/grid/grid_env"
-		echo "    export PATH=\$PATH:\$GRID_HOME/bin"
-		echo "fi"
-		echo ". rlwrap.alias"
-	)	>> /root/.bash_profile
+	if [ $GRID_ROOT != undef ]
+	then
+		(	echo "if [ -f /home/grid/grid_env ]"
+			echo "then"
+			echo "    . /home/grid/grid_env"
+			echo "    export PATH=\$PATH:\$GRID_HOME/bin"
+			echo "fi"
+			echo ". rlwrap.alias"
+		)	>> /root/.bash_profile
+	else # Le grid infra n'est pas installé.
+		echo ". rlwrap.alias" /root/.bash_profile
+	fi
 	LN
 	exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /root/rlwrap.alias
 fi
@@ -264,8 +278,7 @@ LN
 #	============================================================================
 #	oracle peut faire un sudo grid sans mot de passe
 #	grid peut faire un sudo oracle sans mot de passe.
-grep -E "^oracle" /etc/sudoers >/dev/null 2>&1
-if [ $? -ne 0 ]
+if [ $GRID_ROOT != undef ] && ! grep -qE "^oracle" /etc/sudoers
 then
 	line_separator
 	info "Config sudo for user oracle"

@@ -80,6 +80,8 @@ function memory_setting
 	set_limit oracle hard memlock $mem_limit
 	LN
 
+	[ $db_type == single_fs ] && return 0 || true
+
 	set_limit grid soft memlock $mem_limit
 	LN
 
@@ -93,6 +95,10 @@ function memory_setting
 	LN
 
 	set_limit grid hard nofile 65536
+	LN
+
+	# 12.2
+	set_limit grid soft stack 10240
 	LN
 }
 

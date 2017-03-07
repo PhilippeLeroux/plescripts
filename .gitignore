@@ -43,3 +43,6 @@ db/dbfs/pass
 #	Tests sql
 db/sql/jl
 db/sql/uwe
+
+#	Fichier local de configuration
+local.cfg

@@ -65,13 +65,16 @@ then
 	error "LV errors : $lv_errors"
 	LN
 
+	exec_cmd abrt-cli list
+	LN
+
 	restart_target
 
 	lv_errors=$(count_lv_errors)
 
 	if [ $lv_errors -eq 0 ]
 	then
-		info "restart target [$OK]"
+		info "After restart target [$OK]"
 		exit 0
 	fi
 
@@ -112,7 +115,11 @@ then
 else
 	# La sortie de la commande sera dans la log, mais pas à l'écran.
 	exec_cmd -c "systemctl status target" >/dev/null 2>&1
-	[ $? -ne 0 ] && restart_target || true
-	info "status target [$OK]"
+	if [ $? -ne 0 ]
+	then
+		warning "Satus error :"
+		restart_target
+	fi
+	info "target [$OK]"
 	exit 0
 fi

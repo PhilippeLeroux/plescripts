@@ -9,7 +9,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-Ce script vérifie que l'OS host remplie les conditions nécessaires au bon
+Ce script vérifie que le virtual-host remplie les conditions nécessaires au bon
 fonctionnement de la démo."
 
 script_banner $ME $*
@@ -70,17 +70,37 @@ function runInstaller_exists
 		LN
 	fi
 
-	info "Grid extracted :"
-	info -n "Exist '$HOME/$oracle_install/grid/runInstaller' "
-	if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
+	if [ "$orarel" == "12.2" ]
 	then
-		info -f "[$KO]"
-		error " $HOME/$oracle_install/grid must contains Grid installer."
-		LN
-		((++count_errors))
+		info "Grid zip :"
+		info -n "Exist '$HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip' "
+		if [ ! -f "$HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip" ]
+		then
+			info -f "[$KO]"
+			error " $HOME/$oracle_install/grid must contains linuxx64_12201_grid_home.zip."
+			LN
+			((++count_errors))
+		else
+			info -f "[$OK]"
+			LN
+		fi
+	elif [ "$orarel" == "12.1" ]
+	then
+		info "Grid extracted :"
+		info -n "Exist '$HOME/$oracle_install/grid/runInstaller' "
+		if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
+		then
+			info -f "[$KO]"
+			error " $HOME/$oracle_install/grid must contains Grid installer."
+			LN
+			((++count_errors))
+		else
+			info -f "[$OK]"
+			LN
+		fi
 	else
-		info -f "[$OK]"
-		LN
+		error "Release '$orarel' invalid."
+		exit 1
 	fi
 }
 
@@ -112,7 +132,7 @@ function validate_NFS_exports
 	fi
 	if ! _is_exported $HOME/$oracle_install
 	then
-		info "\tadd to /etc/exports : $HOME/oracle_install/12.1 $network/$if_pub_prefix(ro,async,no_root_squash,no_subtree_check)"
+		info "\tadd to /etc/exports : $HOME/oracle_install/$orarel $network/$if_pub_prefix(ro,async,no_root_squash,no_subtree_check)"
 	fi
 	LN
 }
@@ -272,6 +292,8 @@ function test_if_configure_global_cfg_executed
 	fi
 	LN
 }
+
+typeset -r orarel=${oracle_release%.*.*}
 
 scripts_exists
 

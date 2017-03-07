@@ -16,7 +16,6 @@ Le script est prévu pour être exécuté depuis le poste client.
 
 script_banner $ME $*
 
-typeset	db=undef
 typeset	node1=undef
 typeset	node2=undef
 
@@ -26,11 +25,6 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
-			shift
-			;;
-
-		-db=*)
-			db=${1##*=}
 			shift
 			;;
 
@@ -61,21 +55,26 @@ done
 
 exit_if_param_undef node1 "$str_usage"
 
-if [ $node2 != undef ]
-then
-typeset -r	session_name="Left $node1 / Right $node2"
-exec_cmd -ci tmux kill-session -t \"$session_name\"
+function monitor_rac_2_nodes
+{
+	typeset -r	session_name="Left $node1 / Right $node2"
+	exec_cmd -ci tmux kill-session -t \"$session_name\"
 
-tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"				\; \
-							split-window -h "ssh root@${node2} vmstat 2" \; \
-							split-window -v "ssh -t root@${node2} top" \; \
-							selectp -t 0 \; \
-							split-window -v "ssh -t root@${node1} top"
-else
-typeset -r session_name="$node1"
-exec_cmd -ci tmux kill-session -t \"$session_name\"
+	tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"				\; \
+								split-window -h "ssh root@${node2} vmstat 2" \; \
+								split-window -v "ssh -t root@${node2} top" \; \
+								selectp -t 0 \; \
+								split-window -v "ssh -t root@${node1} top"
+}
 
-tmux new -s "$session_name"	ssh -t root@${node1} "~/plescripts/disk/iostat_on_bdd_disks.sh"	\;\
-							split-window -h "ssh root@${node1} vmstat 2"			\;\
-							split-window -v "ssh -t root@${node1} top"
-fi
+function monitor_standalone_server
+{
+	typeset -r session_name="$node1"
+	exec_cmd -ci tmux kill-session -t \"$session_name\"
+
+	tmux new -s "$session_name"	ssh -t root@${node1} ". .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh"	\;\
+								split-window -h "ssh root@${node1} vmstat 2"			\;\
+								split-window -v "ssh -t root@${node1} top"
+}
+
+[ $node2 != undef ] && monitor_rac_2_nodes || monitor_standalone_server

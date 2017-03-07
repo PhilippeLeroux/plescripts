@@ -8,12 +8,17 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -db=name -pdb=name"
+"Usage : $ME
+	-db=name
+	-pdb=name
+	[-service=auto]	if no service used : localhost:1521
+"
 
 script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef
+typeset service=auto
 
 while [ $# -ne 0 ]
 do
@@ -30,6 +35,11 @@ do
 
 		-pdb=*)
 			pdb=${1##*=}
+			shift
+			;;
+
+		-service=*)
+			service=${1##*=}
 			shift
 			;;
 
@@ -68,7 +78,7 @@ function ddl_set_password_and_unlock_account
 
 function ddl_unlock_all_accounts
 {
-	set_sql_cmd "whenever sqlerror exit 1;"
+#	set_sql_cmd "whenever sqlerror exit 1;"
 	ddl_set_password_and_unlock_account IX
 	ddl_set_password_and_unlock_account SH
 	ddl_set_password_and_unlock_account BI
@@ -78,8 +88,24 @@ function ddl_unlock_all_accounts
 	ddl_set_password_and_unlock_account SCOTT
 }
 
-typeset -r service=$(mk_oci_service $pdb)
-exit_if_service_not_running $db $service
+if test_if_cmd_exists olsnodes
+then
+	typeset -r crs_used=yes
+else
+	typeset -r crs_used=no
+fi
 
-sqlplus_cmd_with sys/$oracle_password@$service as sysdba	\
+case "$service" in
+	"localhost:1521")
+		service="$service/$pdb"
+		;;
+	auto)
+		service=$(mk_oci_service $pdb)
+		[ $crs_used == yes ] && exit_if_service_not_running $db $service || true
+		;;
+	*)
+		[ $crs_used == yes ] && exit_if_service_not_running $db $service || true
+esac
+
+sqlplus_cmd_with sys/$oracle_password@"$service" as sysdba	\
 								"$(ddl_unlock_all_accounts)"

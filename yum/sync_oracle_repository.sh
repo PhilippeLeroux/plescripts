@@ -7,19 +7,20 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME
-\t[-use_tar=name] Initialise le dépôt avec \$use_tar
-\t[-release=$default_yum_repository_release]	latest|R3|R4
-\t[-skip_latest]
-
-Update OS & sync local repository
-"
 
 typeset	use_tar=none
 typeset infra_install=no
 typeset sync_repo_latest=yes
-typeset	release=$default_yum_repository_release
+typeset	release=all
+
+typeset -r str_usage=\
+"Usage : $ME
+\t[-use_tar=name] Initialise le dépôt avec \$use_tar
+\t[-release=$release]	latest|R3|R4|all
+\t[-skip_latest]
+
+Update OS & sync local repository
+"
 
 while [ $# -ne 0 ]
 do
@@ -66,7 +67,7 @@ done
 
 script_banner $ME $*
 
-exit_if_param_invalid	release	"latest R3 R4"	"$str_usage"
+exit_if_param_invalid	release	"latest R3 R4 all"	"$str_usage"
 
 typeset	-r repo_config_path=/etc/yum.repos.d
 typeset	-r repo_config_name=public-yum-ol7.repo
@@ -165,6 +166,10 @@ else
 		R3|R4)
 			sync_repo ol7_UEK$release
 			;;
+		all)
+			sync_repo ol7_UEKR3
+			sync_repo ol7_UEKR4
+			;;
 	esac
 fi
 
@@ -173,8 +178,7 @@ LN
 
 line_separator
 exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=infra
-#	Pour le serveur d'infra le dépôt R4 ne doit pas être activé, trop de
-#	problème avec target.
+LN
 exec_cmd ~/plescripts/yum/switch_repo_to.sh -local
 LN
 

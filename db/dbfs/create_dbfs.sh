@@ -9,12 +9,21 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
+typeset	-r	orcldbversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
+									grep "Oracle Database 12c"		|\
+									awk '{ print $4 }' | cut -d. -f1-2)
+
 typeset db=undef
 typeset pdb=undef
 typeset service=auto
 typeset account_name=dbfsadm
 typeset	account_password=dbfs
-typeset	wallet=yes
+if [ $orcldbversion == 12.1 ]
+then
+	typeset		wallet=yes
+else # Impossible de démarrer la base avec le wallet.
+	typeset		wallet=no
+fi
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -23,11 +32,9 @@ typeset -r str_usage=\
 	[-service=$service]
 	[-account_name=$account_name]
 	[-account_password=$account_password]
+	[-wallet=$wallet]	yes|no : with 'no', uses password file 12.2 cannot use wallet.
 
 For dataguard must be executed first on the primary database.
-
-Debug flags :
-	[-wallet=yes]	yes|no : with 'no', uses password file.
 "
 
 while [ $# -ne 0 ]

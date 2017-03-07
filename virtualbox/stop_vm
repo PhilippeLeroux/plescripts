@@ -84,44 +84,48 @@ done
 [[ $server == undef && -v ID_DB ]] && server=$ID_DB || true
 exit_if_param_undef server	"$str_usage"
 
-function wait_os_until_stopped
+# $1 vm name
+function wait_vm_until_stopped
 {
-	typeset -r os_name="$1"
+	typeset -r	vm_name="$1"
 
 	typeset	-ri	wait_max_secs=120
 	typeset	-i	secs=0
 
-	typeset tod_color
+	typeset		display_color
 
 	hide_cursor
-	info -n "Server $os_name stopping "
+	info -n "Server $vm_name stopping "
 	while [ 0 -eq 0 ]
 	do
-		VBoxManage list runningvms | grep -q $os_name
-		[ $? -eq 1 ] && LN && break
-		info -f -n "${tod_color}.${NORM}"
+		if ! VBoxManage list runningvms | grep -q $vm_name
+		then
+			LN
+			break
+		fi
+		info -f -n "${display_color}.${NORM}"
 		if [ $secs -eq $wait_max_secs ]
 		then
 			LN
-			warning "$os_name not stopped after ${secs} s"
-			exec_cmd -c "VBoxManage controlvm $os_name poweroff"
+			warning "$vm_name not stopped after ${secs}s"
+			exec_cmd -c "VBoxManage controlvm $vm_name poweroff"
 			break
 		elif [[ $secs -ne 0 && $(( secs % 10 )) -eq 0 ]]
 		then
-			info -f -n "${secs}s"
+			info -f -n "${display_color}${secs}s${NORM}"
 			if [[ $secs -ge 30 && $secs -lt 60 ]]
 			then
-				tod_color=$PINK
+				display_color=$PINK
 			elif [[ $secs -ge 60 && $sec -lt 90 ]]
 			then
-				tod_color=$YELLOW
+				display_color=$YELLOW
 			elif [[ $sec -ge 90 ]]
 			then
-				tod_color=$RED
+				display_color=$RED
 			fi
 		fi
 		sleep 1
-		secs=secs+1
+		((++secs))
 	done
 	show_cursor
 }
@@ -191,14 +195,13 @@ function stop_vm_name
 	fi
 }
 
-#===============================================================================
-#	Charge le nom des VMs dans vm_list
-
 typeset -a vm_list			# Nom de toutes les VMs running
 typeset -a vm_stopped_list	# Nom des VMs stoppées.
 typeset	-a dataguard_list	# Nom des autres VMs dans le groupe dataguard.
 typeset -i count_errors=0
 
+#===============================================================================
+# Mémorise dans vm_list le nom des VMs runnings correspondantes au pattern $server
 while read vm_name
 do
 	[ x"$vm_name" != x ] && vm_list+=( $vm_name )
@@ -210,8 +213,8 @@ LN
 [ ${#vm_list[@]} -eq 0 ] && exit 0 || true
 
 #===============================================================================
-# Stop les VMs et mémorise leur nom dans vm_stopped_list
-
+# Stop les VMs et mémorise leurs noms dans vm_stopped_list
+# Mémorise le nom des serveurs en dataguard dans dataguard_list.
 line_separator
 #	Stop toutes les VMs
 for vm in ${vm_list[@]}
@@ -256,11 +259,11 @@ then	# Attend que toutes les VMs soient stoppée.
 	typeset -ri	stop_at=$SECONDS
 	line_separator
 	typeset -i count=0
-	for os_2_wait in ${vm_stopped_list[*]}
+	for vm_2_wait in ${vm_stopped_list[*]}
 	do
-		wait_os_until_stopped "$os_2_wait"
-		[ $count -ne 0 ] && LN
-		count=count+1
+		wait_vm_until_stopped "$vm_2_wait"
+		[ $count -ne 0 ] && LN || true
+		((++count))
 	done
 	typeset -ri	duration=$(( SECONDS - stop_at ))
 	info "Total waiting : $(fmt_seconds $duration)"

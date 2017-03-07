@@ -297,11 +297,11 @@ function run_post_install_root_scripts_on_node	# $1 node# $2 server_name
 	info "Run post install scripts on node #${nr_node} $server_name (~10mn)"
 	LN
 
-	exec_cmd "ssh -t root@$server_name	\
+	exec_cmd -novar "ssh -t root@$server_name	\
 				\"${ORACLE_BASE%/*/*}/app/oraInventory/orainstRoot.sh\""
 	LN
 
-	exec_cmd -c "ssh -t -t root@$server_name \". .bash_profile;	\
+	exec_cmd -c -novar "ssh -t -t root@$server_name \". .bash_profile;	\
 											$ORACLE_HOME/root.sh\""
 	return $?
 }

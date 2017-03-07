@@ -56,10 +56,26 @@ LN
 exec_cmd "./02_install_some_rpms.sh"
 LN
 
+# $1 rpm name.
+function install_cvuqdisk
+{
+	typeset -r cvuqdisk="$1"
+	info "Install cvuqdisk : $(sed "s/.*-\(.*\)-.*/\1/"<<<"$cvuqdisk")"
+	# Par défaut le groupe est oinstall, pas besoin d'exporter CVUQDISK_GRP
+	LANG=C exec_cmd yum -y -q install $cvuqdisk
+	LN
+}
+
 if [ $db_type != single_fs ]
 then
-	exec_cmd "./03_install_oracleasm.sh"
-	LN
+	if [ "${oracle_release%.*.*}" == "12.1" ]
+	then # A partie de la 12.2 plus besoin d'oracleasm.
+		install_cvuqdisk cvuqdisk-1.0.9-1.rpm
+		exec_cmd "./03_install_oracleasm.sh"
+		LN
+	else
+		install_cvuqdisk cvuqdisk-1.0.10-1.rpm
+	fi
 fi
 
 exec_cmd "./04_apply_os_prerequis.sh -db_type=$db_type"

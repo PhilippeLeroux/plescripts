@@ -54,7 +54,7 @@ function print_node # $1 #inode
 			info "Node #$inode RAC : "
 			;;
 
-		std)
+		std|fs)
 			info "Node #$inode standalone : "
 			;;
 	esac
@@ -109,28 +109,23 @@ function print_disks
 	typeset -i no_disks
 	while IFS=':' read dg_name disk_size no_first_disk no_last_disk
 	do
-		if [ $dg_name = FS ]
-		then
-			info "Will used available space on /$GRID_DISK"
-		else
-			info "DG $dg_name :"
-			typeset	-i	size=0
-			typeset	-i	label_len=0
-			typeset		disk_name
-			typeset		label
-			typeset		idisk
-			for idisk in $( seq $no_first_disk $no_last_disk )
-			do
-				disk_name=$(printf "S1DISK%s%02d" $upper_db $idisk)
-				label=$(printf "	%s  %dGb\n" $disk_name $disk_size)
-				info "$label"
-				label_len=${#label}
-				size=size+disk_size
-			done
-			typeset	-i total_disks=$(( no_last_disk - no_first_disk + 1 ))
-			info "$(printf "%${label_len}s %02dGb" "$total_disks disks" $size)"
-			LN
-		fi
+		info "DG $dg_name :"
+		typeset	-i	size=0
+		typeset	-i	label_len=0
+		typeset		disk_name
+		typeset		label
+		typeset		idisk
+		for idisk in $( seq $no_first_disk $no_last_disk )
+		do
+			disk_name=$(printf "S1DISK%s%02d" $upper_db $idisk)
+			label=$(printf "	%s  %dGb\n" $disk_name $disk_size)
+			info "$label"
+			label_len=${#label}
+			size=size+disk_size
+		done
+		typeset	-i total_disks=$(( no_last_disk - no_first_disk + 1 ))
+		info "$(printf "%${label_len}s %02dGb" "$total_disks disks" $size)"
+		LN
 	done < $file
 }
 

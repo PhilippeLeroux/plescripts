@@ -7,8 +7,13 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+
 typeset -r str_usage=\
-"Usage : $ME -db=<str> -vm_memory_mb=<#> [-vmGroup=<name>]"
+"Usage : $ME
+	-db=name           Identifier.
+	-vm_memory_mb=#    RAM for VM.
+	[-vmGroup=name]    Group name for VM.
+"
 
 script_banner $ME $*
 
@@ -21,7 +26,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -68,7 +72,7 @@ cfg_load_node_info $db 1
 if [ x"$vmGroup" == x ]
 then
 	case $cfg_db_type in
-		std)
+		std|fs)
 			typeset	-r	group_name="/Standalone $(initcap $db)"
 			;;
 
@@ -114,22 +118,34 @@ do
 	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\"
 	LN
 
-	info "Create disk ${vm_name}_$GRID_DISK for mount point /$GRID_DISK for grid"
-	exec_cmd $vm_scripts_path/add_disk.sh								\
-							-vm_name="$vm_name"							\
-							-disk_name=${vm_name}_$GRID_DISK			\
-							-disk_mb=$(( GRID_DISK_SIZE_GB * 1024 ))	\
-							-fixed_size
-	LN
-
-	if [[ $cfg_db_type != rac || $cfg_oracle_home != ocfs2 ]]
-	then	# Si utilisation de ocfs2 les disques sont crées après la création
-			# de tous les serveurs.
-		info "Create disk ${vm_name}_$ORCL_DISK for mount point /$ORCL_DISK for Oracle"
+	if [ $cfg_db_type != fs ]
+	then
+		info "Create disk ${vm_name}_$GRID_DISK for mount point /$GRID_DISK for grid"
 		exec_cmd $vm_scripts_path/add_disk.sh								\
+								-vm_name="$vm_name"							\
+								-disk_name=${vm_name}_$GRID_DISK			\
+								-disk_mb=$(( GRID_DISK_SIZE_GB * 1024 ))	\
+								-fixed_size
+		LN
+
+		if [[ $cfg_db_type != rac || $cfg_oracle_home != ocfs2 ]]
+		then	# Si utilisation de ocfs2 les disques sont crées après la création
+				# de tous les serveurs.
+			info "Create disk ${vm_name}_$ORCL_DISK for mount point /$ORCL_DISK for Oracle"
+			exec_cmd $vm_scripts_path/add_disk.sh							\
 								-vm_name="$vm_name"							\
 								-disk_name=${vm_name}_$ORCL_DISK			\
 								-disk_mb=$(( ORCL_DISK_SIZE_GB * 1024 ))	\
+								-fixed_size
+			LN
+		fi
+	else
+		# Si le Grid n'est pas installé il n'y a besoin que d'un seul disque.
+		info "Create disk ${vm_name}_$ORCL_SW_FS_DISK for mount point /$ORCL_SW_FS_DISK for Oracle"
+		exec_cmd $vm_scripts_path/add_disk.sh								\
+								-vm_name="$vm_name"							\
+								-disk_name=${vm_name}_$ORCL_SW_FS_DISK		\
+								-disk_mb=$(( ORCL_SW_FS_SIZE_GB * 1024 ))	\
 								-fixed_size
 		LN
 	fi
@@ -155,6 +171,6 @@ then # Avec ocfs2 le disque Oracle est partagé par tous les nœuds.
 	LN
 fi
 
-[ $cfg_luns_hosted_by == san ] && exit 0
+[ $cfg_luns_hosted_by == san ] && exit 0 || true
 
 exec_cmd "~/plescripts/virtualbox/create_oracle_disks.sh -db=$db"

@@ -51,43 +51,65 @@ exit_if_param_invalid role "master infra" "$str_usage"
 #	Supprime le ss-répertoire x86_64
 if [ $role == master ]
 then
-	url_is="baseurl=file:///mnt${infra_olinux_repository_path}"
+	typeset	-r url_is="file:///mnt${infra_olinux_repository_path}"
 else
-	url_is="baseurl=file://${infra_olinux_repository_path}"
+	typeset	-r url_is="file://${infra_olinux_repository_path}"
 fi
 
 typeset	-r	repo_file=/etc/yum.repos.d/public-yum-ol7.repo
 
-typeset	-ri	first_line=$(grep -n local_ol7_latest $repo_file| cut -d: -f1)
+typeset	-i	first_line=$(grep -n local_ol7_latest $repo_file| cut -d: -f1)
 if [ $first_line -ne 0 ]
 then	# supprimme les dépôts locaux :
+	((--first_line)) # Pour supprimer la ligne vide.
 	info "Truncate repo file at line : $first_line"
 	exec_cmd "sed -i '${first_line},\$d' $repo_file"
 	LN
 fi
 
-info "Add repo local_ol7_latest, local_ol7_UEKR3 & local_ol7_UEKR4"
-cat <<-EOS >>$repo_file
+# Test si le dépôt R4 est renseigné.
+if ! grep -q ol7_UEKR4 $repo_file
+then
+	info "Add repository ol7_UEKR4"
+	cat<<-EOC>>$repo_file
+
+	[ol7_UEKR4]
+	name=Latest Unbreakable Enterprise Kernel Release 4 for Oracle Linux \$releasever (\$basearch)
+	baseurl=http://public-yum.oracle.com/repo/OracleLinux/OL7/UEKR4/\$basearch/
+	gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+	gpgcheck=1
+	enabled=0
+	EOC
+	LN
+
+	info "Yum repository updated."
+	LN
+fi
+
+info "Add repositories local_ol7_latest, local_ol7_UEKR3 & local_ol7_UEKR4"
+cat <<EOC >>$repo_file
 
 [local_ol7_latest]
 name=Oracle Linux \$releasever Latest (\$basearch)
-$url_is/ol7_latest/
+baseurl=$url_is/ol7_latest/
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 gpgcheck=1
 enabled=0
 
 [local_ol7_UEKR3]
 name=Latest Unbreakable Enterprise Kernel Release 3 for Oracle Linux \$releasever (\$basearch)
-$url_is/ol7_UEKR3/
+baseurl=$url_is/ol7_UEKR3/
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 gpgcheck=1
 enabled=0
 
 [local_ol7_UEKR4]
 name=Latest Unbreakable Enterprise Kernel Release 4 for Oracle Linux \$releasever (\$basearch)
-$url_is/ol7_UEKR4/
+baseurl=$url_is/ol7_UEKR4/
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 gpgcheck=1
 enabled=0
-EOS
+EOC
+LN
+info "Yum repository updated."
 LN

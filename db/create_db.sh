@@ -19,12 +19,27 @@ typeset -r ME=$0
 #	Pour éviter ce message d'erreur utiliser le paramètre -shared_pool_size=256M
 #	Cf select name, round( bytes/1024/1024, 2) "Size Mb" from v$sgainfo order by 2 desc;
 
+typeset	-r	orcldbversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
+									grep "Oracle Database 12c"		|\
+									awk '{ print $4 }' | cut -d. -f1-2)
 typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=$(to_mb $shm_for_db)
-[ $totalMemory -eq 0 ] && totalMemory=640 || true
-typeset		shared_pool_size="256M"
-typeset		pga_aggregate_limit="1256M"
+[ $totalMemory -eq 0 ] && totalMemory=780 || true
+case "$orcldbversion" in
+	12.1)
+		typeset	shared_pool_size="256M"
+		typeset	pga_aggregate_limit="1256M"
+		;;
+	12.2)
+		typeset	shared_pool_size="335M"
+		typeset	pga_aggregate_limit="2048M"
+		;;
+	*)
+		error "Oracle Database '$orcldbversion' invalid."
+		LN
+		exit 1
+esac
 typeset		data=DATA
 typeset		fra=FRA
 typeset		templateName=General_Purpose.dbc
@@ -40,14 +55,19 @@ typeset		backup=yes
 typeset		confirm="-confirm"
 typeset	-i	redoSize=64	# Unit Mb
 typeset		sampleSchema=true
-typeset		create_wallet=yes
+if [ $orcldbversion == 12.1 ]
+then
+	typeset		create_wallet=yes
+else # Impossible de démarrer la base avec le wallet.
+	typeset		create_wallet=no
+fi
 
 #	DEBUG :
 typeset		create_database=yes
 
 add_usage "-db=name"								"Database name."
 add_usage "[-lang=$lang]"							"Language."
-add_usage "[-sampleSchema=$sampleSchema]"			"true|false"
+add_usage "[-sampleSchema=$sampleSchema]"			"true|false (pdb only)"
 add_usage "[-sysPassword=$sysPassword]"
 add_usage "[-totalMemory=$totalMemory]"				"Unit Mb"
 # 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
@@ -57,7 +77,7 @@ add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting (6)
 add_usage "[-pga_aggregate_limit=$pga_aggregate_limit" "0 to disable this setting (7)"
 add_usage "[-cdb=$cdb]"								"yes|no (1)"
 add_usage "[-pdb=name]"								"pdb name (2)"
-add_usage "[-no_wallet]"							"Do not use Wallet Manager for pdb connection."
+add_usage "[-wallet=$create_wallet]"				"yes|no. yes : Wallet Manager for pdb connection."
 add_usage "[-redoSize=$redoSize]"					"Redo size Mb."
 add_usage "[-data=$data]"
 add_usage "[-fra=$fra]"
@@ -73,9 +93,9 @@ typeset -r str_usage=\
 $ME
 $(print_usage)
 
-\t1 : -cdb=yes and -pdb not defined → -pdb=pdb01
+\t1 : -cdb=yes and -pdb not defined : -pdb=pdb01
 
-\t2 : -pdb defined → -cdb set to yes.
+\t2 : -pdb defined : -cdb set to yes.
 \t	-pdb=no : do not create a pdb, only cdb.
 \t	Add 2 services : pdb name postfixed by _oci & _java
 
@@ -124,8 +144,8 @@ do
 			shift
 			;;
 
-		-no_wallet)
-			create_wallet=no
+		-wallet=*)
+			create_wallet=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -295,19 +315,9 @@ function make_dbca_args
 			add_dynamic_cmd_param "    -numberOfPDBs     $numberOfPDBs"
 			add_dynamic_cmd_param "    -pdbName          $pdb"
 			add_dynamic_cmd_param "    -pdbAdminPassword $pdbAdminPassword"
-
-			if [ $sampleSchema == true ]
-			then
-				add_dynamic_cmd_param "-sampleSchema true"
-			fi
 		fi
 	else
 		add_dynamic_cmd_param "-createAsContainerDatabase false"
-
-		if [ $sampleSchema == true ]
-		then
-			add_dynamic_cmd_param "-sampleSchema true"
-		fi
 	fi
 
 	add_dynamic_cmd_param "-sysPassword    $sysPassword"
@@ -321,11 +331,18 @@ function make_dbca_args
 	fi
 
 	typeset initParams="-initParams threaded_execution=true"
+
+	if [ $crs_used == no ]
+	then # sur FS il faut activer les asynch I/O
+		initParams="$initParams,filesystemio_options=setall"
+	fi
+
 	if [ $pga_aggregate_limit != "0" ]
 	then
 		# set pga_aggregate_limit for test not prod.
 		initParams="$initParams,pga_aggregate_limit=$pga_aggregate_limit"
 	fi
+
 	case $lang in
 		french)
 			initParams="$initParams,nls_language=FRENCH,NLS_TERRITORY=FRANCE"
@@ -390,8 +407,8 @@ function check_if_ASM_used
 			crs_used=no
 			if [[ "$data" == DATA && "$fra" == FRA ]]
 			then
-				data=/$GRID_DISK/app/oracle/oradata/data
-				fra=/$GRID_DISK/app/oracle/oradata/fra
+				data=/$ORCL_DATA_FS_DISK/app/oracle/oradata/data
+				fra=/$ORCL_FRA_FS_DISK/app/oracle/oradata/fra
 			fi
 		fi
 	fi
@@ -576,8 +593,9 @@ if [ $db_type != undef ]
 then
 	exit_if_param_invalid	db_type "SINGLE RAC RACONENODE"	"$str_usage"
 fi
-exit_if_param_invalid	enable_flashback "yes no"		"$str_usage"
-exit_if_param_invalid	sampleSchema "true false"		"$str_usage"
+exit_if_param_invalid	enable_flashback	"yes no"		"$str_usage"
+exit_if_param_invalid	sampleSchema		"true false"	"$str_usage"
+exit_if_param_invalid	create_wallet		"yes no"		"$str_usage"
 
 adjust_parameters
 
@@ -613,22 +631,20 @@ LN
 if [ $sampleSchema == true ]
 then # Doit être exécute après la mise à jour de oratab pour les RACs.
 	timing 2
+	info "Create sample schemas on $pdb"
+	exec_cmd ~/plescripts/db/create_sample_schemas.sh	\
+						-db=$db							\
+						-pdb=$pdb
+	LN
+
+	info "Clone pdb_samples from $pdb"
 	exec_cmd ~/plescripts/db/create_pdb.sh	\
 						-db=$db				\
 						-pdb=pdb_samples	\
 						-from_pdb=$pdb		\
-						-is_seed
+						-is_seed			\
+						-nolog
 	LN
-
-	if [ $crs_used == no ]
-	then
-		info "Unlock sample schemas."
-		exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh -db=$db -pdb=$pdb
-		LN
-	else
-		warning "Account locked on $pdb"
-		LN
-	fi
 fi
 
 if [ $crs_used == no ]

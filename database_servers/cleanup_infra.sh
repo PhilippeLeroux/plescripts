@@ -37,7 +37,7 @@ do
 			shift
 			;;
 
-		-keep_cfg_file)
+		-keep_cfg_files)
 			remove_cfg_file=no
 			shift
 			;;

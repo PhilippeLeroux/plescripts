@@ -9,14 +9,25 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
+typeset	-r	orcldbversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
+									grep "Oracle Database 12c"		|\
+									awk '{ print $4 }' | cut -d. -f1-2)
+
 typeset db=undef
 typeset pdb=undef
 typeset from_pdb=default
 typeset	from_samples=no
-typeset	create_wallet=yes
+if [ $orcldbversion == 12.1 ]
+then
+	typeset		wallet=yes
+else # Impossible de démarrer la base avec le wallet.
+	typeset		wallet=no
+fi
 typeset is_seed=no
 typeset admin_user=pdbadmin
 typeset admin_pass=$oracle_password
+
+typeset	log=yes
 
 typeset -r str_usage=\
 "Usage :
@@ -26,9 +37,10 @@ $ME
 	[-is_seed]       Seed pdb
 	[-from_samples]	 Clone pdb from pdb_samples
 	[-from_pdb=name] Clone pdb from name
-	[-no_wallet]     Do not use Wallet Manager for pdb connection.
+	[-wallet=$wallet] yes|no yes : Use Wallet Manager for pdb connection.
 	[-admin_user=$admin_user]
 	[-admin_pass=$admin_pass]
+	[-nolog]
 
 Ex create a seed PDB :
 $ME -db=$db -pdb=pdb_samples -from_pdb=pdb01 -is_seed
@@ -76,8 +88,8 @@ do
 			shift
 			;;
 
-		-no_wallet)
-			create_wallet=no
+		-wallet=*)
+			wallet=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -88,6 +100,11 @@ do
 
 		-admin_pass=*)
 			admin_pass=${1##*=}
+			shift
+			;;
+
+		-nolog)
+			log=no
 			shift
 			;;
 
@@ -106,7 +123,7 @@ do
 	esac
 done
 
-ple_enable_log
+[ $log == yes ] && ple_enable_log || true
 
 script_banner $ME $*
 
@@ -114,6 +131,8 @@ must_be_user oracle
 
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
+
+exit_if_param_invalid	wallet "yes no"	"$str_usage"
 
 if test_if_cmd_exists olsnodes
 then
@@ -145,6 +164,7 @@ function clone_from_pdb
 		set_sql_cmd "whenever sqlerror exit 1;"
 		set_sql_cmd "create pluggable database $pdb from $1;"
 	}
+	info "Clone $pdb from $1"
 	sqlplus_cmd "$(ddl_clone_from_pdb $1)"
 	[ $? -ne 0 ] && exit 1 || true
 
@@ -231,6 +251,12 @@ function create_wallet
 			LN
 		done
 	fi
+
+	if [ $orcldbversion == 12.2 ]
+	then
+		warning "Database cannot start with wallet enable."
+		LN
+	fi
 }
 
 if [[ $is_seed == yes ]]
@@ -242,14 +268,7 @@ then
 		exit 1
 	fi
 
-	if [ $from_pdb == default ]
-	then
-		error "-from_pdb missing with -is_seed"
-		LN
-		exit 1
-	fi
-
-	create_wallet=no
+	wallet=no
 fi
 
 if [[ $from_samples == yes && $from_pdb != default ]]
@@ -354,11 +373,4 @@ then
 	done
 fi
 
-[ $create_wallet == yes ] && create_wallet || true
-
-if [ $from_samples == yes ]
-then
-	info "Unlock sample schemas."
-	exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh -db=$db -pdb=$pdb
-	LN
-fi
+[ $wallet == yes ] && create_wallet || true

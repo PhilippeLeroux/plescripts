@@ -56,12 +56,28 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
+script_start
+
 cfg_exists $db
 
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
 for (( inode=1; inode <= max_nodes; ++inode ))
 do
-	exec_cmd ./clone_master.sh -db=$db -node=$inode -vmGroup=\"$vmGroup\" "$clone_master_parameters"
+	exec_cmd ./clone_master.sh	-db=$db -node=$inode -vmGroup=\"$vmGroup\"	\
+								-skip_instructions							\
+								"$clone_master_parameters"
 	LN
 done
+
+script_stop $ME
+
+if [ "${oracle_release}" == "12.2.0.1" ]
+then
+	script_name=install_grid12cR2.sh
+else
+	script_name=install_grid.sh
+fi
+
+info "The Grid infrastructure can be installed."
+info "./$script_name -db=$db"

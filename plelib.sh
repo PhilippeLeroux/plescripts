@@ -539,7 +539,7 @@ function replace_paths_by_shell_vars
 
 function simplify_cmd
 {
-	replace_paths_by_shell_vars "$(echo "$*" | tr -s '\t' ' ' | tr -s [:space:])"
+	echo "$*" | tr -s '\t' ' ' | tr -s [:space:]
 }
 
 #*> Fake exec_cmd command
@@ -690,6 +690,7 @@ function shorten_command
 #*>		-ci like -c.
 #*>		-h  hide command except on error.
 #*>		-hf like -h.
+#*>		-novar path not replaced by variable name.
 #*>
 #*> Show execution time after PLE_SHOW_EXECUTION_TIME_AFTER seconds
 #*>
@@ -708,6 +709,7 @@ function exec_cmd
 	typeset force=NO
 	typeset continue_on_error=NO
 	typeset hide_command=NO
+	typeset path_2_var=YES
 
 	while [ 0 -eq 0 ]	# forever
 	do
@@ -741,6 +743,11 @@ function exec_cmd
 				hide_command=YES
 				;;
 
+			"-novar")
+				shift
+				path_2_var=NO
+				;;
+
 			*)
 				break		# exit while.
 				;;
@@ -749,7 +756,12 @@ function exec_cmd
 
 	typeset -i	eval_return
 
-	typeset -r	simplified_cmd=$(simplify_cmd $*)
+	if [ $path_2_var == YES ]
+	then
+		typeset -r	simplified_cmd=$(replace_paths_by_shell_vars $(simplify_cmd $*))
+	else
+		typeset -r	simplified_cmd=$(simplify_cmd $*)
+	fi
 
 	case $EXEC_CMD_ACTION in
 		NOP)

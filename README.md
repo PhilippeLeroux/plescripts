@@ -46,7 +46,9 @@ Si vous avez une configuration inférieure n'y pensez même pas.
   L'image de l'ISO Oracle Linux 7.3 ne fonctionne pas (V834394-01.iso), java plante lors de l'installation. En partant d'une 7.2
   je mets à jour sur une 7.3 mais en conservant le noyau linux 3.8.
 
-* [Oracle Database 12c & Grid Infrastructure 12c](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
+* Oracle database & Grid Infrastructure : [12cR1](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
+ou [12cR2](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/oracle12c-linux-12201-3608234.html)
+(12cR2 : seul l'installation d'une base de donnée single est supportée (FS ou ASM), pas encore de RAC)
 
 * Cloner le dépôt `plescripts` dans le répertoire $HOME (instructions fournies plus loin).
 

@@ -87,6 +87,12 @@ must_be_user root
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef pdb		"$str_usage"
 
+#	return 0 if cluster, 1 if standalone server
+function is_cluster
+{
+	test $(wc -l<<<"$(olsnodes)") -gt 1
+}
+
 [ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
 
 typeset	-r	dbfs_cfg_file=/home/oracle/${pdb}_dbfs.cfg
@@ -104,10 +110,31 @@ LN
 
 line_separator
 typeset	ORACLE_HOME=undef
-IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent"	\
-															/etc/oratab)"
+if is_cluster
+then
+	IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent"	\
+																/etc/oratab)"
+else
+	IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*" /etc/oratab)"
+fi
+
+if [ x"$ORACLE_HOME" == x ]
+then
+	error "Cannot read ORACLE_HOME"
+	exit 1
+fi
 
 info "ORACLE_HOME = '$ORACLE_HOME'"
+LN
+
+typeset	-r	orcl_release=$(su - oracle -c	\
+							"$ORACLE_HOME/OPatch/opatch lsinventory	|\
+									grep 'Oracle Database 12c'		|\
+									awk '{ print \$4 }' | cut -d. -f1-4")
+
+info "Oracle release $orcl_release"
+LN
+
 exit_if_service_not_exists $db $service
 
 line_separator
@@ -126,8 +153,10 @@ else
 	exec_cmd "echo '/usr/local/lib' >> /etc/ld.so.conf.d/usr_local_lib.conf"
 fi
 
-typeset	-r	rel=$(cut -d. -f1-2<<<"$oracle_release")
-typeset	-r	ver=$(cut -d. -f1<<<"$oracle_release")
+#typeset	-r	rel=$(cut -d. -f1-2<<<"$orcl_release")
+# 12.1 ou 12.2 même noms
+typeset -r	rel=12.1
+typeset	-r	ver=$(cut -d. -f1<<<"$orcl_release")
 
 [ ! -h libclntsh.so.$rel ] && \
 			exec_cmd ln -s $ORACLE_HOME/lib/libclntsh.so.$rel || true
@@ -159,10 +188,26 @@ LN
 
 line_separator
 info "Create /sbin/mount.dbfs"
-exec_cmd "rm -f /sbin/mount.dbfs"
-exec_cmd "ln -s $ORACLE_HOME/bin/dbfs_client /sbin/mount.dbfs"
-exec_cmd ls -l /sbin/mount.dbfs
-LN
+if [ $wallet == yes ]
+then
+	exec_cmd "rm -f /sbin/mount.dbfs"
+	exec_cmd "ln -s $ORACLE_HOME/bin/dbfs_client /sbin/mount.dbfs"
+	exec_cmd ls -l /sbin/mount.dbfs
+	LN
+else
+	#12.2 pas de wallet par défaut :
+	info "no wallet => hack /sbin/mount.dbfs"
+	cat <<-EOS > /sbin/mount.dbfs
+	#!/bin/bash
+	cd /tmp
+	nohup $ORACLE_HOME/bin/dbfs_client \$@ << EO_PASSWORD &
+	$dbfs_password
+	EO_PASSWORD
+	EOS
+	exec_cmd chmod ug+x /sbin/mount.dbfs
+	exec_cmd chgrp fuse /sbin/mount.dbfs
+	LN
+fi
 
 line_separator
 info "Create mount point /mnt/$pdb"
@@ -224,7 +269,7 @@ then # Affiche l'info que sur le serveur ou a été lancé le script.
 		exec_dynamic_cmd "su - grid -c"
 	else
 		info "With user grid :"
-		info "cd ~plescripts/db/dbfs"
+		info "cd ~/plescripts/db/dbfs"
 		info "create_crs_resource_for_dbfs.sh -db=$db -pdb=$pdb -service=$service"
 	fi
 fi

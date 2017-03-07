@@ -41,5 +41,5 @@ then
 		-e "tmux_monitor_server.sh -node1=srv${db}01 -node2=srv${db}02" &
 else
 	xterm $xterm_static_options -geometry ${width_rac}x${height}$top_right \
-		-e "tmux_monitor_server.sh -db=$db -node1=srv${db}01" &
+		-e "tmux_monitor_server.sh -node1=srv${db}01" &
 fi

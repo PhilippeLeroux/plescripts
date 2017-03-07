@@ -52,6 +52,10 @@ done
 exit_if_param_undef name	"$str_usage"
 exit_if_param_undef disks	"$str_usage"
 
+typeset	-r	gridversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
+							grep "Oracle Grid Infrastructure 12c"	|\
+							awk '{ print $5 }')
+
 typeset -a size_list
 typeset -a disk_list
 
@@ -70,9 +74,10 @@ fi
 
 function make_sql_cmd
 {
-	for i in $(seq 1 $(( $disks - 1 )) )
+	typeset other_disks # other_disks mémorise tous les disques sauf le premier.
+	for (( i=1; i < disks; ++i ))
 	do
-		other_disks="$other_disks\n,   '${disk_list[$i]}'"
+		other_disks="$other_disks\n,   '${disk_list[i]}'"
 	done
 
 	cat <<EOS 
@@ -80,8 +85,8 @@ create diskgroup $name external redundancy
 disk
     '${disk_list[0]}'$other_disks
 attribute
-    'compatible.asm' = '12.1.0.2.0'
-,   'compatible.rdbms' = '12.1.0.2.0'
+    'compatible.asm' = '$gridversion'
+,   'compatible.rdbms' = '$gridversion'
 ;
 EOS
 }
@@ -103,7 +108,7 @@ then
 	olsnodes | while read server_name
 	do
 		[ x"$server_name" == x ] && break || true	# Pas un RAC
-		[ $hostn == $server_name ] && continue
+		[ $hostn == $server_name ] && continue || true
 		exec_cmd "ssh $server_name \". ./.profile; asmcmd mount $name\""
 		LN
 	done

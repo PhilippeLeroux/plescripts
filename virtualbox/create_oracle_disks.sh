@@ -8,11 +8,15 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -db=name"
+"Usage : $ME
+	-db=name  Identifier.
+	[-no_crs] No Grid Infra.
+"
 
 script_banner $ME $*
 
-typeset		db=undef
+typeset	db=undef
+typeset	crs=yes
 
 while [ $# -ne 0 ]
 do
@@ -25,6 +29,11 @@ do
 
 		-db=*)
 			db=${1##*=}
+			shift
+			;;
+
+		-no_crs)
+			crs=no
 			shift
 			;;
 
@@ -54,7 +63,7 @@ first_vm=$cfg_server_name
 
 if [ $max_nodes -gt 1 ]
 then
-	for inode in $( seq 2 $max_nodes )
+	for (( inode=2; inode < max_nodes; ++inode ))
 	do
 		cfg_load_node_info $db $inode
 		attach_to="$attach_to $cfg_server_name"
@@ -68,9 +77,10 @@ typeset	-i	ilun=1
 while IFS=: read dg_name size_gb first_no last_no
 do
 	count=$(( last_no - first_no + 1 ))
+	line_separator
 	info "Add $count disks for DG $dg_name"
 	typeset -i	size_mb=$(( size_gb * 1024 ))
-	for idisk in $( seq $count )
+	for (( idisk=1; idisk <= count; ++idisk ))
 	do
 		exec_cmd ~/plescripts/virtualbox/add_disk.sh					\
 							-vm_name=$first_vm							\
@@ -78,6 +88,7 @@ do
 							-disk_mb=$size_mb							\
 							-attach_to="'$attach_to'"					\
 							-fixed_size
-		ilun=ilun+1
+		((++ilun))
 	done
+	LN
 done<$cfg_disk

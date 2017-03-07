@@ -7,9 +7,11 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME"
+typeset -r str_usage="Usage : $ME [-orclonly]"
 
 must_be_user root
+
+typeset showalldisks=yes
 
 while [ $# -ne 0 ]
 do
@@ -17,6 +19,11 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
+			shift
+			;;
+
+		-orclonly)
+			showalldisks=no
 			shift
 			;;
 
@@ -34,12 +41,20 @@ while read disk idisk
 do
 	type="$(disk_type $disk)"
 	typeset -i size_b=$(disk_size_bytes $disk)
-	info -n "disk $disk $(fmt_bytesU_2_better $size_b) "
 	if [ "$type" = "unused" ]
 	then
-		echo "Unused."
+		if [ $showalldisks == yes ]
+		then
+			info -n "disk $disk $(fmt_bytesU_2_better $size_b) Unused."
+		fi
 	else
-		echo -n "type $type"
+		if [[ $showalldisks == no && $type != oracleasm ]]
+		then
+			continue
+		fi
+
+		info -n "disk $disk $(fmt_bytesU_2_better $size_b) type $type"
+
 		typeset -i nb_part=$(count_partition_for $disk)
 		if [ $nb_part -ne 0 ]
 		then

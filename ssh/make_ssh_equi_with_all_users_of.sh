@@ -29,6 +29,8 @@ function copy_public_key
 	exec_cmd -c ssh $user_name@$server_name "chown -R oracle:oinstall /home/oracle/.ssh"
 	LN
 
+	[ $grid_user == no ] && return 0 || true
+
 	info "Ajoute la clef pour grid"
 	exec_cmd -c ssh $user_name@$server_name "mkdir /home/grid/.ssh"
 	exec_cmd ssh $user_name@$server_name "\"cat ~/.ssh/client_rsa.pub >> /home/grid/.ssh/authorized_keys\""
@@ -48,6 +50,7 @@ typeset -r str_usage=\
 "
 
 typeset remote_server=undef
+typeset	grid_user=yes
 
 while [ $# -ne 0 ]
 do
@@ -55,6 +58,11 @@ do
 		-remote_server=*)
 			remote_server=${1##*=}
 			info "remote_server='$remote_server'"
+			shift
+			;;
+
+		-no_grid_user)
+			grid_user=no
 			shift
 			;;
 
