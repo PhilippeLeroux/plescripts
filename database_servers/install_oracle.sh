@@ -13,10 +13,15 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name         Identifiant.
 	-action=install  Si config l'installation n'est pas lancée.
+
+Debug flag
+	-skip_install_oracle
 "
 
 typeset db=undef
 typeset action=install
+
+typeset install_oracle=yes
 
 while [ $# -ne 0 ]
 do
@@ -33,6 +38,11 @@ do
 
 		-action=*)
 			action=${1##*=}
+			shift
+			;;
+
+		-skip_install_oracle)
+			install_oracle=no
 			shift
 			;;
 
@@ -75,6 +85,17 @@ typeset -a	node_priv_ips
 typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
 typeset		primary_db_server=none
+
+function empty_swap
+{
+	line_separator
+	info "Empty swap on nodes ${node_names[*]}"
+	for node in ${node_names[*]}
+	do
+		exec_cmd "ssh root@${node} 'swapoff -a && swapon -a'"
+		LN
+	done
+}
 
 function load_node_cfg # $1 inode
 {
@@ -326,31 +347,38 @@ else
 fi
 LN
 
-case $oracle_release in
-	12.1.0.2)
-		create_response_file_12cR1
-		;;
+if [ $install_oracle == yes ]
+then
+	case $oracle_release in
+		12.1.0.2)
+			create_response_file_12cR1
+			;;
 
-	12.2.0.1)
-		create_response_file_12cR2
-		;;
+		12.2.0.1)
+			create_response_file_12cR2
+			;;
 
-	*)
-		error "Oracle $oracle_release not supported."
-		exit 1
-esac
+		*)
+			error "Oracle $oracle_release not supported."
+			exit 1
+	esac
 
-[ $action == config ] && exit 0	# Pas d'installation.
+	[ $action == config ] && exit 0	# Pas d'installation.
 
-exec_cmd wait_server ${node_names[0]}
+	exec_cmd wait_server ${node_names[0]}
 
-stats_tt start oracle_installation
+	stats_tt start oracle_installation
 
-copy_response_file
+	copy_response_file
 
-mount_install_directory
+	mount_install_directory
 
-start_oracle_installation
+	empty_swap
+
+	start_oracle_installation
+fi
+
+empty_swap
 
 for node in ${node_names[*]}
 do
@@ -368,9 +396,14 @@ fi
 exec_cmd "~/plescripts/database_servers/install_sample_schema.sh -db=$db"
 LN
 
+empty_swap
+
 stats_tt stop oracle_installation
 
-script_stop $ME $db
-LN
+if [ $install_oracle == yes ]
+then
+	script_stop $ME $db
+	LN
+fi
 
 next_instructions

@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -35,7 +34,9 @@ do
 	esac
 done
 
-exit_if_file_not_exists /mnt/oracle_install/database/runInstaller "$str_usage"
+must_be_user oracle
+
+exit_if_file_not_exists /mnt/oracle_install/database/runInstaller "mount /mnt/oracle_install"
 
 info "deinstall oracle"
 fake_exec_cmd /mnt/oracle_install/database/runInstaller -deinstall -home $ORACLE_HOME CR CR y
@@ -47,5 +48,14 @@ y
 EOS
 fi
 LN
+
+# En 12.2 l'ORACLE_HOME des autres nœuds n'est pas purgé.
+while read node
+do
+	[[ x"$node" == x || "$node" == $(hostname -s) ]] && continue || true
+
+	exec_cmd "ssh $node '. .bash_profile && [ -d \$ORACLE_HOME ] && rm -rf \$ORACLE_HOME/* || true'<</dev/null"
+	LN
+done<<<"$(olsnodes)"
 
 exit 0

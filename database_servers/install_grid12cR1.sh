@@ -313,9 +313,9 @@ function print_manual_workaround
 	info "Manual workaround"
 	info "> ssh root@${node_name}"
 	info "> $ORACLE_HOME/root.sh"
-	info "log $OK : ./install_grid.sh -db=$db -skip_grid_install -skip_root_scripts"
+	info "log $OK : ./install_grid12cR1.sh -db=$db -skip_grid_install -skip_root_scripts"
 	info "log $KO : reboot servers, wait crs up and"
-	info "$ ./install_grid.sh -db=$db -skip_grid_install"
+	info "$ ./install_grid12cR1.sh -db=$db -skip_grid_install"
 	LN
 }
 

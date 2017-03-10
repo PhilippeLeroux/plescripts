@@ -35,10 +35,10 @@ do
 	esac
 done
 
-typeset		vbox_running=no	#	Converne VirtualBox
+typeset		infra_running=no	# yes si le serveur d'infra est démarré.
+typeset	-a	vm_list				# contiendra le nom de toutes les VMs démarrées
+								# sauf le nom du serveur d'infra.
 
-typeset		infra_running=no
-typeset	-a	vm_list
 while read vm_name rem
 do
 	if [ "$vm_name" == \"$infra_hostname\" ]
@@ -78,37 +78,18 @@ fi
 line_separator
 exec_cmd "sudo systemctl stop vboxdrv"
 LN
-pid_vboxmanager=$(ps -ef|grep [/]usr/lib/virtualbox/VirtualBox | tr -s [:space:] | cut -d' ' -f2)
-if [ x"$pid_vboxmanager" != x ]
-then
-	vbox_running=yes
-	info "Stop VirtualBox Manager : "
-	exec_cmd kill -1 $pid_vboxmanager
-	info -n "Tempo : "; pause_in_secs 2; LN
-	pid_vboxmanager=$(ps -ef|grep [/]usr/lib/virtualbox/VirtualBox | tr -s [:space:] | cut -d' ' -f2)
-	if [ x"$pid_vboxmanager" != x ]
-	then
-		exec_cmd kill -15 $pid_vboxmanager
-		info -n "Tempo : "; pause_in_secs 2; LN
-		pid_vboxmanager=$(ps -ef|grep [/]usr/lib/virtualbox/VirtualBox | tr -s [:space:] | cut -d' ' -f2)
-		if [ x"$pid_vboxmanager" != x ]
-		then
-			error "Cannot stop VirtualBox Manager."
-			exit 1
-		fi
-	fi
-fi
-info -n "Tempo : "; pause_in_secs 8; LN
+
+timming 8
+LN
+
 exec_cmd "sudo systemctl start vboxdrv"
-info -n "Tempo : "; pause_in_secs 2; LN
+LN
+
+timming 2
 LN
 
 line_separator
 exec_cmd "~/plescripts/virtualbox/create_iface.sh -force_iface_name=$hostifname"
-LN
-
-line_separator
-exec_cmd "sudo ifconfig"
 LN
 
 if [ $infra_running == yes ]
@@ -120,15 +101,16 @@ then
 fi
 
 line_separator
-info "Start $vm_count VMs"
-for vm in ${vm_list[*]}
-do
-	exec_cmd start_vm $vm
-done
+exec_cmd "sudo ifconfig"
+LN
 
-if [ $vbox_running == yes ]
+if [ $vm_count -ne 0 ]
 then
 	line_separator
-	info "Run VirtualBox manager."
-	nohup VirtualBox > /tmp/vv.nohup 2>&1 &
+	info "Start $vm_count VMs"
+	for vm in ${vm_list[*]}
+	do
+		exec_cmd start_vm $vm
+		LN
+	done
 fi

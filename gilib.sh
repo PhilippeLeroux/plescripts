@@ -10,12 +10,19 @@ function _get_other_nodes
 {
 	if $(test_if_cmd_exists olsnodes)
 	then
+		# Si le Grid n'est pas démarré olsnodes ne fonctionne pas.
 		typeset nl=$(olsnodes | xargs)
-		if [ x"$nl" != x ]
+		if [[ "$nl" =~ "PRCO" ]]
+		then
+			echo
+			return 1
+		elif [ x"$nl" != x ]
 		then # olsnodes ne retourne rien sur un SINGLE
 			sed "s/$(hostname -s)//"<<<"$nl"
 		fi
 	fi
+
+	return 0
 }
 
 typeset -r	gi_node_list=$(_get_other_nodes)
@@ -79,4 +86,34 @@ function execute_on_all_nodes_v2
 
 	exec_cmd $first_arg "$cmd"
 	execute_on_other_nodes $first_arg ". .bash_profile; $cmd"
+}
+
+# print to stdout Grid Version :
+#	12.1.0.2
+# or
+#	12.2.0.1
+function grid_version
+{
+	$ORACLE_HOME/OPatch/opatch lsinventory		|\
+		grep "Oracle Grid Infrastructure 12c"	|\
+		awk '{ print $5 }'						|\
+		cut -d. -f1-4
+}
+
+# print to stdout Grid Version :
+#	12cR1
+# or
+#	12cR2
+function grid_release
+{
+	case "$(grid_version)" in
+		12.1.*)
+			echo 12cR1
+			;;
+		12.2.*)
+			echo 12cR2
+			;;
+		*)
+			echo "Unknow release"
+	esac
 }

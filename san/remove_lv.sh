@@ -10,12 +10,12 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage="Usage : $ME
-	-vg_name     : nom du VG contenant les LVs.
-	-prefix      : préfixe du nom des LVs.
-	[-first_no]  : N° du premier LV. Si omis commence au premier.
-	[-count]     : nombre de LV à supprimer, par défaut 1
-	[-all]       : supprime tous les disques à partir de first_no
-	               Si first_no est omis supprime tous les disques."
+	-vg_name=name     : nom du VG contenant les LVs.
+	-prefix=name      : préfixe du nom des LVs.
+	[-first_no=#]     : N° du premier LV. Si omis commence au premier.
+	[-count=#]        : nombre de LV à supprimer, par défaut 1
+	[-all]            : supprime tous les disques à partir de first_no
+	                    Si first_no est omis supprime tous les disques."
 
 typeset		vg_name=undef
 typeset		prefix=undef

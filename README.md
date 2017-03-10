@@ -21,7 +21,8 @@ Type de serveurs de base de données pouvant être créé :
 
 Versions logiciels :
 - Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
-- La version Oracle utilisée est la 12.1.0.2, le grid 12.2 n'étant toujours pas disponible.
+- Oracle 12cR1 base SINGLE & RAC.
+- Oracle 12cR2 base SINGLE, RAC uniquement avec 4 cpu par VM et 8Gb de RAM.
 
 La création des serveurs de base de données est 100% automatisée, il n'y a pas
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
@@ -48,7 +49,6 @@ Si vous avez une configuration inférieure n'y pensez même pas.
 
 * Oracle database & Grid Infrastructure : [12cR1](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 ou [12cR2](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/oracle12c-linux-12201-3608234.html)
-(12cR2 : seul l'installation d'une base de donnée single est supportée (FS ou ASM), pas encore de RAC)
 
 * Cloner le dépôt `plescripts` dans le répertoire $HOME (instructions fournies plus loin).
 

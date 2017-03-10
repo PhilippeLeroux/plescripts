@@ -800,7 +800,7 @@ function exec_cmd
 					# Si la commande a durée plus de PLE_SHOW_EXECUTION_TIME_AFTER
 					# elle a été affichée, sinon elle ne l'est pas. Sur une erreur
 					# on affiche la commande.
-					my_echo "$COL" "$(date +"%Hh%M")> " "$shortened_cmd" || true
+					my_echo "$COL" "$(date +"%Hh%M")> " "$simplified_cmd" || true
 				fi
 
 				case "$continue_on_error" in
@@ -1007,7 +1007,7 @@ function add_value
 #*> If file doesn't exist script aborted.
 function update_value
 {
-	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$3" "Call function update_value"
+	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$3" "Call function update_value $1 $2" || true
 
 	typeset -r var_name="$1"
 	typeset -r var_value="$2"
@@ -1514,9 +1514,18 @@ function get_initiator_for
 }
 
 #*> return 0 if rpm update available else return 1
-#*> check update on server $1 or local server if server name is missing.
+#*> $1 -show show all update
+#*> check update on server $1 or $2 or local server if server name is missing.
 function test_if_rpm_update_available
 {
+	if [ "$1" == "-show" ]
+	then
+		typeset -r show_updates=yes
+		shift
+	else
+		typeset -r show_updates=ni
+	fi
+
 	case $# in
 		1)
 			typeset -r server=$1
@@ -1525,7 +1534,12 @@ function test_if_rpm_update_available
 			exec_cmd -c -hf "ssh -t root@$server 'yum check-update >/dev/null 2>&1'"
 			if [ $? -eq 100 ]
 			then
-				info "$server update available."
+				if [ $show_updates == yes ]
+				then
+					exec_cmd -c -hf "ssh -t root@$server 'yum check-update'"
+				else
+					info "$server update available."
+				fi
 				return 0
 			else
 				info "$server up to date."
@@ -1538,7 +1552,12 @@ function test_if_rpm_update_available
 			exec_cmd -c -hf "yum check-update >/dev/null 2>&1"
 			if [ $? -eq 100 ]
 			then
-				info "$(hostname -s) update available."
+				if [ $show_updates == yes ]
+				then
+					exec_cmd -c -hf "yum check-update"
+				else
+					info "$(hostname -s) update available."
+				fi
 				return 0
 			else
 				info "$(hostname -s) up to date."

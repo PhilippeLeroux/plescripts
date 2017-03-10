@@ -2,13 +2,14 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-Supprime des disques d'oracleasm et du SAN.
+Supprime des disques oracle AFD (les LUNs sur le SAN sont supprimées).
 
 	-db=name         : Identifiant de la base
 	-nr_disk=#       : N° du premier disque.
@@ -78,18 +79,23 @@ function disk_is_candidat
 	exec_cmd -f -c su - grid -c "kfod | grep -q \"$1\>\""
 }
 
+if [ $gi_count_nodes -gt 1 ]
+then
+	error "RAC : TODO"
+	exit 1
+fi
+
 line_separator
-for i in $( seq $nr_disk $(( nr_disk + count - 1 )) )
+for (( i=nr_disk; i < nr_disk + count; ++i ))
 do
 	disk=$(printf "S1DISK%s%02d" $upper_db $i)
-	disk_is_candidat $disk
-	if [ $? -ne 0 ]
+	if ! disk_is_candidat $disk
 	then
-		error "$disk n'est pas candidat !"
+		error "$disk is not candidat !"
 		exit 1
 	fi
 
-	exec_cmd oracleasm deletedisk $disk
+	exec_cmd asmcmd afd_unlabel $disk
 	LN
 done
 
@@ -107,12 +113,12 @@ else
 	LN
 fi
 
-line_separator
-typeset -r hostn=$(hostname -s)
-olsnodes | while read server_name
-do
-	[ x"$server_name" == x ] && break || true	# Pas un RAC
-	[ $hostn == $server_name ] && continue
-	exec_cmd "ssh $server_name \". .bash_profile; oracleasm scandisks\""
-	LN
-done
+if [ $gi_count_nodes -gt 1 ]
+then
+	line_separator
+	for server_name in ${gi_node_list[*]}
+	do
+		exec_cmd "ssh $server_name \". .bash_profile; oracleasm scandisks\""
+		LN
+	done
+fi

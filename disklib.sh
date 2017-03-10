@@ -19,6 +19,13 @@ function get_uuid_disk
 	blkid $1 | sed 's/.*UUID="\(.*\)" T.*/\1/'
 }
 
+# $1 disk or partition name
+# print to stdout the label
+function label_of
+{
+	blkid $1|sed 's/.*LABEL="\(.*\)" TYPE.*/\1/'
+}
+
 #*>	Retourne le type du disque $1 ou unused si le disque n'est pas utilisé.
 function disk_type
 {

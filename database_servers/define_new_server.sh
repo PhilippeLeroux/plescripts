@@ -140,16 +140,6 @@ then
 	exit 1
 fi
 
-if [ $rel == "12.2" ]
-then
-	if [[ $max_nodes -gt 1 ]]
-	then
-		error "RAC 12.2 not supported."
-		LN
-		exit 1
-	fi
-fi
-
 function validate_config
 {
 	exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc" >/dev/null 2>&1
@@ -247,6 +237,11 @@ function normalyse_asm_disks
 	then
 		echo "CRS:6:1:3" > $cfg_path/disks
 		i_lun=4
+		if [ "$oracle_release" == "12.2.0.1" ]
+		then
+			echo "GIMR:4:4:13" >> $cfg_path/disks
+			i_lun=14
+		fi
 	fi
 
 	adjust_DG_size

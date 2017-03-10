@@ -50,14 +50,14 @@ ple_enable_log
 
 script_banner $ME $*
 
-test_if_cmd_exists olsnodes
+_get_other_nodes
 if [ $? -ne 0 ]
 then
-	error "Work only with Grid Infra..."
+	error "Work only with Grid Infra started..."
 	exit 1
 fi
 
-test_if_rpm_update_available
+test_if_rpm_update_available -show
 if [ $? -ne 0 ]
 then
 	info "No update."
@@ -66,7 +66,7 @@ fi
 
 confirm_or_exit "Update available, update"
 
-if [ $gi_count_nodes -eq 1 ]
+if [ $gi_count_nodes -le 1 ]
 then
 	info "Update : $gi_current_node"
 	LN
@@ -81,7 +81,10 @@ then
 	exec_cmd "yum -y update"
 	LN
 
-	update_oracle_asm_configuration
+	if test_if_cmd_exists oracleasm
+	then
+		update_oracle_asm_configuration
+	fi
 
 	line_separator
 	info "Reboot"
@@ -108,7 +111,10 @@ else
 	exec_cmd "yum -y update"
 	LN
 
-	update_oracle_asm_configuration
+	if test_if_cmd_exists oracleasm
+	then
+		update_oracle_asm_configuration
+	fi
 
 	line_separator
 	info "Si des FS du type OCFS2 sont utilisés, mettre à jour la configuration."

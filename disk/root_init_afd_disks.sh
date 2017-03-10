@@ -2,13 +2,15 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
 . ~/plescripts/disklib.sh
-. ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
+
+Ne doit être utilisé que lors de l'installation du grid.
 "
 
 typeset db=undef
@@ -45,7 +47,18 @@ script_banner $ME $*
 
 exit_if_param_undef db	"$str_usage"
 
-typeset -r upper_db=$(to_upper $db)
+must_be_user root
+
+cfg_exists $db
+
+typeset -ri max_nodes=$(cfg_max_nodes $db)
+
+typeset -a other_node_list
+for (( i=2; i <= max_nodes; ++i ))
+do
+	cfg_load_node_info $db $i
+	other_node_list+=( $cfg_server_name )
+done
 
 fake_exec_cmd export ORACLE_HOME=$GRID_HOME
 export ORACLE_HOME=$GRID_HOME
@@ -57,9 +70,22 @@ typeset -i nr_disk=1
 
 while read device
 do
-	[ x"$device" == x ] && exit
+	if [ x"$device" == x ]
+	then
+		warning "No device found."
+		LN
+		exit 0
+	fi
+
 	oracle_label=$(printf "s1disk${db}%02d" $nr_disk)
 	((++nr_disk))
+	# Pour un standalone il n'est pas nécessaire de changer les droits, mais
+	# pour un RAC il faut absolument le faire.
+	for onode in ${other_node_list[*]}
+	do
+		exec_cmd "ssh $onode 'chown grid:asmadmin $device'"</dev/null
+	done
+	exec_cmd chown grid:asmadmin $device
 	exec_cmd $ORACLE_HOME/bin/asmcmd afd_label $oracle_label $device --init
 	exec_cmd $ORACLE_HOME/bin/asmcmd afd_lslbl $device
 	LN

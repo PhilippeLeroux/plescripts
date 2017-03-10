@@ -115,9 +115,11 @@ function get_vg_free_gb # $1 vg_name
 #	============================================================
 if [ "$export_to" != undef ]
 then	#	Déduction du préfixe à partir du nom du premier serveur.
-	typeset -r first_server_name=$(echo $export_to | cut -d\  -f1)
-	read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$first_server_name" )"
-	info "Deducted prefix '$prefix' from '$first_server_name'"
+	typeset first_server_name=$(echo $export_to | cut -d\  -f1)
+	[ x"$first_server_name" == x ] && first_server_name=$export_to || true
+	# Le nom des serveurs est de la forme srv.*## (## 01 02 03...)
+	read prefix num_node <<<"$( sed "s/srv\(.*\)[0-9]\{2\}$/\1/" <<< "$first_server_name" )"
+	info "Read prefix '$prefix' from '$first_server_name'"
 fi
 
 #	Ces variables sont initialisées par load_lv_info
@@ -146,8 +148,7 @@ then	# Il n'existe pas de LV.
 fi
 
 info "Exists $lv_nb disks from $lv_first_no to $lv_last_no"
-info "Add $count disks, start at $new_lv_number"
-info "Disk size ${lv_size_gb}Gb"
+info "Add $count disks of ${lv_size_gb}Gb, start at $new_lv_number"
 
 #	Vérifie s'il y a suffisamment de place dans le VG
 free_vg_gb=$(get_vg_free_gb $vg_name)
@@ -172,7 +173,7 @@ for server_name in $export_to
 do
 	if [ $server_name != undef ]
 	then	# Déduction du préfixe et du n° du nœud du nom du serveur.
-		read prefix num_node <<<"$( sed "s/srv\([a-z]*\)\([0-9]\{2\}$\)/\1 \2/" <<< "$server_name" )"
+		read prefix num_node <<<"$( sed "s/srv\(.*\)\([0-9]\{2\}\)$/\1 \2/" <<< "$server_name" )"
 		initiator_name=$(get_initiator_for $prefix $num_node)
 	fi
 

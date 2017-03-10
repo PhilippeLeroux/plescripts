@@ -177,7 +177,7 @@ function deinstall_oracle
 {
 	line_separator
 	info "deinstall oracle"
-	suoracle -f "~/plescripts/database_servers/uninstall_oracle.sh $arg1"
+	suoracle -f "~/plescripts/database_servers/oracle_uninstall.sh $arg1"
 
 	execute_on_all_nodes "rm -fr /opt/ORCLfmap"
 	execute_on_all_nodes "rm -fr /$ORCL_DISK/app/oracle/audit"

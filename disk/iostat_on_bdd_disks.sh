@@ -57,6 +57,15 @@ function load_oracleasm_disks
 function load_afd_disks
 {
 	info "Lecture des disques utilisés par la base :"
+
+	if ! test_if_cmd_exists asmcmd
+	then
+		info "asmcmd not exists."
+		LN
+		disk_list="/dev/s*"
+		return 0
+	fi
+	
 	for (( iloop=0; iloop < 5; ++iloop ))
 	do
 		while read oralabel filtering os_disk
@@ -76,6 +85,13 @@ function load_afd_disks
 		done<<<"$(asmcmd afd_lsdsk | grep ENABLED )"
 		LN
 	done
+
+	if [ x"$disk_list" == x ]
+	then
+		info "No AFD disks found."
+		disk_list="/dev/s*"
+		LN
+	fi
 }
 
 typeset	disk_list

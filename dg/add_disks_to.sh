@@ -2,13 +2,16 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -name=<str> -disks=<#>
-	-name  : nom du DG dans lequel ajouter des disques.
-	-disks : nombre de disques à ajouter."
+"Usage :
+$ME
+	-name=name : DG name.
+	-disks=#   : # disks to add.
+"
 
 typeset		name=undef
 typeset -i	disks=-1
@@ -16,6 +19,11 @@ typeset -i	disks=-1
 while [ $# -ne 0 ]
 do
 	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
 		-name=*)
 			name=${1##*=}
 			shift
@@ -24,6 +32,12 @@ do
 		-disks=*)
 			disks=${1##*=}
 			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
 			;;
 
 		*)
@@ -38,24 +52,38 @@ done
 exit_if_param_undef name	"$str_usage"
 exit_if_param_undef disks	"$str_usage"
 
+if [ $disks -eq 0 ]
+then
+	error "Parameter -disks=$disks invalid."
+	LN
+	exit 1
+fi
+
 typeset -a size_list
 typeset -a disk_list
 
-while read size disk
-do
-	[ x"$disk" == x ] && continue
-
-	size_list+=( $(( size / 1024 )) )
-	disk_list+=( $disk )
-done<<<"$(kfod nohdr=true op=disks)"
+case "$(grid_release)" in
+	"12cR1")
+		while read size disk_name rem
+		do
+			size_list+=( $(( size / 1024 )) )
+			disk_list+=( $disk_name )
+		done<<<"$(kfod nohdr=true op=disks)"
+		;;
+	"12cR2")
+		while read size disk_name rem
+		do
+			size_list+=( $(( size / 1024 )) )
+			disk_list+=( $disk_name )
+		done<<<"$(kfod nohdr=true op=disks | grep AFD)"
+		;;
+esac
 
 if [ $disks -gt ${#disk_list[@]} ]
 then
-	error "Demande de $disks disks"
-	error "Disponible ${#disk_list[@]} disks"
+	error "Request #$disks disks"
+	error "Available #${#disk_list[@]} disks"
 	LN
-	info "Documentation sur l'ajout de disques :"
-	info "https://github.com/PhilippeLeroux/plescripts/wiki/01-Ajout-de-disques-sur-des-DGs-Oracle"
 	exit 1
 fi
 
@@ -79,4 +107,7 @@ cmd=$(printf "$(make_sql_cmd)\n")
 fake_exec_cmd sqlplus -s / as sysasm
 printf "$cmd\n"
 
-printf "set echo off\nset timin on\n$cmd\n" | sqlplus -s / as sysasm
+if [ $EXEC_CMD_ACTION == EXEC ]
+then
+	printf "set echo off\nset timin on\n$cmd\n" | sqlplus -s / as sysasm
+fi

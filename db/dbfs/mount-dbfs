@@ -7,7 +7,7 @@
 #	Le script contient le nom du point de montage.
 typeset -r mount_point_name="${0##*-}"
 
-typeset	-r log_name=/tmp/log-dbfs-${mount_point_name}.log
+typeset	-r log_name=/tmp/log-dbfs-${mount_point_name}_$(date +%d).log
 
 #	L'agent trace le script dans le fichier crsd_scriptagent_grid.trc
 #	répertoire : /u01/app/grid/diag/crs/$(hostname -s)/crs/trace

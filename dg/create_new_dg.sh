@@ -2,20 +2,32 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
+. ~/plescripts/usagelib.sh
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME -name<str> -disks=<#>
-	-name    : nom du DG à créer.
-	-disks   : nombre de disques à utiliser.
-	-nomount : ne monte pas le DG sur les autres nœuds.
-"
+typeset	-r	ME=$0
+
+typeset	-r	gridversion=$(grid_version)
 
 typeset		name=undef
 typeset -i	disks=-1
+typeset		compat_asm=$gridversion
+typeset		compat_rdbms=$gridversion
 
 typeset		mount_on_other_nodes=yes
+
+add_usage "-name=name"						"DG name."
+add_usage "-disks=#"						"Number disks."
+add_usage "[-nomount]"						"No mount DG on other nodes."
+add_usage "[-compat_asm=$compat_asm]"		"Attribute compatible.asm."
+add_usage "[-compat_rdbms=$compat_rdbms]"	"Attribute compatible.rdbms."
+
+typeset -r str_usage=\
+"Usage :
+$ME
+$(print_usage)
+"
 
 while [ $# -ne 0 ]
 do
@@ -35,9 +47,25 @@ do
 			shift
 			;;
 
+		-compat_asm=*)
+			compat_asm=${1##*=}
+			shift
+			;;
+
+		-compat_rdbms=*)
+			compat_rdbms=${1##*=}
+			shift
+			;;
+
 		-nomount)
 			mount_on_other_nodes=no
 			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
 			;;
 
 		*)
@@ -52,23 +80,30 @@ done
 exit_if_param_undef name	"$str_usage"
 exit_if_param_undef disks	"$str_usage"
 
-typeset	-r	gridversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
-							grep "Oracle Grid Infrastructure 12c"	|\
-							awk '{ print $5 }')
-
 typeset -a size_list
 typeset -a disk_list
 
-while read size disk_name
-do
-	size_list+=( $(( size / 1024 )) )
-	disk_list+=( $disk_name )
-done<<<"$(kfod nohdr=true op=disks)"
+case "$(grid_release)" in
+	"12cR1")
+		while read size disk_name rem
+		do
+			size_list+=( $(( size / 1024 )) )
+			disk_list+=( $disk_name )
+		done<<<"$(kfod nohdr=true op=disks)"
+		;;
+	"12cR2")
+		while read size disk_name rem
+		do
+			size_list+=( $(( size / 1024 )) )
+			disk_list+=( $disk_name )
+		done<<<"$(kfod nohdr=true op=disks | grep AFD)"
+		;;
+esac
 
 if [ $disks -gt ${#disk_list[@]} ]
 then
-	error "Demande de $disks disks"
-	error "Disponible ${#disk_list[@]} disks"
+	error "Request #$disks disks"
+	error "Available #${#disk_list[@]} disks"
 	exit 1
 fi
 
@@ -80,13 +115,13 @@ function make_sql_cmd
 		other_disks="$other_disks\n,   '${disk_list[i]}'"
 	done
 
-	cat <<EOS 
+	cat <<EOS
 create diskgroup $name external redundancy
 disk
     '${disk_list[0]}'$other_disks
 attribute
-    'compatible.asm' = '$gridversion'
-,   'compatible.rdbms' = '$gridversion'
+    'compatible.asm' = '$compat_asm'
+,   'compatible.rdbms' = '$compat_rdbms'
 ;
 EOS
 }
@@ -104,12 +139,9 @@ LN
 
 if [ $mount_on_other_nodes == yes ]
 then
-	typeset -r hostn=$(hostname -s)
-	olsnodes | while read server_name
+	for node_name in ${gi_node_list[*]}
 	do
-		[ x"$server_name" == x ] && break || true	# Pas un RAC
-		[ $hostn == $server_name ] && continue || true
-		exec_cmd "ssh $server_name \". ./.profile; asmcmd mount $name\""
+		exec_cmd "ssh $node_name \". .bash_profile; asmcmd mount $name\""
 		LN
 	done
 fi

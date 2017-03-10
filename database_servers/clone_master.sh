@@ -413,9 +413,6 @@ function configure_server
 												-vm_memory_mb=$vm_memory	\
 												-vmGroup=\"$vmGroup\""
 		LN
-		# VirtualBox Manager se met mal à jour, s'il est démarré je le relance.
-		exec_cmd "restart_vboxmanager.sh"
-		LN
 	fi
 
 	#	-wait_os=no car le nom du serveur n'a pas encore été changé.
@@ -435,6 +432,25 @@ function configure_server
 	setup_iscsi_inititiator
 
 	line_separator
+	info "Workaround yum error : [Errno 256] No more mirrors to try."
+	ssh_master systemctl start nfs-mountd.service
+	LN
+
+	#	Si depuis la création du master le dépôt par défaut a changé, permet
+	#	de basculer sur le bon dépôt.
+	ssh_master ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"
+
+	# Pour Oracle 12cR2 la version est la R4, il faut donc mettre à jour car
+	# par défaut c'est la R3 qui est activé et installée.
+	if [[ $update_os == yes ||
+			$infra_yum_repository_release != $orcl_yum_repository_release ]]
+	then
+		test_if_rpm_update_available $master_hostname
+		[ $? -eq 0 ] && ssh_master "yum -y -q update" || true
+		LN
+	fi
+
+	line_separator
 	configure_ifaces_hostname_and_reboot
 
 	#	************************************************************************
@@ -444,25 +460,6 @@ function configure_server
 
 	line_separator
 	make_ssh_equi_with_san
-
-	line_separator
-	info "Workaround yum error : [Errno 256] No more mirrors to try."
-	ssh_server systemctl start nfs-mountd.service
-	LN
-
-	#	Si depuis la création du master le dépôt par défaut a changé, permet
-	#	de basculer sur le bon dépôt.
-	ssh_server ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"
-
-	# Pour Oracle 12cR2 la version est la R4, il faut donc mettre à jour car
-	# par défaut c'est la R3 qui est activé et installée.
-	if [[ $update_os == yes ||
-			$infra_yum_repository_release != $orcl_yum_repository_release ]]
-	then
-		test_if_rpm_update_available $server_name
-		[ $? -eq 0 ] && ssh_server "yum -y -q update" || true
-		LN
-	fi
 
 	create_disks_for_oracle_and_grid_softwares
 }
@@ -720,7 +717,7 @@ then	# C'est le dernier nœud
 			then
 				script_name=install_grid12cR2.sh
 			else
-				script_name=install_grid.sh
+				script_name=install_grid12cR1.sh
 			fi
 			info "The Grid infrastructure can be installed."
 			info "./$script_name -db=$db"

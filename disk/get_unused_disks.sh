@@ -8,9 +8,10 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -count=#"
+"Usage : $ME -count=# [-skip_disks=#]"
 
 typeset -i count=-1
+typeset -i skip_disks=0
 
 while [ $# -ne 0 ]
 do
@@ -22,6 +23,11 @@ do
 
 		-count=*)
 			count=${1##*=}
+			shift
+			;;
+
+		-skip_disks=*)
+			skip_disks=${1##*=}
 			shift
 			;;
 
@@ -50,6 +56,7 @@ exit_if_param_undef count	"$str_usage"
 
 typeset		list_disks
 typeset	-i	nr_disk=0
+typeset -i	nr_disk_skipped=0
 
 while read device
 do
@@ -58,8 +65,18 @@ do
 		error "$(hostname -s) : No disk unused."
 		exit 1
 	fi
-	[ x"$list_disks" == x ] && list_disks=$device || list_disks="${list_disks},$device"
 	((++nr_disk))
+	if [[ $skip_disks -ne 0 ]]
+	then
+		if [[ $nr_disk -le $skip_disks ]]
+		then
+			continue
+		else
+			nr_disk=1
+			skip_disks=0
+		fi
+	fi
+	[ x"$list_disks" == x ] && list_disks=$device || list_disks="${list_disks},$device"
 	if [ $nr_disk -eq $count ]
 	then
 		echo "$list_disks"

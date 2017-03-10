@@ -3,15 +3,18 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/disklib.sh
-. ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME [-orclonly]"
+typeset -r str_usage=\
+"Usage :
+$ME
+	[-afdonly] show only AFD disks
+"
 
 must_be_user root
 
-typeset showalldisks=yes
+typeset afdonly=no
 
 while [ $# -ne 0 ]
 do
@@ -22,9 +25,15 @@ do
 			shift
 			;;
 
-		-orclonly)
-			showalldisks=no
+		-afdonly)
+			afdonly=yes
 			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
 			;;
 
 		*)
@@ -43,31 +52,25 @@ do
 	typeset -i size_b=$(disk_size_bytes $disk)
 	if [ "$type" = "unused" ]
 	then
-		if [ $showalldisks == yes ]
+		if [ $afdonly == no ]
 		then
 			info -n "disk $disk $(fmt_bytesU_2_better $size_b) Unused."
 		fi
 	else
-		if [[ $showalldisks == no && $type != oracleasm ]]
-		then
-			continue
-		fi
-
-		info -n "disk $disk $(fmt_bytesU_2_better $size_b) type $type"
-
 		typeset -i nb_part=$(count_partition_for $disk)
 		if [ $nb_part -ne 0 ]
 		then
-			echo ", partitions :"
+			[ $afdonly == yes ] && continue || true
+			info -n "disk $disk $(fmt_bytesU_2_better $size_b) type $type"
+			info -f ", partitions :"
 			for (( ipart=1; ipart <= nb_part; ++ipart ))
 			do
 				part_name=${disk}$ipart
 				part_type="$(disk_type $part_name)"
 				info -n "	-$part_name type $part_type"
 				case "$part_type" in
-					oracleasm)
-						desc=$(oracleasm querydisk $part_name)
-						info -f " : ${desc##* }"
+					oracleasm) # Utilisation d'oracleasm 12.1
+						info -f " : $(label_of $part_name)"
 						;;
 					LVM2_member)
 						LN
@@ -79,14 +82,17 @@ do
 						;;
 				esac
 			done
+		elif [ $type == oracleasm ]
+		then # Utilisation de AFD : 12.2
+			info -n "disk $disk $(fmt_bytesU_2_better $size_b) type $type"
+			info -f " : $(label_of $disk)"
+		elif [ $afdonly == no ]
+		then
+			info "disk $disk $(fmt_bytesU_2_better $size_b) type $type"
+			info "\tlsblk $disk"
+			lsblk $disk | sed "s/^/\t\t/g"
 		else
-			LN
-			case "$part_type" in
-				LVM2_member)
-					info "\tlsblk $disk"
-					lsblk $disk | sed "s/^/\t\t/g"
-					;;
-			esac
+			continue	# pour éviter le LN
 		fi
 	fi
 	LN

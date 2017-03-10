@@ -76,7 +76,7 @@ if [ "${oracle_release}" == "12.2.0.1" ]
 then
 	script_name=install_grid12cR2.sh
 else
-	script_name=install_grid.sh
+	script_name=install_grid12cR1.sh
 fi
 
 info "The Grid infrastructure can be installed."

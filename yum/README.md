@@ -1,4 +1,4 @@
-* Dépôts par défaut.
+* Dépôts par défaut
 
 	Le dépôt R3 est activé sur tous les serveurs.
 
@@ -12,6 +12,47 @@
 
 	[Documentation](https://docs.oracle.com/cd/E52668_01/E60259/html/ol7-install.html)
 
+* Tester si un reboot est nécessaire après un `yum update`
+
+	Si la commande `lsof | awk '$5 == "DEL" { print }'` affiche des lignes il faut
+	rebooter.
+
+	Si le kernel est mis à jour, ce n'est pas visible par cette méthode, il faut
+	rebooter.
+
+	```
+	[root@srvdaisy01 ~]# lsof | awk '$5 == "DEL" { print }'
+	gmain       723  737           root  DEL       REG              252,0            101038986 /usr/lib64/NetworkManager/libnm-device-plugin-team.so;58c29691
+	gmain       723  737           root  DEL       REG              252,0            101302725 /usr/lib64/NetworkManager/libnm-settings-plugin-ibft.so;58c29691
+	gmain       723  737           root  DEL       REG              252,0            100862066 /usr/lib64/NetworkManager/libnm-settings-plugin-ifcfg-rh.so;58c29691
+	gmain       723  737           root  DEL       REG              252,0             33674538 /usr/lib64/libaudit.so.1.0.0
+	gmain       723  737           root  DEL       REG              252,0             33674513 /usr/lib64/libnspr4.so
+	gmain       723  737           root  DEL       REG              252,0             33674515 /usr/lib64/libplc4.so
+	gmain       723  737           root  DEL       REG              252,0             33674535 /usr/lib64/libplds4.so
+	gmain       723  737           root  DEL       REG              252,0             33674536 /usr/lib64/libnssutil3.so
+	gmain       723  737           root  DEL       REG              252,0             33806706 /usr/lib64/libnss3.so
+	gmain       723  737           root  DEL       REG              252,0             33806657 /usr/lib64/libsmime3.so
+	gmain       723  737           root  DEL       REG              252,0             33806783 /usr/lib64/libssl3.so
+	gmain       723  737           root  DEL       REG              252,0             33793069 /usr/lib64/libudev.so.1.6.2
+	gmain       723  737           root  DEL       REG              252,0             33793067 /usr/lib64/libsystemd.so.0.6.0
+	gmain       723  737           root  DEL       REG              252,0             34081792 /usr/lib64/libgudev-1.0.so.0.2.0
+	gdbus       723  739           root  DEL       REG              252,0            101038986 /usr/lib64/NetworkManager/libnm-device-plugin-team.so;58c29691
+	gdbus       723  739           root  DEL       REG              252,0            101302725 /usr/lib64/NetworkManager/libnm-settings-plugin-ibft.so;58c29691
+	gdbus       723  739           root  DEL       REG              252,0            100862066 /usr/lib64/NetworkManager/libnm-settings-plugin-ifcfg-rh.so;58c29691
+	gdbus       723  739           root  DEL       REG              252,0             33674538 /usr/lib64/libaudit.so.1.0.0
+	gdbus       723  739           root  DEL       REG              252,0             33674513 /usr/lib64/libnspr4.so
+	gdbus       723  739           root  DEL       REG              252,0             33674515 /usr/lib64/libplc4.so
+	gdbus       723  739           root  DEL       REG              252,0             33674535 /usr/lib64/libplds4.so
+	gdbus       723  739           root  DEL       REG              252,0             33674536 /usr/lib64/libnssutil3.so
+	gdbus       723  739           root  DEL       REG              252,0             33806706 /usr/lib64/libnss3.so
+	gdbus       723  739           root  DEL       REG              252,0             33806657 /usr/lib64/libsmime3.so
+	gdbus       723  739           root  DEL       REG              252,0             33806783 /usr/lib64/libssl3.so
+	gdbus       723  739           root  DEL       REG              252,0             33793069 /usr/lib64/libudev.so.1.6.2
+	gdbus       723  739           root  DEL       REG              252,0             33793067 /usr/lib64/libsystemd.so.0.6.0
+	gdbus       723  739           root  DEL       REG              252,0             34081792 /usr/lib64/libgudev-1.0.so.0.2.0
+	in:imjour  1056 1076           root  DEL       REG              252,0             33793067 /usr/lib64/libsystemd.so.0.6.0
+	rs:main    1056 1077           root  DEL       REG              252,0             33793067 /usr/lib64/libsystemd.so.0.6.0
+	```
 * sync_oracle_repository.sh
 
 	Ne doit être exécuté que sur le serveur d'infra.

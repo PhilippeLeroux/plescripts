@@ -71,5 +71,5 @@ typeset -r session_name="$node1/$node2"
 exec_cmd -ci tmux kill-session -t \"$session_name\"
 
 info "$session_name"
-tmux new -s "$session_name"	"ssh root@${node1} \~/plescripts/disk/iostat_on_bdd_disks.sh"	\; \
-			split-window -h "ssh root@${node2} \~/plescripts/disk/iostat_on_bdd_disks.sh"
+tmux new -s "$session_name"	"ssh root@${node1} '. .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh'"	\; \
+			split-window -h "ssh root@${node2} '. .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh'"
