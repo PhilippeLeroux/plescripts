@@ -10,13 +10,19 @@ sur leur utilisation :
 
 Permet de gérer les disques d'un serveur de base de données.
 
-1. Ajouter des disques dans oracleasm.
+1. Ajouter des disques :
 
-	* `./create_oracleasm_disks_on_new_disks.sh`
+	* oracleasm : `create_oracleasm_disks_on_new_disks.sh`
+
+	* AFD avant l'installation : `root_init_afd_disks.sh`
+
+	* AFD une fois le Grid installé : `create_afd_disks_on_new_disks.sh`
 
 2.	Scripts pouvant être utiles.
 
-	* Vérifier l'état des disques utilisés par oracleasm `check_oracle_disks.sh`
+	* Vérifier l'état des disques
+		* utilisés par oracleasm : `check_oracleasm_disks.sh`
+		* utilisés par AFD : `check_disks_type.sh -afdonly`
 
 	* Visualiser les disques iscsi : `show_iscsi_session.sh`
 

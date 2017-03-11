@@ -27,7 +27,7 @@ typeset -r str_usage=\
 
 typeset storage=ASM
 typeset action_list
-typeset -r all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_disks revert_to_master"
+typeset -r all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_oracle_disks revert_to_master"
 
 typeset not_flag=no
 #	Utiliser lors de l'évaluation de paramètres.
@@ -101,9 +101,9 @@ do
 			if [ $not_flag == yes ]
 			then
 				not_flag=no
-				action_list=$(sed "s/ remove_disks//"<<<"$action_list")
+				action_list=$(sed "s/ remove_oracle_disks//"<<<"$action_list")
 			else
-				action_list="$action_list remove_disks"
+				action_list="$action_list remove_oracle_disks"
 			fi
 			shift
 			;;
@@ -212,7 +212,7 @@ EOS
 }
 
 #	GI uniquement : supprime tous les disques.
-function remove_disks
+function remove_oracleasm_disks
 {
 	line_separator
 	info "Remove disks :"
@@ -298,7 +298,7 @@ then
 	deinstall_oracle
 fi
 
-if [ $storage != FS ]
+if [ $storage == ASM ]
 then
 	if grep -q remove_grid_binary <<< "$action_list"
 	then
@@ -306,9 +306,19 @@ then
 	fi
 fi
 
-if grep -q remove_disks <<< "$action_list"
+if grep -q remove_oracle_disks <<< "$action_list"
 then
-	[ $storage == ASM ] && remove_disks || remove_vg
+	if [ $storage == ASM ]
+	then
+		if test_if_cmd_exists oracleasm
+		then
+			remove_oracleasm_disks
+		else
+			warning "AFD disks not removed : TODO"
+		fi
+	else
+		remove_vg
+	fi
 fi
 
 exec_cmd -f -c "umount /mnt/oracle_install"

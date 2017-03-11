@@ -636,15 +636,6 @@ then # Doit être exécute après la mise à jour de oratab pour les RACs.
 						-db=$db							\
 						-pdb=$pdb
 	LN
-
-	info "Clone pdb_samples from $pdb"
-	exec_cmd ~/plescripts/db/create_pdb.sh	\
-						-db=$db				\
-						-pdb=pdb_samples	\
-						-from_pdb=$pdb		\
-						-is_seed			\
-						-nolog
-	LN
 fi
 
 if [ $crs_used == no ]

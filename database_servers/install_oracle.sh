@@ -4,24 +4,42 @@
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME
-	-db=name         Identifiant.
-	-action=install  Si config l'installation n'est pas lancée.
-
-Debug flag
-	-skip_install_oracle
-"
 
 typeset db=undef
 typeset action=install
 
+if [ "$oracle_release" == "12.2.0.1" ]
+then
+	typeset edition=SE2
+else
+	typeset edition=EE
+fi
+
 typeset install_oracle=yes
+
+add_usage "-db=name"			"Database identifier"
+add_usage "-edition=$edition"	"EE or SE2 only with 12.2"
+typeset -r u1=$(print_usage)
+reset_usage
+
+add_usage "-action=$action"			"install|config : config no installation"
+add_usage "-skip_install_oracle"	"Do not execute runInstaller"
+
+typeset -r str_usage=\
+"Usage : $ME
+$u1
+
+Debug flags :
+$(print_usage)
+"
+
+reset_usage
 
 while [ $# -ne 0 ]
 do
@@ -33,6 +51,11 @@ do
 
 		-db=*)
 			db=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-edition=*)
+			edition=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -65,8 +88,14 @@ ple_enable_log
 
 script_banner $ME $*
 
-exit_if_param_undef		db						"$str_usage"
-exit_if_param_invalid	action "install config" "$str_usage"
+exit_if_param_undef		db							"$str_usage"
+exit_if_param_invalid	action	"install config"	"$str_usage"
+if [ "$oracle_release" == "12.2.0.1" ]
+then
+	exit_if_param_invalid	edition "EE SE2"	"$str_usage"
+else
+	exit_if_param_invalid	edition "EE"		"$str_usage"
+fi
 
 cfg_exists $db
 #	Répertoire contenant le fichiers de configuration de la db
@@ -197,7 +226,7 @@ function create_response_file_12cR2
 	update_value ORACLE_HOME							$O_HOME				$rsp_file
 	update_value ORACLE_BASE							$O_BASE				$rsp_file
 	update_value oracle.install.db.CLUSTER_NODES		empty				$rsp_file
-	update_value oracle.install.db.InstallEdition		EE					$rsp_file
+	update_value oracle.install.db.InstallEdition		$edition			$rsp_file
 	update_value oracle.install.db.OSDBA_GROUP			dba					$rsp_file
 	update_value oracle.install.db.OSOPER_GROUP			oper				$rsp_file
 	update_value oracle.install.db.OSBACKUPDBA_GROUP	dba					$rsp_file
@@ -244,9 +273,17 @@ function start_oracle_installation
 	add_dynamic_cmd_param "      -waitforcompletion"
 	add_dynamic_cmd_param "      -responseFile /home/oracle/oracle_$db.rsp\""
 	exec_dynamic_cmd -c "ssh oracle@${node_names[0]}"
-	ret=$?
+	if [ $? -gt 250 ]
+	then
+		LN
+		if [[ $edition == EE && "$oracle_release" == "12.2.0.1" ]]
+		then
+			info "Try with parameter : -edition=SE2"
+			LN
+		fi
+		exit 1
+	fi
 	LN
-	[ $ret -gt 250 ] && exit 1
 }
 
 function exec_post_install_root_scripts_on_node	# $1 node name

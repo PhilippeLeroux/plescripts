@@ -21,8 +21,8 @@ Type de serveurs de base de données pouvant être créé :
 
 Versions logiciels :
 - Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
-- Oracle 12cR1 base SINGLE & RAC.
-- Oracle 12cR2 base SINGLE, RAC uniquement avec 4 cpu par VM et 8Gb de RAM.
+- Oracle 12cR1 base SINGLE et RAC.
+- Oracle 12cR2 base SINGLE EE et RAC SE2.
 
 La création des serveurs de base de données est 100% automatisée, il n'y a pas
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.

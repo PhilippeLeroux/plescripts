@@ -69,7 +69,7 @@ do
 done<<<"$(get_unused_disks_without_partitions)"
 
 info "Oracle disks :"
-exec_cmd ~/plescripts/disk/check_disks_type.sh -orclonly
+exec_cmd ~/plescripts/disk/check_disks_type.sh -afdonly
 LN
 
 info "Disks candidats :"

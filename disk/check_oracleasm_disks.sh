@@ -1,5 +1,4 @@
 #/bin/bash
-
 # vim: ts=4:sw=4
 
 #	Vérifie l'état des disques oracleasm
@@ -8,7 +7,17 @@
 . ~/plescripts/disklib.sh
 EXEC_CMD_ACTION=EXEC
 
-[ $USER != root ] && [ $USER != grid ] && error "Only root or grid can execute this script" && exit 1
+if [[ $USER != root && $USER != grid ]]
+then
+	error "Only root or grid can execute this script"
+	exit 1
+fi
+
+if ! test_if_cmd_exists oracleasm
+then
+	error "oracleasm not installed."
+	exit 1
+fi
 
 typeset -i count_disks_checked=0
 
