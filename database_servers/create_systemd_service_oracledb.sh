@@ -70,10 +70,3 @@ LN
 info "Enable service"
 exec_cmd "systemctl enable oracledb.service"
 LN
-
-info "Start service"
-exec_cmd -c "systemctl start oracledb.service"
-
-info "Status"
-exec_cmd "systemctl status oracledb.service -l"
-LN

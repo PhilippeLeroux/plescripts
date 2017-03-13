@@ -1,3 +1,4 @@
+-- vim: ts=4:sw=4
 set feed off
 set heading off
 set trim on

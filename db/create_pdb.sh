@@ -16,7 +16,6 @@ typeset	-r	orcldbversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
 typeset db=undef
 typeset pdb=undef
 typeset from_pdb=default
-typeset	from_samples=no
 if [ $orcldbversion == 12.1 ]
 then
 	typeset		wallet=yes
@@ -35,7 +34,6 @@ $ME
 	-db=name
 	-pdb=name
 	[-is_seed]       Seed pdb
-	[-from_samples]	 Clone pdb from pdb_samples
 	[-from_pdb=name] Clone pdb from name
 	[-wallet=$wallet] yes|no yes : Use Wallet Manager for pdb connection.
 	[-admin_user=$admin_user]
@@ -50,9 +48,6 @@ $ME -db=$db -pdb=pdb666
 
 Ex create a PDB from pdb$seed
 $ME -db=$db -pdb=pdb666
-
-Ex create a PDB from pdb_samples
-$ME -db=$db -pdb=pdb666 -from_samples
 "
 
 while [ $# -ne 0 ]
@@ -75,11 +70,6 @@ do
 
 		-from_pdb=*)
 			from_pdb=$(to_lower ${1##*=})
-			shift
-			;;
-
-		-from_samples)
-			from_samples=yes
 			shift
 			;;
 
@@ -141,7 +131,7 @@ else
 	typeset -r crs_used=no
 fi
 
-[ $crs_used == yes ] && exit_if_database_not_exists $db || true
+exit_if_database_not_exists $db
 
 exit_if_ORACLE_SID_not_defined
 
@@ -259,24 +249,7 @@ function create_wallet
 	fi
 }
 
-if [[ $is_seed == yes ]]
-then
-	if [ $from_samples == yes ]
-	then
-		error "-from_samples incompatible with -is_seed"
-		LN
-		exit 1
-	fi
-
-	wallet=no
-fi
-
-if [[ $from_samples == yes && $from_pdb != default ]]
-then
-	error "Used -from_samples or -from_pdb"
-	LN
-	exit 1
-fi
+[ $is_seed == yes ] && wallet=no || true
 
 typeset	-r dataguard=$(dataguard_config_available)
 
@@ -317,8 +290,6 @@ fi
 LN
 
 line_separator
-[ $from_samples == yes ] && from_pdb=pdb_samples || true
-
 [ $from_pdb == default ] && clone_pdb_pdbseed || clone_from_pdb $from_pdb
 LN
 

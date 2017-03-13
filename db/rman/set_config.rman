@@ -1,4 +1,4 @@
-configure snapshot controlfile name to '+DATA/snapshot_ctrl_file.f';
+configure snapshot controlfile name to "&1";
 configure rman output to keep for 2 days;
 configure retention policy to redundancy 1;
 configure backup optimization on;

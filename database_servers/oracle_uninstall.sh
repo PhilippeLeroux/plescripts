@@ -49,13 +49,16 @@ EOS
 fi
 LN
 
-# En 12.2 l'ORACLE_HOME des autres nœuds n'est pas purgé.
-while read node
-do
-	[[ x"$node" == x || "$node" == $(hostname -s) ]] && continue || true
+if test_if_cmd_exists olsnodes
+then
+	# En 12.2 l'ORACLE_HOME des autres nœuds ne sont pas supprimés.
+	while read node
+	do
+		[[ x"$node" == x || "$node" == $(hostname -s) ]] && continue || true
 
-	exec_cmd "ssh $node '. .bash_profile && [ -d \$ORACLE_HOME ] && rm -rf \$ORACLE_HOME/* || true'<</dev/null"
-	LN
-done<<<"$(olsnodes)"
+		exec_cmd "ssh $node '. .bash_profile && [ -d \$ORACLE_HOME ] && rm -rf \$ORACLE_HOME/* || true'<</dev/null"
+		LN
+	done<<<"$(olsnodes)"
+fi
 
 exit 0

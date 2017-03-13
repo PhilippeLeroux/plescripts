@@ -94,7 +94,7 @@ do
 			;;
 
 		-storage=*)
-			storage=${1##*=}
+			storage=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -229,7 +229,7 @@ function adjust_DG_size
 
 #	Les n° de disques n'ont plus de sens, ils sont conservés car ils permettent
 #	de déterminer le nombre de disques nécessaire.
-function normalyse_asm_disks
+function normalyse_disks
 {
 	typeset -i i_lun=1
 
@@ -259,21 +259,25 @@ function normalyse_asm_disks
 		LN
 	fi
 
-	typeset		buffer="DATA:${size_lun_gb}:$i_lun:"
+	if [ $storage == FS ]
+	then
+		typeset	buffer="FSDATA:${size_lun_gb}:$i_lun:"
+	else
+		typeset	buffer="DATA:${size_lun_gb}:$i_lun:"
+	fi
 	typeset	-i	last_lun=i_lun+max_luns-1
 	i_lun=last_lun+1
 	echo "$buffer$last_lun" >> $cfg_path/disks
 
-	buffer="FRA:${size_lun_gb}:$i_lun:"
+	if [ $storage == FS ]
+	then
+		buffer="FSFRA:${size_lun_gb}:$i_lun:"
+	else
+		buffer="FRA:${size_lun_gb}:$i_lun:"
+	fi
 	last_lun=i_lun+max_luns-1
 	i_lun=last_lun+1
 	echo "$buffer$last_lun" >> $cfg_path/disks
-}
-
-function normalyse_fs_disks
-{
-	echo "FSDATA:$size_dg_gb:1:1" > $cfg_path/disks
-	echo "FSFRA:$size_dg_gb:1:1" >> $cfg_path/disks
 }
 
 # Init variable ip_node
@@ -349,7 +353,7 @@ done
 
 [ $db_type == rac ] && normalyze_scan || true
 
-[ $storage == ASM ] && normalyse_asm_disks || normalyse_fs_disks
+normalyse_disks
 
 info "Oracle version $oracle_release"
 LN

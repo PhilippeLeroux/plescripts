@@ -13,18 +13,12 @@ typeset -r ME=$0
 
 typeset db=undef
 typeset action=install
-
-if [ "$oracle_release" == "12.2.0.1" ]
-then
-	typeset edition=SE2
-else
-	typeset edition=EE
-fi
+typeset edition=auto
 
 typeset install_oracle=yes
 
 add_usage "-db=name"			"Database identifier"
-add_usage "-edition=$edition"	"EE or SE2 only with 12.2"
+add_usage "-edition=$edition"	"if auto SE2 for RAC 12.2 else EE."
 typeset -r u1=$(print_usage)
 reset_usage
 
@@ -90,14 +84,9 @@ script_banner $ME $*
 
 exit_if_param_undef		db							"$str_usage"
 exit_if_param_invalid	action	"install config"	"$str_usage"
-if [ "$oracle_release" == "12.2.0.1" ]
-then
-	exit_if_param_invalid	edition "EE SE2"	"$str_usage"
-else
-	exit_if_param_invalid	edition "EE"		"$str_usage"
-fi
 
 cfg_exists $db
+
 #	Répertoire contenant le fichiers de configuration de la db
 typeset -r db_cfg_path=$cfg_path_prefix/$db
 
@@ -114,6 +103,21 @@ typeset -a	node_priv_ips
 typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
 typeset		primary_db_server=none
+
+if [ "$edition" == auto ]
+then
+	if [[ "$oracle_release" == "12.2.0.1" && $max_nodes -gt 1 ]]
+	then
+		edition=SE2
+	else
+		edition=EE
+	fi
+elif [ "$oracle_release" == "12.2.0.1" ]
+then
+	exit_if_param_invalid	edition "EE SE2"	"$str_usage"
+else
+	exit_if_param_invalid	edition "EE"		"$str_usage"
+fi
 
 function empty_swap
 {
@@ -265,7 +269,17 @@ function mount_install_directory
 function start_oracle_installation
 {
 	line_separator
-	info "Start Oracle installation (~10mn)"
+	case $edition in
+		EE)
+			info "Install Oracle Enterprise Edition (~10mn)"
+			;;
+		SE2)
+			info "Install Oracle Standard Edition 2 (~10mn)"
+			;;
+		*)
+			warning "Install Oracle $edition"
+			;;
+	esac
 	info "Logs : $ORA_INVENTORY/logs"
 	add_dynamic_cmd_param "\"LANG=C /mnt/oracle_install/database/runInstaller"
 	add_dynamic_cmd_param "      -silent"

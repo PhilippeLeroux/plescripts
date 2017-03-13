@@ -41,15 +41,25 @@ must_be_user root
 
 typeset -r lower_db=$(to_lower $db)
 
-info "Check DBFS ressource"
-while read res_name
-do
-	[ x"$res_name" == x ] && continue || true
+if test_if_cmd_exists crsctl
+then
+	typeset crs_used=yes
+else
+	typeset crs_used=no
+fi
 
-	exec_cmd -c "crsctl delete res $res_name -f"
+if [ $crs_used == yes ]
+then
+	info "Check DBFS ressource"
+	while read res_name
+	do
+		[ x"$res_name" == x ] && continue || true
+
+		exec_cmd -c "crsctl delete res $res_name -f"
+		LN
+	done<<<"$(crsctl stat res -t | grep -E ".*\.dbfs$")"
 	LN
-done<<<"$(crsctl stat res -t | grep -E ".*\.dbfs$")"
-LN
+fi
 
 line_separator
 info "Drop wallet."
@@ -57,11 +67,14 @@ exec_cmd "su - oracle -c '~/plescripts/db/wallet/delete_all_credentials.sh'"
 exec_cmd "su - oracle -c '~/plescripts/db/wallet/drop_wallet.sh'"
 LN
 
-line_separator
-#	Supprime la base du GI :
-exec_cmd -c "srvctl stop database -db $db -stopoption ABORT -force"
-exec_cmd -c "srvctl remove database -db $lower_db<<<y"
-LN
+if [ $crs_used == yes ]
+then
+	line_separator
+	#	Supprime la base du GI :
+	exec_cmd -c "srvctl stop database -db $db -stopoption ABORT -force"
+	exec_cmd -c "srvctl remove database -db $lower_db<<<y"
+	LN
+fi
 
 line_separator
 #	Si la base n'était pas dans le GI alors la base est toujours démarrée.
@@ -80,7 +93,7 @@ chmod u+x /tmp/stop_orcl.sh
 exec_cmd -c "su - oracle -c /tmp/stop_orcl.sh"
 LN
 
-pid_list="$(ps -ef|grep -iE "ora_.*[${db:0:1}]${db:1}"|\
+pid_list="$(ps -ef|grep -iE "[o]ra_pmon_${ds}"|\
 					tr -s [:space:] | cut -d\  -f2 | xargs)"
 if [ x"$pid_list" != x ]
 then
@@ -99,7 +112,7 @@ oracle_rm_3="su - oracle -c \"rm -rf \\\$ORACLE_HOME/dbs/*${db}*\""
 oracle_rm_4="su - oracle -c \"rm -rf \\\$ORACLE_BASE/admin/$db\""
 oracle_rm_5="su - oracle -c \"rm -rf \\\$TNS_ADMIN/tnsnames.ora\""
 
-clean_oratab_cmd1="sed  \"/$db[_|0-9].*/d\" /etc/oratab > /tmp/oratab"
+clean_oratab_cmd1="sed  \"/$db[_|0-9]\{0,1\}.*/d\" /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
 
 execute_on_all_nodes "$oracle_rm_1"
@@ -125,11 +138,20 @@ line_separator
 execute_on_all_nodes "su - oracle -c '~/plescripts/db/wallet/drop_wallet.sh'"
 LN
 
-line_separator
-info "Remove database files from ASM"
-exec_cmd -c "su - grid -c \"asmcmd rm -rf DATA/$db\""
-exec_cmd -c "su - grid -c \"asmcmd rm -rf FRA/$db\""
-LN
+if [ $crs_used == yes ]
+then
+	line_separator
+	info "Remove database files from ASM"
+	exec_cmd -c "su - grid -c \"asmcmd rm -rf DATA/$db\""
+	exec_cmd -c "su - grid -c \"asmcmd rm -rf FRA/$db\""
+	LN
+else
+	line_separator
+	info "Clean up directories"
+	exec_cmd rm -rf $ORCL_FS_DATA/$db
+	exec_cmd rm -rf $ORCL_FS_FRA/$db
+	LN
+fi
 
 line_separator
 info "${GREEN}done.${NORM}"

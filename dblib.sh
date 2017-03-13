@@ -36,8 +36,15 @@ function load_oraenv_for
 #*> exit 1 if $1 not exists.
 function exit_if_database_not_exists
 {
-	srvctl status database -db $1 >/dev/null 2>&1
-	if [ $? -ne 0 ]
+	if test_if_cmd_exists crsctl
+	then
+		srvctl status database -db $1 >/dev/null 2>&1
+		typeset ret=$?
+	else
+		ps -ef|grep -q [p]mon_$(to_upper $1)
+		typeset ret=$?
+	fi
+	if [ $ret -ne 0 ]
 	then
 		error "Database $1 not exists."
 		LN
@@ -191,6 +198,20 @@ function sqlplus_exec_query
 	typeset -r	seq_query="$1"
 	printf "whenever sqlerror exit 1\nset term off echo off feed off heading off\n$seq_query" | \
 		sqlplus -s sys/$oracle_password as sysdba
+}
+
+function orcl_parameter_value
+{
+typeset opv_query=\
+"	select
+		p.display_value
+	from
+		v\$parameter p
+	where
+		p.name = '$1'
+	;
+"
+	sqlplus_exec_query "$opv_query"
 }
 
 #*>	Objectif de la fonction :

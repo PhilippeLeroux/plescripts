@@ -1083,7 +1083,7 @@ function exit_if_param_invalid
 	grep -E "\<${var_value}\>" <<< "$val_list" >/dev/null 2>&1
 	if [ $? -ne 0 ]
 	then
-		error "-$var_name=$var_value invalid."
+		error "-$var_name=$var_value invalid, values : $val_list"
 		[ $# -ne 0 ] && LN && info "$@"
 		LN
 		exit 1

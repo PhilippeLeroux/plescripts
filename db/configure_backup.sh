@@ -51,16 +51,19 @@ LN
 # Si le block change tracking est déjà activé le script n'est pas
 # interrompu.
 exec_cmd -c "rman target sys/$oracle_password	\
-									@rman/enable_block_change_tracking.sql"
+				@rman/enable_block_change_tracking.sql"
 LN
 
+typeset -r DATA="$(orcl_parameter_value "db_create_file_dest")"
+typeset -r snap=$DATA/snapshot_ctrl_file.f
 exec_cmd "rman target sys/$oracle_password	\
-									@rman/set_config.rman"
+				@rman/set_config.rman using \"'$snap'\""
+#$DATA/snapshot_ctrl_file.f"
 
 if [ $with_standby == yes ]
 then
 	exec_cmd "rman target sys/$oracle_password \
-									@rman/ajust_config_for_dataguard.rman"
+				@rman/ajust_config_for_dataguard.rman"
 	LN
 fi
 

@@ -71,24 +71,35 @@ function error_msg_on_script_failed
 	LN
 }
 
-info "Check DBFS"
-typeset dbfs=no
-while read res_name
-do
-	[ x"$res_name" == x ] && continue || true
-
-	[ $dbfs == no ] && dbfs=yes || true
-
-	pdbName=$(cut -d. -f2<<<$res_name)
-	info "Drop dbfs for pdb $pdbName"
-	exec_cmd -c  "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdbName	\
-													-skip_drop_user</dev/tty"
-	LN
-done<<<"$(crsctl stat res -t | grep -E ".*\.dbfs$")"
-if [ $dbfs == no ]
+if test_if_cmd_exists crsctl
 then
-	info "no dbfs to remove."
-	LN
+	typeset -r crs_used=yes
+else
+	typeset -r crs_used=no
+fi
+
+if [ $crs_used == yes ]
+then
+	info "Check DBFS"
+	typeset dbfs=no
+	while read res_name
+	do
+		[ x"$res_name" == x ] && continue || true
+
+		[ $dbfs == no ] && dbfs=yes || true
+
+		pdbName=$(cut -d. -f2<<<$res_name)
+		info "Drop dbfs for pdb $pdbName"
+		exec_cmd -c  "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdbName	\
+														-skip_drop_user</dev/tty"
+		LN
+	done<<<"$(crsctl stat res -t | grep -E ".*\.dbfs$")"
+
+	if [ $dbfs == no ]
+	then
+		info "no dbfs to remove."
+		LN
+	fi
 fi
 
 line_separator
@@ -97,17 +108,18 @@ exec_cmd ~/plescripts/db/wallet/delete_all_credentials.sh
 exec_cmd ~/plescripts/db/wallet/drop_wallet.sh
 LN
 
-line_separator
-info "Delete services :"
-exec_cmd "~/plescripts/db/drop_all_services.sh -db=$db"
-LN
+if [ $crs_used == yes ]
+then
+	line_separator
+	info "Delete services :"
+	exec_cmd "~/plescripts/db/drop_all_services.sh -db=$db"
+	LN
+fi
 
 trap '[ "$?" -ne 0 ] && error_msg_on_script_failed' EXIT
 
 line_separator
-info "Delete database :"
-LN
-
+info "Drop database :"
 add_dynamic_cmd_param "-deleteDatabase"
 add_dynamic_cmd_param "    -sourcedb       $db"
 add_dynamic_cmd_param "    -sysDBAUserName sys"
@@ -164,12 +176,18 @@ then	#	Sur les RACs les nom des instances ont été ajoutés.
 	LN
 fi
 
-if $(test_if_cmd_exists olsnodes)
+if [ $crs_used == yes ]
 then
 	line_separator
 	info "Clean up ASM :"
 	exec_cmd -c "sudo -u grid -i asmcmd rm -rf DATA/$db"
 	exec_cmd -c "sudo -u grid -i asmcmd rm -rf FRA/$db"
+	LN
+else
+	line_separator
+	info "Clean up directories"
+	exec_cmd rm -rf $ORCL_FS_DATA/$db
+	exec_cmd rm -rf $ORCL_FS_FRA/$db
 	LN
 fi
 

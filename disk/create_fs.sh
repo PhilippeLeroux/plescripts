@@ -7,10 +7,12 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+
 typeset -r str_usage=\
 "Usage : $ME
 	-mount_point=name
-	[-device=check]     or full device name : /dev/sdb
+	[-device=check]     or full device name : /dev/sdb,/dev/sdc ...
+	[-disks=1]          number of disks, only if -device=check
 	-suffix_vglv=name   => vg\$suffix, lv\$suffix
 	-type_fs=name
 	[-netdev]           add _netdev to mount point options
@@ -18,11 +20,12 @@ typeset -r str_usage=\
 
 script_banner $ME $*
 
-typeset mount_point=undef
-typeset	device=check
-typeset	suffix_vglv=undef
-typeset	type_fs=undef
-typeset	netdev=no
+typeset		mount_point=undef
+typeset	-a	device_list=( "check" )
+typeset		disks=1
+typeset		suffix_vglv=undef
+typeset		type_fs=undef
+typeset		netdev=no
 
 while [ $# -ne 0 ]
 do
@@ -39,7 +42,17 @@ do
 			;;
 
 		-device=*)
-			device=${1##*=}
+			disks=0
+			while IFS=',' read dev
+			do
+				device_list+=( $dev )
+				((++disks))
+			done<<<"${1##*=}"
+			shift
+			;;
+
+		-disks=*)
+			disks=${1##*=}
 			shift
 			;;
 
@@ -74,32 +87,64 @@ do
 done
 
 exit_if_param_undef mount_point	"$str_usage"
-exit_if_param_undef device		"$str_usage"
 exit_if_param_undef suffix_vglv	"$str_usage"
 exit_if_param_undef type_fs		"$str_usage"
 
 typeset	-r	vg_name=vg${suffix_vglv}
 typeset	-r	lv_name=lv${suffix_vglv}
 
-if [ "$device" == check ]
+if [ "${device_list[0]}" == check ]
 then
-	info "Search unused disk :"
-	device=$(get_unused_disks_without_partitions | head -1)
-	if [ x"$device" == x ]
+	info "Search $disks disks unused :"
+
+	device_list=()
+
+	typeset -i idisk=0
+	while read device
+	do
+		[ x"$device" == x ] && break || true
+
+		device_list+=( $device )
+		((++idisk))
+		[ $idisk -eq $disks ] && break || true
+	done<<<"$(get_unused_disks_without_partitions)"
+
+	info "Device found $idisk : ${device_list[*]}"
+	LN
+	if [ $idisk -ne $disks ]
 	then
-		error "No device found."
+		error "Not enougth disks."
+		LN
 		exit 1
 	fi
 fi
 
-typeset	-r	part_name=${device}1
-
-info "Create fs $type_fs on device $device : mount point $mount_point"
+info "Create fs $type_fs on devices ${device_list[*]} : mount point $mount_point"
 LN
 
-add_partition_to $device
-exec_cmd pvcreate $part_name
-exec_cmd vgcreate $vg_name $part_name
+typeset -i idisk=0
+for device in ${device_list[*]}
+do
+	((++idisk))
+
+	add_partition_to $device
+	sleep 1
+
+	typeset	part_name=${device}1
+
+	exec_cmd pvcreate $part_name
+	sleep 1
+
+	if [ $idisk -eq 1 ]
+	then
+		exec_cmd vgcreate $vg_name $part_name
+	else
+		exec_cmd vgextend $vg_name $part_name
+	fi
+	LN
+done
+
+sleep 1
 exec_cmd lvcreate -y -l 100%FREE -n $lv_name $vg_name
 exec_cmd mkfs -t $type_fs /dev/$vg_name/$lv_name
 exec_cmd mkdir -p $mount_point

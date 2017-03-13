@@ -302,8 +302,12 @@ function export_SAN_LUNs
 
 function create_database_fs_on_new_disks
 {
+	typeset -r cfg_disks=$cfg_path_prefix/$db/disks
+
+	IFS=':' read name size_disk first last<<<"$(grep FSDATA $cfg_disks)"
 	info "Create FS for DATA"
 	ssh_server "plescripts/disk/create_fs.sh					\
+							-disks=$(( last - first + 1 ))		\
 							-mount_point=/$ORCL_DATA_FS_DISK	\
 							-suffix_vglv=oradata				\
 							-type_fs=$rdbms_fs_type				\
@@ -312,8 +316,10 @@ function create_database_fs_on_new_disks
 	ssh_server "chmod 775 /$ORCL_DATA_FS_DISK"
 	LN
 
+	IFS=':' read name size_disk first last<<<"$(grep FSFRA $cfg_disks)"
 	info "Create FS for FRA"
 	ssh_server "plescripts/disk/create_fs.sh					\
+							-disks=$(( last - first + 1 ))		\
 							-mount_point=/$ORCL_FRA_FS_DISK		\
 							-suffix_vglv=orafra					\
 							-type_fs=$rdbms_fs_type				\

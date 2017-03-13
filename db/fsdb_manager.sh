@@ -82,7 +82,7 @@ case $action in
 
 	start)
 		exec_cmd -c lsnrctl $action
-		[ $? -ne 0 ] && count_error=count_error+1
+		[ $? -ne 0 ] && count_error=count_error+1 || true
 		LN
 		;;
 esac
@@ -100,7 +100,7 @@ do
 done<<<"$(cat /etc/oratab | grep -E "^[A-Z].*")"
 LN
 
-[ $action == start ] && exec_cmd lsnrctl status
+[ $action == start ] && exec_cmd lsnrctl status || true
 
 
 info "$count_error $action failed."

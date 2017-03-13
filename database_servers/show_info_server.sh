@@ -109,22 +109,34 @@ function print_disks
 	typeset -i no_disks
 	while IFS=':' read dg_name disk_size no_first_disk no_last_disk
 	do
-		info "DG $dg_name :"
-		typeset	-i	size=0
-		typeset	-i	label_len=0
-		typeset		disk_name
-		typeset		label
-		typeset		idisk
-		for idisk in $( seq $no_first_disk $no_last_disk )
-		do
-			disk_name=$(printf "S1DISK%s%02d" $upper_db $idisk)
-			label=$(printf "	%s  %dGb\n" $disk_name $disk_size)
-			info "$label"
-			label_len=${#label}
-			size=size+disk_size
-		done
 		typeset	-i total_disks=$(( no_last_disk - no_first_disk + 1 ))
-		info "$(printf "%${label_len}s %02dGb" "$total_disks disks" $size)"
+
+		if [[ $max_nodes -eq 1 && $cfg_db_type == fs ]]
+		then # Base single sur FS.
+			if [ ${dg_name:2} == "DATA" ]
+			then
+				info -n "DATA : $ORCL_FS_DATA"
+			else
+				info -n "FRA  : $ORCL_FS_FRA"
+			fi
+			info -f " size $(( total_disks * disk_size ))Gb ($total_disks disks)."
+		else
+			info "DG $dg_name :"
+			typeset	-i	size=0
+			typeset	-i	label_len=0
+			typeset		disk_name
+			typeset		label
+			typeset		idisk
+			for idisk in $( seq $no_first_disk $no_last_disk )
+			do
+				disk_name=$(printf "S1DISK%s%02d" $upper_db $idisk)
+				label=$(printf "	%s  %dGb\n" $disk_name $disk_size)
+				info "$label"
+				label_len=${#label}
+				size=size+disk_size
+			done
+			info "$(printf "%${label_len}s %02dGb" "$total_disks disks" $size)"
+		fi
 		LN
 	done < $file
 }

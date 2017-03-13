@@ -79,12 +79,6 @@ function disk_is_candidat
 	exec_cmd -f -c su - grid -c "kfod | grep -q \"$1\>\""
 }
 
-if [ $gi_count_nodes -gt 1 ]
-then
-	error "RAC : TODO"
-	exit 1
-fi
-
 line_separator
 for (( i=nr_disk; i < nr_disk + count; ++i ))
 do
@@ -98,10 +92,6 @@ do
 	exec_cmd asmcmd afd_unlabel $disk
 	LN
 done
-
-line_separator
-exec_cmd "~/plescripts/disk/remove_unused_partition.sh"
-LN
 
 if [ $disks_hosted_by == san ]
 then

@@ -33,17 +33,19 @@ do
 	esac
 done
 
-# Mémorise dans disk_list les disques utilisé par oracleasm.
+# Mémorise dans disk_list tous les disques de l'OS.
+function load_fs_disks
+{
+	disk_list="$(find /dev -name "sd*" | grep -E "sd.*[0-9]{1}")"
+}
+
+# Mémorise dans disk_list les disques utilisés par oracleasm.
+# Si aucun disques trouvé appel load_fs_disks
 function load_oracleasm_disks
 {
-	info "Lecture des disques utilisés par la base :"
 	while read oralabel
 	do
-		if [ x"$oralabel" == x ]
-		then
-			error "no disk name."
-			exit 1
-		fi
+		[ x"$oralabel" == x ] && break || true
 
 		info -n "Disque oracleasm : $oralabel <--> "
 		os_disk=$(oracleasm querydisk -p $oralabel | tail -1 | cut -d: -f1)
@@ -51,21 +53,19 @@ function load_oracleasm_disks
 		[ x"$disk_list" == x ] && disk_list=$os_disk || disk_list="$disk_list $os_disk"
 	done<<<"$(oracleasm listdisks)"
 	LN
+	
+	if [ x"$disk_list" == x ]
+	then
+		info "No oracleasm disks found."
+		load_fs_disks
+		LN
+	fi
 }
 
-# Mémorise dans disk_list les disques utilisé par AFD.
+# Mémorise dans disk_list les disques utilisés par AFD.
+# Si aucun disques trouvé appel load_fs_disks
 function load_afd_disks
 {
-	info "Lecture des disques utilisés par la base :"
-
-	if ! test_if_cmd_exists asmcmd
-	then
-		info "asmcmd not exists."
-		LN
-		disk_list="/dev/s*"
-		return 0
-	fi
-	
 	for (( iloop=0; iloop < 5; ++iloop ))
 	do
 		while read oralabel filtering os_disk
@@ -89,18 +89,22 @@ function load_afd_disks
 	if [ x"$disk_list" == x ]
 	then
 		info "No AFD disks found."
-		disk_list="/dev/s*"
+		load_fs_disks
 		LN
 	fi
 }
 
 typeset	disk_list
 
+info "Lecture des disques utilisés par la base :"
 if test_if_cmd_exists oracleasm
 then
 	load_oracleasm_disks
-else
+elif test_if_cmd_exists asmcmd
+then
 	load_afd_disks
+else
+	load_fs_disks
 fi
 
 exec_cmd iostat -k 2 $(echo $disk_list |tr " " "\n"|sort|tr "\n" " ")

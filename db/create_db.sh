@@ -54,12 +54,12 @@ typeset		enable_flashback=yes
 typeset		backup=yes
 typeset		confirm="-confirm"
 typeset	-i	redoSize=64	# Unit Mb
-typeset		sampleSchema=true
+typeset		sampleSchema=yes
 if [ $orcldbversion == 12.1 ]
 then
-	typeset		create_wallet=yes
+	typeset		wallet=yes
 else # Impossible de démarrer la base avec le wallet.
-	typeset		create_wallet=no
+	typeset		wallet=no
 fi
 
 #	DEBUG :
@@ -67,7 +67,7 @@ typeset		create_database=yes
 
 add_usage "-db=name"								"Database name."
 add_usage "[-lang=$lang]"							"Language."
-add_usage "[-sampleSchema=$sampleSchema]"			"true|false (pdb only)"
+add_usage "[-sampleSchema=$sampleSchema]"			"yes|no (pdb only)"
 add_usage "[-sysPassword=$sysPassword]"
 add_usage "[-totalMemory=$totalMemory]"				"Unit Mb"
 # 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
@@ -77,7 +77,7 @@ add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting (6)
 add_usage "[-pga_aggregate_limit=$pga_aggregate_limit" "0 to disable this setting (7)"
 add_usage "[-cdb=$cdb]"								"yes|no (1)"
 add_usage "[-pdb=name]"								"pdb name (2)"
-add_usage "[-wallet=$create_wallet]"				"yes|no. yes : Wallet Manager for pdb connection."
+add_usage "[-wallet=$wallet]"						"yes|no. yes : Wallet Manager for pdb connection."
 add_usage "[-redoSize=$redoSize]"					"Redo size Mb."
 add_usage "[-data=$data]"
 add_usage "[-fra=$fra]"
@@ -145,7 +145,7 @@ do
 			;;
 
 		-wallet=*)
-			create_wallet=$(to_lower ${1##*=})
+			wallet=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -337,7 +337,7 @@ function make_dbca_args
 		initParams="$initParams,filesystemio_options=setall"
 	fi
 
-	if [ $pga_aggregate_limit != "0" ]
+	if [[ "${db_type:0:3}" == RAC && $pga_aggregate_limit != "0" ]]
 	then
 		# set pga_aggregate_limit for test not prod.
 		initParams="$initParams,pga_aggregate_limit=$pga_aggregate_limit"
@@ -349,7 +349,7 @@ function make_dbca_args
 			;;
 	esac
 
-	if [ "$shared_pool_size" != "0" ]
+	if [[ "${db_type:0:3}" == RAC && "$shared_pool_size" != "0" ]]
 	then
 		initParams="$initParams,shared_pool_size=$shared_pool_size"
 	fi
@@ -365,12 +365,11 @@ function make_dbca_args
 #	Test si l'installation est de type RAC ou SINGLE.
 #	Se base sur olsnodes.
 #	Initialise les variables :
-#		- node_list pour un RAC contiendra tous les nœuds ou undef.
-#		- db_type à SINGLE ou RAC
-function check_rac_or_single
+#		- node_list : pour un RAC contiendra tous les nœuds ou undef.
+#		- db_type : SINGLE ou RAC si n'est pas définie.
+function load_node_list_and_update_dbtype
 {
-	test_if_cmd_exists olsnodes
-	if [ $? -eq 0 ]
+	if test_if_cmd_exists olsnodes
 	then
 		typeset -i count_nodes=0
 		while read node_name
@@ -381,36 +380,26 @@ function check_rac_or_single
 			else
 				node_list=${node_list}","$node_name
 			fi
-			count_nodes=count_nodes+1
+			((++count_nodes))
 		done<<<"$(olsnodes)"
 
-		[ $db_type == undef ] && [ $count_nodes -gt 1 ] && db_type=RAC
+		[[ $db_type == undef && $count_nodes -gt 1 ]] && db_type=RAC || true
 	fi
 
-	[ $db_type == undef ] && db_type=SINGLE
+	[ $db_type == undef ] && db_type=SINGLE || true
 
 	#	Note sur un single olsnodes existe mais ne retourne rien.
-	[ x"$node_list" == x ] && node_list=undef
+	[ x"$node_list" == x ] && node_list=undef || true
 }
 
-#	Si db_type == SINGLE test si utilisation d'ASM ou fs
-#	Si fs ajuste les variables data & fra.
-function check_if_ASM_used
+# print to stdout yes or no
+function test_if_crs_used
 {
-	if [ $db_type == SINGLE ]
+	if test_if_cmd_exists crsctl
 	then
-		test_if_cmd_exists olsnodes
-		if [ $? -eq 0 ]
-		then	# Si le GI est installé alors utilisation de ASM
-			crs_used=yes
-		else	# Pas de GI alors on est sur FS
-			crs_used=no
-			if [[ "$data" == DATA && "$fra" == FRA ]]
-			then
-				data=/$ORCL_DATA_FS_DISK/app/oracle/oradata/data
-				fra=/$ORCL_FRA_FS_DISK/app/oracle/oradata/fra
-			fi
-		fi
+		echo yes
+	else
+		echo no
 	fi
 }
 
@@ -420,6 +409,10 @@ function create_database
 {
 	make_dbca_args
 
+	info "Create database $db : "
+	info "   - Wallet Manager $wallet"
+	info "   - Create sample schemas $sampleSchema"
+	LN
 	exec_dynamic_cmd $confirm dbca
 	typeset -ri	dbca_return=$?
 	if [ $dbca_return -eq 0 ]
@@ -519,26 +512,13 @@ function copy_glogin
 	LN
 }
 
-function setup_fs_database
+function fsdb_enable_autostart
 {
 	line_separator
 	info "Enable auto start for database"
 	exec_cmd "sed \"s/^\(${db:0:8}.*\):N/\1:Y/\" /etc/oratab > /tmp/ot"
 	exec_cmd "cat /tmp/ot > /etc/oratab"
 	exec_cmd "rm /tmp/ot"
-	LN
-
-	if [ $pdb != undef ]
-	then
-		line_separator
-		warning "pdb $pdb not open on startup, DIY."
-		line_separator
-		LN
-	fi
-
-	copy_glogin
-
-	info "With root, execute : database_servers/create_systemd_service_oracledb.sh"
 	LN
 }
 
@@ -552,7 +532,7 @@ function adjust_parameters
 		numberOfPDBs=1
 		pdbAdminPassword=$sysPassword
 	else
-		sampleSchema=false
+		sampleSchema=no
 	fi
 
 	#	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
@@ -565,15 +545,13 @@ function next_instructions
 	if cfg_exists $db use_return_code >/dev/null 2>&1
 	then
 		cfg_load_node_info $db 1
-		if [ "$cfg_standby" != none ]
+		if [[ "$cfg_standby" != none	&& $(dataguard_config_available) == no
+										&& ! -d $cfg_path_prefix/$cfg_standby ]]
 		then
-			if [[ $(dataguard_config_available) == no && ! -d $cfg_path_prefix/$cfg_standby ]]
-			then
-				info "From virtual-host $client_hostname execute :"
-				info "$ cd ~/plescripts/database_servers"
-				info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db)"
-				LN
-			fi
+			info "From virtual-host $client_hostname execute :"
+			info "$ cd ~/plescripts/database_servers"
+			info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db) -rel=$orcldbversion"
+			LN
 		fi
 	fi
 }
@@ -587,15 +565,15 @@ script_banner $ME $*
 
 script_start
 
-exit_if_param_undef		db								"$str_usage"
-exit_if_param_invalid	cdb "yes no"					"$str_usage"
+exit_if_param_undef		db				"$str_usage"
+exit_if_param_invalid	cdb "yes no"	"$str_usage"
 if [ $db_type != undef ]
 then
 	exit_if_param_invalid	db_type "SINGLE RAC RACONENODE"	"$str_usage"
 fi
-exit_if_param_invalid	enable_flashback	"yes no"		"$str_usage"
-exit_if_param_invalid	sampleSchema		"true false"	"$str_usage"
-exit_if_param_invalid	create_wallet		"yes no"		"$str_usage"
+exit_if_param_invalid	enable_flashback	"yes no"	"$str_usage"
+exit_if_param_invalid	sampleSchema		"yes no"	"$str_usage"
+exit_if_param_invalid	wallet				"yes no"	"$str_usage"
 
 adjust_parameters
 
@@ -603,12 +581,24 @@ stats_tt start create_$lower_db
 
 typeset prefixInstance=${db:0:8}
 
-check_rac_or_single
+load_node_list_and_update_dbtype
 
-typeset	crs_used=yes
-check_if_ASM_used
+typeset -r crs_used=$(test_if_crs_used)
+
+if [[ $crs_used == no && "$data" == DATA && "$fra" == FRA ]]
+then
+	data=$ORCL_FS_DATA
+	fra=$ORCL_FS_FRA
+fi
 
 remove_glogin
+
+if [ $crs_used == no ]
+then
+	info "Start listener"
+	exec_cmd -c lsnrctl start
+	LN
+fi
 
 [ $create_database == yes ] && create_database || true
 
@@ -622,13 +612,29 @@ then
 	exit 1
 fi
 
-info "Load env for $ORACLE_SID"
-ORAENV_ASK=NO . oraenv
-LN
+load_oraenv_for $ORACLE_SID
 
-[[ $cdb == yes && $pdb != undef ]] && create_services_for_pdb || true
+[ $crs_used == no ] && fsdb_enable_autostart || true
 
-if [ $sampleSchema == true ]
+if [[ $cdb == yes && $pdb != undef ]]
+then
+	info "$pdb save state"
+	# Ce n'est pas util lorsque le CRS est utilisé.
+	sqlplus_cmd "$(set_sql_cmd "alter pluggable database $pdb save state;")"
+	LN
+
+	if [ $crs_used == no ]
+	then # Sans le Grid il n'y a pas d'alias créé.
+		exec_cmd ./add_tns_alias.sh	-service=$db				\
+									-host_name=$(hostname -s)	\
+									-tnsalias=$db
+		LN
+	fi
+
+	create_services_for_pdb
+fi
+
+if [ $sampleSchema == yes ]
 then # Doit être exécute après la mise à jour de oratab pour les RACs.
 	timing 2
 	info "Create sample schemas on $pdb"
@@ -638,17 +644,18 @@ then # Doit être exécute après la mise à jour de oratab pour les RACs.
 	LN
 fi
 
-if [ $crs_used == no ]
-then
-	setup_fs_database
-
-	exit 0	#	Pour les base sur FS le reste du script est incompatible.
-fi
-
 line_separator
 info "Adjust FRA size"
-sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
-LN
+if [ $crs_used == yes ]
+then
+	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
+	LN
+else
+	typeset -i disk_size=$(to_mb $(df -h /$ORCL_FRA_FS_DISK | tail -1 | awk '{ print $2 }'))
+	typeset -i fra_size=$(compute -i "$disk_size * 0.9")
+	sqlplus_cmd "$(set_sql_cmd "alter system set db_recovery_file_dest_size=${fra_size}M scope=both sid='*';")"
+	LN
+fi
 
 line_separator
 info "Enable archivelog :"
@@ -670,15 +677,23 @@ then
 	LN
 fi
 
-line_separator
-info "Database config :"
-exec_cmd "srvctl config database -db $lower_db"
-exec_cmd "srvctl status service -db $lower_db"
-LN
+if [ $crs_used == yes ]
+then
+	line_separator
+	info "Database config :"
+	exec_cmd "srvctl config database -db $lower_db"
+	exec_cmd "srvctl status service -db $lower_db"
+	LN
 
-line_separator
-exec_cmd "crsctl stat res ora.$lower_db.db -t"
-LN
+	line_separator
+	exec_cmd "crsctl stat res ora.$lower_db.db -t"
+	LN
+else
+	line_separator
+	info "Listener status"
+	exec_cmd -c lsnrctl status
+	LN
+fi
 
 copy_glogin
 
@@ -694,16 +709,12 @@ then
 	LN
 fi
 
-if [[ $create_wallet == yes && $cdb == yes && $pdb != undef ]]
+if [[ $wallet == yes && $cdb == yes && $pdb != undef ]]
 then
 	line_separator
 	exec_cmd ./add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb
 	LN
 fi
-
-line_separator
-exec_cmd "~/plescripts/memory/show_pages.sh"
-LN
 
 stats_tt stop create_$lower_db
 

@@ -167,9 +167,18 @@ function delete_all_db
 	info "delete all DBs :"
 	while IFS=':' read OSID REM
 	do
+		[ x$"OSID" == x ] && continue || true
+
 		exec_cmd ~/plescripts/db/remove_all_files_for_db.sh -db=$OSID
-	done<<<"$(cat /etc/oratab | grep -E "^[A-Z].*# line added by Agent")"
+	done<<<"$(cat /etc/oratab | grep -E "^[A-Z].*")"
 	LN
+	
+	if [  -f /etc/systemd/system/multi-user.target.wants/oracledb.service ]
+	then
+		exec_cmd "systemctl disable oracledb"
+		exec_cmd "rm -f /etc/systemd/system/multi-user.target.wants/oracledb.service"
+		LN
+	fi
 }
 
 #	Désinstalle Oracle.

@@ -266,13 +266,15 @@ function create_service_no_crs
 
 	}
 
+	info "Create service $service"
 	sqlplus_cmd "$(plsql_create_service)"
+	LN
 
 	if [ $action == add ]
 	then
 		if [ $start == yes ]
 		then
-			info "Start service"
+			info "Start service $service"
 			sqlplus_cmd "$(set_sql_cmd "exec dbms_service.start_service( '$service' );")"
 			LN
 		fi
@@ -313,34 +315,6 @@ function java_service_no_crs
 	create_service_no_crs $service
 }
 
-function create_trigger_open_pdbs
-{
-	sqlplus -s sys/$oracle_password as sysdba<<EO_SQL
-create or replace
-trigger open_pdbs after startup on database 
-begin 
-
-	--	Open all pdbs with a service.
-	for c in (	select distinct
-					substr( network_name, 0, instr( network_name, '_' ) - 1 ) pdb
-				from dba_services
-				where network_name like '%_oci' or network_name like '%_java' )
-	loop
-		execute immediate 'alter pluggable database '||c.pdb||' open';
-	end loop;
-
-	--	start all services.
-	for s in (	select name from dba_services
-				where network_name like '%_oci' or network_name like '%_java' )
-	loop
-		dbms_service.start_service( s.name );
-	end loop;
-	
-end open_pdbs;
-/
-EO_SQL
-}
-
 function create_database_trigger_no_crs
 {
 typeset query=\
@@ -349,13 +323,13 @@ typeset query=\
 from
 	dba_triggers
 where
-	trigger_name = 'OPEN_PDBS'
+	trigger_name = 'START_PDB_SERVICES'
 ;"
 	typeset trigger=$(sqlplus_exec_query "$query"|tail -1)
-	if [ "$trigger" != "OPEN_PDBS" ]
+	if [ "$trigger" != "START_PDB_SERVICES" ]
 	then
-		info "Create trigger open_pdbs"
-		create_trigger_open_pdbs
+		info "Create trigger start_pdb_services"
+		sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
 		LN
 	fi
 }
