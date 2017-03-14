@@ -54,7 +54,7 @@ typeset		enable_flashback=yes
 typeset		backup=yes
 typeset		confirm="-confirm"
 typeset	-i	redoSize=64	# Unit Mb
-typeset		sampleSchema=yes
+typeset		sampleSchema=no
 if [ $orcldbversion == 12.1 ]
 then
 	typeset		wallet=yes
@@ -107,9 +107,9 @@ $(print_usage)
 
 \t5 : Enable flag -policyManaged
 
-\t6 : 12.2.0.1 minimum 335M
+\t6 : RAC 12.2.0.1 minimum 335M
 
-\t7 : 12.2.0.1 minimum 2048M
+\t7 : RAC 12.2.0.1 minimum 2048M
 
 \tDebug flag :
 \t	-skip_db_create : skip create database

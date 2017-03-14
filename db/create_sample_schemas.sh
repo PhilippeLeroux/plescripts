@@ -92,6 +92,7 @@ if [ ! -d "$sample_dir" ]
 then
 	info -f "[$KO]"
 	LN
+	exit 1
 else
 	info -f "[$OK]"
 	LN

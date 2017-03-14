@@ -108,6 +108,8 @@ function remove_broker_cfg
 	line_separator
 	exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
 	LN
+	exec_cmd -c sudo -u grid -i "asmcmd rm -f FRA/$db/dr2db_*.dat"
+	LN
 }
 
 function remove_database_from_broker

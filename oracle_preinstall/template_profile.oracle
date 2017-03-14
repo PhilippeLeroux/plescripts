@@ -52,6 +52,12 @@ then
     then
         ORACLE_SID=$instance
         ORAENV_ASK=NO . oraenv >/dev/null 2>&1
+    else
+        # bug 12.2
+        echo "** ERROR **"
+        echo "** Database instance $instance exists"
+        echo "** But not found in /etc/oratab"
+        echo
     fi
 fi
 

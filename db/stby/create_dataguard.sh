@@ -134,6 +134,26 @@ typeset -r primary=$ORACLE_SID
 exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
 
+# $1 account
+# $@ command
+#
+# Fonction peut utiliser car ajoutée tardivement.
+function ssh_stby
+{
+	if [ "$1" == "-c" ]
+	then
+		typeset farg="-c"
+		shift
+	else
+		typeset farg
+	fi
+
+	typeset -r ssh_account="$1"
+	shift
+
+	exec_cmd $farg "ssh -t $ssh_account@${standby_host} '. .bash_profile; $@'"
+}
+
 #	Exécute la commande "$@" avec sqlplus sur la standby
 function sqlplus_cmd_on_stby
 {
@@ -371,6 +391,7 @@ run {
 	using compressed backupset
 	spfile
 		parameter_value_convert '$primary','$standby'
+		set db_name='$primary' #Obligatoire en 12.2, sinon le duplicate échoue.
 		set db_unique_name='$standby'
 		set db_create_file_dest='+DATA'
 		set db_recovery_file_dest='+FRA'
@@ -493,6 +514,21 @@ function sql_mount_db_and_start_recover
 	set_sql_cmd "recover managed standby database disconnect;"
 }
 
+function workaround_regression_12cR2
+{
+	line_separator
+	ssh_stby -c oracle "grep -q '^$standby' /etc/oratab"
+	if [ $? -ne 0 ]
+	then
+		warning "12.2 : /etc/oratab empty."
+		LN
+		ssh_stby oracle "echo \"$standby:\$ORACLE_HOME:N\" >> /etc/oratab"
+		LN
+	else
+		LN
+	fi
+}
+
 #	Après que la duplication ait été faite, finalise la configuration.
 #	Actions :
 #		- backup de l'alertlog de la standby (pour ne plus avoir 50K de messages d'erreurs)
@@ -523,6 +559,8 @@ function register_stby_to_GI
 	sqlplus_cmd_on_stby "$(sql_mount_db_and_start_recover)"
 	timing 10 "Wait recover"
 	LN
+
+	workaround_regression_12cR2
 }
 
 function create_dataguard_config
