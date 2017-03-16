@@ -85,6 +85,7 @@ function replace
 
 info "Replace :"
 info "   $str"
+info "by :"
 info "   $by"
 LN
 

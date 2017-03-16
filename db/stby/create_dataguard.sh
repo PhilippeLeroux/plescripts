@@ -137,7 +137,7 @@ exit_if_param_undef standby_host	"$str_usage"
 # $1 account
 # $@ command
 #
-# Fonction peut utiliser car ajoutée tardivement.
+# Fonction peut utilisée car ajoutée tardivement.
 function ssh_stby
 {
 	if [ "$1" == "-c" ]

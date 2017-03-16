@@ -54,33 +54,32 @@ done
 
 exit_if_param_undef	vm_name "$str_usage"
 
+exit_if_dir_not_exists $guest_addition_path "$str_usage"
+
 typeset -r vbox_version=$(VBoxManage --version | cut -d_ -f1)
-typeset -r guest_iso=$guest_addition_path/VBoxGuestAdditions_${vbox_version}.iso
+typeset	-r iso_name=VBoxGuestAdditions_${vbox_version}.iso
+typeset -r full_iso_name=$guest_addition_path/VBoxGuestAdditions_${vbox_version}.iso
 
-if [ ! -d $guest_addition_path ]
+if [ ! -f $full_iso_name ]
 then
-	error "Dir not exists : $guest_addition_path"
+	warning "ISO not found : $full_iso_name"
 	LN
-	info "$str_usage"
-	LN
-	exit 1
-fi
 
-if [ ! -f $guest_iso ]
-then
-	error "Not found : $guest_iso"
+	info "Download $iso_name"
+	fake_exec_cmd cd $guest_addition_path
+	cd $guest_addition_path
+	exec_cmd wget http://download.virtualbox.org/virtualbox/$vbox_version/$iso_name
+	fake_exec_cmd cd -
+	cd -
 	LN
-	info "Guest addition path : $guest_addition_path"
-	info "VBox version        : $vbox_version"
+	info "ISO lists :"
+	exec_cmd ls -rlt $guest_addition_path/VBoxGuestAdditions*
 	LN
-	info "$str_usage"
-	LN
-	exit 1
 fi
 
 info "Attach guest additions to $vm_name"
 add_dynamic_cmd_param "storageattach $vm_name"
 add_dynamic_cmd_param "--storagectl IDE --port 0 --device 0 --type dvddrive"
-add_dynamic_cmd_param "--medium \"$guest_iso\""
+add_dynamic_cmd_param "--medium $full_iso_name"
 exec_dynamic_cmd "VBoxManage"
 LN

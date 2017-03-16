@@ -18,7 +18,7 @@ typeset		vg_name=asm01
 typeset		show_instructions=yes
 
 typeset		start_server_only=no
-typeset		kvmclock=disable
+typeset		kvmclock=$rac_kvmclock
 
 add_usage "-db=name"			"Database name."
 add_usage "[-vmGroup=name]"		"VBox group name."
@@ -33,8 +33,8 @@ $ME
 $(print_usage)
 
 Debug flag :
-	[-start_server_only] The server is cloned, only start it.
-	[-keep_kvmclock]     For RAC, kvmclock is disabled.
+	[-start_server_only]    The server is cloned, only start it.
+	[-kvmclock=$kvmclock]   For RAC : enable|disable kvmclock.
 "
 
 while [ $# -ne 0 ]
@@ -60,8 +60,8 @@ do
 			shift
 			;;
 
-		-keep_kvmclock)
-			kvmclock=enable
+		-kvmclock=*)
+			kvmclock=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -502,13 +502,22 @@ function rac_configure_ntp
 	ssh_server "~/plescripts/ntp/configure_ntp.sh"
 	LN
 
-	info "Force sync time"
-	ssh_server "crontab ~/plescripts/ntp/crontab_workaround_ntp.txt"
-	LN
+	if [ $rac_forcesyncntp == yes ]
+	then
+		info "Force sync time"
+		ssh_server "crontab ~/plescripts/ntp/crontab_workaround_ntp.txt"
+		LN
+	else
+		info "Force sync time not applied."
+		LN
+	fi
 
 	if [ $kvmclock == disable ]
 	then
 		ssh_server "~/plescripts/ntp/disable_kvmclock.sh"
+		LN
+	else
+		info "kvmclock not disabled."
 		LN
 	fi
 }
@@ -701,6 +710,17 @@ create_stats_services
 info "Reboot needed : new kernel config from oracle-rdbms-server-12cR1-preinstall"
 reboot_server $server_name
 LN
+
+if [ $install_guestadditions == yes ]
+then # Attend le reboot, si kernel mis à jour?
+	fake_exec_cmd cd ~/plescripts/virtualbox/guest
+	cd ~/plescripts/virtualbox/guest
+	exec_cmd "./attach_iso_guestadditions.sh -vm_name=$server_name"
+	ssh_server "~/plescripts/virtualbox/guest/install_guestadditions.sh"
+	fake_exec_cmd cd -
+	cd -
+	LN
+fi
 
 if [ $node -eq $max_nodes ]
 then	# C'est le dernier nœud
