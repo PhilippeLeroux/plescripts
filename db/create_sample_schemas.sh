@@ -10,13 +10,13 @@ typeset -r ME=$0
 
 typeset db=undef
 typeset pdb=undef
-typeset service=localhost:1521
+typeset service=auto
 
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
-	[-service=$service] used localhost:1521 if no service exists.
+	[-service=$service] if no service used localhost:1521
 "
 
 while [ $# -ne 0 ]
@@ -72,18 +72,20 @@ typeset	-r	orcl_release=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
 									grep "Oracle Database 12c"		|\
 									awk '{ print $4 }' | cut -d. -f1-4)
 
-if [ "$service" == "localhost:1521" ]
-then
-	service_param=$service
-	service="$service/$pdb"
-else
-	service=$(mk_oci_service $pdb)
-	service_param=$service
-	if test_if_exists_cmd olsnodes
-	then
+case "$service" in
+	"localhost:1521")
+		service_param=$service
+		service="$service/$pdb"
+		;;
+	auto)
+		service=$(mk_oci_service $pdb)
+		service_param=$service
 		exit_if_service_not_running $db $service
-	fi
-fi
+		;;
+	*)
+		exit_if_service_not_running $db $service
+		;;
+esac
 
 typeset -r sample_dir="$HOME/db-sample-schemas-$orcl_release"
 
@@ -91,6 +93,10 @@ info -n "Exists '$sample_dir' "
 if [ ! -d "$sample_dir" ]
 then
 	info -f "[$KO]"
+	LN
+	info "From $client_hostname execute :"
+	info "cd ~/plescripts/database_servers"
+	info "./install_sample_schema.sh -db=$db"
 	LN
 	exit 1
 else
@@ -112,10 +118,7 @@ exec_cmd "perl -p -i.bak -e 's#__SUB__CWD__#'$(pwd)'#g' *.sql */*.sql */*.dat"
 LN
 
 info "Execute mksample :"
-fake_exec_cmd "sqlplus system/$oracle_password@$service @mksample ...."
-sqlplus system/$oracle_password@$service<<OE_CMD
-@mksample $oracle_password $oracle_password hr oe pm ix sh bi users temp $sample_dir/logs/ $service
-OE_CMD
+sqlplus_cmd "$(set_sql_cmd @mksample $oracle_password $oracle_password hr oe pm ix sh bi users temp $sample_dir/logs/ $service)"
 LN
 
 info "Unlock sample schemas."

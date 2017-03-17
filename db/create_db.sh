@@ -409,10 +409,12 @@ function create_database
 {
 	make_dbca_args
 
-	info "Create database $db : "
-	info "   - Wallet Manager $wallet"
-	info "   - Create sample schemas $sampleSchema"
+	info "Create database $db"
+	info "   - Wallet Manager        : $wallet"
+	info "   - Create sample schemas : $sampleSchema"
+	info "   - Backup database       : $backup"
 	LN
+
 	exec_dynamic_cmd $confirm dbca
 	typeset -ri	dbca_return=$?
 	if [ $dbca_return -eq 0 ]

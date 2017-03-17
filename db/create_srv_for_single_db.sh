@@ -257,25 +257,25 @@ function create_service_no_crs
 
 	function plsql_create_service
 	{
-		echo "set feed on echo on"
-		echo "begin"
-		echo "	dbms_service.create_service(	service_name=>'$service'"
-		echo "								,	network_name=>'$service' );"
-		echo "end;"
-		echo "/"
-
+		set_sql_cmd "exec dbms_service.create_service( service_name=>'$service', network_name=>'$service' );"
 	}
 
 	info "Create service $service"
-	sqlplus_cmd "$(plsql_create_service)"
+	sqlplus_cmd_with	"sys/$oracle_password@localhost:1521/$pdb as sysdba" \
+						"$(plsql_create_service)"
 	LN
 
 	if [ $action == add ]
 	then
 		if [ $start == yes ]
 		then
+			function plsql_start_service
+			{
+				set_sql_cmd "alter session set container=$pdb;"
+				set_sql_cmd "exec dbms_service.start_service( '$service' );"
+			}
 			info "Start service $service"
-			sqlplus_cmd "$(set_sql_cmd "exec dbms_service.start_service( '$service' );")"
+			sqlplus_cmd "$(plsql_start_service)"
 			LN
 		fi
 
@@ -325,11 +325,12 @@ from
 where
 	trigger_name = 'START_PDB_SERVICES'
 ;"
-	typeset trigger=$(sqlplus_exec_query "$query"|tail -1)
+	typeset pdbconn="sys/$oracle_password@localhost:1521/$pdb as sysdba"
+	typeset trigger=$(sqlplus_exec_query_with "$pdbconn" "$query"|tail -1)
 	if [ "$trigger" != "START_PDB_SERVICES" ]
 	then
 		info "Create trigger start_pdb_services"
-		sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
+		sqlplus_cmd_with "$pdbconn"  "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
 		LN
 	fi
 }

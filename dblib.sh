@@ -189,15 +189,27 @@ function sqlplus_asm_cmd
 	fi
 }
 
+#*> $1 connect string
+#*> $2 sql query
+#*>
 #*>	Objectif de la fonction :
 #*>	 Exécute une requête, seul son résultat est affiché, la sortie peut être 'parsée'
 #*>	 Par exemple obtenir la liste de tous les PDBs d'un CDB.
 #*>	N'inscrit rien dans la log.
+function sqlplus_exec_query_with
+{
+	typeset	-r	string_connection="$1"
+	typeset -r	seq_query="$2"
+	printf "whenever sqlerror exit 1\nset term off echo off feed off heading off\n$seq_query" | \
+		sqlplus -s "$string_connection"
+}
+
+#*> $1 sql query
+#*>
+#*> call sqlplus_exec_query_with "sys/$oracle_password as sysdba" "$1"
 function sqlplus_exec_query
 {
-	typeset -r	seq_query="$1"
-	printf "whenever sqlerror exit 1\nset term off echo off feed off heading off\n$seq_query" | \
-		sqlplus -s sys/$oracle_password as sysdba
+	sqlplus_exec_query_with	"sys/$oracle_password as sysdba" "$1"
 }
 
 function orcl_parameter_value
@@ -234,11 +246,16 @@ function sqlplus_print_query
 #*> return 1 if db name or service name not exists, else return 0
 function service_exists
 {
-	if grep -qE "^PRCR-1001"<<<"$(srvctl config service -db $1 -service $2)"
+	if test_if_cmd_exists crsctl
 	then
-		return 1
-	else
-		return 0
+		if grep -qE "^PRCR-1001"<<<"$(srvctl config service -db $1 -service $2)"
+		then
+			return 1
+		else
+			return 0
+		fi
+	else # ne test pas la base $1
+		grep -q "Service \"$2\" has .*"<<<"$(lsnrctl status)"
 	fi
 }
 
@@ -269,9 +286,14 @@ function exit_if_service_not_exists
 #*> return 0 if service running else return 1
 function service_running
 {
-	typeset -r db_name_l=$1
-	typeset -r service_name_l=$(to_lower $2)
-	grep -iqE "Service $service_name_l is running.*"<<<"$(LANG=C srvctl status service -db $db_name_l -s $service_name_l)"
+	if test_if_cmd_exists crsctl
+	then
+		typeset -r db_name_l=$1
+		typeset -r service_name_l=$(to_lower $2)
+		grep -iqE "Service $service_name_l is running.*"<<<"$(LANG=C srvctl status service -db $db_name_l -s $service_name_l)"
+	else
+		service_exists $1 $2
+	fi
 }
 
 #*> $1	db name

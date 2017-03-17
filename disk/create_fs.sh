@@ -11,10 +11,12 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
 	-mount_point=name
-	[-device=check]     or full device name : /dev/sdb,/dev/sdc ...
-	[-disks=1]          number of disks, only if -device=check
 	-suffix_vglv=name   => vg\$suffix, lv\$suffix
 	-type_fs=name
+	[-device=check]     or full device name : /dev/sdb,/dev/sdc ...
+	[-disks=1]          number of disks, only if -device=check
+	[-striped=no]       no|yes
+	[-stripesize=#]     stripe size Kb.
 	[-netdev]           add _netdev to mount point options
 "
 
@@ -23,6 +25,8 @@ script_banner $ME $*
 typeset		mount_point=undef
 typeset	-a	device_list=( "check" )
 typeset		disks=1
+typeset		striped=no
+typeset		stripesize_kb=0
 typeset		suffix_vglv=undef
 typeset		type_fs=undef
 typeset		netdev=no
@@ -32,7 +36,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -66,6 +69,16 @@ do
 			shift
 			;;
 
+		-striped=*)
+			striped=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-stripesize=*)
+			stripesize_kb=${1##*=}
+			shift
+			;;
+
 		-netdev)
 			netdev=yes
 			shift
@@ -85,6 +98,8 @@ do
 			;;
 	esac
 done
+
+exit_if_param_invalid striped "yes no" "$str_usage"
 
 exit_if_param_undef mount_point	"$str_usage"
 exit_if_param_undef suffix_vglv	"$str_usage"
@@ -127,28 +142,26 @@ for device in ${device_list[*]}
 do
 	((++idisk))
 
-	add_partition_to $device
-	sleep 1
-
-	typeset	part_name=${device}1
-
-	exec_cmd pvcreate $part_name
-	sleep 1
-
-	if [ $idisk -eq 1 ]
-	then
-		exec_cmd vgcreate $vg_name $part_name
-	else
-		exec_cmd vgextend $vg_name $part_name
-	fi
+	exec_cmd pvcreate $device
 	LN
 done
-
 sleep 1
-exec_cmd lvcreate -y -l 100%FREE -n $lv_name $vg_name
+
+exec_cmd vgcreate $vg_name ${device_list[*]}
+sleep 1
+LN
+
+if [ $striped == yes ]
+then
+	options="-i${#device_list[@]}"
+	[ $stripesize_kb -ne 0 ] && options="$options -I$stripesize_kb" || true
+fi
+
+exec_cmd lvcreate -y $options -l 100%FREE -n $lv_name $vg_name
 exec_cmd mkfs -t $type_fs /dev/$vg_name/$lv_name
 exec_cmd mkdir -p $mount_point
 typeset mp_options=defaults
 [ $netdev == yes ] && mp_options="_netdev,$mp_options" || true
 exec_cmd "echo \"/dev/mapper/$vg_name-$lv_name $mount_point $type_fs $mp_options 0 0\" >> /etc/fstab"
 exec_cmd mount $mount_point
+LN

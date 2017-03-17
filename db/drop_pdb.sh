@@ -13,8 +13,8 @@ typeset -r str_usage=\
 $ME
 	-db=name
 	-pdb=name
-	[-physical]
-	[-force]
+	[-physical]  Physical Standby
+	[-force]     don't stop on error
 "
 
 typeset db=undef
@@ -178,10 +178,9 @@ fi
 if [ $crs_used == yes ]
 then
 	stop_and_remove_dbfs
-else
-	warning "NO CRS : credentials for dbfs not removed"
-	confirm_or_exit "Continue"
-	LN
+elif [ -f $HOME/${pdb}_dbfs.cfg ]
+then
+	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb -skip_drop_user"
 fi
 
 line_separator

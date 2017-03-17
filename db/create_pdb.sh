@@ -4,6 +4,7 @@
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -28,26 +29,19 @@ typeset admin_pass=$oracle_password
 
 typeset	log=yes
 
+add_usage "-db=name"			"Database name."
+add_usage "-pdb=name"			"PDB name."
+add_usage "[-is_seed]"			"Create seed pdb."
+add_usage "[-from_pdb=name]"	"Clone from pdb 'name'"
+add_usage "[-wallet=$wallet]"	"yes|no yes : Use Wallet Manager for pdb connection."
+add_usage "[-admin_user=$admin_user]"
+add_usage "[-admin_pass=$admin_pass]"
+add_usage "[-nolog]"
+
 typeset -r str_usage=\
 "Usage :
 $ME
-	-db=name
-	-pdb=name
-	[-is_seed]       Seed pdb
-	[-from_pdb=name] Clone pdb from name
-	[-wallet=$wallet] yes|no yes : Use Wallet Manager for pdb connection.
-	[-admin_user=$admin_user]
-	[-admin_pass=$admin_pass]
-	[-nolog]
-
-Ex create a seed PDB :
-$ME -db=$db -pdb=pdb_samples -from_pdb=pdb01 -is_seed
-
-Ex create a PDB from pdb$seed
-$ME -db=$db -pdb=pdb666
-
-Ex create a PDB from pdb$seed
-$ME -db=$db -pdb=pdb666
+$(print_usage)
 "
 
 while [ $# -ne 0 ]

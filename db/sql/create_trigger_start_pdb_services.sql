@@ -1,6 +1,6 @@
 -- vim: ts=4:sw=4
 create or replace
-trigger start_pdb_services after startup on database
+trigger start_pdb_services after startup on pluggable database
 declare
 	db_role			varchar(255);
 	db_open_mode	varchar(255);

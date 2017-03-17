@@ -304,6 +304,15 @@ function create_database_fs_on_new_disks
 {
 	typeset -r cfg_disks=$cfg_path_prefix/$db/disks
 
+	# Pour se rapprocher d'ASM, le gain n'est pas évident car faible. Tests
+	# fait sur la création d'une base.
+	if [ "${oracle_release}" == "12.2.0.1" ]
+	then
+		typeset -ri stripesize_kb=$(( 1024 * 4 ))
+	else
+		typeset -ri stripesize_kb=1024
+	fi
+
 	IFS=':' read name size_disk first last<<<"$(grep FSDATA $cfg_disks)"
 	info "Create FS for DATA"
 	ssh_server "plescripts/disk/create_fs.sh					\
@@ -311,6 +320,8 @@ function create_database_fs_on_new_disks
 							-mount_point=/$ORCL_DATA_FS_DISK	\
 							-suffix_vglv=oradata				\
 							-type_fs=$rdbms_fs_type				\
+							-striped=yes						\
+							-stripesize=$stripesize_kb			\
 							-netdev"
 	ssh_server "chown oracle:oinstall /$ORCL_DATA_FS_DISK"
 	ssh_server "chmod 775 /$ORCL_DATA_FS_DISK"
@@ -323,6 +334,8 @@ function create_database_fs_on_new_disks
 							-mount_point=/$ORCL_FRA_FS_DISK		\
 							-suffix_vglv=orafra					\
 							-type_fs=$rdbms_fs_type				\
+							-striped=yes						\
+							-stripesize=$stripesize_kb			\
 							-netdev"
 	ssh_server "chown oracle:oinstall /$ORCL_FRA_FS_DISK"
 	ssh_server "chmod 775 /$ORCL_FRA_FS_DISK"

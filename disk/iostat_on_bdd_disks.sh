@@ -36,7 +36,7 @@ done
 # Mémorise dans disk_list tous les disques de l'OS.
 function load_fs_disks
 {
-	disk_list="$(find /dev -name "sd*" | grep -E "sd.*[0-9]{1}")"
+	disk_list="$(find /dev -name "sd*" | grep -E "sd.*[a-z]$")"
 }
 
 # Mémorise dans disk_list les disques utilisés par oracleasm.
