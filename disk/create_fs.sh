@@ -137,24 +137,35 @@ fi
 info "Create fs $type_fs on devices ${device_list[*]} : mount point $mount_point"
 LN
 
-typeset -i idisk=0
+# Il faut créer une partition, sinon on écrase l'en-tête des LUNs sur le SAN
+# Avec les disques présentés par VBox pas de problème, mais pour être cohérent
+# il y aura toujours une partition.
+typeset -a partition_list
 for device in ${device_list[*]}
 do
-	((++idisk))
+	typeset partname=${device}1
+	partition_list+=( $partname )
+	add_partition_to $device
+	sleep 1
 
-	exec_cmd pvcreate $device
+	exec_cmd pvcreate $partname
 	LN
 done
 sleep 1
 
-exec_cmd vgcreate $vg_name ${device_list[*]}
+exec_cmd vgcreate $vg_name ${partition_list[*]}
 sleep 1
 LN
 
 if [ $striped == yes ]
 then
-	options="-i${#device_list[@]}"
+	info "Create striped FS"
+	LN
+	options="-i${#partition_list[@]}"
 	[ $stripesize_kb -ne 0 ] && options="$options -I$stripesize_kb" || true
+else
+	info "Create linear FS"
+	LN
 fi
 
 exec_cmd lvcreate -y $options -l 100%FREE -n $lv_name $vg_name
