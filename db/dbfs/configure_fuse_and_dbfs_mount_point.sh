@@ -12,16 +12,12 @@ typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
-	-service=auto	auto or service name.
 	[-nolog]
-	[-call_crs_script]
 "
 
 typeset	db=undef
 typeset	pdb=undef
-typeset	service=undef
 typeset	local_only=no
-typeset call_crs_script=no
 typeset	log=yes
 
 while [ $# -ne 0 ]
@@ -42,11 +38,6 @@ do
 			shift
 			;;
 
-		-service=*)
-			service=$(to_lower ${1##*=})
-			shift
-			;;
-
 		-nolog)
 			log=no
 			shift
@@ -55,11 +46,6 @@ do
 		-local_only)
 			# Le script ne sera pas exécuté sur les autres serveurs.
 			local_only=yes
-			shift
-			;;
-
-		-call_crs_script)
-			call_crs_script=yes
 			shift
 			;;
 
@@ -90,10 +76,13 @@ exit_if_param_undef pdb		"$str_usage"
 #	return 0 if cluster, 1 if standalone server
 function is_cluster
 {
-	test $(wc -l<<<"$(olsnodes)") -gt 1
+	if test_if_cmd_exists olsnodes
+	then
+		test $(wc -l<<<"$(olsnodes)") -gt 1
+	else
+		return 1
+	fi
 }
-
-[ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
 
 typeset	-r	dbfs_cfg_file=/home/oracle/${pdb}_dbfs.cfg
 
@@ -135,7 +124,10 @@ typeset	-r	orcl_release=$(su - oracle -c	\
 info "Oracle release $orcl_release"
 LN
 
-exit_if_service_not_exists $db $service
+if test_if_cmd_exists crsctl
+then # root ne peut utiliser lsnrctl.
+	exit_if_service_not_exists $db $service
+fi
 
 line_separator
 info "Install fuse :"
@@ -173,8 +165,6 @@ LN
 line_separator
 info "Add oracle to group fuse"
 exec_cmd usermod -a -G fuse oracle
-#info "Add grid to group fuse"
-#exec_cmd usermod -a -G fuse grid
 LN
 
 line_separator
@@ -250,26 +240,12 @@ then
 	LN
 fi
 
-line_separator
-if grep -qE "oracle" <<<"$(who)"
+if ! test_if_cmd_exists crsctl && grep -qE "oracle" <<<"$(who)"
 then
+	line_separator
 	warning "***********************************"
 	warning "YOU must disconnect oracle account."
 	warning "***********************************"
 	exec_cmd w oracle
 	LN
-fi
-
-if [ $local_only == no ]
-then # Affiche l'info que sur le serveur ou a été lancé le script.
-	if [ $call_crs_script == yes ]
-	then
-		add_dynamic_cmd_param "\"plescripts/db/dbfs/create_crs_resource_for_dbfs.sh"
-		add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service -nolog\""
-		exec_dynamic_cmd "su - grid -c"
-	else
-		info "With user grid :"
-		info "cd ~/plescripts/db/dbfs"
-		info "create_crs_resource_for_dbfs.sh -db=$db -pdb=$pdb -service=$service"
-	fi
 fi

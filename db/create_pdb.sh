@@ -20,8 +20,11 @@ typeset from_pdb=default
 if [ $orcldbversion == 12.1 ]
 then
 	typeset		wallet=yes
-else # Impossible de démarrer la base avec le wallet.
+elif test_if_cmd_exists crsctl
+then # Impossible de démarrer la base avec le wallet.
 	typeset		wallet=no
+else # Sur FS pas de problème.
+	typeset		wallet=yes
 fi
 typeset is_seed=no
 typeset admin_user=pdbadmin
@@ -236,7 +239,7 @@ function create_wallet
 		done
 	fi
 
-	if [ $orcldbversion == 12.2 ]
+	if [ $orcldbversion == 12.2 ] && test_if_cmd_exists crsctl
 	then
 		warning "Database cannot start with wallet enable."
 		LN
@@ -308,7 +311,12 @@ then
 else
 	if [ $crs_used == no ]
 	then # Sans le CRS démarrer le service n'ouvre pas l'instance du PDB.
-		sqlplus_cmd "$(set_sql_cmd "alter pluggable database $pdb open;")"
+		function open_pdb_and_save_state
+		{
+			set_sql_cmd "alter pluggable database $pdb open;"
+			set_sql_cmd "alter pluggable database $pdb save state;"
+		}
+		sqlplus_cmd "$(open_pdb_and_save_state)"
 		LN
 	fi
 

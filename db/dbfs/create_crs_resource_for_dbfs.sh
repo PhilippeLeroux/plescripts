@@ -160,7 +160,11 @@ function create_local_resource
 	if service_running $db $service
 	then
 		info "Start $resource_name"
-		exec_cmd crsctl start res $resource_name
+		exec_cmd -c crsctl start res $resource_name
+		if [ $? -ne 0 ]
+		then # En 12.2 le premier call peut échouer.
+			exec_cmd crsctl start res $resource_name
+		fi
 		LN
 
 		info "Status"

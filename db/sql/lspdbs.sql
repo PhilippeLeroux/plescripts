@@ -11,10 +11,14 @@ select
 ,	round( c.total_size / 1024 / 1024, 0 ) "Size (Mb)"
 ,	c.recovery_status
 ,	c.restricted
+,	nvl(pss.state,'NOT SAVED') "State"
 from
     gv$containers c
     inner join gv$instance i
         on  c.inst_id = i.inst_id
+	left join dba_pdb_saved_states pss
+		on	c.con_uid = pss.con_uid
+		and	c.guid = pss.guid
 order by
     c.name
 ,   i.instance_name

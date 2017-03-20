@@ -58,8 +58,11 @@ typeset		sampleSchema=no
 if [ $orcldbversion == 12.1 ]
 then
 	typeset		wallet=yes
-else # Impossible de démarrer la base avec le wallet.
+elif test_if_cmd_exists crsctl
+then # Impossible de démarrer la base avec le wallet.
 	typeset		wallet=no
+else # Sur FS pas de problème.
+	typeset		wallet=yes
 fi
 
 #	DEBUG :

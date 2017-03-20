@@ -118,6 +118,12 @@ then
 	fi
 fi
 
+if [ "$pdb" == undef ]
+then
+	info "For pdb add -pdb=pdbname"
+	LN
+fi
+
 info "Update $TNS_ADMIN/tnsnames.ora"
 info "    alias   $alias_name"
 info "    service $service"

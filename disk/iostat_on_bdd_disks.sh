@@ -74,7 +74,6 @@ function load_afd_disks
 			then
 				error "loop #${iloop} no disk"
 				timing 10 "Waiting asmcmd"
-				LN
 				break
 			else
 				iloop=10 # stop loop for

@@ -21,8 +21,11 @@ typeset	account_password=dbfs
 if [ $orcldbversion == 12.1 ]
 then
 	typeset		wallet=yes
-else # Impossible de démarrer la base avec le wallet.
+elif test_if_cmd_exists crsctl
+then # Impossible de démarrer la base avec le wallet.
 	typeset		wallet=no
+else # Sur FS pas de problème.
+	typeset		wallet=yes
 fi
 
 typeset -r str_usage=\
@@ -32,7 +35,7 @@ typeset -r str_usage=\
 	[-service=$service]
 	[-account_name=$account_name]
 	[-account_password=$account_password]
-	[-wallet=$wallet]	yes|no : with 'no', uses password file 12.2 cannot use wallet.
+	[-wallet=$wallet]	yes|no : no ==> password file.
 
 For dataguard must be executed first on the primary database.
 "
@@ -222,7 +225,7 @@ function resume
 	then
 		info "Wallet used."
 	else
-		info "Use password file : debug mode !"
+		info "Use password file."
 	fi
 	LN
 }
@@ -284,16 +287,20 @@ fi
 
 [ $role == primary ] && load_data_tests || true
 
-info "With user root"
-info "cd ~/plescripts/db/dbfs"
-info "configure_fuse_and_dbfs_mount_point.sh -db=$db -pdb=$pdb -service=$service"
-LN
-
-info "ctrl-c to skip script execution."
+line_separator
 add_dynamic_cmd_param "\"plescripts/db/dbfs/configure_fuse_and_dbfs_mount_point.sh"
-add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service -nolog -call_crs_script\""
+add_dynamic_cmd_param "-db=$db -pdb=$pdb -nolog\""
 exec_dynamic_cmd "su - root -c"
 LN
+
+if test_if_cmd_exists crsctl
+then
+	line_separator
+	add_dynamic_cmd_param "plescripts/db/dbfs/create_crs_resource_for_dbfs.sh"
+	add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service -nolog"
+	exec_dynamic_cmd "sudo -iu grid"
+	LN
+fi
 
 if [[ $dg_cfg_available == yes && $role == primary ]]
 then
