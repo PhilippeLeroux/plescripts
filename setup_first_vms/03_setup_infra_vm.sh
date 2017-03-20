@@ -79,10 +79,13 @@ line_separator
 exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,comment=systemd.automount\"  >> /etc/fstab"
 LN
 
-line_separator
-info "Create VG asm01 on first unused disk :"
-exec_cmd "~/plescripts/san/create_vg.sh -device=auto -vg=asm01"
-LN
+if [ $disks_hosted_by == san ]
+then
+	line_separator
+	info "Create VG asm01 on first unused disk :"
+	exec_cmd "~/plescripts/san/create_vg.sh -device=auto -vg=asm01"
+	LN
+fi
 
 line_separator
 info "Setup SAN"

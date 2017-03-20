@@ -43,14 +43,31 @@ function print_node # $1 #inode
 
 	cfg_load_node_info $db $inode
 
+	if [ $inode -eq 1 ]
+	then
+		info -n "LUNs hosted by : "
+		case $cfg_luns_hosted_by in
+			vbox)
+				info -f "VirtualBox"
+				;;
+			san)
+				info -f "$infra_hostname protocol iSCSI"
+				;;
+		esac
+
+		info -n "ORACLE_HOME FS : $cfg_oracle_home"
+		case $cfg_oracle_home in
+			ocfs2)
+				info -f " : heartbeat on $if_iscsi_name/$cfg_iscsi_ip"
+				;;
+			*)
+				LN
+		esac
+		LN
+	fi
+
 	case $cfg_db_type in
 		rac)
-			if [ $inode -eq 1 ]
-			then
-				info "ORACLE_HOME FS : $cfg_oracle_home"
-				LN
-			fi
-
 			info "Node #$inode RAC : "
 			;;
 
@@ -72,7 +89,7 @@ function print_node # $1 #inode
 			;;
 
 		vbox)
-			info "	Disks hosted by VBox"
+			info "	Disks hosted by VirtualBox ($if_iscsi_name unused for LUNs)"
 			;;
 
 		*)

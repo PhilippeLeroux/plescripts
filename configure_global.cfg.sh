@@ -95,15 +95,59 @@ then
 				grep "Default machine folder:"	|\
 				tr -s [:space:] | cut -d' ' -f4-)"
 	ask_for_variable vm_p "VMs folder :"
+	info -n "Exists $vm_p : "
+	if [ ! -d "$vm_p" ]
+	then
+		info -f "[$KO]"
+		LN
+		exit 1
+	else
+		info -f "[$OK]"
+		LN
+	fi
 else
 	error "VirtualBox not installed or VBoxManage not in PATH"
 	LN
 fi
 
 ask_for_variable full_linux_iso_n "Full path for Oracle Linux $OL7_LABEL_n ISO $OracleLinux72 :"
+info -n "Exists $full_linux_iso_n : "
+if [ ! -f "$full_linux_iso_n" ]
+then
+	info -f "[$KO]"
+	LN
+	exit 1
+else
+	info -f "[$OK]"
+	LN
+fi
 
 dns_main_n=$(read_dns_main_ip)
 ask_for_variable dns_main_n "Main DNS/box IP :"
+info -n "Ping $dns_main_n : "
+if ping -c 1 $dns_main_n 1>/dev/null 2>&1
+then
+	info -f "[$OK]"
+	LN
+else
+	info -f "[$KO]"
+	LN
+	exit 1
+fi
+
+disks_stored_on=$disks_hosted_by
+ask_for_variable disks_stored_on "san or vbox :"
+disks_stored_on=$(to_lower $disks_stored_on)
+case "$disks_stored_on" in
+	vbox|san)
+		LN
+		;;
+	*)
+		error "Value $disks_stored_on invalid."
+		LN
+		exit 1
+		;;
+esac
 
 line_separator
 exec_cmd "sed -i 's/dns_main=.*$/dns_main=$dns_main_n/g' ~/plescripts/global.cfg"
@@ -120,6 +164,9 @@ exec_cmd "sed -i 's/common_uid=.*/common_uid=$UID/g' ~/plescripts/global.cfg"
 LN
 
 exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"$vm_p\"~g' ~/plescripts/global.cfg"
+LN
+
+exec_cmd "sed -i 's~disks_stored_on=.*$~disks_stored_on=\"$disks_stored_on\"~g' ~/plescripts/global.cfg"
 LN
 
 if [ "$HOME/ISO/oracle_linux_7/$OracleLinux73" == "$full_linux_iso_n" ]

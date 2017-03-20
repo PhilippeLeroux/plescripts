@@ -430,6 +430,50 @@ function disclaimer
 	info "****************************************************"
 }
 
+function restart_rac_cluster
+{
+	ssh_node0 root crsctl stop cluster -all
+	LN
+
+	# Parfois le second nœud est trop chargé et ne répond pas.
+	# Arrêt du CRS sur les 2 nœuds :
+	for node_name in ${node_names[*]}
+	do
+		exec_cmd "ssh root@${node_name} '. .bash_profile && crsctl stop crs'"
+		LN
+	done
+
+	timing 5
+	LN
+
+	for node_name in ${node_names[*]}
+	do
+		exec_cmd "ssh root@${node_name} '. .bash_profile && crsctl start crs'"
+		LN
+	done
+	LN
+
+	#Pour être certain qu'ASM est démarré.
+	timing 180 "Waiting cluster"
+	LN
+}
+
+function restart_standalone_crs
+{
+	ssh_node0 root crsctl stop has
+	LN
+
+	timing 5
+	LN
+
+	ssh_node0 root crsctl start has
+	LN
+
+	#Pour être certain qu'ASM est démarré.
+	timing 30 "Waiting cluster"
+	LN
+}
+
 function set_ASM_memory_target_low_and_restart_ASM
 {
 	if [ $hack_asm_memory != "0" ]
@@ -440,31 +484,7 @@ function set_ASM_memory_target_low_and_restart_ASM
 				~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
 		LN
 
-		if [ $max_nodes -gt 1 ]
-		then	#	RAC
-			ssh_node0 root crsctl stop cluster -all
-			LN
-
-			timing 5
-			LN
-
-			empty_swap
-
-			ssh_node0 root crsctl start cluster -all
-		else	#	SINGLE
-			ssh_node0 root crsctl stop has
-			LN
-
-			timing 5
-			LN
-
-			ssh_node0 root crsctl start has
-		fi
-		LN
-
-		#Pour être certain qu'ASM est démarré.
-		timing 30 "Wait Grid Infra."
-		LN
+		[ $max_nodes -gt 1 ] && restart_rac_cluster || restart_standalone_crs
 	else
 		info "do nothing : hack_asm_memory=0"
 	fi

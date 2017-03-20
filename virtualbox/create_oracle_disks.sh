@@ -63,7 +63,7 @@ first_vm=$cfg_server_name
 
 if [ $max_nodes -gt 1 ]
 then
-	for (( inode=2; inode < max_nodes; ++inode ))
+	for (( inode=2; inode <= max_nodes; ++inode ))
 	do
 		cfg_load_node_info $db $inode
 		attach_to="$attach_to $cfg_server_name"

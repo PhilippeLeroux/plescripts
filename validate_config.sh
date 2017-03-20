@@ -57,8 +57,8 @@ function scripts_exists
 function runInstaller_exists
 {
 	line_separator
-	info "Oracle extracted :"
-	info -n "Exist '$HOME/$oracle_install/database/runInstaller' "
+	info "Oracle $orarel extracted :"
+	info -n "Exist $HOME/$oracle_install/database/runInstaller "
 	if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
 	then
 		info -f "[$KO]"
@@ -72,8 +72,8 @@ function runInstaller_exists
 
 	if [ "$orarel" == "12.2" ]
 	then
-		info "Grid zip :"
-		info -n "Exist '$HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip' "
+		info "Grid zip $orarel :"
+		info -n "Exist $HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip "
 		if [ ! -f "$HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip" ]
 		then
 			info -f "[$KO]"
@@ -86,8 +86,8 @@ function runInstaller_exists
 		fi
 	elif [ "$orarel" == "12.1" ]
 	then
-		info "Grid extracted :"
-		info -n "Exist '$HOME/$oracle_install/grid/runInstaller' "
+		info "Grid $orarel extracted :"
+		info -n "Exist $HOME/$oracle_install/grid/runInstaller "
 		if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
 		then
 			info -f "[$KO]"
@@ -140,7 +140,7 @@ function validate_NFS_exports
 function ISO_OLinux7_exists
 {
 	line_separator
-	info -n "ISO Oracle Linux $OL7_LABEL exists $full_linux_iso_name"
+	info -n "ISO Oracle Linux $OL7_LABEL exists $full_linux_iso_name "
 	if [ ! -f "$full_linux_iso_name" ]
 	then
 		info -f "[$KO]"

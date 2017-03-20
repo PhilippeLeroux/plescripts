@@ -361,3 +361,13 @@ LN
 ./show_info_server.sh -db=$db
 
 next_instructions
+
+if [[ $rel == "12.2" && $max_nodes -gt 1 ]]
+then
+	if [[ $luns_hosted_by != vbox || $OH_FS != ocfs2 ]]
+	then
+		LN
+		warning "Advice with RAC $rel add options : -luns_hosted_by=vbox -OH_FS=ocfs2"
+		LN
+	fi
+fi
