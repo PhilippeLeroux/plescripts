@@ -299,9 +299,9 @@ function start_grid_installation
 	exec_dynamic_cmd -c "ssh -t grid@${node_names[0]} \"cd $ORACLE_HOME &&"
 	if [[ $? -gt 250 || $? -eq 127 ]]
 	then
-		error "To check errors :"
-		error "cd /mnt/oracle_install/grid"
-		error "Run : ./runcluvfy.sh stage -pre crsinst -fixup -n $(echo ${node_names[*]} | tr [:space:] ',')"
+		error "Look log, if ntp sync failed re-run the script and"
+		error "add options -skip_extract_grid -skip_init_afd_disks"
+		LN
 		exit 1
 	fi
 	LN
@@ -661,6 +661,16 @@ fi
 
 if [ $install_grid == yes ]
 then
+	if [ $max_nodes -ne 1 ]
+	then
+		line_separator
+		for node in ${node_names[*]}
+		do
+			exec_cmd "ssh -t root@${node} '~/plescripts/database_servers/test_synchro_ntp.sh'"
+		done
+		LN
+	fi
+
 	start_grid_installation
 
 	run_post_install_root_scripts

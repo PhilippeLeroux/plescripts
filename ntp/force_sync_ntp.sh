@@ -9,7 +9,7 @@
 
 typeset -r ME=$0
 
-typeset -ri	max_offset_ms=1
+typeset -ri	max_offset_ms=4
 
 #	print abs( $1 ) to stdout
 function abs

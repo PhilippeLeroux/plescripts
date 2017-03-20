@@ -721,7 +721,11 @@ create_stats_services
 [[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
 
 info "Reboot needed : new kernel config from oracle-rdbms-server-12cR1-preinstall"
-reboot_server $server_name
+# Pour les RACs, si le reboot est fait avec les commandes VBox (script reboot_vm)
+# alors le second nœud plante pendant que l'installer check les pré-requis.
+ssh_server -c reboot
+timing 10
+wait_server $server_name
 LN
 
 if [ $install_guestadditions == yes ]
