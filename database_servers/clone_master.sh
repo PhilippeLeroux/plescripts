@@ -191,12 +191,11 @@ function loop_wait_server
 {
 	typeset -r server=$1
 
-	sleep 2
+	timing 10
 
-	while [ 1 -eq 1 ]	# forever
+	while true	# forever
 	do
-		wait_server $server
-		if [ $? -ne 0 ]
+		if ! wait_server $server
 		then
 			error "Cannot contact $server"
 			LN
@@ -216,7 +215,6 @@ function reboot_server
 
 	info "Reboot server $server..."
 	exec_cmd "$vm_scripts_path/reboot_vm $server -error_on_poweroff"
-	LN
 
 	loop_wait_server $server
 }
@@ -225,7 +223,7 @@ function configure_ifaces_hostname_and_reboot
 {
 	info "Configure network..."
 	ssh_master "~/plescripts/configure_network/setup_iface_and_hostname.sh	\
-															-db=$db -node=$node"
+														-db=$db -node=$node"
 	LN
 
 	# Le reboot est nécessaire à cause du changement du nom du serveur et de
@@ -640,6 +638,7 @@ function test_space_on_san
 #	============================================================================
 #	MAIN
 #	============================================================================
+
 script_start
 
 cfg_load_node_info $db $node
@@ -721,15 +720,12 @@ create_stats_services
 [[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
 
 info "Reboot needed : new kernel config from oracle-rdbms-server-12cR1-preinstall"
-# Pour les RACs, si le reboot est fait avec les commandes VBox (script reboot_vm)
-# alors le second nœud plante pendant que l'installer check les pré-requis.
-ssh_server -c reboot
-timing 10
-wait_server $server_name
+exec_cmd reboot_vm $server_name
 LN
+loop_wait_server $server_name
 
 if [ $install_guestadditions == yes ]
-then # Attend le reboot, si kernel mis à jour?
+then
 	fake_exec_cmd cd ~/plescripts/virtualbox/guest
 	cd ~/plescripts/virtualbox/guest
 	exec_cmd "./attach_iso_guestadditions.sh -vm_name=$server_name"
@@ -753,7 +749,7 @@ then	# C'est le dernier nœud
 	then
 		if [ $cfg_db_type == fs ]
 		then
-			info "The Oracle RDBMS software can be installed."
+			info "Oracle RDBMS software can be installed."
 			info "./install_oracle.sh -db=$db"
 		else
 			if [ "${oracle_release}" == "12.2.0.1" ]
@@ -762,7 +758,7 @@ then	# C'est le dernier nœud
 			else
 				script_name=install_grid12cR1.sh
 			fi
-			info "The Grid infrastructure can be installed."
+			info "Grid infrastructure can be installed."
 			info "./$script_name -db=$db"
 		fi
 		LN

@@ -119,17 +119,6 @@ else
 	exit_if_param_invalid	edition "EE"		"$str_usage"
 fi
 
-function empty_swap
-{
-	line_separator
-	info "Empty swap on nodes ${node_names[*]}"
-	for node in ${node_names[*]}
-	do
-		exec_cmd "ssh root@${node} 'swapoff -a && swapon -a'"
-		LN
-	done
-}
-
 function load_node_cfg # $1 inode
 {
 	typeset	-ri	inode=$1
@@ -424,12 +413,8 @@ then
 
 	mount_install_directory
 
-	empty_swap
-
 	start_oracle_installation
 fi
-
-empty_swap
 
 for node in ${node_names[*]}
 do
@@ -446,8 +431,6 @@ fi
 
 exec_cmd "~/plescripts/database_servers/install_sample_schema.sh -db=$db"
 LN
-
-empty_swap
 
 stats_tt stop oracle_installation
 

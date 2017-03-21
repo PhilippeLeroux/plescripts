@@ -86,9 +86,9 @@ fi
 
 if [ $max_nodes -eq 1 ]
 then
-	typeset -r nr_cpus=$mv_nr_cpus_for_single_db
+	typeset -r nr_cpus=$vm_nr_cpus_for_single_db
 else
-	typeset -r nr_cpus=$mv_nr_cpus_for_rac_db
+	typeset -r nr_cpus=$vm_nr_cpus_for_rac_db
 fi
 
 for nr_node in $( seq $max_nodes )

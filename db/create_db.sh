@@ -115,7 +115,7 @@ $(print_usage)
 \t7 : RAC 12.2.0.1 minimum 2048M
 
 \tDebug flag :
-\t	-skip_db_create : skip create database
+\t	-skip_db_create : skip create database, add -pdb=no to skip create pdb
 "
 
 while [ $# -ne 0 ]
@@ -313,12 +313,14 @@ function make_dbca_args
 	then
 		add_dynamic_cmd_param "-createAsContainerDatabase true"
 
+		if [ 0 -eq 1 ]; then # Mutualisation du code de création des PDBs.
 		if [ "$pdb" != undef ]
 		then
 			add_dynamic_cmd_param "    -numberOfPDBs     $numberOfPDBs"
 			add_dynamic_cmd_param "    -pdbName          $pdb"
-			add_dynamic_cmd_param "    -pdbAdminPassword $pdbAdminPassword"
+			add_dynamic_cmd_param "    -pdbAdminPassword $sysPassword"
 		fi
+		fi # [ 0 -eq 1 ]; then
 	else
 		add_dynamic_cmd_param "-createAsContainerDatabase false"
 	fi
@@ -413,8 +415,12 @@ function create_database
 	make_dbca_args
 
 	info "Create database $db"
-	info "   - Wallet Manager        : $wallet"
-	info "   - Create sample schemas : $sampleSchema"
+	if [ $pdb != undef ]
+	then
+		info "   - Create pdb            : $pdb"
+		info "   - Wallet Manager        : $wallet"
+		info "   - Create sample schemas : $sampleSchema"
+	fi
 	info "   - Backup database       : $backup"
 	LN
 
@@ -535,7 +541,6 @@ function adjust_parameters
 	if [ $pdb != undef ]
 	then
 		numberOfPDBs=1
-		pdbAdminPassword=$sysPassword
 	else
 		sampleSchema=no
 	fi
@@ -621,34 +626,6 @@ load_oraenv_for $ORACLE_SID
 
 [ $crs_used == no ] && fsdb_enable_autostart || true
 
-if [[ $cdb == yes && $pdb != undef ]]
-then
-	info "$pdb save state"
-	# Ce n'est pas util lorsque le CRS est utilisé.
-	sqlplus_cmd "$(set_sql_cmd "alter pluggable database $pdb save state;")"
-	LN
-
-	if [ $crs_used == no ]
-	then # Sans le Grid il n'y a pas d'alias créé.
-		exec_cmd ./add_tns_alias.sh	-service=$db				\
-									-host_name=$(hostname -s)	\
-									-tnsalias=$db
-		LN
-	fi
-
-	create_services_for_pdb
-fi
-
-if [ $sampleSchema == yes ]
-then # Doit être exécute après la mise à jour de oratab pour les RACs.
-	timing 2
-	info "Create sample schemas on $pdb"
-	exec_cmd ~/plescripts/db/create_sample_schemas.sh	\
-						-db=$db							\
-						-pdb=$pdb
-	LN
-fi
-
 line_separator
 info "Adjust FRA size"
 if [ $crs_used == yes ]
@@ -702,6 +679,21 @@ fi
 
 copy_glogin
 
+if [[ $cdb == yes && $pdb != undef ]]
+then
+	exec_cmd "~/plescripts/db/create_pdb.sh -db=$db -pdb=$pdb -wallet=$wallet"
+
+	if [ $sampleSchema == yes ]
+	then
+		timing 2
+		info "Create sample schemas on $pdb"
+		exec_cmd ~/plescripts/db/create_sample_schemas.sh	\
+							-db=$db							\
+							-pdb=$pdb
+		LN
+	fi
+fi
+
 line_separator
 info "Configure RMAN"
 exec_cmd "~/plescripts/db/configure_backup.sh"
@@ -711,13 +703,6 @@ if [ $backup == yes ]
 then
 	info "Backup database"
 	exec_cmd "~/plescripts/db/image_copy_backup.sh"
-	LN
-fi
-
-if [[ $wallet == yes && $cdb == yes && $pdb != undef ]]
-then
-	line_separator
-	exec_cmd ./add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb
 	LN
 fi
 

@@ -79,5 +79,5 @@ else
 	script_name=install_grid12cR1.sh
 fi
 
-info "The Grid infrastructure can be installed."
+info "Grid infrastructure can be installed."
 info "./$script_name -db=$db"

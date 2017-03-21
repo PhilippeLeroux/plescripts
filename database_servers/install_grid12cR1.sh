@@ -539,6 +539,17 @@ then
 	LN
 	mount_install_directory
 	LN
+
+	if [ $max_nodes -ne 1 ]
+	then
+		line_separator
+		for node in ${node_names[*]}
+		do
+			exec_cmd "ssh -t root@${node} '~/plescripts/database_servers/test_synchro_ntp.sh'"
+		done
+		LN
+	fi
+
 	start_grid_installation
 	LN
 fi

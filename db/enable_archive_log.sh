@@ -103,6 +103,8 @@ function enable_archivelog_with_GI
 	LN
 
 	info "Start instance $ORACLE_SID"
+	# Attention si le GI est installé est que le wallet est utilisé, la commande
+	# va échouer.
 	sqlplus_cmd "$(set_sql_cmd "startup mount")"
 	LN
 
