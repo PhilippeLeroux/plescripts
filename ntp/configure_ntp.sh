@@ -76,6 +76,12 @@ function configure_ntp
 	exec_cmd "cp $ntp_conf ${ntp_conf}.backup"
 	LN
 
+	if [ $rac_ntp_tinker_panic == yes ]
+	then
+		exec_cmd "sed -i '4itinker panic 0' $ntp_conf"
+		LN
+	fi
+
 	exec_cmd "sed -i '/^server.*iburst$/d' $ntp_conf"
 	LN
 

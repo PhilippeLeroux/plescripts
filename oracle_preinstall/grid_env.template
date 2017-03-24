@@ -37,3 +37,5 @@ function dg
 {
 	~/plescripts/shell/dg "$@"
 }
+
+alias lscrs='crsctl stat res -t'

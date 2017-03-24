@@ -611,6 +611,8 @@ function create_stats_services
 
 	ssh_server "plescripts/stats/create_service_ifiscsi_stats.sh"
 
+	ssh_server "plescripts/stats/create_service_uptime_stats.sh"
+
 	if [ $max_nodes -gt 1 ]
 	then
 		ssh_server "plescripts/stats/create_service_ifrac_stats.sh"

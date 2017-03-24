@@ -50,15 +50,13 @@ ple_enable_log
 
 script_banner $ME $*
 
-_get_other_nodes
-if [ $? -ne 0 ]
+if ! test_if_cmd_exists crsctl
 then
 	error "Work only with Grid Infra started..."
 	exit 1
 fi
 
-test_if_rpm_update_available -show
-if [ $? -ne 0 ]
+if ! test_if_rpm_update_available -show
 then
 	info "No update."
 	exit 0
@@ -66,7 +64,7 @@ fi
 
 confirm_or_exit "Update available, update"
 
-if [ $gi_count_nodes -le 1 ]
+if [ $gi_count_nodes -eq 1 ]
 then
 	info "Update : $gi_current_node"
 	LN
@@ -92,14 +90,6 @@ then
 	LN
 else
 	info "Update : $gi_current_node $gi_node_list"
-	LN
-
-	line_separator
-	info "Stop instances :"
-	while IFS='.' read prefix dbname suffix
-	do
-		exec_cmd -c srvctl stop instance -db $dbname -node $gi_current_node
-	done<<<"$(crsctl stat res -t | grep -E '^ora\..*\.db')"
 	LN
 
 	line_separator

@@ -26,6 +26,7 @@ then # Impossible de démarrer la base avec le wallet.
 else # Sur FS pas de problème.
 	typeset		wallet=yes
 fi
+typeset	sampleSchema=no
 typeset is_seed=no
 typeset admin_user=pdbadmin
 typeset admin_pass=$oracle_password
@@ -34,6 +35,7 @@ typeset	log=yes
 
 add_usage "-db=name"			"Database name."
 add_usage "-pdb=name"			"PDB name."
+add_usage "[-sampleSchema=$sampleSchema]"	"yes|no"
 add_usage "[-is_seed]"			"Create seed pdb."
 add_usage "[-from_pdb=name]"	"Clone from pdb 'name'"
 add_usage "[-wallet=$wallet]"	"yes|no yes : Use Wallet Manager for pdb connection."
@@ -62,6 +64,11 @@ do
 
 		-pdb=*)
 			pdb=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-sampleSchema=*)
+			sampleSchema=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -119,7 +126,8 @@ must_be_user oracle
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
-exit_if_param_invalid	wallet "yes no"	"$str_usage"
+exit_if_param_invalid	wallet			"yes no"	"$str_usage"
+exit_if_param_invalid	sampleSchema	"yes no"	"$str_usage"
 
 if test_if_cmd_exists olsnodes
 then
@@ -347,3 +355,12 @@ then
 fi
 
 [ $wallet == yes ] && create_wallet || true
+
+if [ $sampleSchema == yes ]
+then
+	info "Create sample schemas on $pdb"
+	exec_cmd ~/plescripts/db/create_sample_schemas.sh	\
+						-db=$db							\
+						-pdb=$pdb
+	LN
+fi

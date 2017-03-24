@@ -414,6 +414,9 @@ function create_database
 {
 	make_dbca_args
 
+	exec_cmd "rm -rf $ORACLE_BASE/cfgtoollogs/dbca/$DB"
+	LN
+
 	info "Create database $db"
 	if [ $pdb != undef ]
 	then
@@ -659,11 +662,23 @@ then
 	LN
 fi
 
+copy_glogin
+
+if [[ $cdb == yes && $pdb != undef ]]
+then
+	exec_cmd ~/plescripts/db/create_pdb.sh						\
+								-db=$db							\
+								-pdb=$pdb						\
+								-wallet=$wallet					\
+								-sampleSchema=$sampleSchema
+fi
+
 if [ $crs_used == yes ]
 then
 	line_separator
 	info "Database config :"
 	exec_cmd "srvctl config database -db $lower_db"
+	LN
 	exec_cmd "srvctl status service -db $lower_db"
 	LN
 
@@ -675,23 +690,6 @@ else
 	info "Listener status"
 	exec_cmd -c lsnrctl status
 	LN
-fi
-
-copy_glogin
-
-if [[ $cdb == yes && $pdb != undef ]]
-then
-	exec_cmd "~/plescripts/db/create_pdb.sh -db=$db -pdb=$pdb -wallet=$wallet"
-
-	if [ $sampleSchema == yes ]
-	then
-		timing 2
-		info "Create sample schemas on $pdb"
-		exec_cmd ~/plescripts/db/create_sample_schemas.sh	\
-							-db=$db							\
-							-pdb=$pdb
-		LN
-	fi
 fi
 
 line_separator

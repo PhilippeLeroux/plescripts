@@ -71,6 +71,7 @@ do
 done
 
 script_stop $ME
+LN
 
 if [ "${oracle_release}" == "12.2.0.1" ]
 then

@@ -199,7 +199,6 @@ else
 	exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /home/oracle/.bashrc
 fi
 make_vimrc_file "/home/oracle"
-exec_cmd chown -R oracle:oinstall /home/oracle
 LN
 
 #	============================================================================
@@ -209,6 +208,9 @@ exec_cmd cp ~/plescripts/oracle_preinstall/grid_env /home/oracle/grid_env
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\" \
 			~/plescripts/oracle_preinstall/template_profile.oracle |\
 			sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > $profile_oracle"
+LN
+
+exec_cmd chown -R oracle:oinstall /home/oracle
 LN
 
 . $profile_oracle

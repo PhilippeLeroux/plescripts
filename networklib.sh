@@ -1,5 +1,37 @@
 # vim: ts=4:sw=4
 
+# $1 server to ping
+# return 0 if server is reachable, else other value.
+function ping_test
+{
+	ping -c 1 $1 1>/dev/null 2>&1
+}
+
+# $1 server name
+# $2 port
+# return 0 if port $2 open, else return 0
+function port_open
+{
+	nc $1 $2 </dev/null >/dev/null 2>&1
+}
+
+# $1 server name
+# exit 1 if ssh not available on port 22 or server unreachable.
+function exit_if_cannot_connect_to
+{
+	if ping_test $1
+	then
+		if ! port_open $1 22
+		then
+			error "Server $1 port 22 not open"
+			exit 1
+		fi
+	else
+		error "$1 unreachable"
+		exit 1
+	fi
+}
+
 #*>	pad ip $1 with .0
 #*> Ex : 192.250.240 ==> 192.250.240.0
 function right_pad_ip

@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/cfglib.sh
 
 typeset -r nc_installed=$(which nc)
@@ -9,7 +10,7 @@ typeset -r nc_installed=$(which nc)
 
 typeset -ri max_time=180	#seconds
 
-function ping_test
+function ping_server
 {
 	typeset -r server_name=$1
 
@@ -24,8 +25,7 @@ function ping_test
 	while [ $duration -lt $max_time ]
 	do
 		printf "\b\b\b[$car]"
-		ping_status=$(ping -c 1 $server_name 2>/dev/null | head -2 | tail -1)
-		if [[ -z $ping_status ]] || [[ "$ping_status" = *Unreachable ]]
+		if ! ping_test $server_name
 		then
 			case $car in
 				"|")	car="/"
@@ -61,16 +61,17 @@ function wait_for
 
 	info "Wait $server_name max time $(fmt_seconds $(( $max_time * 2 )) ) :"
 
-	ping_test $server_name
-	[ $? -ne 0 ] && return 1
+	if ! ping_server $server_name
+	then
+		return 1
+	fi
 
 	start=$SECONDS
 	info -n "Wait sshd up : "
 	duration=0
 	while [ $duration -lt $max_time ]
 	do
-		nc $server_name 22 </dev/null >/dev/null 2>&1
-		if [ $? -ne 0 ]
+		if ! port_open $server_name 22
 		then
 			pause_in_secs 5 "$suffix"
 			typeset -i l=$?
@@ -103,11 +104,13 @@ then
 		typeset -i	exit_code=0
 		cfg_exists $ID_DB
 		typeset	-ri max_nodes=$(cfg_max_nodes $ID_DB)
-		for i in $( seq $max_nodes )
+		for (( i=1; i <= max_nodes; ++i ))
 		do
 			cfg_load_node_info $ID_DB $i
-			wait_for $cfg_server_name
-			[ $? -ne  0 ] && exit_code=1
+			if ! wait_for $cfg_server_name
+			then
+				exit_code=1
+			fi
 			LN
 		done
 		exit $exit_code

@@ -258,6 +258,13 @@ function mount_install_directory
 function start_oracle_installation
 {
 	line_separator
+	# Parfois le link échoue : favorise le swap
+	info "Adjust swappiness for link step."
+	typeset -r vm_swappiness=$(ssh root@${node_names[0]} 'sysctl -n vm.swappiness')
+	exec_cmd "ssh root@${node_names[0]} 'sysctl -w vm.swappiness=60'"
+	LN
+
+	line_separator
 	case $edition in
 		EE)
 			info "Install Oracle Enterprise Edition (~10mn)"
@@ -286,6 +293,11 @@ function start_oracle_installation
 		fi
 		exit 1
 	fi
+	LN
+
+	line_separator
+	info "Restore swappiness."
+	exec_cmd "ssh root@${node_names[0]} 'sysctl -w vm.swappiness=$vm_swappiness'"
 	LN
 }
 

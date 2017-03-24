@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -42,6 +43,8 @@ do
 done
 
 exit_if_param_undef host "$str_usage"
+
+exit_if_cannot_connect_to $host
 
 typeset		guest_version=$(ssh root@${host} 'modinfo vboxguest -F version|cut -d\  -f1')
 [ x"$guest_version" == x ] && guest_version="not installed" || true
