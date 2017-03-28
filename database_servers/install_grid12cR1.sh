@@ -550,6 +550,12 @@ then
 		LN
 	fi
 
+	for node in ${node_names[@]}
+	do
+		ssh grid@$node ". .bash_profile && echo 'SQLNET.INBOUND_CONNECT_TIMEOUT=300' > \$TNS_ADMIN/sqlnet.ora"
+	done
+	LN
+
 	start_grid_installation
 	LN
 fi

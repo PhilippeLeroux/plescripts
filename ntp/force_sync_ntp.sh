@@ -1,16 +1,11 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
-#	Version VBox < 5.1.2 il peut être préférable de forcer le sync.
-#	Avec VBox 5.1.2 pas besoin de forcer le sync.
-#	Donc finalement le script ne sera pas mis en oeuvre.
-
 . ~/plescripts/global.cfg
 
 typeset -r ME=$0
 
-typeset -ri	max_offset_ms=4
-typeset -ri	warning_offset_ms=1	# 0 disable warning
+typeset -ri	max_offset_ms=1
 
 #	print abs( $1 ) to stdout
 function abs
@@ -54,11 +49,6 @@ function ntpdate_read_offset_ms
 typeset -i offset_ms=10#$(ntpq_read_offset_ms)
 [ $offset_ms -lt $max_offset_ms ] && status=OK || status=KO
 
-if [[ $warning_offset_ms -ne 0 &&
-		$offset_ms -ge $warning_offset_ms && $offset_ms -lt $max_offset_ms ]]
-then
-	echo "$(date +%Hh%M) : warning offset = $offset_ms ms"
-fi
 [ $status == OK ] && exit 0 || true
 
 [ ! -t 1 ] && exec >> /tmp/force_sync_ntp.$(date +%d) 2>&1 || true

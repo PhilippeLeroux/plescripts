@@ -48,6 +48,22 @@ done
 [[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB
 exit_if_param_undef db	"$str_usage"
 
+# swap instance number :
+#	si $1 == DONALD1 print to stdout DONALD2
+#	si $1 == DONALD_2 print to stdout DONALD_1
+function swap_instance_number
+{
+	typeset		inst="$1"
+	typeset	-ri	l=${#inst}-1
+	typeset -ri	nu=${inst:$l}
+	if [ $nu -eq 1 ]
+	then
+		echo "${inst:0:$l}2"
+	else
+		echo "${inst:0:$l}1"
+	fi
+}
+
 typeset -r	upper_db=$(to_upper $db)
 
 cfg_exists $db
@@ -65,10 +81,36 @@ if [ $max_nodes -eq 2 ]
 then	#	RAC 2 nœuds.
 	cfg_load_node_info $db 2
 	typeset -r	server2=$cfg_server_name
-	inst2=$(ssh oracle@$server2 plescripts/db/get_active_instance.sh)
+	typeset		inst2
+
+	# Pour les RAC Policy Managed ou One Node on ne connait pas le n° de
+	# l'instance démarrée sur le serveur.
+
+	# Boucle tant qu'une instance n'est pas démarrée.
+	while [[ x"$inst1" == x && x"$inst2" == x ]]
+	do
+		timing 5
+		info "Test si l'instance sur $server2 est démarrée."
+		inst2=$(ssh oracle@$server2 plescripts/db/get_active_instance.sh)
+		if [ x"$inst2" == x ]
+		then
+			info "Test si l'instance sur $server1 est démarrée."
+			inst1=$(ssh oracle@$server1 plescripts/db/get_active_instance.sh)
+		fi
+		LN
+	done
+
+	# Une instance est démarrée, déduction du nom de l'autre instance.
+	if [ x"$inst1" == x ]
+	then
+		inst1=$(swap_instance_number $inst2)
+	else
+		inst2=$(swap_instance_number $inst1)
+	fi
 
 	info "Server $server1 running instance $inst1"
 	info "Server $server2 running instance $inst2"
+	LN
 
 	typeset -r	session_name="ORCL Top $server1 / Bottom $server2"
 	exec_cmd -ci tmux kill-session -t \"$session_name\"

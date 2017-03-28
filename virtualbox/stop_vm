@@ -200,6 +200,10 @@ typeset -a vm_stopped_list	# Nom des VMs stoppées.
 typeset	-a dataguard_list	# Nom des autres VMs dans le groupe dataguard.
 typeset -i count_errors=0
 
+# Si arrêt de la VM d'infra alors tous les serveurs de base de données sont
+# stoppés. Le nom des serveurs de base de données commence par srv.
+[ "$server" == "$infra_hostname" ] && server="srv" || true
+
 #===============================================================================
 # Mémorise dans vm_list le nom des VMs runnings correspondantes au pattern $server
 while read vm_name
@@ -208,15 +212,15 @@ do
 done<<<"$(VBoxManage list runningvms | grep "$server" | cut -d\" -f2)"
 
 info "${#vm_list[@]} running VMs found for pattern $server : ${vm_list[@]}"
+[ "$server" == srv ] && info "stop $infra_hostname." || true
 LN
 
-[ ${#vm_list[@]} -eq 0 ] && exit 0 || true
+[[ ${#vm_list[@]} -eq 0 && "$server" != srv ]] && exit 0 || true
 
 #===============================================================================
 # Stop les VMs et mémorise leurs noms dans vm_stopped_list
 # Mémorise le nom des serveurs en dataguard dans dataguard_list.
 line_separator
-#	Stop toutes les VMs
 for vm in ${vm_list[@]}
 do
 	stop_vm_name "$vm"
@@ -269,6 +273,9 @@ then	# Attend que toutes les VMs soient stoppée.
 	info "Total waiting : $(fmt_seconds $duration)"
 	timing 2
 fi
+
+# Arrêt de la VM d'infra quand tous les serveurs sont stoppés.
+[ "$server" == srv ] && stop_vm_name $infra_hostname || true
 
 #===============================================================================
 if [ $count_errors -ne 0 ]

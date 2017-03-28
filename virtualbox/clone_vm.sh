@@ -110,6 +110,7 @@ do
 
 	exec_cmd VBoxManage modifyvm "$vm_name" --memory $vm_memory_mb
 	exec_cmd VBoxManage modifyvm $vm_name --cpus $nr_cpus
+	exec_cmd VBoxManage modifyvm $vm_name --hpet $hpet
 	exec_cmd "VBoxManage modifyvm $vm_name	\
 		--description \"$(~/plescripts/virtualbox/get_vm_description -db=$db)\""
 	LN

@@ -46,8 +46,16 @@ script_banner $ME $*
 
 while [ true ]
 do
-	echo "$(hostname -s) : $(date "+%Hh%Mmn%Ss")"
-	ntpq -p
+	header="$(hostname -s) : $(date "+%Hh%Mmn%Ss") (next in ${pause}s)"
+	buffer="$(ntpq -p)"
+	last_line="$(tail -1<<<"$buffer")"
+	if [ "${last_line:0:1}" == "*" ]
+	then
+		echo "SYNC OK $header"
+	else
+		echo "SYNC KO $header"
+	fi
+	echo "$buffer"
 	echo
 	sleep $pause
 done

@@ -19,7 +19,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -71,5 +70,5 @@ exec_cmd "cd -"
 LN
 
 info "Configuration done."
-info "Backup script : rman/image_copy_level1.rman"
+info "Backup script : rman/image_copy.rman"
 LN

@@ -24,8 +24,8 @@ typeset	-r	orcldbversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
 									awk '{ print $4 }' | cut -d. -f1-2)
 typeset		db=undef
 typeset		sysPassword=$oracle_password
-typeset	-i	totalMemory=$(to_mb $shm_for_db)
-[ $totalMemory -eq 0 ] && totalMemory=780 || true
+typeset	-i	totalMemory=0
+[[ $gi_count_nodes -ne 1 ]] && totalMemory=$(to_mb $shm_for_db) || true
 case "$orcldbversion" in
 	12.1)
 		typeset	shared_pool_size="256M"
@@ -72,7 +72,7 @@ add_usage "-db=name"								"Database name."
 add_usage "[-lang=$lang]"							"Language."
 add_usage "[-sampleSchema=$sampleSchema]"			"yes|no (pdb only)"
 add_usage "[-sysPassword=$sysPassword]"
-add_usage "[-totalMemory=$totalMemory]"				"Unit Mb"
+add_usage "[-totalMemory=$totalMemory]"				"Unit Mb, 0 to disable."
 # 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
 # minimum de 256M sinon la création échoue, sur un FS mettre 0 est OK
 add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting (6)"
@@ -329,10 +329,13 @@ function make_dbca_args
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
 	add_dynamic_cmd_param "-redoLogFileSize $redoSize"
 
-	add_dynamic_cmd_param "-totalMemory $totalMemory"
-	if [[ "$shm_for_db" != "0" && $totalMemory -gt $(to_mb $shm_for_db) ]]
+	if [ $totalMemory -ne 0 ]
 	then
-		warning "totalMemoy (${totalMemory}M) > shm_for_db ($shm_for_db)"
+		add_dynamic_cmd_param "-totalMemory $totalMemory"
+		if [[ "$shm_for_db" != "0" && $totalMemory -gt $(to_mb $shm_for_db) ]]
+		then
+			warning "totalMemoy (${totalMemory}M) > shm_for_db ($shm_for_db)"
+		fi
 	fi
 
 	typeset initParams="-initParams threaded_execution=true"
@@ -626,6 +629,12 @@ then
 fi
 
 load_oraenv_for $ORACLE_SID
+
+if [[ "${db_type:0:3}" == "RAC" && $oracle_release == "12.1.0.2" ]]
+then
+	info "Bug 9040676 : MMON ACTION POLICY VIOLATION. 'BLOCK CLEANOUT OPTIM, UNDO SEGMENT SCAN' (ORA-12751)"
+	sqlplus_cmd "$(set_sql_cmd "alter system set \"_smu_debug_mode\"=134217728 scope=both sid='*';")"
+fi
 
 [ $crs_used == no ] && fsdb_enable_autostart || true
 
