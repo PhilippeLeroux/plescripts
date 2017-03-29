@@ -94,7 +94,10 @@ exit_if_param_undef db	"$str_usage"
 
 cfg_exists $db
 
-typeset	-ri max_nodes=($cfg_max_nodes $db)
+typeset	-ri max_nodes=$(cfg_max_nodes $db)
+
+info "$db #$max_nodes nodes."
+LN
 
 typeset alias_name=${db}
 
@@ -118,12 +121,6 @@ then
 	fi
 fi
 
-if [ "$pdb" == undef ]
-then
-	info "For pdb add -pdb=pdbname"
-	LN
-fi
-
 info "Update $TNS_ADMIN/tnsnames.ora"
 info "    alias   $alias_name"
 info "    service $service"
@@ -133,3 +130,13 @@ LN
 exec_cmd ~/plescripts/db/add_tns_alias.sh	-service=$service	\
 											-host_name=$server	\
 											-tnsalias=$alias_name
+LN
+
+exec_cmd "sed -i 's/$alias_name =$/$alias_name = #${ME##*/}/' $TNS_ADMIN/tnsnames.ora"
+LN
+
+if [ "$pdb" == undef ]
+then
+	info "For pdb add -pdb=pdbname"
+	LN
+fi

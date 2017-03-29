@@ -211,8 +211,8 @@ do
 	[ x"$vm_name" != x ] && vm_list+=( $vm_name )
 done<<<"$(VBoxManage list runningvms | grep "$server" | cut -d\" -f2)"
 
+[ "$server" == srv ] && info "Stop infra server : $infra_hostname" || true
 info "${#vm_list[@]} running VMs found for pattern $server : ${vm_list[@]}"
-[ "$server" == srv ] && info "stop $infra_hostname." || true
 LN
 
 [[ ${#vm_list[@]} -eq 0 && "$server" != srv ]] && exit 0 || true

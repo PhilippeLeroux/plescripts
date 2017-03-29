@@ -36,19 +36,22 @@ done
 
 script_banner $ME $*
 
+typeset -r	hn=$(hostname -s)
 typeset	-ri	max_loops=10
 typeset	-i	wait_time=10
 
 for (( iloop=0; iloop < max_loops; ++iloop ))
 do
 	[ $iloop -ne 0 ] && timing $wait_time "Waiting ntp sync" || true
+
 	while read w1 w2 rem
 	do
 		[[ "$w2" == "" || "$w1" == "remote" ]] && continue || true
 
-		info "Sync state : $w1"
+		info "$hn sync state : $w1"
 		[ "${w1:0:1}" == "*" ] && exit 0 || true
 	done<<<"$(ntpq -p)"
+
 	case $wait_time in
 		10)	[ $iloop -ne 0 ] && wait_time=20 || true
 			;;

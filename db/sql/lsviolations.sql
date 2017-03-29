@@ -1,6 +1,5 @@
 --	vim: ts=4:sw=4
 --	sqldevelpper pas sqlplus
-set lines 100
 select
 	*
 from

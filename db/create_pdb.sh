@@ -364,3 +364,21 @@ then
 						-pdb=$pdb
 	LN
 fi
+
+line_separator
+typeset -r violations=\
+"select
+	name		\"PDB Name\"
+,	count(*)	\"PDB Violations\"
+from
+	pdb_plug_in_violations
+where
+	status	!= 'RESOLVED'
+and	name	= upper( '$pdb' )
+group by
+	name
+;"
+
+info "$pdb violations"
+sqlplus_print_query "$violations"
+LN

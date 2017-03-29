@@ -13,12 +13,12 @@ typeset -r ME=$0
 
 typeset db=undef
 typeset action=install
-typeset edition=auto
+typeset edition=EE
 
 typeset install_oracle=yes
 
 add_usage "-db=name"			"Database identifier"
-add_usage "-edition=$edition"	"if auto SE2 for RAC 12.2 else EE."
+add_usage "-edition=$edition"	"RAC 12.2 :SE|EE else EE."
 typeset -r u1=$(print_usage)
 reset_usage
 
@@ -104,15 +104,7 @@ typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
 typeset		primary_db_server=none
 
-if [ "$edition" == auto ]
-then
-	if [[ "$oracle_release" == "12.2.0.1" && $max_nodes -gt 1 ]]
-	then
-		edition=SE2
-	else
-		edition=EE
-	fi
-elif [ "$oracle_release" == "12.2.0.1" ]
+if [ "$oracle_release" == "12.2.0.1" ]
 then
 	exit_if_param_invalid	edition "EE SE2"	"$str_usage"
 else
@@ -286,11 +278,6 @@ function start_oracle_installation
 	if [ $? -gt 250 ]
 	then
 		LN
-		if [[ $edition == EE && "$oracle_release" == "12.2.0.1" ]]
-		then
-			info "Try with parameter : -edition=SE2"
-			LN
-		fi
 		exit 1
 	fi
 	LN

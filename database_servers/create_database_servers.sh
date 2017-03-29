@@ -82,3 +82,4 @@ fi
 
 info "Grid infrastructure can be installed."
 info "./$script_name -db=$db"
+LN
