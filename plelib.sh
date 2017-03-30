@@ -1159,17 +1159,6 @@ function fill
 #	Fonctions pratiques sur le temps.
 ################################################################################
 
-#*>	Temporisation pendant $1 secondes
-#*>	$1 temps en secondes
-#*>	$2 msg par défaut pas de message.
-function timing
-{
-	typeset -ri secs=$1
-	[ $# -eq 1 ] && typeset msg="" || typeset msg="$2 : "
-
-	info -n "$msg"; pause_in_secs $secs; LN
-}
-
 #*> pause_in_secs <seconds>
 #*> Fait une pause de <seconds> secondes.
 #*> Le décompte du temps écoulé sera affiché à la position courante du curseur.
@@ -1193,11 +1182,11 @@ function pause_in_secs
 			while [ $secs -ne $max_secs ]
 			do
 				sleep 1
-				secs=secs+1
+				((++secs))
 				buffer=$(printf "${secs}/${max_secs}s")
 				buffer="$buffer$suffix"
 
-				if [[ $max_secs -lt 5 || $max_secs -gt 30 ]]
+				if [[ $max_secs -lt 5 || $max_secs -gt 60 ]]
 				then
 					printf "$backspaces$buffer$CEOL"
 					backspaces=$(fill "\b" ${#buffer})
@@ -1219,7 +1208,7 @@ function pause_in_secs
 
 			[ "$PLELIB_OUTPUT" == "FILE" ] && printf "${max_secs}/${max_secs}s" >> $PLELIB_LOG_FILE
 
-			if [[ $max_secs -lt 5 || $max_secs -gt 30 ]]
+			if [[ $max_secs -lt 5 || $max_secs -gt 60 ]]
 			then
 				return ${#buffer}
 			else
@@ -1233,7 +1222,7 @@ function pause_in_secs
 			do
 				printf "."
 				sleep 1
-				secs=secs+1
+				((++secs))
 			done
 
 			buffer="${max_secs}s>: "$(fill . $max_secs)
@@ -1246,6 +1235,17 @@ function pause_in_secs
 			return ${#buffer}
 		;;
 	esac
+}
+
+#*>	Temporisation pendant $1 secondes
+#*>	$1 temps en secondes
+#*>	$2 msg par défaut pas de message.
+function timing
+{
+	typeset -ri secs=$1
+	[ $# -eq 1 ] && typeset msg="" || typeset msg="$2 : "
+
+	info -n "$msg"; pause_in_secs $secs; LN
 }
 
 ple_start=0

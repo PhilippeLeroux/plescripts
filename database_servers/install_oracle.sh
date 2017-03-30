@@ -249,6 +249,17 @@ function mount_install_directory
 
 function start_oracle_installation
 {
+	if [ $max_nodes -ne 1 ]
+	then
+		line_separator
+		for node in ${node_names[*]}
+		do
+			exec_cmd "ssh -t root@${node}	\
+			   '~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=60'"
+			LN
+		done
+	fi
+
 	line_separator
 	# Parfois le link échoue : favorise le swap
 	info "Adjust swappiness for link step."

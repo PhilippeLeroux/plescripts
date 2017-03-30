@@ -79,13 +79,13 @@ line_separator
 exec_cmd "sudo systemctl stop vboxdrv"
 LN
 
-timming 8
+timing 8
 LN
 
 exec_cmd "sudo systemctl start vboxdrv"
 LN
 
-timming 2
+timing 2
 LN
 
 line_separator

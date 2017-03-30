@@ -8,16 +8,19 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-Supprime les options no-kvmclock no-kvmclock-vsyscall
+	Generate grub config file.
 "
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-db=*)
+			db=${1##*=}
 			shift
 			;;
 
@@ -36,23 +39,15 @@ do
 	esac
 done
 
-must_be_user root
+#ple_enable_log
 
-info "Modify kernel parameter, remove parameters no-kvmclock no-kvmclock-vsyscall"
-if ! grep -q "no-kvmclock no-kvmclock-vsyscall" /etc/default/grub
-then
-	error "Parameter not set."
-	exit 1
-fi
-
-exec_cmd "sed -i 's/ no-kvmclock no-kvmclock-vsyscall//g' /etc/default/grub"
-LN
+script_banner $ME $*
 
 info "Generate grub config file"
 exec_cmd grub2-mkconfig -o /boot/grub2/grub.cfg
 LN
 
-info "Workaround kernel boot"
+info "Search kernel UEK"
 #	boot sur le noyau 3.10, alors que :
 #	$ grub2-editenv list
 #	saved_entry=Oracle Linux Server 7.3, with Unbreakable Enterprise Kernel 3.8.13-118.15.1.el7uek.x86_64

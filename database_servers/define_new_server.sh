@@ -307,18 +307,19 @@ function next_instructions
 		fi
 		if [ $max_nodes -eq 1 ]
 		then
-			info "Exec : ./clone_master.sh -db=$db -vmGroup=\"$vmGroup\""
+			info "Execute : ./clone_master.sh -db=$db -vmGroup=\"$vmGroup\""
 		else
-			info "Exec : ./create_database_servers.sh -db=$db -vmGroup=\"$vmGroup\""
+			info "Execute : ./create_database_servers.sh -db=$db -vmGroup=\"$vmGroup\""
 		fi
 	else
 		if [ $max_nodes -eq 1 ]
 		then
-			info "Exec : ./clone_master.sh -db=$db"
+			info "Execute : ./clone_master.sh -db=$db"
 		else
-			info "Exec : ./create_database_servers.sh -db=$db"
+			info "Execute : ./create_database_servers.sh -db=$db"
 		fi
 	fi
+	LN
 }
 
 if [ "$rel" != "${oracle_release%.*.*}" ]
@@ -366,7 +367,6 @@ if [[ $rel == "12.2" && $max_nodes -gt 1 ]]
 then
 	if [[ $luns_hosted_by != vbox || $OH_FS != ocfs2 ]]
 	then
-		LN
 		warning "Advice with RAC $rel add options : -luns_hosted_by=vbox -OH_FS=ocfs2"
 		LN
 	fi

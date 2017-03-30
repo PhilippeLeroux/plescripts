@@ -525,12 +525,26 @@ function rac_configure_ntp
 
 	if [ $kvmclock == disable ]
 	then
-		ssh_server "~/plescripts/ntp/disable_kvmclock.sh"
+		ssh_server "~/plescripts/grub2/disable_kvmclock.sh"
 		LN
 	else
 		info "kvmclock not disabled."
 		LN
 	fi
+}
+
+function disable_cgroup_memory
+{
+	line_separator
+	info "Disable cgroup for memory"
+	LN
+
+	typeset sed_cmd='sed -i "s/GRUB_CMDLINE_LINUX=\"\(.*\)\"/GRUB_CMDLINE_LINUX=\"\1 cgroup_disable=memory\"/" /etc/default/grub'
+	ssh_server "$sed_cmd"
+	LN
+
+	ssh_server "~/plescripts/grub2/grub2_mkconfig.sh"
+	LN
 }
 
 function copy_color_file
@@ -721,12 +735,14 @@ create_stats_services
 #	Pour utiliser chrony définir la variable RAC_NTP=chrony
 [[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
 
+[ $cgroup_memory == disable ] && disable_cgroup_memory || true
+
 info "Reboot needed : new kernel config from oracle-rdbms-server-12cR1-preinstall"
 exec_cmd reboot_vm $server_name
 LN
 loop_wait_server $server_name
 
-if [ $install_guestadditions == yes ]
+if [ "$install_guestadditions" == yes ]
 then
 	fake_exec_cmd cd ~/plescripts/virtualbox/guest
 	cd ~/plescripts/virtualbox/guest

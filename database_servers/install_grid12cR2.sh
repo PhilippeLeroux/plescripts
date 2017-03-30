@@ -305,6 +305,13 @@ function start_grid_installation
 		exit 1
 	fi
 	LN
+
+	line_separator
+	for node in ${node_names[@]}
+	do
+		ssh grid@$node ". .bash_profile && echo 'SQLNET.INBOUND_CONNECT_TIMEOUT=300' > \$TNS_ADMIN/sqlnet.ora"
+	done
+	LN
 }
 
 function run_post_install_root_scripts_on_node	# $1 node# $2 server_name
@@ -346,6 +353,14 @@ function run_post_install_root_scripts
 
 		if [ $ret -ne 0 ]
 		then
+			# L'erreur se produit quand la synchronisation du temps est mauvaise.
+			# Les erreurs de synchronisation varient bcps entre les diverses
+			# versions de mon OS et de VirtualBox.
+			#
+			# Pour valider que le problème vient bien de la synchro du temps, voir
+			# le fichier /tmp/force_sync_ntp.DD, si il y a bcp de resynchronisation
+			# c'est que le temps sur le serveur fait des sauts.
+
 			error "root scripts on server $node_name failed."
 			[ $inode -eq 0 ] && exit 1 || true
 
@@ -667,15 +682,9 @@ then
 		for node in ${node_names[*]}
 		do
 			exec_cmd "ssh -t root@${node} '~/plescripts/database_servers/test_synchro_ntp.sh'"
+			LN
 		done
-		LN
 	fi
-
-	for node in ${node_names[@]}
-	do
-		ssh grid@$node ". .bash_profile && echo 'SQLNET.INBOUND_CONNECT_TIMEOUT=300' > \$TNS_ADMIN/sqlnet.ora"
-	done
-	LN
 
 	start_grid_installation
 

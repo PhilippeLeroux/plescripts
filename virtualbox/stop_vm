@@ -152,7 +152,7 @@ function load_vm_in_group
 
 		if [ "$(group_name_for_vm $vm_name)" == "$search_group" ]
 		then
-			dataguard_list+=( $vm_name ) 
+			dataguard_list+=( $vm_name )
 		fi
 	done<<<"$(VBoxManage list vms | cut -d\" -f2)"
 }
@@ -215,67 +215,73 @@ done<<<"$(VBoxManage list runningvms | grep "$server" | cut -d\" -f2)"
 info "${#vm_list[@]} running VMs found for pattern $server : ${vm_list[@]}"
 LN
 
-[[ ${#vm_list[@]} -eq 0 && "$server" != srv ]] && exit 0 || true
+if [ ${#vm_list[@]} -eq 0 ]
+then
+	[ "$server" != srv ] && exit 0 || true
+else
+	#===========================================================================
+	# Stop les VMs et mémorise leurs noms dans vm_stopped_list
+	# Mémorise le nom des serveurs en dataguard dans dataguard_list.
+	line_separator
+	for vm in ${vm_list[@]}
+	do
+		stop_vm_name "$vm"
 
-#===============================================================================
-# Stop les VMs et mémorise leurs noms dans vm_stopped_list
-# Mémorise le nom des serveurs en dataguard dans dataguard_list.
-line_separator
-for vm in ${vm_list[@]}
-do
-	stop_vm_name "$vm"
-
-	if [[ $dataguard == yes && ${#vm_list[@]} -eq 1 ]]
-	then # Actuellement seul les serveurs standalone sont en DG.
-		dg_group="$(group_name_for_vm $vm)"
-		if [ "${dg_group:0:2}" == "DG" ]
-		then
-			load_vm_in_group "$dg_group" "$vm"
+		if [[ $dataguard == yes && ${#vm_list[@]} -eq 1 ]]
+		then # Actuellement seul les serveurs standalone sont en DG.
+			dg_group="$(group_name_for_vm $vm)"
+			if [ "${dg_group:0:2}" == "DG" ]
+			then
+				load_vm_in_group "$dg_group" "$vm"
+			fi
 		fi
+
+		LN
+	done
+
+	if [ ${#dataguard_list[@]} -ne 0 ]
+	then
+		#	====================================================================
+		#	Arrête les éventuelles autres VMs du dataguard.
+		line_separator
+		info "Stop dataguard members : ${dataguard_list[*]}"
+		for vm_name in ${dataguard_list[*]}
+		do
+			if vm_running $vm_name
+			then
+				vm_list+=( $vm_name )
+				stop_vm_name "$vm_name"
+				LN
+			else
+				info "$vm_name not running."
+				LN
+			fi
+		done
 	fi
 
-	LN
-done
-
-#	============================================================================
-#	Arrête les éventuelles autres VMs du dataguard.
-if [ ${#dataguard_list[@]} -ne 0 ]
-then
-	line_separator
-	info "Stop dataguard members : ${dataguard_list[*]}"
-	for vm_name in ${dataguard_list[*]}
-	do
-		if vm_running $vm_name
-		then
-			vm_list+=( $vm_name )
-			stop_vm_name "$vm_name"
-			LN
-		else
-			info "$vm_name not running."
-			LN
-		fi
-	done
+	#===========================================================================
+	if [[ $EXEC_CMD_ACTION == EXEC && $wait_os == yes ]]
+	then	# Attend que toutes les VMs soient stoppée.
+		typeset -ri	stop_at=$SECONDS
+		line_separator
+		typeset -i count=0
+		for vm_2_wait in ${vm_stopped_list[*]}
+		do
+			wait_vm_until_stopped "$vm_2_wait"
+			[ $count -ne 0 ] && LN || true
+			((++count))
+		done
+		typeset -ri	duration=$(( SECONDS - stop_at ))
+		info "Total waiting : $(fmt_seconds $duration)"
+		timing 2
+	fi
 fi
 
-#===============================================================================
-if [[ $EXEC_CMD_ACTION == EXEC && $wait_os == yes ]]
-then	# Attend que toutes les VMs soient stoppée.
-	typeset -ri	stop_at=$SECONDS
-	line_separator
-	typeset -i count=0
-	for vm_2_wait in ${vm_stopped_list[*]}
-	do
-		wait_vm_until_stopped "$vm_2_wait"
-		[ $count -ne 0 ] && LN || true
-		((++count))
-	done
-	typeset -ri	duration=$(( SECONDS - stop_at ))
-	info "Total waiting : $(fmt_seconds $duration)"
-	timing 2
+if [ "$server" == srv ]
+then # Arrêt de la VM d'infra quand tous les serveurs sont stoppés.
+	stop_vm_name $infra_hostname
+	wait_vm_until_stopped $infra_hostname
 fi
-
-# Arrêt de la VM d'infra quand tous les serveurs sont stoppés.
-[ "$server" == srv ] && stop_vm_name $infra_hostname || true
 
 #===============================================================================
 if [ $count_errors -ne 0 ]

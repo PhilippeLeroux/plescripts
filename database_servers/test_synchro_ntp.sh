@@ -6,14 +6,23 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME ...."
+
+typeset	-i	max_loops=10
+
+typeset -r	str_usage=\
+"Usage :
+	$ME [-max_loops=$max_loops]"
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-max_loops=*)
+			max_loops=${1##*=}
 			shift
 			;;
 
@@ -37,7 +46,6 @@ done
 script_banner $ME $*
 
 typeset -r	hn=$(hostname -s)
-typeset	-ri	max_loops=10
 typeset	-i	wait_time=10
 
 for (( iloop=0; iloop < max_loops; ++iloop ))

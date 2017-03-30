@@ -50,21 +50,5 @@ exec_cmd cp /etc/default/grub /etc/default/grub.$(date +%d)
 exec_cmd "sed -i 's/GRUB_CMDLINE_LINUX=\"\(.*\)\"/GRUB_CMDLINE_LINUX=\"\1 no-kvmclock no-kvmclock-vsyscall\"/' /etc/default/grub"
 LN
 
-info "Generate grub config file"
-exec_cmd grub2-mkconfig -o /boot/grub2/grub.cfg
-LN
-
-info "Workaround kernel boot"
-#	boot sur le noyau 3.10, alors que :
-#	$ grub2-editenv list
-#	saved_entry=Oracle Linux Server 7.3, with Unbreakable Enterprise Kernel 3.8.13-118.15.1.el7uek.x86_64
-
-#	Le premier kernel UEK est celui à utiliser.
-UEK=$(grep -E "^menuentry.*Unbreakable Enterprise Kernel.*" /boot/grub2/grub.cfg | cut -d\' -f2 | head -1)
-info "boot on $UEK"
-#	C'est déjà celui par défaut, mais il faut quand même le préciser.
-exec_cmd "grub2-set-default '$UEK'"
-LN
-
-info "Take effect after reboot."
+exec_cmd "~/plescripts/grub2/grub2_mkconfig.sh"
 LN
