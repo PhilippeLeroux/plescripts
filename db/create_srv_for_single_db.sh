@@ -101,7 +101,7 @@ function test_if_service_exists
 								-service $service" >/dev/null 2>&1
 }
 
-function oci_service
+function create_or_modify_oci_service
 {
 	case "$role" in
 		primary|undef)
@@ -160,7 +160,7 @@ function oci_service
 	fi
 }
 
-function java_service
+function create_or_modify_java_service
 {
 	case "$role" in
 		primary|undef)
@@ -285,7 +285,7 @@ function create_service_no_crs
 	fi
 }
 
-function oci_service_no_crs
+function create_or_modify_oci_service_no_crs
 {
 	case "$role" in
 		primary|undef)
@@ -300,7 +300,7 @@ function oci_service_no_crs
 	create_service_no_crs $service
 }
 
-function java_service_no_crs
+function create_or_modify_java_service_no_crs
 {
 	case "$role" in
 		primary|undef)
@@ -349,13 +349,13 @@ esac
 
 if [ $crs_used == yes ]
 then
-	oci_service
+	create_or_modify_oci_service
 
-	java_service
+	create_or_modify_java_service
 else
 	create_database_trigger_no_crs
 
-	oci_service_no_crs
+	create_or_modify_oci_service_no_crs
 
-	java_service_no_crs
+	create_or_modify_java_service_no_crs
 fi
