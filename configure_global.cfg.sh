@@ -66,6 +66,8 @@ function ask_for_variable
 		str=$(escape_anti_slash "$var_value")
 		info "Press <enter> to select : $str"
 		info -n "Or new value : "
+	else
+		info -n "Value : "
 	fi
 	read -r keyboard
 
@@ -79,7 +81,7 @@ function ask_for_variable
 
 function read_dns_main_ip
 {
-	typeset outp=$(cat /etc/resolv.conf | grep -E "^nameserver" | grep -Ev "$infra_ip")
+	typeset outp=$(cat /etc/resolv.conf | grep -E "^nameserver")
 	if [ $(wc -l<<<"$outp") -eq 1 ]
 	then
 		cut -d\  -f2<<<"$outp"
@@ -100,7 +102,6 @@ then
 	then
 		info -f "[$KO]"
 		LN
-		exit 1
 	else
 		info -f "[$OK]"
 		LN
@@ -116,7 +117,6 @@ if [ ! -f "$full_linux_iso_n" ]
 then
 	info -f "[$KO]"
 	LN
-	exit 1
 else
 	info -f "[$OK]"
 	LN
@@ -132,7 +132,6 @@ then
 else
 	info -f "[$KO]"
 	LN
-	exit 1
 fi
 
 disks_stored_on=$disks_hosted_by
@@ -145,7 +144,6 @@ case "$disks_stored_on" in
 	*)
 		error "Value $disks_stored_on invalid."
 		LN
-		exit 1
 		;;
 esac
 
@@ -166,7 +164,7 @@ LN
 exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"$vm_p\"~g' ~/plescripts/global.cfg"
 LN
 
-exec_cmd "sed -i 's~disks_stored_on=.*$~disks_stored_on=\"$disks_stored_on\"~g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's~disks_hosted_by=.*$~disks_hosted_by=$disks_stored_on~g' ~/plescripts/global.cfg"
 LN
 
 if [ "$HOME/ISO/oracle_linux_7/$OracleLinux73" == "$full_linux_iso_n" ]
@@ -176,7 +174,6 @@ then
 	error "Oracle Linux $OL7_LABEL_n don't work."
 	error "Latest tested Release is Oracle Linux 7.2 ISO : $OracleLinux72"
 	LN
-	exit 1
 else
 	OL7_LABEL_n=7.2
 fi
