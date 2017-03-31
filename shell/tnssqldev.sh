@@ -104,7 +104,7 @@ typeset alias_name=${db}
 if [ "$pdb" != undef ]
 then
 	alias_name=$(to_upper ${db}_${pdb})
-	[ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
+	[ "$service" == auto ] && service=$(mk_java_service $pdb) || true
 else
 	alias_name=$(to_upper ${db})
 	[ "$service" == auto ] && service=$db || true
