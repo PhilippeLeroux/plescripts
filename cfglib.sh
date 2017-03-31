@@ -37,7 +37,7 @@ function cfg_max_nodes
 #*>		- cfg_iscsi_ip			ip des disques iscsi
 #*>		- cfg_luns_hosted_by	vbox|san
 #*>		- cfg_oracle_home		ocfs2|xfs
-#*>		- cfg_stantby			standby id
+#*>		- cfg_standby			standby id	or none
 #*>
 #*> La fonction test_if_other_nodes_up du script clone_master.sh lie le nom
 #*> des serveurs sans passer pas cette fonction : ne pas déplacer le champs

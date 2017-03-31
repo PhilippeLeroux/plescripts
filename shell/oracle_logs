@@ -130,9 +130,34 @@ else	#	Mono Instance.
 		inst1=$(ssh oracle@$server1 grep "^[A-Z].*" /etc/oratab | cut -d: -f1)
 	fi
 
-	typeset -r	session_name="ORCL Top $server1 / Bottom $server2"
-	exec_cmd -ci tmux kill-session -t \"$session_name\"
+	if [ "$cfg_standby" != none ]
+	then
+		db_stby=$cfg_standby
+		cfg_load_node_info $cfg_standby 1
+		if ping -c 1 $cfg_server_name >/dev/null 2>&1
+		then
+			server2=$cfg_server_name
+			inst2=$(ssh oracle@$server2 grep "^[A-Z].*" /etc/oratab | cut -d: -f1)
 
+			typeset -r	session_name="ORCL Top $db / Bottom $db_stby"
+			exec_cmd -ci tmux kill-session -t \"$session_name\"
+
+			alert1=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst1 $inst1)
+			alert2=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $db_stby $inst2 $inst2)
+
+			tmux new -s "$session_name"										\
+				"ssh oracle@${server1} '. .profile; tail -1000f $alert1'"	\;\
+				split-window -v												\
+				"ssh oracle@${server2} '. .profile; tail -1000f $alert2'"	\;\
+				selectp -t 0
+			exit 0
+		else
+			error "ping of $cfg_server_name failed."
+		fi
+	fi
+
+	typeset -r	session_name="ORCL $server1"
+	exec_cmd -ci tmux kill-session -t \"$session_name\"
 	alert1=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $(to_lower $inst1) $inst1 $inst1)
 	ssh oracle@${server1} ". .profile; tail -1000f $alert1"
 fi
