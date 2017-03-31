@@ -118,6 +118,11 @@ then
 	else
 		cfg_load_node_info $db 1
 		server=$cfg_server_name
+		if [[ "$cfg_standby" != none && "$pdb" != undef ]]
+		then
+			cfg_load_node_info $cfg_standby 1
+			server="'$server $cfg_server_name'"
+		fi
 	fi
 fi
 
@@ -127,9 +132,12 @@ info "    service $service"
 info "    server  $server"
 LN
 
-exec_cmd ~/plescripts/db/add_tns_alias.sh	-service=$service	\
-											-host_name=$server	\
-											-tnsalias=$alias_name
+exec_cmd ~/plescripts/db/delete_tns_alias.sh -tnsalias=$alias_name
+LN
+
+exec_cmd "~/plescripts/shell/gen_tns_alias.sh	-service=$service		\
+												-server_list=$server	\
+												-alias_name=$alias_name >> $TNS_ADMIN/tnsnames.ora"
 LN
 
 exec_cmd "sed -i 's/$alias_name =$/$alias_name = #${ME##*/}/' $TNS_ADMIN/tnsnames.ora"

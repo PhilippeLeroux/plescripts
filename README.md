@@ -81,6 +81,12 @@ Suivre les [instructions ici](https://github.com/PhilippeLeroux/plescripts/wiki/
 
 --------------------------------------------------------------------------------
 
+### Gestion du tnsnames.ora sur le virtual-host et adresse de scan
+
+Comment utiliser l'adresse de scan et gestion du tnsnames.ora décrit [ici](https://github.com/PhilippeLeroux/plescripts/wiki/Gestion-du-tnsname.ora-depuis-le-virtual-host)
+
+--------------------------------------------------------------------------------
+
 ##	Temps de références
 ### Création d'un dataguard (Base single)
 
