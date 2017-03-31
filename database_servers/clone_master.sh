@@ -488,15 +488,17 @@ function configure_oracle_accounts
 
 	if [ $cfg_db_type != fs ]
 	then
+		typeset -r srvctl_script="srvctl_${oracle_release%.*.*}.bash"
 		info "install bash completion for srvctl"
 		typeset -r BACKUP_PWD="$PWD"
 		fake_exec_cmd "cd ~/plescripts/tmp"
 		cd ~/plescripts/tmp
-		exec_cmd rm -f srvctl.bash
-		exec_cmd -c wget https://raw.githubusercontent.com/PhilippeLeroux/oracle_bash_completion/master/srvctl.bash
+		exec_cmd rm -f $srvctl_script
+		exec_cmd -c wget https://raw.githubusercontent.com/PhilippeLeroux/oracle_bash_completion/master/$srvctl_script
 		if [ $? -eq 0 ]
 		then
-			exec_cmd scp srvctl.bash root@$cfg_server_name:/etc/bash_completion.d/
+			exec_cmd scp	$srvctl_script	\
+							root@$cfg_server_name:/etc/bash_completion.d/
 		fi
 		fake_exec_cmd "cd -"
 		cd -
