@@ -135,7 +135,7 @@ else
 fi
 
 disks_stored_on=$disks_hosted_by
-ask_for_variable disks_stored_on "san or vbox :"
+ask_for_variable disks_stored_on "Disks managed by san or vbox (vbox = VirtualBox) :"
 disks_stored_on=$(to_lower $disks_stored_on)
 case "$disks_stored_on" in
 	vbox|san)

@@ -56,6 +56,10 @@ function backstore_exists
 	targetcli ls backstores/block/$1 >/dev/null 2>&1
 }
 
+# Si le vg asm01 n'existe pas c'est que le serveur d'infra ne sert par de SAN.
+vgs asm01 >/dev/null 2>&1
+[ $? -ne 0 ] && exit 0 || true
+
 ple_enable_log san_status.log
 
 typeset -i lv_errors=$(count_lv_errors)

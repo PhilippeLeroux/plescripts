@@ -6,8 +6,8 @@ dans les conditions proches de ce que l'on peut trouver en entreprise.
 
 Le serveur central se nomme K2 et a en charge :
 - la gestion du DNS via bind.
-- la gestion du SAN via target (qui est présent sur les distributions de type Redhat),
-les disques sont exportés sur le réseau via le protocole iSCSI.
+- la gestion du SAN via target (optionnel, le stockage peut être fait à 100% sur
+VirtualBox), les disques sont exportés sur le réseau via le protocole iSCSI.
 - la GATEWAY qui centralise l'accès à internet des serveurs, par défaut aucun
 serveur de base de données ne peut accéder à internet. Le firewall et SELinux sont
 activés sur ce serveur.

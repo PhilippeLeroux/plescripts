@@ -143,14 +143,17 @@ exec_cmd VBoxManage storagectl $infra_hostname --name SATA --hostiocache on
 LN
 fi # [ 0 -eq 1 ]; then
 
-line_separator
-info "Add disk for SAN storage (targetcli)"
-exec_cmd $vm_scripts_path/add_disk.sh					\
-				-vm_name=$infra_hostname				\
-				-disk_name=asm01_disk01					\
-				-disk_mb=$(( $san_disk_size_g * 1024 ))	\
-				-fixed_size
-LN
+if [ $disks_hosted_by == san ]
+then
+	line_separator
+	info "Add disk for SAN storage (targetcli)"
+	exec_cmd $vm_scripts_path/add_disk.sh					\
+					-vm_name=$infra_hostname				\
+					-disk_name=asm01_disk01					\
+					-disk_mb=$(( $san_disk_size_g * 1024 ))	\
+					-fixed_size
+	LN
+fi
 
 line_separator
 info "Move $infra_hostname to group Infra"
