@@ -247,6 +247,20 @@ function mount_install_directory
 	LN
 }
 
+# $1 server
+function check_oracle_size
+{
+	typeset -r server=$1
+
+	typeset -r size="$(ssh oracle@$server '. .bash_profile && du -sh $ORACLE_HOME/bin/oracle | cut -d\  -f1')"
+	if [ "$size" == "0" ]
+	then
+		error "link failed : \$ORACLE_HOME/bin/oracle size 0."
+		LN
+		exit 1
+	fi
+}
+
 function start_oracle_installation
 {
 	if [ $max_nodes -ne 1 ]
@@ -292,6 +306,8 @@ function start_oracle_installation
 		exit 1
 	fi
 	LN
+
+	check_oracle_size ${node_names[0]}
 
 	line_separator
 	info "Restore swappiness."

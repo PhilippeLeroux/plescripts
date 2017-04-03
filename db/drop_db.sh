@@ -71,6 +71,27 @@ function error_msg_on_script_failed
 	LN
 }
 
+function remove_database_from_broker
+{
+	line_separator
+	dgmgrl -silent -echo<<-EOS | tee -a $PLELIB_LOG_FILE
+	connect sys/$oracle_password
+	remove database $db;
+	EOS
+	LN
+
+	exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
+	exec_cmd -c sudo -u grid -i "asmcmd rm -f FRA/$db/dr2db_*.dat"
+	LN
+}
+
+typeset -r dataguard=$(dataguard_config_available)
+
+if [ $dataguard == yes ]
+then
+	remove_database_from_broker
+fi
+
 if test_if_cmd_exists crsctl
 then
 	typeset -r crs_used=yes

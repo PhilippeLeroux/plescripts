@@ -108,6 +108,13 @@ function drop_pdb_on_physical_standby_database
 	done<<<"$(dgmgrl sys/$oracle_password 'show configuration'	|\
 					grep "Physical standby" | awk '{ print $1 }')"
 
+	if [ ${#physical_list[@]} -eq 0 ]
+	then
+		warning "no Physical Standby found."
+		LN
+		return 0
+	fi
+
 	#	Load physical standby servers.
 	typeset stby_name
 	for stby_name in ${physical_list[*]}

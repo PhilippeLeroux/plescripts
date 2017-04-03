@@ -679,7 +679,8 @@ then
 								-db=$db							\
 								-pdb=$pdb						\
 								-wallet=$wallet					\
-								-sampleSchema=$sampleSchema
+								-sampleSchema=$sampleSchema		\
+								-nolog
 fi
 
 if [ $crs_used == yes ]

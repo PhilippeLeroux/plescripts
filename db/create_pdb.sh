@@ -129,6 +129,8 @@ exit_if_param_undef pdb	"$str_usage"
 exit_if_param_invalid	wallet			"yes no"	"$str_usage"
 exit_if_param_invalid	sampleSchema	"yes no"	"$str_usage"
 
+[ $log == yes ] && script_start || true
+
 if test_if_cmd_exists olsnodes
 then
 	typeset -r crs_used=yes
@@ -157,12 +159,28 @@ function clone_from_pdb
 	function ddl_clone_from_pdb
 	{
 		set_sql_cmd "whenever sqlerror exit 1;"
+		if [ $dataguard == yes ]
+		then
+			# Sur un Dataguard si le PDB est RW alors la synchro est HS
+			# Il faut que le PDB soit RO pour être clonable : BUG or not BUG ??
+			set_sql_cmd "alter pluggable database $1 close immediate instances=all;"
+			set_sql_cmd "alter pluggable database $1 open read only instances=all;"
+		fi
 		set_sql_cmd "create pluggable database $pdb from $1;"
+		if [ $dataguard == yes ]
+		then
+			set_sql_cmd "alter pluggable database $1 close immediate instances=all;"
+			set_sql_cmd "alter pluggable database $1 open instances=all;"
+		fi
 	}
 	info "Clone $pdb from $1"
+	if [ $dataguard == yes ]
+	then
+		warning "Dataguard bug : $1 must be reopen RO"
+		LN
+	fi
 	sqlplus_cmd "$(ddl_clone_from_pdb $1)"
 	[ $? -ne 0 ] && exit 1 || true
-
 }
 
 # Primary database : no parameter
@@ -189,7 +207,7 @@ function create_pdb_services
 {
 	line_separator
 	info "Create services"
-	if [ $dataguard == yes ]
+	if [[ $dataguard == yes && ${#physical_list[@]} -ne 0 ]]
 	then
 		for (( i=0; i < ${#physical_list[@]}; ++i ))
 		do
@@ -201,6 +219,12 @@ function create_pdb_services
 			LN
 		done
 	else
+		if [ $dataguard == yes ]
+		then
+			warning "Dataguard configured but no physical standby"
+			LN
+		fi
+
 		if [ $gi_count_nodes -eq 1 ]
 		then
 			exec_cmd ./create_srv_for_single_db.sh -db=$db -pdb=$pdb
@@ -313,25 +337,23 @@ fi
 
 if [ $is_seed == yes ]
 then
-	info "Open RO $pdb and save state (no services on seed PDB)."
+	info "Open RO $pdb and save state."
 	sqlplus_cmd "$(pdb_seed_ro_and_save_state)"
 	LN
 else
-	if [ $crs_used == no ]
-	then # Sans le CRS démarrer le service n'ouvre pas l'instance du PDB.
-		function open_pdb_and_save_state
-		{
-			set_sql_cmd "alter pluggable database $pdb open;"
-			set_sql_cmd "alter pluggable database $pdb save state;"
-		}
-		sqlplus_cmd "$(open_pdb_and_save_state)"
-		LN
-	fi
+	function open_pdb_and_save_state
+	{
+		set_sql_cmd "alter pluggable database $pdb open instances=all;"
+		set_sql_cmd "alter pluggable database $pdb save state;"
+	}
+	info "Open RW $pdb and save state."
+	sqlplus_cmd "$(open_pdb_and_save_state)"
+	LN
 
 	create_pdb_services
 fi
 
-if [ $dataguard == yes ]
+if [[ $dataguard == yes && ${#physical_list[*]} -ne 0 ]]
 then
 	function add_temp_tbs_to
 	{
@@ -340,7 +362,7 @@ then
 	}
 
 	line_separator
-	info "12cR1 : temporary tablespace not created."
+	info "12c : temporary tablespace not created on standby."
 	for stby_name in ${physical_list[*]}
 	do
 		sqlplus_cmd_with sys/$oracle_password@$stby_name as sysdba	\
@@ -382,3 +404,5 @@ group by
 info "$pdb violations"
 sqlplus_print_query "$violations"
 LN
+
+[ $log == yes ] && script_stop ${ME##*/} || true

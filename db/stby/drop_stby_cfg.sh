@@ -122,6 +122,7 @@ function remove_database_from_broker
 	LN
 
 	exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
+	exec_cmd -c sudo -u grid -i "asmcmd rm -f FRA/$db/dr2db_*.dat"
 	LN
 }
 
@@ -141,14 +142,9 @@ function convert_physical_to_primary
 function remove_SRLs
 {
 	line_separator
+	info "Drop Standby redo log"
 	sqlplus_cmd "@drop_standby_redolog.sql"
 	LN
-if [ 0 -eq 1 ]; then
-	sqlplus -s sys/$oracle_password as sysdba<<-EOS
-	@drop_standby_redolog.sql
-	EOS
-	LN
-fi # [ 0 -eq 1 ]; then
 }
 
 function drop_all_services
