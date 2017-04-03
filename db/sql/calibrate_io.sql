@@ -8,9 +8,12 @@ set termout on feed off
 set serveroutput on
 set timin on
 
+define v_max_latency=&1
+
 declare
 --
-max_latency	constant integer := 100;
+max_latency	constant integer := &v_max_latency;
+
 --
 procedure p( b varchar2 )
 as
@@ -118,6 +121,23 @@ begin
 end save_measures;
 
 --
+function asm_is_used return boolean
+as
+	l_exist number := 0;
+begin
+	select
+		count(*)
+	into
+		l_exist
+	from
+		v$asm_disk
+	;
+
+	return l_exist != 0;
+
+end asm_is_used;
+
+--
 function get_number_disks_on_dg( p_dg_name varchar2 )
 	return integer
 as
@@ -148,7 +168,7 @@ as
 	mbps	integer;
 begin
 
-	--	Je considère que le nombre de disque est celui dans un DG.
+	p( 'run : dbms_resource_manager.calibrate_io( '||nr_disks||', '||max_latency||', iops, mbps, latency );' );
 	dbms_resource_manager.calibrate_io( nr_disks, max_latency, iops, mbps, latency );
 
 	save_measures;
@@ -156,20 +176,14 @@ begin
 end	calibrate;
 
 --
-procedure main(	dg_name			varchar2,
-				max_loops		number,
-				trunc_table		boolean )
+procedure calibrate_io_asm(	dg_name			varchar2,
+							max_loops		number,
+							trunc_table		boolean )
 as
-	timed_stats	constant varchar2(255)	:= parameter_value( 'timed_statistics' );
 	disks		constant integer		:= get_number_disks_on_dg( dg_name );
 --
 	i_loop	number	:= 0;
 begin
-
-	if timed_stats != 'TRUE' 
-	then
-		fatal_error( 'Error timed_statistics == '||timed_stats||' expected TRUE.' );
-	end if;
 
 	prepare_table( trunc_table );
 
@@ -179,11 +193,49 @@ begin
 		calibrate( disks );
 	end loop;
 
-end main;
+end calibrate_io_asm;
 
+--
+procedure calibrate_io_fs(	disks			number,
+							max_loops		number,
+							trunc_table		boolean )
+as
+	i_loop	number	:= 0;
+begin
+
+	prepare_table( trunc_table );
+
+	while i_loop < max_loops
+	loop
+		i_loop := i_loop + 1;
+		calibrate( disks );
+	end loop;
+
+end calibrate_io_fs;
+
+--	Lance une exception si les prés requis ne sont pas remplis.
+procedure check_prereq
+as
+	timed_stats	constant varchar2(255)	:= parameter_value( 'timed_statistics' );
+begin
+	if timed_stats != 'TRUE' 
+	then
+		fatal_error( 'Error timed_statistics == '||timed_stats||' expected TRUE.' );
+	end if;
+end check_prereq;
+
+--	============================================================================
 begin
 	p( 'max_latency = '||max_latency );
-	main( dg_name => 'DATA', max_loops => 1, trunc_table => false );
+	
+	check_prereq;
+
+	if asm_is_used
+	then
+		calibrate_io_asm( dg_name => 'DATA', max_loops => 1, trunc_table => false );
+	else
+		calibrate_io_fs( 4, max_loops => 1, trunc_table => false );
+	end if;
 end;
 /
 set serveroutput off

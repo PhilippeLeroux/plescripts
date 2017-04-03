@@ -70,12 +70,12 @@ done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
 
 typeset -ri max_vms=${#vm_list[@]}
 info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
-[ $max_vms -eq 0 ] && exit 1
+[ $max_vms -eq 0 ] && exit 1 || true
 
-[ $confirm == yes ] && confirm_or_exit "Delete them ?"
+[ $confirm == yes ] && confirm_or_exit "Delete them ?" || true
 
 info "Stop all VMs..."
-exec_cmd stop_vm $db
+exec_cmd stop_vm $db -dataguard=no
 LN
 
 info "Delete all VMs.."

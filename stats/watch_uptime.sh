@@ -69,6 +69,12 @@ exit_if_param_invalid log "screen only both" "$str_usage"
 
 if [ $log != none ]
 then
+	while [ ! -d $PLESTATS_PATH ]
+	do
+		echo "$PLESTATS_PATH not exists. sleep for 60s"
+		sleep 60
+	done
+
 	if [ $title == undef ]
 	then
 		log_name="$PLESTATS_PATH/uptime_$(hostname -s).log"

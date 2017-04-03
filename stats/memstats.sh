@@ -169,6 +169,7 @@ case $action in
 		pid_file=/var/run/$(date +"%Hh%M")_$(get_pid_file_suffix)
 		echo "$$" > $pid_file
 		trap remove_pid_file EXIT
+		sleep 60
 		main
 		;;
 

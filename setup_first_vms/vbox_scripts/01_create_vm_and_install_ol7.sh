@@ -81,6 +81,7 @@ exec_cmd VBoxManage modifyvm $master_hostname --rtcuseutc on
 exec_cmd VBoxManage modifyvm $master_hostname --largepages on
 exec_cmd VBoxManage modifyvm $master_hostname --hpet on
 exec_cmd VBoxManage modifyvm $master_hostname --x2apic on
+exec_cmd VBoxManage modifyvm $master_hostname --audio none
 LN
 
 line_separator

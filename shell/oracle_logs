@@ -127,7 +127,7 @@ then	#	RAC 2 nœuds.
 else	#	Mono Instance.
 	if [ x"$inst1" == x ]
 	then #  L'instance est arrêtée Pour les SINGLE db pas de problème pour lire /etc/oratab...
-		inst1=$(ssh oracle@$server1 grep "^[A-Z].*" /etc/oratab | cut -d: -f1)
+		inst1=$(ssh oracle@$server1 plescripts/db/get_active_instance.sh)
 	fi
 
 	if [ "$cfg_standby" != none ]
@@ -137,13 +137,17 @@ else	#	Mono Instance.
 		if ping -c 1 $cfg_server_name >/dev/null 2>&1
 		then
 			server2=$cfg_server_name
-			inst2=$(ssh oracle@$server2 grep "^[A-Z].*" /etc/oratab | cut -d: -f1)
+			inst2=$(ssh oracle@$server2 plescripts/db/get_active_instance.sh)
 
 			typeset -r	session_name="ORCL Top $db / Bottom $db_stby"
 			exec_cmd -ci tmux kill-session -t \"$session_name\"
 
 			alert1=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst1 $inst1)
 			alert2=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $db_stby $inst2 $inst2)
+
+			info "$alert1"
+			info "$alert2"
+			LN
 
 			tmux new -s "$session_name"										\
 				"ssh oracle@${server1} '. .profile; tail -1000f $alert1'"	\;\
