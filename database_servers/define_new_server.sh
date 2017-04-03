@@ -191,7 +191,7 @@ function normalyze_node
 	fi
 	ip_node=ip_node+1
 
-	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${standby}" > $cfg_path/node${num_node}
+	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${standby}:${oracle_release}" > $cfg_path/node${num_node}
 }
 
 function normalyze_scan
@@ -356,12 +356,19 @@ done
 
 normalyse_disks
 
-info "Oracle version $oracle_release"
-LN
-
 ./show_info_server.sh -db=$db
 
 next_instructions
+
+if [ "$standby" != none ] && cfg_exists $standby use_return_code >/dev/null 2>&1
+then
+	cfg_load_node_info $standby 1
+	if [ "$oracle_release" != "$cfg_orarel" ]
+	then
+		warning "Dataguard different release : $db $oracle_release, $standby $cfg_orarel"
+		LN
+	fi
+fi
 
 if [[ $rel == "12.2" && $max_nodes -gt 1 ]]
 then

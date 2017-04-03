@@ -45,6 +45,9 @@ function print_node # $1 #inode
 
 	if [ $inode -eq 1 ]
 	then
+		info "Oracle Release : $cfg_orarel"
+		LN
+
 		info -n "LUNs hosted by : "
 		case $cfg_luns_hosted_by in
 			vbox)
