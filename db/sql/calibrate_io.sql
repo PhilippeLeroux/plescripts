@@ -1,10 +1,10 @@
 --	vim: ts=4:sw=4
 
 set echo off termout off
-set lines 120
+set lines 140
 col col_date new_v fmt_date noprint
 select to_char( sysdate, 'HH24:MI:SS' ) col_date from dual;
-set termout on feed off
+set termout on feed off echo off
 set serveroutput on
 set timin on
 
@@ -244,8 +244,8 @@ set timin off
 ttitle 'Result :' left
 select
 	id
-,	to_char( start_time, 'YYYY DD HH24:MI' )	"Start"
-,	to_char( end_time, 'YYYY DD HH24:MI' )		"End"
+,	to_char( start_time, 'YYYY/MM/DD HH24:MI' )	"Start"
+,	to_char( end_time, 'HH24:MI' )				"End"
 ,	max_iops									"Max IOPS"
 ,	max_mbps									"Max mbps"
 ,	max_pmbps									"Max pmbps Large I/O"

@@ -61,7 +61,7 @@ typeset	-a	running_db_server_list
 
 # Si dès VMs sont actives elles sont mémorisés dans running_db_server_list.
 # return 0 si des VMs sont actives, 1 sinon.
-function db_server_running
+function load_running_vms
 {
 	while read vm_name rem
 	do
@@ -82,9 +82,23 @@ function db_server_running
 	[ ${#running_db_server_list[@]} -eq 0 ] && return 1 || return 0
 }
 
+# $1 vm name
+# return 0 if running, else 1
+function vm_running
+{
+	grep -q "$1"<<<"$(VBoxManage list runningvms)"
+}
+
+if ! vm_running $server
+then
+	error "VM $server not running."
+	LN
+	exit 1
+fi
+
 if [ "$server" == "$infra_hostname" ]
 then # On doit arrêter les serveurs de BDD pour arrêter le serveur d'infra.
-	if db_server_running
+	if load_running_vms
 	then
 		info "DB servers running : ${running_db_server_list[*]}"
 		confirm_or_exit "Stop them"

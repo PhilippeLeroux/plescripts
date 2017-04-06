@@ -135,29 +135,23 @@ load_vm_list
 for vm in ${vm_list[*]}
 do
 
-	if [[ "$vm" == "$infra_hostname" && "$INSTALLING_INFRA" != yes ]]
+	exec_cmd -c "VBoxManage startvm $vm --type headless"
+	if [ $? -eq 0 ]
 	then
-		exec_cmd -c "~/plescripts/virtualbox/start_vm_infra"
-		[ $? -eq 0 ] && ((++nr_vm_started)) || true
-	else
-		exec_cmd -c "VBoxManage startvm $vm --type headless"
-		if [ $? -eq 0 ]
-		then
-			((++nr_vm_started))
-			vm_started_list+=( $vm )
-			if [[ $dataguard == yes && ${#vm_list[@]} -eq 1 ]]
-			then # Actuellement seul les serveurs standalone sont en DG.
-				dg_group="$(group_name_for_vm $vm)"
-				if [ "${dg_group:0:2}" == "DG" ]
-				then
-					load_vm_in_group "$dg_group" "$vm"
-				fi
+		((++nr_vm_started))
+		vm_started_list+=( $vm )
+		if [[ $dataguard == yes && ${#vm_list[@]} -eq 1 ]]
+		then # Actuellement seul les serveurs standalone sont en DG.
+			dg_group="$(group_name_for_vm $vm)"
+			if [ "${dg_group:0:2}" == "DG" ]
+			then
+				load_vm_in_group "$dg_group" "$vm"
 			fi
-		else
-			error "Failed to start $vm" 
 		fi
-		LN
+	else
+		error "Failed to start $vm" 
 	fi
+	LN
 
 done
 

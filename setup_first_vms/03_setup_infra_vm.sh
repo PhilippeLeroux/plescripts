@@ -83,14 +83,24 @@ if [ $disks_hosted_by == san ]
 then
 	line_separator
 	info "Create VG asm01 on first unused disk :"
-	exec_cmd "~/plescripts/san/create_vg.sh -device=auto -vg=asm01"
+	exec_cmd ~/plescripts/san/create_vg.sh	\
+							-device=auto	\
+							-vg=asm01		\
+							-add_partition=no
+	LN
+
+	line_separator
+	info "Setup SAN"
+	exec_cmd "~/plescripts/san/targetcli_default_cfg.sh"
+	LN
+
+	line_separator
+	info "Workaround target error"
+	exec_cmd cp ~/plescripts/setup_first_vms/check-target.service	\
+				/usr/lib/systemd/system/check-target.service
+	exec_cmd systemctl enable check-target.service
 	LN
 fi
-
-line_separator
-info "Setup SAN"
-exec_cmd "~/plescripts/san/targetcli_default_cfg.sh"
-LN
 
 #	Le serveur d'infra doit utiliser chrony, ntp merde trop
 exec_cmd ~/plescripts/ntp/configure_chrony.sh -role=infra

@@ -17,6 +17,12 @@ exec_cmd "echo \"${infra_hostname}.${infra_domain}\" > /etc/hostname"
 LN
 
 line_separator
+hn=$(hostname -s)
+info "Add $hn to /etc/hosts"
+exec_cmd "sed -i 's/$/ $hn/' /etc/hosts"
+LN
+
+line_separator
 info "Update Iface $if_pub_name"
 if_hwaddr=$(get_if_hwaddr $if_pub_name)
 exec_cmd nmcli connection modify	$if_pub_name					\

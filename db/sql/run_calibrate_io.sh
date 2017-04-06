@@ -2,19 +2,18 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-typeset -r vg_name=asm01
+typeset -i max_latency_ms=10
 
 typeset -r str_usage=\
-"Usage : 
+"Usage :
 $ME
-	-vg_name=$vg_name
-
-Drop $vg_name and disable target.
+	[-max_latency_ms=$max_latency_ms]
 "
 
 while [ $# -ne 0 ]
@@ -25,8 +24,8 @@ do
 			shift
 			;;
 
-		-vg_name=*)
-			vg_name=${1##*=}
+		-max_latency_ms=*)
+			max_latency_ms=${1##*=}
 			shift
 			;;
 
@@ -45,19 +44,16 @@ do
 	esac
 done
 
-#ple_enable_log
-
 script_banner $ME $*
 
-info "Disks used by $vg_name"
-exec_cmd -c "pvs | grep $vg_name"
-LN
+must_be_user oracle
 
-info "Remove vg $vg_name"
-exec_cmd -c  vgremove $vg_name
-LN
+exit_if_ORACLE_SID_not_defined
 
-info "Stop & disable target"
-exec_cmd systemctl stop target.service
-exec_cmd systemctl disable target.service
-LN
+function sql_calibrate_io
+{
+	set_sql_cmd @calibrate_io.sql $max_latency_ms
+	set_sql_cmd exit
+}
+
+sqlplus_cmd "$(sql_calibrate_io)"

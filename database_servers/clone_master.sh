@@ -302,14 +302,8 @@ function create_database_fs_on_new_disks
 {
 	typeset -r cfg_disks=$cfg_path_prefix/$db/disks
 
-	# Pour se rapprocher d'ASM, le gain n'est pas évident car faible. Tests
-	# fait sur la création d'une base.
-	if [ "${oracle_release}" == "12.2.0.1" ]
-	then
-		typeset -ri stripesize_kb=$(( 1024 * 4 ))
-	else
-		typeset -ri stripesize_kb=1024
-	fi
+	#http://docs.oracle.com/database/122/VLDBG/vldb-storage.htm#VLDBG1600
+	typeset -ri stripesize_kb=$(( 1024 * 1024 ))
 
 	IFS=':' read name size_disk first last<<<"$(grep FSDATA $cfg_disks)"
 	info "Create FS for DATA"
@@ -340,15 +334,11 @@ function create_database_fs_on_new_disks
 	LN
 }
 
-function create_oracle_disks_on_new_disks
+function create_oracleasm_disks_on_new_disks
 {
-	if [ "${oracle_release%.*.*}" == "12.1" ]
-	then
-		ssh_server "plescripts/disk/create_oracleasm_disks_on_new_disks.sh	\
-																-db=$db"
-		LN
-	fi
-	# A partir de la 12.2 se fait lors de l'installation du grid (AFD).
+	ssh_server "plescripts/disk/create_oracleasm_disks_on_new_disks.sh	\
+															-db=$db"
+	LN
 }
 
 #	Permet au compte root du serveur de se connecter sur le SAN sans mot de passe.
@@ -376,7 +366,8 @@ function create_disks_for_oracle_and_grid_softwares
 		ssh_server plescripts/disk/create_fs.sh		\
 					-type_fs=$rdbms_fs_type			\
 					-suffix_vglv=orcl				\
-					-mount_point=/$ORCL_SW_FS_DISK
+					-mount_point=/$ORCL_SW_FS_DISK	\
+					-noatime
 		LN
 		return 0
 	fi
@@ -385,7 +376,8 @@ function create_disks_for_oracle_and_grid_softwares
 	ssh_server plescripts/disk/create_fs.sh		\
 					-mount_point=/$GRID_DISK	\
 					-suffix_vglv=grid			\
-					-type_fs=$rdbms_fs_type
+					-type_fs=$rdbms_fs_type		\
+					-noatime
 	LN
 
 	if [[ $max_nodes -eq 1 || $cfg_oracle_home == $rdbms_fs_type ]]
@@ -394,7 +386,8 @@ function create_disks_for_oracle_and_grid_softwares
 		ssh_server	plescripts/disk/create_fs.sh		\
 							-mount_point=/$ORCL_DISK	\
 							-suffix_vglv=orcl			\
-							-type_fs=$rdbms_fs_type
+							-type_fs=$rdbms_fs_type		\
+							-noatime
 		LN
 	else
 		info "Install ocfs2"
@@ -657,7 +650,7 @@ function test_space_on_san
 #	MAIN
 #	============================================================================
 
-script_start
+[ $show_instructions == yes ] || script_start || true
 
 cfg_load_node_info $db $node
 
@@ -688,49 +681,28 @@ copy_color_file
 
 add_oracle_install_directory_to_fstab
 
-case $cfg_luns_hosted_by in
-	san)
-		if [ $node -eq 1 ]
-		then
-			create_and_export_san_LUNs
-			if [ $cfg_db_type != fs ]
-			then
-				create_oracle_disks_on_new_disks
-			else
-				create_database_fs_on_new_disks
-			fi
-		else
-			export_SAN_LUNs
-			if [ "${oracle_release%.*.*}" == "12.1" ]
-			then
-				ssh_server "oracleasm scandisks"
-			fi
-			# A partir de la 12.2 se fait lors de l'installation du grid (AFD).
-		fi
-		;;
+if [ $node -eq 1 ]
+then
+	[ $cfg_luns_hosted_by == san ] && create_and_export_san_LUNs || true
 
-	vbox)
-		if [ $node -eq 1 ]
-		then
-			if [ $cfg_db_type != fs ]
-			then
-				create_oracle_disks_on_new_disks
-			else
-				create_database_fs_on_new_disks
-			fi
-		else
-			if [ "${oracle_release%.*.*}" == "12.1" ]
-			then
-				ssh_server "oracleasm scandisks"
-			fi
-			# A partir de la 12.2 se fait lors de l'installation du grid (AFD).
+	if [ $cfg_db_type != fs ]
+	then
+		if [ "${oracle_release%.*.*}" == "12.1" ]
+		then # A partir de la 12.2 se fait lors de l'installation du grid (AFD).
+			create_oracleasm_disks_on_new_disks
 		fi
-		;;
+	else
+		create_database_fs_on_new_disks
+	fi
+else
+	[ $cfg_luns_hosted_by == san ] && export_SAN_LUNs || true
 
-	*)
-		error "cfg_luns_hosted_by = '$cfg_luns_hosted_by' invalid."
-		exit 1
-esac
+	if [ "${oracle_release%.*.*}" == "12.1" ]
+	then
+		ssh_server "oracleasm scandisks"
+	fi
+	# A partir de la 12.2 se fait lors de l'installation du grid (AFD).
+fi
 
 create_stats_services
 
@@ -743,6 +715,7 @@ info "Reboot needed : new kernel config from oracle-rdbms-server-12cR1-preinstal
 exec_cmd reboot_vm $server_name
 LN
 loop_wait_server $server_name
+LN
 
 if [ "$install_guestadditions" == yes ]
 then
@@ -763,10 +736,11 @@ then	# C'est le dernier nœud
 		LN
 	fi
 
-	script_stop $ME $db
-
 	if [ $show_instructions == yes ]
 	then
+		script_stop $ME $db
+		LN
+
 		if [ $cfg_db_type == fs ]
 		then
 			info "Oracle RDBMS software can be installed."
@@ -785,7 +759,7 @@ then	# C'est le dernier nœud
 	fi
 elif [ $max_nodes -ne 1 ]
 then	# Ce n'est pas le dernier nœud et il y a plus de 1 nœud.
-	script_stop $ME $db
+	[ $show_instructions == yes ] || script_stop $ME $db && LN || true
 
 	info "Run script :"
 	info "$ME -db=$db -node=$(( node + 1 ))"

@@ -281,6 +281,7 @@ if [ "$server" == srv ]
 then # Arrêt de la VM d'infra quand tous les serveurs sont stoppés.
 	stop_vm_name $infra_hostname
 	wait_vm_until_stopped $infra_hostname
+	timing 2
 fi
 
 #===============================================================================

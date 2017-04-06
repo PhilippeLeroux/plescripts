@@ -90,6 +90,8 @@ function read_dns_main_ip
 	fi
 }
 
+typeset -i count_errors=0
+
 test_if_cmd_exists VBoxManage
 if [ $? -eq 0 ]
 then
@@ -100,6 +102,7 @@ then
 	info -n "Exists $vm_p : "
 	if [ ! -d "$vm_p" ]
 	then
+		((++count_errors))
 		info -f "[$KO]"
 		LN
 	else
@@ -115,6 +118,7 @@ ask_for_variable full_linux_iso_n "Full path for Oracle Linux $OL7_LABEL_n ISO $
 info -n "Exists $full_linux_iso_n : "
 if [ ! -f "$full_linux_iso_n" ]
 then
+	((++count_errors))
 	info -f "[$KO]"
 	LN
 else
@@ -130,6 +134,7 @@ then
 	info -f "[$OK]"
 	LN
 else
+	((++count_errors))
 	info -f "[$KO]"
 	LN
 fi
@@ -142,10 +147,61 @@ case "$disks_stored_on" in
 		LN
 		;;
 	*)
+		((++count_errors))
 		error "Value $disks_stored_on invalid."
 		LN
 		;;
 esac
+
+[ -b $san_disk ] && san_disk_type=$san_disk || san_disk_type=vdi
+ask_for_variable san_disk_type	\
+	"Use virtual disk (enter vdi) or physical disk (enter full device name) : "
+
+if [ "$san_disk_type" != "vdi" ]
+then
+	info -n "Device $san_disk_type exists : "
+	if [ ! -b "$san_disk_type" ]
+	then
+		((++count_errors))
+		info -f "[$KO]"
+		LN
+	else
+		info -f "[$OK]"
+		LN
+		warning "All data on $san_disk_type will be lost !"
+		confirm_or_exit "Continue"
+		LN
+
+		typeset -r device_group=$(ls -l "$san_disk" | cut -d\  -f4)
+		info "$san_disk in group : $device_group"
+		info -n "$common_user_name member of group : $device_group "
+		if id | grep -q $device_group
+		then
+			info -f "[$OK]"
+			LN
+		else
+			info -f "[$KO] add $common_user_name to group $device_group"
+			exec_cmd sudo usermod -a -G $device_group $common_user_name
+			LN
+			warning "Disconnect & connect user $common_user_name"
+			LN
+		fi
+
+	fi
+fi
+
+info "Network interface"
+exec_cmd "ip link show | grep -vE \"(lo|vboxnet)\" | grep \"state UP\""
+LN
+if_net_bridgeadapter_n=$(printf "%s" $(ip link show | grep -vE "(lo|vboxnet)" | grep "state UP" | cut -d: -f2))
+ask_for_variable if_net_bridgeadapter_n "Network interface to used for internet access."
+
+if [ $count_errors -ne 0 ]
+then
+	error "$count_errors errors, configuration not updated !"
+	LN
+	exit 1
+fi
 
 line_separator
 exec_cmd "sed -i 's/dns_main=.*$/dns_main=$dns_main_n/g' ~/plescripts/global.cfg"
@@ -161,10 +217,14 @@ exec_cmd "sed -i 's/common_user_name=.*/common_user_name=$USER/g' ~/plescripts/g
 exec_cmd "sed -i 's/common_uid=.*/common_uid=$UID/g' ~/plescripts/global.cfg"
 LN
 
+exec_cmd "sed -i 's/if_net_bridgeadapter=.*/if_net_bridgeadapter=$if_net_bridgeadapter_n/g' ~/plescripts/global.cfg"
+LN
+
 exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"$vm_p\"~g' ~/plescripts/global.cfg"
 LN
 
 exec_cmd "sed -i 's~disks_hosted_by=.*$~disks_hosted_by=$disks_stored_on~g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's~san_disk=.*$~san_disk=$san_disk_type~g' ~/plescripts/global.cfg"
 LN
 
 if [ "$HOME/ISO/oracle_linux_7/$OracleLinux73" == "$full_linux_iso_n" ]

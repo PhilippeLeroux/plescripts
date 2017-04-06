@@ -1,0 +1,12 @@
+[Unit]
+Description=Check target errors
+Wants=named.service
+After=named.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/root/san/check_target.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -67,6 +67,37 @@ script_start
 
 #	Le script start_vm ignore les actions spécifique du serveur d'infra.
 export INSTALLING_INFRA=yes
+if [[ $disks_hosted_by == san && "$san_disk" != "vdi" ]]
+then
+	line_separator
+	typeset -i sd_errors=0
+	info -n "$san_disk exists "
+	if [ -b "$san_disk" ]
+	then
+		info -f "[$OK]"
+		LN
+	else
+		info -f "[$KO]"
+		LN
+		exit 1
+	fi
+
+	typeset -r device_group=$(ls -l "$san_disk" | cut -d\  -f4)
+	info "$san_disk in group : $device_group"
+	info -n "$common_user_name member of group : $device_group "
+	if id | grep -q $device_group
+	then
+		info -f "[$OK]"
+		LN
+	else
+		info -f "[$KO] add $common_user_name to group $device_group"
+		exec_cmd sudo usermod -a -G $device_group $common_user_name
+		LN
+		error "Disconnect & connect user $common_user_name"
+		LN
+		exit 1
+	fi
+fi
 
 line_separator
 exec_cmd ~/plescripts/shell/remove_from_known_host.sh		\
@@ -120,7 +151,7 @@ LN
 line_separator
 info "Add NIC for internet connection"
 exec_cmd VBoxManage modifyvm $infra_hostname --nic3 bridged
-exec_cmd VBoxManage modifyvm $infra_hostname --bridgeadapter3 "enp3s0"
+exec_cmd VBoxManage modifyvm $infra_hostname --bridgeadapter3 "$if_net_bridgeadapter"
 exec_cmd VBoxManage modifyvm $infra_hostname --nictype3 virtio
 exec_cmd VBoxManage modifyvm $infra_hostname --cableconnected3 on
 LN
@@ -130,8 +161,8 @@ exec_cmd VBoxManage modifyvm $infra_hostname --cpus 2
 LN
 
 if [ 0 -eq 1 ]; then
-# --hostiocache on : la CPU et le SWAP du virtual-host explose et les
-# gains/pertes en IO deviennent extrêment aléatoire, c'était une très
+# --hostiocache on : la CPU et le SWAP du virtual-host explosent et les
+# gains/pertes en IO deviennent extrêmement aléatoires, c'était une très
 # mauvaise idée.
 line_separator
 # VBox 5.1.14 : utilise le cache sinon trop de blocs fracturés ou corrompus lors
@@ -147,12 +178,24 @@ if [ $disks_hosted_by == san ]
 then
 	line_separator
 	info "Add disk for SAN storage (targetcli)"
-	exec_cmd $vm_scripts_path/add_disk.sh					\
-					-vm_name=$infra_hostname				\
-					-disk_name=asm01_disk01					\
-					-disk_mb=$(( $san_disk_size_g * 1024 ))	\
-					-fixed_size
-	LN
+	if [ "$san_disk" == "vdi" ]
+	then
+		exec_cmd $vm_scripts_path/add_disk.sh					\
+						-vm_name=$infra_hostname				\
+						-disk_name=asm01_disk01					\
+						-disk_mb=$(( $san_disk_size_g * 1024 ))	\
+						-mtype=writethrough						\
+						-fixed_size
+		LN
+	else
+		exec_cmd $vm_scripts_path/add_raw_disk.sh	\
+						-vm_name=$infra_hostname	\
+						-disk_name=asm01_disk01		\
+						-os_device="$san_disk"		
+		
+		LN
+
+	fi
 fi
 
 line_separator

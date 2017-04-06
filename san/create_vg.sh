@@ -9,14 +9,19 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-device=<str>] Nom du disque à utiliser, par exemple sdb ou auto
-	[-vg=<str>]     Nom du VG à créer, par exemple asm01.
+	-device=name         OS disk name or auto.
+	-vg=name             VG name, for exemple asm01
+	[-add_partition=no]  yes|no, yes : add a partition to device.
+	[-io_scheduler=none] noop|deadline|cfq create udev rule for device
 "
 
 script_banner $ME $*
 
 typeset	device=undef
 typeset vg=undef
+typeset	add_partition=no
+
+typeset	io_scheduler=none
 
 while [ $# -ne 0 ]
 do
@@ -29,11 +34,22 @@ do
 
 		-device=*)
 			device=${1##*=}
+			device=${device##*/}
 			shift
 			;;
 
 		-vg=*)
 			vg=${1##*=}
+			shift
+			;;
+
+		-add_partition=*)
+			add_partition=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-io_scheduler=*)
+			io_scheduler=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -55,13 +71,16 @@ done
 exit_if_param_undef device	"$str_usage"
 exit_if_param_undef vg		"$str_usage"
 
+exit_if_param_invalid add_partition "yes no" "$str_usage"
+exit_if_param_invalid io_scheduler "none noop deadline cfq" "$str_usage"
+
 #	exit if device $1 not exists
 function exit_if_device_not_exists
 {
 	typeset -r device=$1
 
 	info "Test if $device exists."
-	exec_cmd -f -ci "lvmdiskscan | grep $device >/dev/null 2>&1"
+	exec_cmd -f -ci "lvmdiskscan | grep -q $device"
 	if [ $? -ne 0 ]
 	then
 		error "Device '$device' not exists."
@@ -116,10 +135,28 @@ LN
 exit_if_vg_exists $vg
 LN
 
-exec_cmd "pvcreate /dev/$device"
+device=/dev/$device
+
+if [ $io_scheduler != none ]
+then
+	exec_cmd ~/plescripts/disk/create_udev_rule_io_scheduler.sh		\
+											-device_list=$device	\
+											-io_scheduler=$io_scheduler
+fi
+
+if [ $add_partition == yes ]
+then
+	add_partition_to $device
+	sleep 1
+	LN
+
+	device=${device}1
+fi
+
+exec_cmd "pvcreate $device"
 LN
 
-exec_cmd "vgcreate $vg /dev/$device"
+exec_cmd "vgcreate $vg $device"
 LN
 
 exec_cmd "vgdisplay $vg"

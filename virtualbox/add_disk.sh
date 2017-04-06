@@ -8,11 +8,13 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	-vm_name=str
-	-disk_name=str
+	-vm_name=name
+	-disk_name=name
 	-disk_mb=#
-	[-attach_to]    Ex : 'vm1 vm2'
-	[-fixed_size]   Disk size is fixed (auto with -attach_to)
+	[-attach_to]     Ex : 'vm1 vm2'
+	[-mtype=auto] normal|writethrough|immutable|shareable|readonly|multiattach
+	    auto : -attache_to specified -mtype=shareable else -mtype=normal
+	[-fixed_size]    Disk size is fixed (auto with -attach_to)
 
 Add disk to SATA controller on the first free port, the controller must exists.
 "
@@ -23,6 +25,7 @@ typeset		vm_name=undef
 typeset		disk_name=undef
 typeset	-i	disk_mb=-1
 typeset		attach_to=no_attach
+typeset		mtype=auto
 typeset		fixed_size=Standard
 
 while [ $# -ne 0 ]
@@ -53,6 +56,11 @@ do
 			shift
 			;;
 
+		-mtype=*)
+			mtype=${1##*=}
+			shift
+			;;
+
 		-fixed_size)
 			fixed_size=Fixed
 			shift
@@ -76,7 +84,6 @@ done
 exit_if_param_undef vm_name		"$str_usage"
 exit_if_param_undef disk_name	"$str_usage"
 exit_if_param_undef disk_mb		"$str_usage"
-exit_if_param_undef port		"$str_usage"
 
 function get_free_SATA_port
 {
@@ -88,14 +95,15 @@ function get_free_SATA_port
 
 typeset	-r	disk_full_path="$vm_path/$vm_name/${disk_name}.vdi"
 
-typeset -r on_port=$(get_free_SATA_port)
+typeset -r	on_port=$(get_free_SATA_port)
+
 if [ "$attach_to" == no_attach ]
 then
-	mtype=normal
+	[ $mtype == auto ] && mtype=normal || true
 	attach_to=$vm_name
 	variant=$fixed_size
 else
-	mtype=shareable
+	[ $mtype == shareable ] && mtype=normal || true
 	attach_to="$vm_name $attach_to"
 	variant=Fixed
 fi

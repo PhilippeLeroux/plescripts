@@ -17,7 +17,8 @@ typeset -r str_usage=\
 	[-disks=1]          number of disks, only if -device=check
 	[-striped=no]       no|yes
 	[-stripesize=#]     stripe size Kb.
-	[-netdev]           add _netdev to mount point options
+	[-noatime]			add option noatime to mount point options.
+	[-netdev]           add _netdev to mount point options.
 "
 
 script_banner $ME $*
@@ -29,6 +30,7 @@ typeset		striped=no
 typeset		stripesize_kb=0
 typeset		suffix_vglv=undef
 typeset		type_fs=undef
+typeset		noatime=no
 typeset		netdev=no
 
 while [ $# -ne 0 ]
@@ -81,6 +83,11 @@ do
 
 		-netdev)
 			netdev=yes
+			shift
+			;;
+
+		-noatime)
+			noatime=yes
 			shift
 			;;
 
@@ -173,6 +180,7 @@ exec_cmd mkfs -t $type_fs /dev/$vg_name/$lv_name
 exec_cmd mkdir -p $mount_point
 typeset mp_options=defaults
 [ $netdev == yes ] && mp_options="_netdev,$mp_options" || true
+[ $noatime == yes ] && mp_options="noatime,$mp_options" || true
 exec_cmd "echo \"/dev/mapper/$vg_name-$lv_name $mount_point $type_fs $mp_options 0 0\" >> /etc/fstab"
 exec_cmd mount $mount_point
 LN
