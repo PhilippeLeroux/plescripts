@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/disklib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -49,14 +50,31 @@ done
 
 script_banner $ME $*
 
-info "Disks used by $vg_name"
-exec_cmd -c "pvs | grep $vg_name"
+typeset -a vg_disk_list
+while read disk_name rem
+do
+	vg_disk_list+=( $disk_name )
+done<<<"$(pvs|grep $vg_name)"
+
+info "Disks used by $vg_name : ${vg_disk_list[*]}"
 LN
 
+line_separator
 info "Remove vg $vg_name"
 exec_cmd -c  vgremove $vg_name
 LN
 
+if [ ${#vg_disk_list[@]} -ne 0 ]
+then
+	line_separator
+	for disk_name in ${vg_disk_list[*]}
+	do
+		clear_device $disk_name
+		LN
+	done
+fi
+
+line_separator
 info "Stop & disable target"
 exec_cmd systemctl stop target.service
 exec_cmd systemctl disable target.service

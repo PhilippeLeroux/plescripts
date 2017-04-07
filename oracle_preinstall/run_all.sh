@@ -40,6 +40,7 @@ fake_exec_cmd cd ~/plescripts/oracle_preinstall
 cd ~/plescripts/oracle_preinstall
 LN
 
+if [ 0 -eq 1 ]; then
 info "Workaround yum error : [Errno 256] No more mirrors to try."
 exec_cmd systemctl restart nfs-mountd.service
 exec_cmd umount /mnt$infra_olinux_repository_path
@@ -49,6 +50,7 @@ timing 2
 LN
 exec_cmd "~/plescripts/yum/clean_cache.sh"
 LN
+fi # [ 0 -eq 1 ]; then
 
 exec_cmd "./01_create_oracle_users.sh -release=$oracle_release -db_type=$db_type"
 LN

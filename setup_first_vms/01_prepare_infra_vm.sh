@@ -17,9 +17,9 @@ exec_cmd "echo \"${infra_hostname}.${infra_domain}\" > /etc/hostname"
 LN
 
 line_separator
-hn=$(hostname -s)
-info "Add $hn to /etc/hosts"
-exec_cmd "sed -i 's/$/ $hn/' /etc/hosts"
+# A ce stade hostname -s retourne le nom du master pas de infra_hostname
+info "Add $infra_hostname to /etc/hosts"
+exec_cmd "sed -i 's/$/ $infra_hostname/' /etc/hosts"
 LN
 
 line_separator

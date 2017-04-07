@@ -153,7 +153,15 @@ case "$disks_stored_on" in
 		;;
 esac
 
-[ -b $san_disk ] && san_disk_type=$san_disk || san_disk_type=vdi
+if [ "$common_user_name" != "$USER" ]
+then
+	san_disk_type=vdi
+elif [ -b $san_disk ]
+then
+	san_disk_type=$san_disk
+else
+	san_disk_type=vdi
+fi
 ask_for_variable san_disk_type	\
 	"Use virtual disk (enter vdi) or physical disk (enter full device name) : "
 
@@ -174,16 +182,17 @@ then
 
 		typeset -r device_group=$(ls -l "$san_disk" | cut -d\  -f4)
 		info "$san_disk in group : $device_group"
-		info -n "$common_user_name member of group : $device_group "
+		info -n "$USER member of group : $device_group "
 		if id | grep -q $device_group
 		then
 			info -f "[$OK]"
 			LN
 		else
-			info -f "[$KO] add $common_user_name to group $device_group"
-			exec_cmd sudo usermod -a -G $device_group $common_user_name
+			info -f "[$KO] add $USER to group $device_group"
+			exec_cmd sudo usermod -a -G $device_group $USER
 			LN
-			warning "Disconnect & connect user $common_user_name"
+			error "Disconnect & connect user $USER"
+			((++count_errors))
 			LN
 		fi
 
@@ -220,7 +229,7 @@ LN
 exec_cmd "sed -i 's/if_net_bridgeadapter=.*/if_net_bridgeadapter=$if_net_bridgeadapter_n/g' ~/plescripts/global.cfg"
 LN
 
-exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"$vm_p\"~g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"\${VM_PATH:-$vm_p}\"~g' ~/plescripts/global.cfg"
 LN
 
 exec_cmd "sed -i 's~disks_hosted_by=.*$~disks_hosted_by=$disks_stored_on~g' ~/plescripts/global.cfg"

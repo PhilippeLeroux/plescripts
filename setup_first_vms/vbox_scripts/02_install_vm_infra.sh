@@ -65,8 +65,6 @@ script_banner $ME $*
 
 script_start
 
-#	Le script start_vm ignore les actions spécifique du serveur d'infra.
-export INSTALLING_INFRA=yes
 if [[ $disks_hosted_by == san && "$san_disk" != "vdi" ]]
 then
 	line_separator
@@ -97,6 +95,11 @@ then
 		LN
 		exit 1
 	fi
+
+	line_separator
+	info "Clear $san_disk"
+	exec_cmd "sudo dd if=/dev/zero of=$san_disk bs=$((1024*1024)) count=1024"
+	LN
 fi
 
 line_separator
@@ -120,8 +123,7 @@ then
 fi
 rm -f /tmp/vc
 
-master_ip_is_pingable
-if [ $? -eq 0 ]
+if master_ip_is_pingable
 then
 	#	La VM master vient d'être créée, elle est démarrée.
 	line_separator
