@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset	vm_name=undef
@@ -11,9 +12,12 @@ typeset	memory=2048
 typeset	cpus=2
 
 typeset -r ME=$0
+
+
 typeset -r str_usage=\
 "Usage : $ME
-	<-vm_name=name -os_type=type>
+	-vm_name=name
+	-os_type=$(VBoxManage list ostypes | grep -v "Windows" | grep -E "^ID:"  | awk '{ print $2 }' | xargs | sed "s/ /|/g")
 	[-memory=$memory]
 	[-cpus=$cpus]
 
