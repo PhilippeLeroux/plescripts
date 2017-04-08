@@ -103,7 +103,7 @@ then
 	attach_to=$vm_name
 	variant=$fixed_size
 else
-	[ $mtype == shareable ] && mtype=normal || true
+	[ $mtype == auto ] && mtype=shareable || true
 	attach_to="$vm_name $attach_to"
 	variant=Fixed
 fi
