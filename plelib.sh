@@ -520,13 +520,13 @@ function confirm_or_exit
 ################################################################################
 
 #	Modifie '$@' et affiche le résultat sur stdout.
-#		Remplace le chemin correspondand à HOME par ~
+#		Remplace le chemin correspondand à HOME par $HOME
 #		Remplace le chemin correspondand à TNS_ADMIN par $TNS_ADMIN
 #		Remplace le chemin correspondand à ORACLE_HOME par $ORACLE_HOME
 #		Remplace le chemin correspondand à ORACLE_BASE par $ORACLE_BASE
 function replace_paths_by_shell_vars
 {
-	typeset s=$(sed "s,$HOME,~,"<<<"$@")
+	typeset s=$(sed "s,$HOME,\$HOME,"<<<"$@")
 
 	[ -v TNS_ADMIN ] && s=$(sed "s,$TNS_ADMIN,\$TNS_ADMIN,"<<<"$s") || true
 
