@@ -168,8 +168,8 @@ as
 	mbps	integer;
 begin
 
-	p( 'run : dbms_resource_manager.calibrate_io( '||nr_disks||', '||max_latency||', iops, mbps, latency );' );
-	dbms_resource_manager.calibrate_io( nr_disks, max_latency, iops, mbps, latency );
+	p( 'run : dbms_resource_manager.calibrate_io( num_physical_disks => '||nr_disks||', max_latency => '||max_latency||', max_iops => iops, max_mbps => mbps, actual_latency => latency );' );
+	dbms_resource_manager.calibrate_io( num_physical_disks => nr_disks,  max_latency => max_latency, max_iops => iops, max_mbps => mbps, actual_latency => latency );
 
 	save_measures;
 
