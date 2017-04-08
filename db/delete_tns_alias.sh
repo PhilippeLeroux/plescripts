@@ -94,6 +94,10 @@ then
 	info "Delete alias $tnsalias between lines $first_num & $last_num"
 	cmd="'${first_num},${last_num}d'"
 	exec_cmd sed -i $cmd $TNS_ADMIN/tnsnames.ora
+	LN
+	info "Replace multiple empty lines with a single empty line."
+	# Note : je pige rien :(
+	exec_cmd sed -i '/^$/N;/^\n$/D' $TNS_ADMIN/tnsnames.ora
 else
 	error "Alias found, failed to check lines"
 	exit 1
