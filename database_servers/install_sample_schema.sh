@@ -78,6 +78,11 @@ do
 	LN
 	exec_cmd "ssh oracle@${cfg_server_name} 'gzip -dc plescripts/tmp/v${oracle_release}.tar.gz | tar xf - '"
 	LN
+	if [ $oracle_release == 12.1.0.2 ]
+	then # Bug Oracle avec sqlloader
+		exec_cmd "ssh oracle@${cfg_server_name} 'mkdir db-sample-schemas-${oracle_release}/logs'"
+		LN
+	fi
 done
 
 script_stop $ME
