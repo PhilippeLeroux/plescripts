@@ -97,7 +97,7 @@ then
 	LN
 	info "Replace multiple empty lines with a single empty line."
 	# Note : je pige rien :(
-	exec_cmd sed -i '/^$/N;/^\n$/D' $TNS_ADMIN/tnsnames.ora
+	exec_cmd "sed -i '/^$/N;/^\n$/D' $TNS_ADMIN/tnsnames.ora"
 else
 	error "Alias found, failed to check lines"
 	exit 1
