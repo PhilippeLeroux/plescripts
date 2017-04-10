@@ -96,11 +96,7 @@ fi
 
 while true
 do
-#	06:50:50 up 2 min,  2 users,  load average: 1.87, 1.46, 0.60
-#	LANC=C IFS=',' read f_time f_user f_loada<<<uptime
-#	read tt la_up upt la_min<<<"$f_time"	#	06:50:50 up 2 min
-#	read nr_users la_user<<<"$f_user"		#	2 users
-#	read
-	echo "$title : $(uptime)"
+	# Les traductions Fr sont vraiment à chier !
+	echo "$title : $(LANG=C uptime)"
 	sleep $interval_secs
 done
