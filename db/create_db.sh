@@ -19,24 +19,22 @@ typeset -r ME=$0
 #	Pour éviter ce message d'erreur utiliser le paramètre -shared_pool_size=256M
 #	Cf select name, round( bytes/1024/1024, 2) "Size Mb" from v$sgainfo order by 2 desc;
 
-typeset	-r	orcldbversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
-									grep "Oracle Database 12c"		|\
-									awk '{ print $4 }' | cut -d. -f1-2)
+typeset	-r	orcl_release="$(read_orcl_release)"
 typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
 [[ $gi_count_nodes -ne 1 ]] && totalMemory=$(to_mb $shm_for_db) || true
-case "$orcldbversion" in
+case "$orcl_release" in
 	12.1)
-		typeset	shared_pool_size="256M"
+		typeset	shared_pool_size="344M"	# Strict minimum 256M
 		typeset	pga_aggregate_limit="1256M"
 		;;
 	12.2)
-		typeset	shared_pool_size="335M"
+		typeset	shared_pool_size="344M"
 		typeset	pga_aggregate_limit="2048M"
 		;;
 	*)
-		error "Oracle Database '$orcldbversion' invalid."
+		error "Oracle Database '$orcl_release' invalid."
 		LN
 		exit 1
 esac
@@ -55,7 +53,7 @@ typeset		backup=yes
 typeset		confirm="-confirm"
 typeset	-i	redoSize=64	# Unit Mb
 typeset		sampleSchema=no
-if [ $orcldbversion == 12.1 ]
+if [ $orcl_release == 12.1 ]
 then
 	typeset		wallet=yes
 elif test_if_cmd_exists crsctl
@@ -566,7 +564,7 @@ function next_instructions
 		then
 			info "From virtual-host $client_hostname execute :"
 			info "$ cd ~/plescripts/database_servers"
-			info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db) -rel=$orcldbversion"
+			info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db) -rel=$orcl_release"
 			LN
 		fi
 	fi

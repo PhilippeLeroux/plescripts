@@ -357,3 +357,33 @@ function mk_java_stby_service
 {
 	echo $(to_lower "$1")_stby_java
 }
+
+# print to stdout Oracle SW Version :
+#	12.1.0.2
+# or
+#	12.2.0.1
+function read_orcl_version
+{
+	$ORACLE_HOME/OPatch/opatch lsinventory	|\
+		grep "Oracle Database 12c"			|\
+		awk '{ print $4 }'					|\
+		cut -d. -f1-4
+}
+
+# print to stdout Oracle SW Version :
+#	12.1
+# or
+#	12.2
+function read_orcl_release
+{
+	case "$(read_orcl_version)" in
+		12.1.*)
+			echo 12.1
+			;;
+		12.2.*)
+			echo 12.2
+			;;
+		*)
+			echo "Unknow release"
+	esac
+}

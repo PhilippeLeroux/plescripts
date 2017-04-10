@@ -10,14 +10,12 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-typeset	-r	orcldbversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
-									grep "Oracle Database 12c"		|\
-									awk '{ print $4 }' | cut -d. -f1-2)
+typeset	-r	orcl_release="$(read_orcl_release)"
 
 typeset db=undef
 typeset pdb=undef
 typeset from_pdb=default
-if [ $orcldbversion == 12.1 ]
+if [ $orcl_release == 12.1 ]
 then
 	typeset		wallet=yes
 elif test_if_cmd_exists crsctl
@@ -271,7 +269,7 @@ function create_wallet
 		done
 	fi
 
-	if [ $orcldbversion == 12.2 ] && test_if_cmd_exists crsctl
+	if [ $orcl_release == 12.2 ] && test_if_cmd_exists crsctl
 	then
 		warning "Database cannot start with wallet enable."
 		LN

@@ -9,16 +9,12 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-typeset	-r	orcldbversion=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
-									grep "Oracle Database 12c"		|\
-									awk '{ print $4 }' | cut -d. -f1-2)
-
 typeset db=undef
 typeset pdb=undef
 typeset service=auto
 typeset account_name=dbfsadm
 typeset	account_password=dbfs
-if [ $orcldbversion == 12.1 ]
+if [ "$(read_orcl_release)" == "12.1" ]
 then
 	typeset		wallet=yes
 elif test_if_cmd_exists crsctl
