@@ -372,9 +372,9 @@ fi
 
 if [[ $rel == "12.2" && $max_nodes -gt 1 ]]
 then
-	if [[ $luns_hosted_by != vbox || $OH_FS != ocfs2 ]]
+	if [[ $OH_FS != ocfs2 ]]
 	then
-		warning "Advice with RAC $rel add options : -luns_hosted_by=vbox -OH_FS=ocfs2"
+		warning "Advice with RAC $rel add option : -OH_FS=ocfs2"
 		LN
 	fi
 fi
