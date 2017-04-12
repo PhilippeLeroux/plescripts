@@ -25,7 +25,7 @@ function print_usage
 {
 	for (( i=0; i < ${#usage_desc_list[@]}; i++ ))
 	do
-		printf "\t%-${usage_max_len_desc}s" ${usage_desc_list[i]}
+		printf "    %-${usage_max_len_desc}s" ${usage_desc_list[i]}
 		if [ "${usage_help_list[i]}" == "none" ]
 		then
 			echo
