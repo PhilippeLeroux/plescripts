@@ -245,7 +245,7 @@ LN
 info "Create NFS mount points."
 ssh_infra "mkdir /mnt/plescripts"
 ssh_infra "ln -s /mnt/plescripts ~/plescripts"
-ssh_infra "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o rw,$nfs_options"
+ssh_infra "mount ${infra_network}.1:/home/$common_user_name/plescripts /root/plescripts -t nfs -o rw,$rw_nfs_options"
 LN
 
 line_separator
@@ -289,11 +289,6 @@ LN
 line_separator
 #	L'équivalence ssh existe déjà.
 add_to_known_hosts $infra_hostname
-LN
-
-line_separator
-info "Check target"
-exec_cmd "ssh $infra_conn \"san/check_target.sh\""
 LN
 
 script_stop $ME

@@ -51,7 +51,7 @@ LN
 line_separator
 info "Setup yum repositories"
 exec_cmd mkdir -p /mnt$infra_olinux_repository_path
-exec_cmd "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux_repository_path nfs ro,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
+exec_cmd "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux_repository_path nfs ro,$ro_nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
 exec_cmd mount /mnt$infra_olinux_repository_path
 LN
 

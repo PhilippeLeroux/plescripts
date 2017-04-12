@@ -76,7 +76,7 @@ exec_cmd "firewall-cmd --reload"
 LN
 
 line_separator
-exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,comment=systemd.automount\"  >> /etc/fstab"
+exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$rw_nfs_options,comment=systemd.automount\"  >> /etc/fstab"
 LN
 
 if [ $disks_hosted_by == san ]

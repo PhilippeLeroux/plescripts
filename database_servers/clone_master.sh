@@ -255,7 +255,7 @@ function add_oracle_install_directory_to_fstab
 	line_separator
 	info "Mount point for Oracle installation"
 	typeset fstab="$client_hostname:/home/$common_user_name/${oracle_install}	\
-									/mnt/oracle_install nfs ro,defaults,noauto"
+									/mnt/oracle_install nfs ro,$ro_nfs_options,noauto"
 
 	ssh_server "sed -i '/oracle_install/d' /etc/fstab"
 	ssh_server "[ ! -d /mnt/oracle_install ] &&	mkdir /mnt/oracle_install || true"

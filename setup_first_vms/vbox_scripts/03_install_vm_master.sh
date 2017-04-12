@@ -118,7 +118,7 @@ line_separator
 #	Le DNS étant accessible, le montage peut être fait.
 info "Mount plescripts from $client_hostname on /mnt/plescripts."
 master_ssh mkdir /mnt/plescripts
-master_ssh "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
+master_ssh "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$rw_nfs_options,comment=systemd.automount 0 0\" >> /etc/fstab"
 master_ssh mount /mnt/plescripts
 master_ssh "ln -s /mnt/plescripts ~/plescripts"
 LN

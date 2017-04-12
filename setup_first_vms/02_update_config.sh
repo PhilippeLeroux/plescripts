@@ -24,7 +24,6 @@ LN
 line_separator
 . ~/plescripts/oracle_preinstall/make_vimrc_file	# Charge la fonction make_vimrc_file
 make_vimrc_file "/root"
-exec_cmd "gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf -"
 
 line_separator
 exec_cmd "cat ~/plescripts/setup_first_vms/for_inputrc /etc/inputrc > new_inputrc"
