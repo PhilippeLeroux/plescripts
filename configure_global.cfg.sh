@@ -232,8 +232,8 @@ LN
 exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"\${VM_PATH:-$vm_p}\"~g' ~/plescripts/global.cfg"
 LN
 
-exec_cmd "sed -i 's~disks_hosted_by=.*$~disks_hosted_by=$disks_stored_on~g' ~/plescripts/global.cfg"
-exec_cmd "sed -i 's~san_disk=.*$~san_disk=$san_disk_type~g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's~disks_hosted_by=.*$~disks_hosted_by=${DISKS_HOSTED_BY:-$disks_stored_on}~g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's~san_disk=.*$~san_disk=${SAN_DISK_TYPE:-$san_disk_type}~g' ~/plescripts/global.cfg"
 LN
 
 if [ "$HOME/ISO/oracle_linux_7/$OracleLinux73" == "$full_linux_iso_n" ]

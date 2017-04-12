@@ -10,12 +10,19 @@ typeset -r ME=$0
 script_banner $ME $*
 
 typeset switch_to=undef
-if [ "$(hostname -s)" == "$infra_hostname" ]
-then
-	typeset	release=$infra_yum_repository_release
-else
-	typeset	release=$orcl_yum_repository_release
-fi
+case "$(hostname -s)" in
+	"$infra_hostname")	# Serveur d'infra
+		typeset	release=$infra_yum_repository_release
+		;;
+
+	"$master_hostname") # Serveur Master.
+		typeset	release=$master_yum_repository_release
+		;;
+
+	*)	# Serveur base de données.
+		typeset	release=$orcl_yum_repository_release
+		;;
+esac
 
 typeset -r str_usage=\
 "Usage : $ME

@@ -966,12 +966,12 @@ function exit_if_dir_not_exists
 #	Fonctions agissant sur le contenu d'un fichier.
 ################################################################################
 
-#*<	Test if a variable exists, format ^var\\s*=\\s*value
+#*<	Test if a variable exists, format ^var\s{0,}=\s{0,}value
 #*<	1	variable name
 #*<	2	file name
 function exist_var
 {
-	grep -E "^${1}\s*=\s*" "$2" >/dev/null 2>&1
+	grep -qE "^${1}\s{0,}=\s{0,}" "$2"
 }
 
 #*< change_value <var> <value> <file>
@@ -982,7 +982,7 @@ function change_value
 	typeset -r file=$3
 	[ "$2" == "empty" ] && new_val="" || new_val=$(escape_slash "$2")
 
-	exec_cmd "sed -i 's/^\(${var_name}\s*=\s*\).*/\1$new_val/' $file"
+	exec_cmd "sed -i 's/^\(${var_name}\s\{0,\}=\s\{0,\}\).*/\1$new_val/' $file"
 }
 
 #*< add_value <var> <value> <file>
@@ -1013,8 +1013,7 @@ function update_value
 	typeset -r var_value="$2"
 	typeset -r file="$3"
 
-	exist_var "$var_name" "$file"
-	if [ $? -eq 0 ]
+	if exist_var "$var_name" "$file"
 	then
 		change_value "$var_name" "$var_value" "$file"
 	else
@@ -1030,12 +1029,11 @@ function update_value
 #*> If file doesn't exist script aborted.
 function remove_value
 {
-	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$2" "Call function remove_value"
+	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$2" "Call function remove_value" || true
 
 	typeset -r var_name=$(escape_slash "$1")
 	typeset -r file="$2"
-	exist_var "$var_name" "$file"
-	if [ $? -eq 0 ]
+	if exist_var "$var_name" "$file"
 	then
 		exec_cmd "sed -i '/^${var_name}\s*=.*$/d' $file"
 	else

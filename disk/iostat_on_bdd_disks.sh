@@ -34,13 +34,13 @@ do
 done
 
 # Mémorise dans disk_list tous les disques de l'OS.
-function load_fs_disks
+function load_all_disks
 {
 	disk_list="$(find /dev -name "sd*" | grep -E "sd.*[a-z]$")"
 }
 
 # Mémorise dans disk_list les disques utilisés par oracleasm.
-# Si aucun disques trouvé appel load_fs_disks
+# Si aucun disques trouvé appel load_all_disks
 function load_oracleasm_disks
 {
 	while read oralabel
@@ -57,13 +57,13 @@ function load_oracleasm_disks
 	if [ x"$disk_list" == x ]
 	then
 		info "No oracleasm disks found."
-		load_fs_disks
+		load_all_disks
 		LN
 	fi
 }
 
 # Mémorise dans disk_list les disques utilisés par AFD.
-# Si aucun disques trouvé appel load_fs_disks
+# Si aucun disques trouvé appel load_all_disks
 function load_afd_disks
 {
 	for (( iloop=0; iloop < 5; ++iloop ))
@@ -88,7 +88,7 @@ function load_afd_disks
 	if [ x"$disk_list" == x ]
 	then
 		info "No AFD disks found."
-		load_fs_disks
+		load_all_disks
 		LN
 	fi
 }
@@ -96,14 +96,19 @@ function load_afd_disks
 typeset	disk_list
 
 info "Lecture des disques utilisés par la base :"
-if test_if_cmd_exists oracleasm
+if [ $iostat_on == ALL ]
 then
-	load_oracleasm_disks
-elif test_if_cmd_exists asmcmd
-then
-	load_afd_disks
+	load_all_disks
 else
-	load_fs_disks
+	if test_if_cmd_exists oracleasm
+	then
+		load_oracleasm_disks
+	elif test_if_cmd_exists asmcmd
+	then
+		load_afd_disks
+	else
+		load_all_disks
+	fi
 fi
 
 exec_cmd iostat -k 2 $(echo $disk_list |tr " " "\n"|sort|tr "\n" " ")

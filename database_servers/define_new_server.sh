@@ -324,8 +324,12 @@ function next_instructions
 
 if [ "$rel" != "${oracle_release%.*.*}" ]
 then
+	case "$rel" in
+		12.1)	rel=12.1.0.2 ;;
+		12.2)	rel=12.2.0.1 ;;
+	esac
 	info "Update Oracle Release"
-	exec_cmd ~/plescripts/switch_ora_release.sh -rel=$rel
+	exec_cmd ~/plescripts/update_local_cfg.sh -var=oracle_release -value=$rel
 
 	info "Call with local config updated."
 	exec_cmd $ME $all_params
