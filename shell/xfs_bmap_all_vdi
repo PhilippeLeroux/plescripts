@@ -1,33 +1,36 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage=\
-"Usage : $ME
-	[-ask]			Demande si il faut réorganiser.
-	[-reorg]       	Lance la réorganisation si elle est nécessaire (cf -max_ext et -skip_gt)
-	[-max_ext=#]   	Nombre d'extents maximum par disque.
-	[-skip_gt=#]   	Ne pas réorganiser les fichiers de plus de # extents.
-"
-
-script_banner $ME $*
 
 typeset		reorg=no
 typeset		ask=no
 typeset	-i	max_ext=40
 typeset -i	skip_gt=0
 
+add_usage "[-ask]"					"Demander s'il faut réorganiser."
+add_usage "[-reorg]"				"Lance la réorganisation si elle est nécessaire."
+add_usage "[-max_ext=$max_ext]"		"Nombre d'extents maximum par disque."
+add_usage "[-skip_gt=$skip_gt]"		"Ne pas réorganiser les fichiers de plus de # extents."
+
+typeset -r str_usage=\
+"Usage :
+$ME
+$(print_usage)
+"
+
+script_banner $ME $*
+
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -66,6 +69,7 @@ do
 	esac
 done
 
+# $1 file.
 function xfs_bmap_file
 {
 	typeset -r	vdi_file=$1
@@ -85,13 +89,16 @@ function xfs_bmap_file
 	fi
 }
 
-[ $ask == yes ] && reorg=yes
+[ $ask == yes ] && reorg=yes || true
 
 if [[ $reorg == yes && $ask == no ]]
 then
 	LN
 	info "La réorganisation sera faite s'il y a plus de $max_ext extents à réorganiser."
-	[ $skip_gt -ne 0 ] && info "    - Si le nombre d'extents à réorganiser est inférieur à $skip_gt"
+	if [ $skip_gt -ne 0 ]
+	then
+		info "    - Si le nombre d'extents à réorganiser est inférieur à $skip_gt"
+	fi
 	LN
 
 	confirm_or_exit "Continuer"
@@ -131,7 +138,7 @@ do
 			then
 				info "Démarrage..."
 				exec_cmd sudo xfs_fsr -v \"$vdi_file\"
-				count_reorgs=count_reorgs+1
+				((++count_reorgs))
 				xfs_bmap_file "$vdi_file"
 				LN
 			fi
