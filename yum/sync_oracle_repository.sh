@@ -82,7 +82,7 @@ function nfs_export_repo
 	if [ $? -ne 0 ]
 	then
 		typeset	-r network=$(right_pad_ip $infra_network)
-		exec_cmd "echo \"$infra_olinux_repository_path $network/${if_pub_prefix}(ro,async,no_root_squash,no_subtree_check)\" >> /etc/exports"
+		exec_cmd "echo \"$infra_olinux_repository_path $network/${if_pub_prefix}(ro,async,no_subtree_check)\" >> /etc/exports"
 		exec_cmd exportfs -ua
 		exec_cmd exportfs -a
 		LN
@@ -152,12 +152,9 @@ fi
 if [ "$use_tar" != none ]
 then #	$use_tar contient le backup d'un dépôt OL7.
 	info "Extract repository from $use_tar"
+	# Lecture du répertoire parent (root dir)
 	root_dir="/$(echo $infra_olinux_repository_path | cut -d/ -f2)"
-	exec_cmd mv "$use_tar"	"$root_dir"
-	fake_exec_cmd cd $root_dir
-	cd "$root_dir"
-	exec_cmd "gzip -dc \"${use_tar##*/}\" | tar xf -"
-	exec_cmd rm "${use_tar##*/}"
+	exec_cmd "gzip -dc \"$use_tar\" | tar -C \"$root_dir\" -xf -"
 	LN
 else
 	[ $sync_repo_latest == yes ] && sync_repo ol7_latest || true

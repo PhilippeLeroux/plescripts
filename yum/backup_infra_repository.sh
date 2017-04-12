@@ -39,66 +39,40 @@ done
 
 must_be_executed_on_server "$client_hostname"
 
-function create_backup_on_server_infra
+# $1 backup name
+function backup_repo_on_infra
 {
-	info "Create $backup_name on $infra_hostname"
-	exec_cmd "ssh ${infra_conn} \"cd /repo; tar cf - OracleLinux |\
-												gzip -c > $backup_name\""
+	info "Create $1 on $infra_hostname"
+	exec_cmd "ssh ${infra_conn} \
+				'tar -C /repo -cf - OracleLinux		|\
+					gzip -c > ~/plescripts/tmp/$1'"
 	LN
 }
 
-function copy_backup_to_local_host
-{
-	info "Copy $backup_name to $client_hostname"
-	exec_cmd "scp ${infra_conn}:/repo/$backup_name $full_backup_name"
-	LN
-}
-
+# $1 full backup name (path + name)
 # return 0 OK, else 1 KO
-# Même avec scp la copie peut être corrompue.
-function validates_local_backup
+function test_if_backup_valid
 {
-	info "Validates local backup $backup_name"
-	exec_cmd -c "gzip -dc $full_backup_name > /dev/null"
+	info "Validate backup $1"
+	exec_cmd "gzip --test '$1'"
+	LN
 }
 
-typeset -r backup_name="yum_repo.tar.gz"
-typeset -r full_backup_name="$iso_olinux_path/$backup_name"
+typeset -r full_backup_name="$HOME/plescripts/tmp/$backup_repo_name"
+
+[ ! -d "$HOME/plescripts/tmp" ] && exec_cmd "mkdir '$HOME/plescripts/tmp'" || true
+
 if [ -f "$full_backup_name" ]
 then
-	exec_cmd ls -l $full_backup_name
+	exec_cmd "ls -l '$full_backup_name'"
 	confirm_or_exit "Backup exists. Remove"
+	exec_cmd "rm -f '$full_backup_name'"
+	LN
 fi
 
-create_backup_on_server_infra
+backup_repo_on_infra $backup_repo_name
 
-copy_backup_to_local_host
+test_if_backup_valid $full_backup_name
 
-if ! validates_local_backup
-then
-	LN
-	info "Validates $backup_name on $infra_hostname"
-	exec_cmd -c "ssh ${infra_conn} 'gzip -dc /repo/$backup_name > /dev/null'"
-	if [ $? -ne 0 ]
-	then
-		error "Rerun the scripts."
-		LN
-		exit 1
-	fi
-
-	info "$backup_name valid on $infra_hostname"
-	LN
-
-	copy_backup_to_local_host
-
-	if ! validates_local_backup
-	then
-		error "scp error ??"
-		exit 1
-	fi
-fi
-LN
-
-info "Remove $backup_name from $infra_hostname"
-exec_cmd "ssh ${infra_conn} \"rm -rf /repo/$backup_name\""
+info "Bakup [$OK]"
 LN

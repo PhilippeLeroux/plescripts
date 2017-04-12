@@ -24,6 +24,7 @@ do
 			;;
 
 		-infra_install)
+			# Active la log et paramètre passé au script sync_oracle_repository.sh
 			infra_install=yes
 			pass_arg="-infra_install"
 			shift
@@ -50,8 +51,7 @@ script_banner $ME $*
 
 must_be_executed_on_server "$client_hostname"
 
-typeset -r backup_name="yum_repo.tar.gz"
-typeset -r full_backup_name="$iso_olinux_path/$backup_name"
+typeset -r full_backup_name="$HOME/plescripts/tmp/$backup_repo_name"
 
 if [ ! -f $full_backup_name ]
 then # Pas de backup de dépôt, la synchronisation sera longue.
@@ -65,12 +65,9 @@ else # Le dépôt sera initialisé avec $full_backup_name
 	exec_cmd "ssh -t root@$infra_ip \"[ -d /repo ] && rm -rf /repo || true\""
 	LN
 
-	info "Copy repository backup to ${infra_ip}"
-	exec_cmd scp $full_backup_name root@${infra_ip}:/
-	LN
-
 	info "Restore OL7 repository on $infra_hostname"
 	exec_cmd "ssh -t root@$infra_ip	\
 				'~/plescripts/yum/sync_oracle_repository.sh	\
-							-use_tar=/$backup_name' $pass_arg"
+					-use_tar=\"\$HOME/plescripts/tmp/$backup_repo_name\" $pass_arg'"
+	LN
 fi
