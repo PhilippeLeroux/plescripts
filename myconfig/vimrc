@@ -1,7 +1,8 @@
 set ts=4
 set sw=4
 set softtabstop=4	" aka sts ne fonctionne pas avec vi
-set listchars=tab:→\ ,eol:¬,trail:⋅,nbsp:⋅
+" BUG gvim Redhat space ne fonctionne pas !
+set listchars=tab:→\ ,eol:$,trail:✗,nbsp:⋅,space:.
 "set cc=81 wrap
 "set nu
 set vb t_vb=
@@ -9,6 +10,11 @@ set noerrorbells
 
 if  ! has("compatible")
 "	A partir d'ici la configuration n'est pas compatible avec vi.
+
+" http://vim.wikia.com/wiki/Set_working_directory_to_the_current_file
+" Le répertoire du fichier en cour d'édition devient le répertoire courant.
+" git ne fonctionne plus avec :
+" autocmd BufEnter * silent! lcd %:p:h
 
 if ! exists( "g:first_load" )
 	" Permet d'éviter certaines actions sur
@@ -33,11 +39,21 @@ endif
 call pathogen#infect()
 call pathogen#helptags()
 
+if getcwd() == $HOME.'/plewiki'
+	let plewiki_directory='yes'
+else
+	let plewiki_directory='no'
+endif
+
 if g:first_load == 1
 	if has("gui_running")
 		set columns=115
-		set lines=48
-		winpos 0 36
+		set lines=49
+		if plewiki_directory == 'yes'
+			winpos 847 36
+		else
+			winpos 0 36
+		endif
 	endif
 endif
 
@@ -47,8 +63,13 @@ let g:vim_markdown_toc_autofit = 1
 set conceallevel=2
 
 "	vim-session & vim-misc
-let g:session_autoload='yes'
-let g:session_autosave='yes'
+if plewiki_directory == 'yes'
+	let g:session_autoload='no'
+	let g:session_autosave='no'
+else
+	let g:session_autoload='yes'
+	let g:session_autosave='yes'
+endif
 "	Ne fonctionne pas.
 "	il faut supprimer default.vim
 "	g:session_default_name est buggé. pour pouvoir réutiliser le nom par
@@ -210,10 +231,6 @@ nnoremap <silent> <C-m> :call ManWordUnderTheCursor()<CR>
 "	Recherche de la fonction correspondante ou mot sous le curseur.
 source $HOME/vimfunc/SearchFunction.vim
 nnoremap <leader>f :call SearchFunction()<CR>
- 
-"	============================================================================
-"	xolox/vim-session
-"let g:session_autoload='yes'
-"let g:session_autosave='yes'
+
 endif "!has("compatible")
 

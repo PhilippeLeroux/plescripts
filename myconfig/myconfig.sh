@@ -6,7 +6,13 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME -apply [-skip_vim]|-backup [-emul]"
+
+typeset -r str_usage=\
+"Usage : $ME
+	[-restore|-backup]  -restore config, -backup config
+	[-skip_vim]         with -restore not install gvim
+	[-emul]
+"
 
 typeset	action=undef
 typeset	install_gvim=yes
@@ -24,14 +30,20 @@ do
 			shift
 			;;
 
-		-apply)
-			action=apply
+		-restore)
+			action=restore
 			shift
 			;;
 
 		-skip_vim)
 			install_gvim=no
 			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
 			;;
 
 		*)
@@ -43,9 +55,16 @@ do
 	esac
 done
 
-exit_if_param_invalid action "backup apply" "$str_usage"
+if [ $action == undef ]
+then
+	error "Missing parameter -restore or -backup"
+	LN
+	info "$str_usage"
+	LN
+	exit 1
+fi
 
-function run_apply
+function apply_sudo_config
 {
 	typeset	-r	sudo_config="$USER ALL=(root) NOPASSWD: ALL"
 
@@ -80,6 +99,11 @@ function run_apply
 			LN
 		fi
 	fi
+}
+
+function restore
+{
+	[ "$USER" != root ] && apply_sudo_config || true
 
 	line_separator
 	if grep -q "set editing-mode vi" /etc/inputrc
@@ -99,10 +123,12 @@ function run_apply
 	exec_cmd "echo \"[ -f ~/.bashrc_extensions ] && . ~/.bashrc_extensions || true\" >> ~/.bashrc"
 	LN
 
-	test_if_cmd_exists gvim
-	if [ $? -eq 0 ]
+	typeset	gvim_installed=no
+
+	if test_if_cmd_exists gvim
 	then
 		install_gvim=no
+		gvim_installed=yes
 		line_separator
 		info "gvim is installed."
 		LN
@@ -111,17 +137,16 @@ function run_apply
 	if [ $install_gvim == yes ]
 	then
 		line_separator
-		typeset	gvim_installed=no
 		. /etc/os-release
 		case "$ID" in
 			opensuse)
 				exec_cmd -c "sudo zypper install git-core gvim"
-				[ $? -eq 0 ] && gvim_installed=yes
+				[ $? -eq 0 ] && gvim_installed=yes || true
 				;;
 
 			neon)
 				exec_cmd "sudo apt install vim-gnome"
-				[ $? -eq 0 ] && gvim_installed=yes
+				[ $? -eq 0 ] && gvim_installed=yes || true
 				;;
 
 			*)
@@ -129,16 +154,16 @@ function run_apply
 				;;
 		esac
 		LN
+	fi
 
-		if [ $gvim_installed == yes ]
-		then
-			line_separator
-			info "[G]vim configuration :"
-			exec_cmd "~/plescripts/myconfig/vim_config.sh -restore"
-			LN
-			exec_cmd "~/plescripts/myconfig/vim_plugin.sh -init"
-			LN
-		fi
+	if [ $gvim_installed == yes ] || test_if_cmd_exists vim
+	then
+		line_separator
+		info "[G]vim configuration :"
+		exec_cmd "~/plescripts/myconfig/vim_config.sh -restore"
+		LN
+		exec_cmd "~/plescripts/myconfig/vim_plugin.sh -init"
+		LN
 	fi
 
 	line_separator
@@ -146,12 +171,20 @@ function run_apply
 	exec_cmd cp mytmux.conf ~/.tmux.conf
 	LN
 
-	line_separator
-	exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
-	LN
+	case "$USER" in
+		root|oracle|grid)
+			: # do nothing
+			;;
+
+		*)
+			line_separator
+			exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
+			LN
+			;;
+	esac
 }
 
-function run_backup
+function backup
 {
 	line_separator
 	info "Backup bashrc extensions :"
@@ -169,9 +202,4 @@ function run_backup
 	LN
 }
 
-if [ $action == apply ]
-then
-	run_apply
-else
-	run_backup
-fi
+[ $action == restore ] && restore || backup
