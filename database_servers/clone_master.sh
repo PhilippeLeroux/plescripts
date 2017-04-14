@@ -450,16 +450,6 @@ function configure_server
 	#	de basculer sur le bon dépôt.
 	ssh_master ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"
 
-	# Pour Oracle 12cR2 la version est la R4, il faut donc mettre à jour car
-	# par défaut c'est la R3 qui est activé et installée.
-	if [[ $update_os == yes ||
-			$infra_yum_repository_release != $orcl_yum_repository_release ]]
-	then
-		test_if_rpm_update_available $master_hostname
-		[ $? -eq 0 ] && ssh_master "yum -y -q update" || true
-		LN
-	fi
-
 	line_separator
 	configure_ifaces_hostname_and_reboot
 
@@ -472,6 +462,16 @@ function configure_server
 	make_ssh_equi_with_san
 
 	create_disks_for_oracle_and_grid_softwares
+
+	if [[ $update_os == yes ||
+			$infra_yum_repository_release != $orcl_yum_repository_release ]]
+	then
+		if test_if_rpm_update_available $server_name
+		then
+			ssh_server "yum -y -q update" || true
+		fi
+		LN
+	fi
 }
 
 #	Met en place tous les pré requis Oracle
