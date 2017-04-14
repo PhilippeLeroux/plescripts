@@ -53,7 +53,12 @@ must_be_executed_on_server "$client_hostname"
 
 typeset -r full_backup_name="$HOME/plescripts/tmp/$backup_repo_name"
 
-if [ ! -f $full_backup_name ]
+if [[ $infra_install == yes && ${infra_yum_repository_release:0:3} == DVD ]]
+then
+	line_separator
+	exec_cmd "~/plescripts/yum/create_repo_from_dvd.sh	\
+									-release=$infra_yum_repository_release"
+elif [ ! -f $full_backup_name ]
 then # Pas de backup de dépôt, la synchronisation sera longue.
 	line_separator
 	info "Cloning OL7 repository on $infra_hostname"

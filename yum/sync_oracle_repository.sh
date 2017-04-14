@@ -19,7 +19,7 @@ typeset -r str_usage=\
 \t[-release=$release]	latest|R3|R4|all
 \t[-skip_latest]
 
-Update OS & sync local repository
+Sync local repository
 "
 
 while [ $# -ne 0 ]
@@ -82,7 +82,7 @@ function nfs_export_repo
 	if [ $? -ne 0 ]
 	then
 		typeset	-r network=$(right_pad_ip $infra_network)
-		exec_cmd "echo \"$infra_olinux_repository_path $network/${if_pub_prefix}(ro,async,no_subtree_check)\" >> /etc/exports"
+		exec_cmd "echo \"$infra_olinux_repository_path $network/${if_pub_prefix}(ro,subtree_check)\" >> /etc/exports"
 		exec_cmd exportfs -ua
 		exec_cmd exportfs -a
 		LN
@@ -180,8 +180,7 @@ exec_cmd ~/plescripts/yum/switch_repo_to.sh -local
 LN
 
 line_separator
-test_if_rpm_update_available
-if [ $? -eq 0 ]
+if test_if_rpm_update_available
 then
 	info "To update : yum update"
 	LN

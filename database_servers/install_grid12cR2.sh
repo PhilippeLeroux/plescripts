@@ -288,8 +288,31 @@ function mount_install_directory
 	LN
 }
 
+# $1 server
+function check_oracle_size
+{
+	typeset -r server=$1
+
+	exec_cmd "ssh grid@$server '. .bash_profile && plescripts/database_servers/check_bin_oracle_size.sh'"
+}
+
 function start_grid_installation
 {
+	function restore_swappiness
+	{
+		line_separator
+		info "Restore swappiness."
+		exec_cmd "ssh root@${node_names[0]} 'sysctl -w vm.swappiness=$vm_swappiness'"
+		LN
+	}
+
+	line_separator
+	# Parfois le link échoue : favorise le swap
+	info "Adjust swappiness for link step."
+	typeset -r vm_swappiness=$(ssh root@${node_names[0]} 'sysctl -n vm.swappiness')
+	exec_cmd "ssh root@${node_names[0]} 'sysctl -w vm.swappiness=60'"
+	LN
+	
 	line_separator
 	info "Start grid installation (${extract_grid_mn[idx_mn]})."
 	add_dynamic_cmd_param "LANG=C ./gridSetup.sh"
@@ -299,6 +322,8 @@ function start_grid_installation
 	exec_dynamic_cmd -c "ssh -t grid@${node_names[0]} \"cd $ORACLE_HOME &&"
 	if [[ $? -gt 250 || $? -eq 127 ]]
 	then
+		restore_swappiness
+
 		error "Look log, if ntp sync failed re-run the script and"
 		error "add options -skip_extract_grid -skip_init_afd_disks"
 		LN
@@ -312,6 +337,10 @@ function start_grid_installation
 		ssh grid@$node ". .bash_profile && echo 'SQLNET.INBOUND_CONNECT_TIMEOUT=300' > \$TNS_ADMIN/sqlnet.ora"
 	done
 	LN
+
+	restore_swappiness
+
+	check_oracle_size ${node_names[0]}
 }
 
 function run_post_install_root_scripts_on_node	# $1 node# $2 server_name

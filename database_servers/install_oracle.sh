@@ -252,13 +252,7 @@ function check_oracle_size
 {
 	typeset -r server=$1
 
-	typeset -r size="$(ssh oracle@$server '. .bash_profile && du -sh $ORACLE_HOME/bin/oracle | cut -d\  -f1')"
-	if [ "$size" == "0" ]
-	then
-		error "link failed : \$ORACLE_HOME/bin/oracle size 0."
-		LN
-		exit 1
-	fi
+	exec_cmd "ssh oracle@$server '. .bash_profile && plescripts/database_servers/check_bin_oracle_size.sh'"
 }
 
 function start_oracle_installation
@@ -273,6 +267,14 @@ function start_oracle_installation
 			LN
 		done
 	fi
+
+	function restore_swappiness
+	{
+		line_separator
+		info "Restore swappiness."
+		exec_cmd "ssh root@${node_names[0]} 'sysctl -w vm.swappiness=$vm_swappiness'"
+		LN
+	}
 
 	line_separator
 	# Parfois le link échoue : favorise le swap
@@ -303,16 +305,14 @@ function start_oracle_installation
 	if [ $? -gt 250 ]
 	then
 		LN
+		restore_swappiness
 		exit 1
 	fi
 	LN
 
-	check_oracle_size ${node_names[0]}
+	restore_swappiness
 
-	line_separator
-	info "Restore swappiness."
-	exec_cmd "ssh root@${node_names[0]} 'sysctl -w vm.swappiness=$vm_swappiness'"
-	LN
+	check_oracle_size ${node_names[0]}
 }
 
 function exec_post_install_root_scripts_on_node	# $1 node name

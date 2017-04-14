@@ -86,7 +86,7 @@ then
 	LN
 fi
 
-info "Add repositories local_ol7_latest, local_ol7_UEKR3 & local_ol7_UEKR4"
+info "Add repositories local_ol7_latest, local_ol7_UEKR3, local_ol7_UEKR4, DVD_R2 && DVD_R3"
 cat <<EOC >>$repo_file
 
 [local_ol7_latest]
@@ -109,6 +109,21 @@ baseurl=$url_is/ol7_UEKR4/
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 gpgcheck=1
 enabled=0
+
+[ol7_DVD_R2]
+name=DVD Unbreakable Enterprise Kernel Release 2 for Oracle Linux \$releasever (\$basearch)
+baseurl=$url_is/DVD_R2/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=0
+
+[ol7_DVD_R3]
+name=DVD Unbreakable Enterprise Kernel Release 3 for Oracle Linux \$releasever (\$basearch)
+baseurl=$url_is/DVD_R3/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=0
+
 EOC
 LN
 info "Yum repository updated."
