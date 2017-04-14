@@ -380,6 +380,16 @@ EO_SSH_STBY
 #	Lance la duplication de la base avec RMAN
 function run_duplicate
 {
+	typeset db_name=$(orcl_parameter_value db_name)
+	typeset db_unique_name=$(orcl_parameter_value db_unique_name)
+
+	if [ "$db_name" == "$db_unique_name" ]
+	then # Base à l'origine du Dataguard
+		db_unique_name="$standby"
+	else # Base créée à partir de la Primary
+		db_unique_name="$db_name"
+	fi
+
 	info "Run duplicate :"
 cat<<EOR >/tmp/duplicate.rman
 run {
@@ -391,13 +401,13 @@ run {
 	using compressed backupset
 	spfile
 		parameter_value_convert '$primary','$standby'
-		set db_name='$primary' #Obligatoire en 12.2, sinon le duplicate échoue.
-		set db_unique_name='$standby'
+		set db_name='$db_name' #Obligatoire en 12.2, sinon le duplicate échoue.
+		set db_unique_name='$db_unique_name'
 		set db_create_file_dest='+DATA'
 		set db_recovery_file_dest='+FRA'
 		set control_files='+DATA','+FRA'
 		set cluster_database='false'
-		set fal_server='$primary'
+		set fal_server='$db_unique_name'
 		nofilenamecheck
 	;
 }
