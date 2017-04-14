@@ -66,7 +66,6 @@ function create_iscsi_initiator
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute cache_dynamic_acls=0
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute demo_mode_write_protect=0
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute generate_node_acls=0
-	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute default_cmdsn_depth=128
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/portals/ create $l_portal
 
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/acls create $l_initiator_name
