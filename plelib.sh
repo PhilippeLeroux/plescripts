@@ -562,12 +562,36 @@ function fake_exec_cmd
 	esac
 }
 
+#*> $@ string
+#*> print to stdout string without quotes ( ' or " )
+function unquote
+{
+	typeset	string="$@"
+	# Supprime la ' ou " du début si elle est présente.
+	case "${string:0:1}" in
+		"'"|"\"")
+			echo "${string:1}"
+			return
+			;;
+	esac
+
+	# Supprime la ' ou " de fin si elle est présente.
+	case "${string:${#string}-1:1}" in
+		"'"|"\"")
+			echo "${string:0:${#string}-1}"
+			return
+			;;
+	esac
+
+	echo "$string"
+}
+
 #*< Extrait la commande de "$@", si une des commandes su, sudo ou ssh sont utilisées
 #*< leurs noms apparaitra.
 function shorten_command
 {
 	typeset	-a	argv
-	read -a argv <<<"$@"
+	read -a argv <<<"$(unquote "$@")"
 
 	typeset -ri size=${#argv[@]}
 
@@ -594,7 +618,7 @@ function shorten_command
 		arg=${argv[$argc]}
 		[ "${arg:0:1}" != - ] && break || true
 
-		argc=argc+1
+		((++argc))
 	done
 
 	# Ici argc pointe sur la chaîne de connexion.
@@ -611,30 +635,19 @@ function shorten_command
 	# cas de su ... -c
 	if [ "$cmd" == "-c" ]
 	then
-		icmd=icmd+1
+		((++icmd))
 		cmd=${argv[icmd]}
-		argc=argc+1
+		((++argc))
 	fi
 
-	# Supprime la ' ou " du début si elle est présente.
-	case "${cmd:0:1}" in
-		"'"|"\"")
-			cmd=${cmd:1}
-			;;
-	esac
-	# Supprime la ' ou " de fin si elle est présente.
-	case "${cmd:${#cmd}-1:1}" in
-		"'"|"\"")
-			cmd=${cmd:0:${#cmd}-1}
-			;;
-	esac
+	cmd="$(unquote $cmd)"
 
 	# Passe LANG=*
 	if [ "${cmd:0:5}" == "LANG=" ]
 	then
-		icmd=icmd+1
+		((++icmd))
 		cmd=${argv[icmd]}
-		argc=argc+1
+		((++argc))
 	fi
 
 	case "$cmd" in
@@ -650,29 +663,30 @@ function shorten_command
 				fi
 			done
 
-			# Supprime la ' ou " du début si elle est présente.
-			case "${new_argv:0:1}" in
-				"'"|"\"")
-					new_argv=${new_argv:1}
-					;;
-			esac
-			# Supprime la ' ou " de fin si elle est présente.
-			case "${new_argv:${#new_argv}-1:1}" in
-				"'"|"\"")
-					cmd=${new_argv:0:${#new_argv}-1}
-					;;
-			esac
-
 			echo "$(shorten_command "$new_argv") (ssh)"
 			return 0
 			;;
-	esac
 
-	# Si la commande est '.' c'est qu'un fichier profile est sourcé.
-	# Ex : . ./.profile ... donc pointe sur 3
-	[ "$cmd" == "." ] && cmd=${argv[argc+3]} || true
-	# Arrive dans ce scénario : . ./.profile \; ....
-	[ "$cmd" == ";" ] && cmd=${argv[argc+4]} || true
+		cd) # cd path &&|;
+			echo "$(shorten_command "${argv[icmd+3]}")"
+			return 0
+			;;
+
+		.) # . .bash_profile
+			argc=argc+3
+
+			#	. .bash_profile \; ....
+			# or
+			#	. .bash_profile && ....
+			case "${argv[$argc]}" in
+				";"|"&&")
+					((++argc))
+					;;
+			esac
+
+			cmd="$(unquote ${argv[argc]})"
+			;;
+	esac
 
 	echo "$cmd (${argv[0]})"
 }
