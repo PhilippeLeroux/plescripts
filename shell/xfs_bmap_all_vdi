@@ -8,15 +8,15 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-typeset		reorg=no
+typeset		defrag=no
 typeset		ask=no
 typeset	-i	max_ext=40
 typeset -i	skip_gt=0
 
-add_usage "[-ask]"					"Demander s'il faut réorganiser."
-add_usage "[-reorg]"				"Lance la réorganisation si elle est nécessaire."
+add_usage "[-ask]"					"Demander s'il faut défragmenter."
+add_usage "[-defrag]"				"Lance la réorganisation si elle est nécessaire."
 add_usage "[-max_ext=$max_ext]"		"Nombre d'extents maximum par disque."
-add_usage "[-skip_gt=$skip_gt]"		"Ne pas réorganiser les fichiers de plus de # extents."
+add_usage "[-skip_gt=$skip_gt]"		"Ne pas défragmenter les fichiers de plus de #extents."
 
 typeset -r str_usage=\
 "Usage :
@@ -34,8 +34,8 @@ do
 			shift
 			;;
 
-		-reorg)
-			reorg=yes
+		-defrag)
+			defrag=yes
 			shift
 			;;
 
@@ -70,34 +70,70 @@ do
 done
 
 # $1 file.
-function xfs_bmap_file
+# return 0 if #extends less than max_ext, else return 1
+function file_nr_extends_ok
 {
 	typeset -r	vdi_file=$1
 
 	typeset -ri nr_extents=$(sudo xfs_bmap "$vdi_file" | tail -1 | tr -s [:space:] | cut -d: -f1)+1
 
-	typeset -r file_size=$(fmt_bytesU_2_better $(stat --printf="%s" "$vdi_file"))
-	msg=$(printf "%-20s %8s : %2d extents " "${vdi_file##*/}" $file_size $nr_extents)
+	typeset -r	file_size=$(fmt_bytesU_2_better $(stat --printf="%s" "$vdi_file"))
+	typeset	-r	msg=$(printf "%-20s %8s : %2d extents " "${vdi_file##*/}" $file_size $nr_extents)
 	if [ $nr_extents -le $max_ext ]
 	then
 		info "$msg [$OK]"
+		LN
 		return 0
 	else
+		info "$msg [$KO] limit $max_ext extents, defrag needed..."
 		LN
-		info "$msg [$KO] limit $max_ext extents, reorg needed..."
 		return 1
 	fi
 }
 
-[ $ask == yes ] && reorg=yes || true
+# $1 file
+# Increment count_reorgs
+function defrag_file
+{
+	typeset	-r	vdi_file="$1"
 
-if [[ $reorg == yes && $ask == no ]]
+	typeset		reorg_this_file=yes
+	if [ $ask == yes ]
+	then
+		ask_for -reply_list="o n a" -print="o/n/a ?" \
+				"Défragmenter le fichier (a : oui toujours)"
+		case $? in
+			0)	: # OK
+				;;
+
+			1)	reorg_this_file=no
+				;;
+
+			3)	ask=no
+				;;
+		esac
+		LN
+	fi
+
+	if [ $reorg_this_file == yes ]
+	then
+		info "Démarrage..."
+		exec_cmd sudo xfs_fsr -v \"$vdi_file\"
+		((++count_reorgs))
+		file_nr_extends_ok "$vdi_file"
+		LN
+	fi
+}
+
+[ $ask == yes ] && defrag=yes || true
+
+if [[ $defrag == yes && $ask == no ]]
 then
 	LN
-	info "La réorganisation sera faite s'il y a plus de $max_ext extents à réorganiser."
+	info "La défragmentation sera faite si le fichier vdi a plus de $max_ext extents."
 	if [ $skip_gt -ne 0 ]
 	then
-		info "    - Si le nombre d'extents à réorganiser est inférieur à $skip_gt"
+		info "    - Si le nombre d'extents à défragmenter est inférieur à $skip_gt"
 	fi
 	LN
 
@@ -111,44 +147,19 @@ cmd="find \"$vm_path/\" -name *.vdi"
 fake_exec_cmd "$cmd"
 while read vdi_file
 do
-	xfs_bmap_file "$vdi_file"
-	if [ $? -ne 0 ]
+	line_separator
+	if ! file_nr_extends_ok "$vdi_file"
 	then
-		if [ $reorg == yes ]
+		if [ $defrag == yes ]
 		then
-			reorg_this_file=yes
-			if [ $ask == yes ]
-			then
-				ask_for -reply_list="o n a" -print="o/n/a ?" \
-						"Réorganiser le fichier (a : oui toujours)"
-				case $? in
-					0)	: # OK
-						;;
-
-					1)	reorg_this_file=no
-						;;
-
-					3)	ask=no
-						;;
-				esac
-				LN
-			fi
-
-			if [ $reorg_this_file == yes ]
-			then
-				info "Démarrage..."
-				exec_cmd sudo xfs_fsr -v \"$vdi_file\"
-				((++count_reorgs))
-				xfs_bmap_file "$vdi_file"
-				LN
-			fi
+			defrag_file "$vdi_file"
 		else
 			info "    Détails avec :"
 			info "    sudo xfs_bmap -v \"$vdi_file\""
 			info ""
 			info "    Défragmentation :"
 			info "       - sudo xfs_fsr -v \"$vdi_file\""
-			info "       - ${ME##*/} -reorg (Tous les fichiers seront réorganisés)"
+			info "       - ${ME##*/} -defrag (Tous les fichiers seront défragmentés)"
 			LN
 		fi
 	fi
