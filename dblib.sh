@@ -223,7 +223,7 @@ typeset opv_query=\
 		p.name = '$1'
 	;
 "
-	sqlplus_exec_query "$opv_query"
+	sqlplus_exec_query "$opv_query" | xargs
 }
 
 #*>	Objectif de la fonction :
