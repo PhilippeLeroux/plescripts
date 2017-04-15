@@ -24,6 +24,8 @@ tmp/**
 #
 test/**
 
+tnsadmin
+
 ###
 dns/install/etc
 dns/install/var

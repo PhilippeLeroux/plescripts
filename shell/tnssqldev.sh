@@ -10,16 +10,15 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 
-typeset -r sqldeveloper_path=$HOME/sqldeveloper
-if [ ! -v TNS_ADMIN ]
+if [ x"$TNS_ADMIN" == x ]
 then
-	if [ -d $sqldeveloper_path ]
+	if [ -d ~/plescripts/tnsadmin ]
 	then
-		export TNS_ADMIN=$sqldeveloper_path
-	else
-		error "TNS_ADMIN not defined and $sqldeveloper_path not exists."
-		exit 1
+		exec_cmd mkdir ~/plescripts/tnsadmin
+		LN
 	fi
+	info "export TNS_ADMIN=~/plescripts/tnsadmin"
+	export TNS_ADMIN=~/plescripts/tnsadmin
 fi
 
 must_be_executed_on_server $client_hostname
@@ -118,10 +117,19 @@ then
 	else
 		cfg_load_node_info $db 1
 		server=$cfg_server_name
-		if [[ "$cfg_standby" != none && "$pdb" != undef ]]
+		if [[ "$cfg_standby" != none ]]
 		then
-			cfg_load_node_info $cfg_standby 1
-			server="'$server $cfg_server_name'"
+			info "Dataguard detected."
+			if [[ "$pdb" == undef ]]
+			then
+				info "No dataguard cfg for cdb, only pdb."
+				LN
+			else
+				cfg_load_node_info $cfg_standby 1
+				server="'$server $cfg_server_name'"
+				info "server list : $server"
+				LN
+			fi
 		fi
 	fi
 fi

@@ -1,0 +1,98 @@
+#!/bin/bash
+# vim: ts=4:sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+
+if [ x"$SQLDEVELOPER_PATH" == x ]
+then
+	SQLDEVELOPER_PATH=$HOME/sqldeveloper
+fi
+
+if [ x"$SQLCL_PATH" == x ]
+then
+	SQLCL_PATH=$SQLDEVELOPER_PATH/sqldeveloper/bin
+fi
+
+typeset -r str_usage=\
+"Usage : $ME
+Exécute sqldeveloper ou sqlcl.
+
+Valeur par défaut :
+	SQLDEVELOPER_PATH=\$HOME/sqldeveloper
+	SQLCL_PATH=\$SQLDEVELOPER_PATH/sqldeveloper/bin
+
+sqlcl est un alias sur sqld.
+
+Répertoire :
+	sqldeveloper : $SQLDEVELOPER_PATH
+	sqlc         : $SQLCL_PATH
+"
+
+if [ $# -eq 0 ]
+then
+	info "$str_usage"
+	LN
+	exit 1
+fi
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			break
+	esac
+done
+
+case "${ME##*/}" in
+	sqld)
+		typeset -r script=$SQLDEVELOPER_PATH/sqldeveloper.sh
+		;;
+	sqlcl)
+		typeset -r script=$SQLCL_PATH/sql
+		;;
+esac
+
+if [ ! -f "$script" ]
+then
+	error "$script not exists."
+	LN
+	exit 1
+fi
+
+if [ x"$TNS_ADMIN" == x ]
+then
+	if [ -d ~/plescripts/tnsadmin ]
+	then
+		info "export TNS_ADMIN=~/plescripts/tnsadmin"
+		export TNS_ADMIN=~/plescripts/tnsadmin
+	else
+		warning "no TNS_ADMIN"
+		LN
+	fi
+fi
+
+info "Stop nscd.service"
+exec_cmd sudo systemctl stop nscd.service
+LN 
+
+exec_cmd -c "$script ${@:1}"
+LN
+
+info "Start nscd.service"
+exec_cmd sudo systemctl start nscd.service
+LN
