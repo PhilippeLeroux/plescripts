@@ -1,8 +1,7 @@
 set ts=4
 set sw=4
 set softtabstop=4	" aka sts ne fonctionne pas avec vi
-" BUG gvim Redhat space ne fonctionne pas !
-set listchars=tab:→\ ,eol:$,trail:✗,nbsp:⋅,space:.
+set listchars=tab:→\ ,eol:$,space:.,trail:✗,nbsp:⋅
 "set cc=81 wrap
 "set nu
 set vb t_vb=
@@ -214,18 +213,17 @@ nnoremap <silent> <C-n> :GitGutterNextHunk<CR>
 "	Fait un man du mot sous le curseur.
 "	============================================================================
 source $HOME/vimfunc/ManWordUnderTheCursor.vim
-nnoremap <silent> <C-M> :call ManWordUnderTheCursor()<CR>
+nnoremap <silent> <C-m> :call ManWordUnderTheCursor()<CR>
 
+"	============================================================================
+"	TOC markdown
+"	============================================================================
 function! TocMarkdown()
 	call system('gh-md-toc ' . shellescape(bufname("%")) . " >/tmp/toc.md")
 	set previewheight=15
 	pedit! /tmp/toc.md
 endfunction
 nnoremap <silent> <C-t> :call TocMarkdown()<CR>
-
-"	============================================================================
-source $HOME/vimfunc/ManWordUnderTheCursor.vim
-nnoremap <silent> <C-m> :call ManWordUnderTheCursor()<CR>
 
 "	============================================================================
 "	Recherche de la fonction correspondante ou mot sous le curseur.
