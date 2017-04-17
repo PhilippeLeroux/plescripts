@@ -14,7 +14,6 @@ typeset -r str_usage=\
 	-show              : Affiche l'ensemble des plugins installés.
 	-del=<plugin name> : Supprime un plugin
 	-init              : Réinitialise tous les plugins.
-	-backup            : backup le répertoire .vim.
 
 Pour l'initialisation (-init) les plugins à installer sont lues dans le fichier :
 	$plugin_list
@@ -50,11 +49,6 @@ do
 		-del=*)
 			plugin_name=${1##*=}
 			action=uninstall_plugin
-			shift
-			;;
-
-		-backup)
-			action=backup
 			shift
 			;;
 
@@ -198,15 +192,6 @@ then
 fi
 
 case $action in
-	backup)
-		cd $HOME
-		rm -rf ~/plescripts/myconfig/vim.tar.gz
-		exec_cmd "tar --exclude '.git*' -cf - .vim  	|\
-					gzip -c > ~/plescripts/myconfig/vim.tar.gz"
-		cd -
-		LN
-		;;
-
 	init)
 		install_all
 		LN

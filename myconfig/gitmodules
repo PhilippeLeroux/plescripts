@@ -1,0 +1,51 @@
+[submodule "bundle/vim-fugitive"]
+	path = bundle/vim-fugitive
+	url = git://github.com/tpope/vim-fugitive.git
+[submodule "bundle/nerdtree"]
+	path = bundle/nerdtree
+	url = git://github.com/scrooloose/nerdtree.git
+[submodule "bundle/nerdtree-git-plugin"]
+	path = bundle/nerdtree-git-plugin
+	url = git://github.com/Xuyuanp/nerdtree-git-plugin.git
+[submodule "bundle/vim-gitgutter"]
+	path = bundle/vim-gitgutter
+	url = git://github.com/airblade/vim-gitgutter.git
+[submodule "bundle/vim-airline"]
+	path = bundle/vim-airline
+	url = git://github.com/vim-airline/vim-airline
+[submodule "bundle/syntastic"]
+	path = bundle/syntastic
+	url = git://github.com/scrooloose/syntastic.git
+[submodule "bundle/vim-github-colorscheme"]
+	path = bundle/vim-github-colorscheme
+	url = git://github.com/endel/vim-github-colorscheme.git
+[submodule "bundle/vim-wwdc16-theme"]
+	path = bundle/vim-wwdc16-theme
+	url = git://github.com/lifepillar/vim-wwdc16-theme.git
+[submodule "bundle/hilal"]
+	path = bundle/hilal
+	url = git://github.com/kocakosm/hilal.git
+[submodule "bundle/sourcerer.vim"]
+	path = bundle/sourcerer.vim
+	url = git://github.com/xero/sourcerer.vim.git
+[submodule "bundle/vim-togglemouse"]
+	path = bundle/vim-togglemouse
+	url = git://github.com/nvie/vim-togglemouse.git
+[submodule "bundle/undotree"]
+	path = bundle/undotree
+	url = git://github.com/mbbill/undotree.git
+[submodule "bundle/vim-instant-markdown"]
+	path = bundle/vim-instant-markdown
+	url = git://github.com/suan/vim-instant-markdown.git
+[submodule "bundle/vim-grammarous"]
+	path = bundle/vim-grammarous
+	url = git://github.com/rhysd/vim-grammarous.git
+[submodule "bundle/vim-man"]
+	path = bundle/vim-man
+	url = git://github.com/vim-utils/vim-man.git
+[submodule "bundle/vim-misc"]
+	path = bundle/vim-misc
+	url = git://github.com/xolox/vim-misc.git
+[submodule "bundle/vim-session"]
+	path = bundle/vim-session
+	url = git://github.com/xolox/vim-session.git
