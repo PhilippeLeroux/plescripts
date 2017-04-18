@@ -223,7 +223,7 @@ function create_or_modify_java_service
 #	Gestion des services sans le crs (et c'est chiant)
 
 #	$1 service name
-function test_if_service_exists_no_crs
+function service_exists_no_crs
 {
 	typeset -r service=$1
 	exec_cmd -c "lsnrctl status | grep -q 'Service \"$service\" has .*'"
@@ -236,14 +236,18 @@ function create_service_no_crs
 	info "create service $service on pluggable $pdb."
 	LN
 
-	test_if_service_exists_no_crs $service
-	[ $? -eq 0 ] && action=modify || action=add
+	if service_exists_no_crs $service
+	then
+		action=modify
+	else
+		action=add
+	fi
 
 	if [ $action == modify ]
 	then
-		error "modify service without crs not implemanted."
+		error "modify service without crs nothing to do."
 		LN
-		exit 1
+		return 0
 	fi
 
 	if [[ $action == modify && $role == undef ]]
@@ -317,22 +321,14 @@ function create_or_modify_java_service_no_crs
 
 function create_database_trigger_no_crs
 {
-typeset query=\
-"select
-	trigger_name
-from
-	dba_triggers
-where
-	trigger_name = 'START_PDB_SERVICES'
-;"
+	info "Create trigger open_stby_pdbs_ro"
+	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_open_stby_pdbs_ro.sql")"
+	LN
+
 	typeset pdbconn="sys/$oracle_password@localhost:1521/$pdb as sysdba"
-	typeset trigger=$(sqlplus_exec_query_with "$pdbconn" "$query"|tail -1)
-	if [ "$trigger" != "START_PDB_SERVICES" ]
-	then
-		info "Create trigger start_pdb_services"
-		sqlplus_cmd_with "$pdbconn"  "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
-		LN
-	fi
+	info "Create trigger start_pdb_services"
+	sqlplus_cmd_with "$pdbconn"  "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
+	LN
 }
 
 case "$role" in
@@ -353,7 +349,11 @@ then
 
 	create_or_modify_java_service
 else
-	create_database_trigger_no_crs
+	case $role in
+		primary|undef)
+			create_database_trigger_no_crs
+			;;
+	esac
 
 	create_or_modify_oci_service_no_crs
 

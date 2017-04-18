@@ -164,6 +164,9 @@ typeset -r rm_1="rm -rf $ORACLE_BASE/cfgtoollogs/dbca/${db}*"
 typeset -r rm_2="rm -rf $ORACLE_BASE/diag/rdbms/$(to_lower $db)"
 typeset -r rm_3="rm -rf $ORACLE_BASE/admin/$db"
 typeset -r rm_4="rm -rf $ORACLE_HOME/dbs/*${db}*"
+typeset -r rm_5="rm -rf $TNS_ADMIN/listener.ora"
+typeset -r rm_6="rm -rf $TNS_ADMIN/tnsnames.ora"
+typeset -r rm_7="rm -rf $TNS_ADMIN/sqlnet.ora"
 
 line_separator
 info "Purge des répertoires :"
@@ -180,6 +183,16 @@ LN
 exec_cmd "$rm_4"
 execute_on_other_nodes "$rm_4"
 LN
+exec_cmd "$rm_5"
+execute_on_other_nodes "$rm_5"
+LN
+exec_cmd "$rm_6"
+execute_on_other_nodes "$rm_6"
+LN
+exec_cmd "$rm_7"
+execute_on_other_nodes "$rm_7"
+LN
+
 
 if [ x"$gi_node_list" != x ]
 then	#	Sur les RACs les nom des instances ont été ajoutés.
@@ -209,6 +222,11 @@ else
 	info "Clean up directories"
 	exec_cmd rm -rf $ORCL_FS_DATA/$db
 	exec_cmd rm -rf $ORCL_FS_FRA/$db
+	LN
+
+	line_separator
+	info "stop listener"
+	exec_cmd lsnrctl stop
 	LN
 fi
 

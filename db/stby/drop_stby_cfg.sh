@@ -182,6 +182,13 @@ exit_if_database_not_exists $db
 
 load_oraenv_for $db
 
+if test_if_cmd_exists crsctl
+then
+	typeset -r crs_used=yes
+else
+	typeset -r crs_used=no
+fi
+
 typeset -r role_cfg=$(read_database_role $(to_lower $db))
 
 info "$db role=$role, role read from configuration : $role_cfg"
@@ -203,17 +210,33 @@ fi
 
 remove_SRLs
 
-drop_all_services
+if [ $crs_used == yes ]
+then
+	drop_all_services
 
-create_services_for_single_db
+	create_services_for_single_db
+else
+	line_separator
+	exec_cmd "$HOME/plescripts/db/fsdb_drop_all_stby_services.sh -db=$db"
+	LN
+fi
 
 line_separator
 sqlplus_cmd "$(sqlcmd_reset_dataguard_cfg)"
-if [ $role == physical ]
+LN
+
+if [[ $role == physical && $crs_used == yes ]]
 then
 	exec_cmd srvctl modify database -db $db -startoption open
 	exec_cmd srvctl modify database -db $db -role primary
 fi
-# startup avec sqlplus ne fonctionne pas avec le wallet.
-exec_cmd srvctl start database -db $db
-LN
+
+if [ $crs_used == yes ]
+then
+	# startup avec sqlplus ne fonctionne pas avec le wallet.
+	exec_cmd srvctl start database -db $db
+	LN
+else
+	sqlplus_cmd "$(set_sql_cmd startup)"
+	LN
+fi

@@ -6,6 +6,7 @@ After=named.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecStart=/usr/bin/sleep 60
 ExecStart=/root/san/check_target.sh
 
 [Install]

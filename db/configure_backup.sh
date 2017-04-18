@@ -8,7 +8,9 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME [-with_standby]"
+"Usage : $ME
+	[-with_standby]
+"
 
 script_banner $ME $*
 
@@ -54,10 +56,10 @@ exec_cmd -c "rman target sys/$oracle_password	\
 LN
 
 typeset -r DATA="$(orcl_parameter_value "db_create_file_dest")"
-typeset -r snap=$DATA/snapshot_ctrl_file.f
+typeset -r snap=$DATA/$ORACLE_SID/snapshot_ctrl_file.f
 exec_cmd "rman target sys/$oracle_password	\
 				@rman/set_config.rman using \"'$snap'\""
-#$DATA/snapshot_ctrl_file.f"
+LN
 
 if [ $with_standby == yes ]
 then

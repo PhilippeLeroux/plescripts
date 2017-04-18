@@ -442,6 +442,7 @@ function create_database
 
 #	Création des services pour les pdb.
 #	TODO : Pour le moment service minimum
+#	TODO : La fonction n'est plus utilisée !
 function create_services_for_pdb
 {
 	line_separator
@@ -564,7 +565,9 @@ function next_instructions
 		then
 			info "From virtual-host $client_hostname execute :"
 			info "$ cd ~/plescripts/database_servers"
-			info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db) -rel=$orcl_release"
+			typeset params
+			[ $crs_used == no ] && params="-storage=FS" || true
+			info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db) -rel=$orcl_release $params"
 			LN
 		fi
 	fi

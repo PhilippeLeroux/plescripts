@@ -32,13 +32,6 @@ Répertoire :
 	sqlc         : $SQLCL_PATH
 "
 
-if [ $# -eq 0 ]
-then
-	info "$str_usage"
-	LN
-	exit 1
-fi
-
 while [ $# -ne 0 ]
 do
 	case $1 in

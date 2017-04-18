@@ -15,10 +15,11 @@ typeset -r	all_params="$*"
 typeset		rel=undef
 typeset		db=undef
 typeset		standby=none
-typeset -i	ip_node=-1
-typeset -i	max_nodes=1
-typeset -i	size_dg_gb=$default_size_dg_gb
-typeset -i	size_lun_gb=$default_size_lun_gb
+typeset	-i	ip_node=-1
+typeset	-i	max_nodes=1
+typeset	-i	size_dg_gb=$default_size_dg_gb
+typeset	-i	size_lun_gb=$default_size_lun_gb
+typeset	-i	min_lun=$default_minimum_lun
 typeset		dns_test=yes
 typeset		storage=ASM
 typeset		luns_hosted_by=$disks_hosted_by
@@ -34,6 +35,7 @@ add_usage "[-OH_FS=$OH_FS]"			"RAC : ORACLE_HOME FS : ocfs2|$rdbms_fs_type."
 add_usage "[-luns_hosted_by=$luns_hosted_by]"	"san|vbox"
 add_usage "[-size_dg_gb=$size_dg_gb]"			"DG size"
 add_usage "[-size_lun_gb=$size_lun_gb]"			"LUNs size"
+add_usage "[-min_lun=$min_lun]"					"LUN per DG"
 add_usage "[-no_dns_test]"			"ne pas tester si les IPs sont utilisées."
 add_usage "[-storage=$storage]"		"ASM|FS"
 add_usage "[-ip_node=node]"			"nœud IP, sinon prend la première IP disponible."
@@ -50,6 +52,11 @@ do
 	case $1 in
 		-size_lun_gb=*)
 			size_lun_gb=${1##*=}
+			shift
+			;;
+
+		-min_lun=*)
+			min_lun=${1##*=}
 			shift
 			;;
 
@@ -209,20 +216,42 @@ function normalyze_scan
 	echo "$buffer" > $cfg_path/scanvips
 }
 
-function adjust_DG_size
+#	$1 dg size (Gb)
+#	print to stdout number of lun needed.
+function update_nr_luns
+{
+	typeset	-i	for_dg_size=$1
+	typeset	-i	max_luns=$(( for_dg_size / size_lun_gb ))
+	typeset	-i	corrected_size_dg_gb=$(( size_lun_gb *  max_luns ))
+	if [ $corrected_size_dg_gb -lt $for_dg_size ]
+	then
+		while [ $corrected_size_dg_gb -lt $for_dg_size ]
+		do
+			corrected_size_dg_gb=$(( corrected_size_dg_gb + size_lun_gb ))
+		done
+		max_luns=$(( corrected_size_dg_gb / size_lun_gb ))
+	fi
+
+	# Pour le stripe le nombre de LUNs doit être un multiple de 2
+	[ $(bc<<<"$max_luns % 2") -ne 0 ] && ((++max_luns)) || true
+
+	echo $max_luns
+}
+
+function adjust_DATA_FRA_size
 {
 	#	La taille du DG doit être un multiple de la taille des LUNs.
 	typeset -i dg_lun_count=$(( size_dg_gb /  size_lun_gb))
-	if [ $dg_lun_count -lt $default_minimum_lun ]
+	if [ $dg_lun_count -lt $min_lun ]
 	then
-		dg_lun_count=$default_minimum_lun
+		dg_lun_count=$min_lun
 		typeset	-i corrected_size_dg_gb=$(( size_lun_gb *  dg_lun_count ))
 		while [ $corrected_size_dg_gb -lt $size_dg_gb ]
 		do
 			corrected_size_dg_gb=$(( corrected_size_dg_gb + size_lun_gb ))
 		done
 		size_dg_gb=$corrected_size_dg_gb
-		info "Adjust DG size to ${size_dg_gb}Gb : minimum $default_minimum_lun LUNs of ${size_lun_gb}Gb per DG"
+		info "Adjust DG size to ${size_dg_gb}Gb : minimum $min_lun LUNs of ${size_lun_gb}Gb."
 		LN
 	fi
 }
@@ -239,24 +268,20 @@ function normalyse_disks
 		i_lun=4
 		if [ "$oracle_release" == "12.2.0.1" ]
 		then
-			echo "GIMR:4:4:13" >> $cfg_path/disks
-			i_lun=14
+			typeset -ri	gimr_nr_luns=$(update_nr_luns 40)
+			typeset -ri	gimr_last_i_lun=$(( i_lun + gimr_nr_luns - 1 ))
+			echo "GIMR:$size_lun_gb:$i_lun:$gimr_last_i_lun" >> $cfg_path/disks
+			i_lun=$((gimr_last_i_lun+1))
 		fi
 	fi
 
-	adjust_DG_size
+	adjust_DATA_FRA_size
 
-	typeset	-i	max_luns=$(( size_dg_gb / size_lun_gb ))
-	typeset	-i	corrected_size_dg_gb=$(( size_lun_gb *  max_luns ))
-	if [ $corrected_size_dg_gb -lt $size_dg_gb ]
+	if [ $min_lun -eq 1 ]
 	then
-		while [ $corrected_size_dg_gb -lt $size_dg_gb ]
-		do
-			corrected_size_dg_gb=$(( corrected_size_dg_gb + size_lun_gb ))
-		done
-		max_luns=$(( corrected_size_dg_gb / size_lun_gb ))
-		info "DG size will be $max_luns LUNs * ${size_lun_gb}Gb = ${corrected_size_dg_gb}Gb (greater than ${size_dg_gb}Gb requested)"
-		LN
+		typeset	-i	max_luns=1
+	else
+		typeset -i	max_luns=$(update_nr_luns $size_dg_gb)
 	fi
 
 	if [ $storage == FS ]

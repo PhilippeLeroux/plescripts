@@ -265,7 +265,12 @@ lsnrctl reload
 EOS
 
 	exec_cmd "chmod ug=rwx $script"
-	exec_cmd "sudo -u grid -i $script"
+	if [ $crs_used == yes ]
+	then
+		exec_cmd "sudo -u grid -i $script"
+	else
+		exec_cmd "$script"
+	fi
 	LN
 }
 
@@ -289,12 +294,18 @@ fi
 echo "Configuration :"
 cp \$TNS_ADMIN/listener.ora \$TNS_ADMIN/listener.ora.bibi.backup
 echo "$standby_sid_list" >> \$TNS_ADMIN/listener.ora
-lsnrctl reload
+lsnrctl stop
+lsnrctl start
 EOS
 
 	exec_cmd chmod ug=rwx $script
 	exec_cmd "scp $script $standby_host:$script"
-	exec_cmd "ssh -t $standby_host sudo -u grid -i $script"
+	if [ $crs_used == yes ]
+	then
+		exec_cmd "ssh -t $standby_host sudo -u grid -i $script"
+	else
+		exec_cmd "ssh -t $standby_host '. .bash_profile && $script'"
+	fi
 	LN
 }
 
@@ -362,6 +373,8 @@ function start_stby
 	line_separator
 	info "Configure et démarre $standby sur $standby_host (configuration minimaliste.)"
 
+	[ $crs_used == no ] && stdby_update_oratab Y || true
+
 ssh -t -t $standby_host<<EO_SSH_STBY | tee -a $PLELIB_LOG_FILE
 rm -f $ORACLE_HOME/dbs/sp*${standby}* $ORACLE_HOME/dbs/init*${standby}*
 echo "db_name='$standby'" > $ORACLE_HOME/dbs/init${standby}.ora
@@ -390,6 +403,15 @@ function run_duplicate
 		db_unique_name="$db_name"
 	fi
 
+	if [ $crs_used == no ]
+	then
+		exec_cmd "ssh $standby_host mkdir -p $data/$standby"
+		exec_cmd "ssh $standby_host mkdir -p $fra/$standby"
+		control_files="'$data/$standby/control01.ctl','$fra/$standby/control02.ctl'"
+	else
+		control_files="'$data','$fra'"
+	fi
+
 	info "Run duplicate :"
 cat<<EOR >/tmp/duplicate.rman
 run {
@@ -403,9 +425,9 @@ run {
 		parameter_value_convert '$primary','$standby'
 		set db_name='$db_name' #Obligatoire en 12.2, sinon le duplicate échoue.
 		set db_unique_name='$db_unique_name'
-		set db_create_file_dest='+DATA'
-		set db_recovery_file_dest='+FRA'
-		set control_files='+DATA','+FRA'
+		set db_create_file_dest='$data'
+		set db_recovery_file_dest='$fra'
+		set control_files=$control_files
 		set cluster_database='false'
 		set fal_server='$db_unique_name'
 		nofilenamecheck
@@ -424,9 +446,9 @@ function sql_setup_primary_database
 
 	set_sql_cmd "alter system set fal_server='$standby' scope=both sid='*';"
 
-	set_sql_cmd "alter system set dg_broker_config_file1 = '+DATA/$primary/dr1db_$primary.dat' scope=both sid='*';"
+	set_sql_cmd "alter system set dg_broker_config_file1 = '$data/$primary/dr1db_$primary.dat' scope=both sid='*';"
 
-	set_sql_cmd "alter system set dg_broker_config_file2 = '+FRA/$primary/dr2db_$primary.dat' scope=both sid='*';"
+	set_sql_cmd "alter system set dg_broker_config_file2 = '$fra/$primary/dr2db_$primary.dat' scope=both sid='*';"
 
 	set_sql_cmd "alter system set dg_broker_start=true scope=both sid='*';"
 
@@ -524,15 +546,16 @@ function sql_mount_db_and_start_recover
 	set_sql_cmd "recover managed standby database disconnect;"
 }
 
-function workaround_regression_12cR2
+# $1 Y|N
+function stdby_update_oratab
 {
+	typeset -r autostartup="$1"
 	line_separator
 	ssh_stby -c oracle "grep -q '^$standby' /etc/oratab"
 	if [ $? -ne 0 ]
 	then
-		warning "12.2 : /etc/oratab empty."
 		LN
-		ssh_stby oracle "echo \"$standby:\$ORACLE_HOME:N\" >> /etc/oratab"
+		ssh_stby oracle "echo \"$standby:\$ORACLE_HOME:$autostartup\" >> /etc/oratab"
 		LN
 	else
 		LN
@@ -570,7 +593,8 @@ function register_stby_to_GI
 	timing 10 "Wait recover"
 	LN
 
-	workaround_regression_12cR2
+	#	Workaround 12cR2
+	stdby_update_oratab N
 }
 
 function create_dataguard_config
@@ -669,7 +693,7 @@ from
 						-role=physical_standby -start=no'</dev/null"
 		LN
 
-		if [ $create_primary_cfg == yes ]
+		if [[ $create_primary_cfg == yes && $crs_used == yes ]]
 		then	#(1) Il faut stopper les services stdby sur la primary.
 				#	Les services stdby démarreront automatiquement lors de
 				#	l'ouverture de la stdby en RO.
@@ -851,6 +875,23 @@ typeset	-r	primary_host=$(hostname -s)
 
 script_start
 
+if test_if_cmd_exists crsctl
+then
+	typeset	-r crs_used=yes
+else
+	typeset	-r crs_used=no
+	_register_stby_to_GI=no
+fi
+
+if [ $crs_used == yes ]
+then
+	typeset -r data='+DATA'
+	typeset -r fra='+FRA'
+else
+	typeset -r data=$ORCL_FS_DATA
+	typeset -r fra=$ORCL_FS_FRA
+fi
+
 info "Create dataguard :"
 info "	- Primary database          : $primary on $primary_host"
 info "	- Physical standby database : $standby on $standby_host"
@@ -866,9 +907,9 @@ check_prereq
 
 [ $_register_stby_to_GI == yes ] && register_stby_to_GI || true
 
-[ $_create_dataguard_services == yes ] && create_dataguard_services || true
-
 [ $_configure_dataguard == yes ] && configure_dataguard || true
+
+[ $_create_dataguard_services == yes ] && create_dataguard_services || true
 
 if [ "$(read_flashback_value)" == YES ]
 then
@@ -884,6 +925,15 @@ info "Copy glogin.sql"
 exec_cmd "scp	$ORACLE_HOME/sqlplus/admin/glogin.sql	\
 				$standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
 LN
+
+if [ $crs_used == no ]
+then
+	line_separator
+	info "Restart database on all nodes."
+	sqlplus_cmd "$(set_sql_cmd "startup force")"
+	sqlplus_cmd_on_stby "$(set_sql_cmd "startup force")"
+	LN
+fi
 
 exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
 

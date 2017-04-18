@@ -74,6 +74,10 @@ then
 	exec_cmd -c "srvctl stop database -db $db -stopoption ABORT -force"
 	exec_cmd -c "srvctl remove database -db $lower_db<<<y"
 	LN
+else
+	line_separator
+	exec_cmd -c "su - oracle -c \"lsnrctl stop\""
+	LN
 fi
 
 line_separator
@@ -111,6 +115,8 @@ oracle_rm_2="su - oracle -c \"rm -rf \\\$ORACLE_BASE/diag/rdbms/$lower_db\""
 oracle_rm_3="su - oracle -c \"rm -rf \\\$ORACLE_HOME/dbs/*${db}*\""
 oracle_rm_4="su - oracle -c \"rm -rf \\\$ORACLE_BASE/admin/$db\""
 oracle_rm_5="su - oracle -c \"rm -rf \\\$TNS_ADMIN/tnsnames.ora\""
+oracle_rm_6="su - oracle -c \"rm -rf \\\$TNS_ADMIN/listener.ora\""
+oracle_rm_7="su - oracle -c \"rm -rf \\\$TNS_ADMIN/sqlnet.ora\""
 
 clean_oratab_cmd1="sed  \"/$db[_|0-9]\{0,1\}.*/d\" /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
@@ -124,6 +130,10 @@ LN
 execute_on_all_nodes "$oracle_rm_4"
 LN
 execute_on_all_nodes "$oracle_rm_5"
+LN
+execute_on_all_nodes "$oracle_rm_6"
+LN
+execute_on_all_nodes "$oracle_rm_7"
 LN
 
 exec_cmd -c "$clean_oratab_cmd1"

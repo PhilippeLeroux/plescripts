@@ -442,9 +442,12 @@ function configure_server
 	setup_iscsi_inititiator
 
 	line_separator
-	#info "Workaround yum error : [Errno 256] No more mirrors to try."
-	#ssh_master systemctl start nfs-mountd.service
-	#LN
+	if [ $workaround_yum_error_256 == apply ]
+	then
+		info "Workaround yum error : [Errno 256] No more mirrors to try."
+		ssh_master systemctl start nfs-mountd.service
+		LN
+	fi
 
 	#	Si depuis la création du master le dépôt par défaut a changé, permet
 	#	de basculer sur le bon dépôt.

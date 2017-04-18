@@ -12,7 +12,7 @@ typeset -r ME=$0
 
 if [ x"$TNS_ADMIN" == x ]
 then
-	if [ -d ~/plescripts/tnsadmin ]
+	if [ ! -d ~/plescripts/tnsadmin ]
 	then
 		exec_cmd mkdir ~/plescripts/tnsadmin
 		LN
@@ -88,7 +88,6 @@ done
 
 script_banner $ME $*
 
-[[ $db == undef && x"$ID_DB" != x ]] && db=$ID_DB || true
 exit_if_param_undef db	"$str_usage"
 
 cfg_exists $db
