@@ -155,7 +155,7 @@ do
 	add_partition_to $device
 	sleep 1
 
-	exec_cmd pvcreate $partname
+	exec_cmd pvcreate -y $partname
 	LN
 done
 sleep 1
