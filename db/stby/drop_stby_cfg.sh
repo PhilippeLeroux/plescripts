@@ -134,9 +134,22 @@ function convert_physical_to_primary
 		set_sql_cmd "alter database commit to switchover to primary with session shutdown;"
 		set_sql_cmd "alter database open;"
 	}
-	exec_cmd srvctl stop database -db $db
-	exec_cmd srvctl start database -db $db -startoption mount
+	if [ $crs_used == yes ]
+	then
+		exec_cmd srvctl stop database -db $db
+		exec_cmd srvctl start database -db $db -startoption mount
+		LN
+	else
+		function sql_mount_db
+		{
+			set_sql_cmd "shu immediate;"
+			set_sql_cmd "startup mount;"
+		}
+		sqlplus_cmd "$(sql_mount_db)"
+		LN
+	fi
 	sqlplus_cmd "$(sql_convert_to_primary)"
+	LN
 }
 
 function remove_SRLs
@@ -229,6 +242,7 @@ if [[ $role == physical && $crs_used == yes ]]
 then
 	exec_cmd srvctl modify database -db $db -startoption open
 	exec_cmd srvctl modify database -db $db -role primary
+	LN
 fi
 
 if [ $crs_used == yes ]
