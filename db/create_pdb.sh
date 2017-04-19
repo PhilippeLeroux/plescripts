@@ -215,7 +215,7 @@ function create_database_trigger_no_crs
 
 function create_pdb_services
 {
-	if [[ $crs_used == no && $dataguard == yes ]]
+	if [[ $crs_used == no ]]
 	then
 		line_separator
 		create_database_trigger_no_crs
