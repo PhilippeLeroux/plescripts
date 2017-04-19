@@ -56,7 +56,7 @@ function backstore_exists
 	targetcli ls backstores/block/$1 >/dev/null 2>&1
 }
 
-# Si le vg asm01 n'existe pas c'est que le serveur d'infra ne sert par de SAN.
+# Si le vg asm01 n'existe pas c'est que le serveur d'infra ne sert pas de SAN.
 vgs asm01 >/dev/null 2>&1
 [ $? -ne 0 ] && exit 0 || true
 
@@ -118,7 +118,7 @@ then
 	fi
 else
 	# La sortie de la commande sera dans la log, mais pas à l'écran.
-	exec_cmd -c "systemctl status target" >/dev/null 2>&1
+	exec_cmd -c "systemctl status target"
 	if [ $? -ne 0 ]
 	then
 		warning "Satus error :"
