@@ -75,7 +75,8 @@ where
 EOS
 }
 
-typeset -r	db_role="$(read_database_role $db)"
+typeset db_role="$(read_database_role $db)"
+[ x"$db_role" == x ] && db_role=primary || true
 
 while read service_name
 do
