@@ -94,11 +94,11 @@ fi
 #	GRANT EXECUTE ON DBMS_APP_CONT;
 
 #	$1 service name
-function test_if_service_exists
+#	return 0 if service exists, else return 1
+function pdb_service_exists
 {
 	typeset -r service=$1
-	exec_cmd -ci "srvctl status service -db $db	\
-								-service $service" >/dev/null 2>&1
+	srvctl status service -db $db -service $service >/dev/null 2>&1
 }
 
 function create_or_modify_oci_service
@@ -114,11 +114,15 @@ function create_or_modify_oci_service
 	esac
 
 	line_separator
-	info "create service $service on pluggable $pdb."
+	info "$db : create service $service on pluggable database $pdb."
 	LN
 
-	test_if_service_exists $service
-	[ $? -eq 0 ] && action=modify || action=add
+	if pdb_service_exists $service
+	then
+		action=modify
+	else
+		action=add
+	fi
 
 	if [[ $action == modify && $role == undef ]]
 	then
@@ -174,11 +178,15 @@ function create_or_modify_java_service
 
 	line_separator
 	#	Services for Application Continuity (java)
-	info "create service $service on pluggable $pdb."
+	info "$db : create service $service on pluggable database $pdb."
 	LN
 
-	test_if_service_exists $service
-	[ $? -eq 0 ] && action=modify || action=add
+	if pdb_service_exists $service
+	then
+		action=modify
+	else
+		action=add
+	fi
 
 	if [[ $action == modify && $role == undef ]]
 	then
@@ -223,20 +231,23 @@ function create_or_modify_java_service
 #	Gestion des services sans le crs (et c'est chiant)
 
 #	$1 service name
-function service_exists_no_crs
+#	return 0 if service exists, else return 1
+function pdb_service_exists_no_crs
 {
 	typeset -r service=$1
-	exec_cmd -c "lsnrctl status | grep -q 'Service \"$service\" has .*'"
+	lsnrctl status|grep -q "Service \"$service\" has .*"
 }
 
-# Variable service defined by caller.
+# $1 service name
 function create_service_no_crs
 {
+	typeset	-r	service="$1"
+
 	line_separator
-	info "create service $service on pluggable $pdb."
+	info "$db : create service $service on pluggable database $pdb."
 	LN
 
-	if service_exists_no_crs $service
+	if pdb_service_exists_no_crs $service
 	then
 		action=modify
 	else
@@ -252,7 +263,7 @@ function create_service_no_crs
 
 	if [[ $action == modify && $role == undef ]]
 	then
-		error "Service $service exist and no role specified."
+		error "$pdb : service $service exists and no role specified."
 		LN
 		info "$str_usage"
 		LN
@@ -264,7 +275,7 @@ function create_service_no_crs
 		set_sql_cmd "exec dbms_service.create_service( service_name=>'$service', network_name=>'$service' );"
 	}
 
-	info "Create service $service"
+	info "$pdb : create service $service"
 	sqlplus_cmd_with	"sys/$oracle_password@localhost:1521/$pdb as sysdba" \
 						"$(plsql_create_service)"
 	LN
@@ -278,7 +289,7 @@ function create_service_no_crs
 				set_sql_cmd "alter session set container=$pdb;"
 				set_sql_cmd "exec dbms_service.start_service( '$service' );"
 			}
-			info "Start service $service"
+			info "$pdb : start service $service"
 			sqlplus_cmd "$(plsql_start_service)"
 			LN
 		fi
@@ -319,18 +330,6 @@ function create_or_modify_java_service_no_crs
 	create_service_no_crs $service
 }
 
-function create_database_trigger_no_crs
-{
-	info "Create trigger open_stby_pdbs_ro"
-	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_open_stby_pdbs_ro.sql")"
-	LN
-
-	typeset pdbconn="sys/$oracle_password@localhost:1521/$pdb as sysdba"
-	info "Create trigger start_pdb_services"
-	sqlplus_cmd_with "$pdbconn"  "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
-	LN
-}
-
 case "$role" in
 	primary|undef|physical_standby)
 		:
@@ -349,12 +348,6 @@ then
 
 	create_or_modify_java_service
 else
-	case $role in
-		primary|undef)
-			create_database_trigger_no_crs
-			;;
-	esac
-
 	create_or_modify_oci_service_no_crs
 
 	create_or_modify_java_service_no_crs

@@ -15,12 +15,14 @@ $ME
 	-pdb=name
 	[-physical]  Physical Standby
 	[-force]     don't stop on error
+	[-nolog]
 "
 
 typeset db=undef
 typeset pdb=undef
 typeset	role=primary
 typeset	force_flag
+typeset log=yes
 
 while [ $# -ne 0 ]
 do
@@ -47,6 +49,11 @@ do
 
 		-force)
 			force_flag="-c"
+			shift
+			;;
+
+		-nolog)
+			log=no
 			shift
 			;;
 
@@ -130,6 +137,7 @@ function drop_pdb_on_physical_standby_database
 							cd plescripts/db;								\
 							./drop_pdb.sh	-db=${physical_list[i]}			\
 											-pdb=${pdb}						\
+											-nolog							\
 											-physical\"</dev/null"
 
 	done
@@ -146,7 +154,7 @@ function stop_and_remove_dbfs
 	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb -skip_drop_user"
 }
 
-ple_enable_log
+[ $log == yes ] && ple_enable_log || true
 
 script_banner $ME $*
 
@@ -195,7 +203,12 @@ info "Delete credential for sys"
 exec_cmd "wallet/delete_credential.sh -tnsalias=sys${pdb}"
 LN
 
-exec_cmd "./drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
+if [ $crs_used == yes ]
+then
+	exec_cmd "./drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
+else
+	exec_cmd "./fsdb_drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
+fi
 
 line_separator
 if [[ $dataguard == no || $role == primary ]]

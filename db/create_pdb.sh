@@ -201,8 +201,27 @@ function pdb_seed_ro_and_save_state
 	set_sql_cmd "alter pluggable database $pdb save state instances=all;"
 }
 
+function create_database_trigger_no_crs
+{
+	info "Create trigger open_stby_pdbs_ro"
+	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_open_stby_pdbs_ro.sql")"
+	LN
+
+	typeset pdbconn="sys/$oracle_password@localhost:1521/$pdb as sysdba"
+	info "Create trigger start_pdb_services"
+	sqlplus_cmd_with "$pdbconn"  "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
+	LN
+}
+
 function create_pdb_services
 {
+	if [[ $crs_used == no && $dataguard == yes ]]
+	then
+		line_separator
+		create_database_trigger_no_crs
+		LN
+	fi
+
 	line_separator
 	info "Create services"
 	if [[ $dataguard == yes && ${#physical_list[@]} -ne 0 ]]
@@ -285,12 +304,6 @@ then
 	if [[ $gi_count_nodes -gt 1 ]]
 	then
 		error "RAC + Dataguard not supported."
-		exit 1
-	fi
-
-	if [ $crs_used == no ]
-	then
-		error "Dataguard supported only with crs."
 		exit 1
 	fi
 
