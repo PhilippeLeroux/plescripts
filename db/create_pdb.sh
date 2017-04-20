@@ -161,6 +161,7 @@ function clone_from_pdb
 		then
 			# Sur un Dataguard si le PDB est RW alors la synchro est HS
 			# Il faut que le PDB soit RO pour être clonable : BUG or not BUG ??
+			# TODO : tester si sur la 12.2 c'est encore nécessaire.
 			set_sql_cmd "alter pluggable database $1 close immediate instances=all;"
 			set_sql_cmd "alter pluggable database $1 open read only instances=all;"
 		fi

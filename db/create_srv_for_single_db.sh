@@ -14,9 +14,9 @@ typeset -r str_usage=\
 	[-role=name] (primary, physical_standby, ${STRIKE}logical_standby, snapshot_standby$NORM)
 	[-start=yes]
 
-Si le service existe et que le rôle est définie le service est modifié en fonction du rôle.
-
-Pour les RACs : create_srv_for_rac_db.sh
+Si le service existe et que le rôle est définie :
+	- avec le CRS le service est modifié en fonction du rôle.
+	- sans le CRS pas d'action.
 "
 
 script_banner $ME $*
@@ -119,18 +119,17 @@ function create_or_modify_oci_service
 
 	if pdb_service_exists $service
 	then
+		if [ $role == undef ]
+		then
+			error "Service $service exists and no role specified."
+			LN
+			info "$str_usage"
+			LN
+			exit 1
+		fi
 		action=modify
 	else
 		action=add
-	fi
-
-	if [[ $action == modify && $role == undef ]]
-	then
-		error "Service $service exist and no role specified."
-		LN
-		info "$str_usage"
-		LN
-		exit 1
 	fi
 
 	add_dynamic_cmd_param "$action service -service $service"
@@ -183,18 +182,18 @@ function create_or_modify_java_service
 
 	if pdb_service_exists $service
 	then
+		if [ $role == undef ]
+		then
+			error "Service $service exist and no role specified."
+			LN
+			info "$str_usage"
+			LN
+			exit 1
+		fi
+
 		action=modify
 	else
 		action=add
-	fi
-
-	if [[ $action == modify && $role == undef ]]
-	then
-		error "Service $service exist and no role specified."
-		LN
-		info "$str_usage"
-		LN
-		exit 1
 	fi
 
 	add_dynamic_cmd_param "$action service -service $service"
@@ -250,47 +249,49 @@ function create_service_no_crs
 	if pdb_service_exists_no_crs $service
 	then
 		action=modify
+		warning "modify service without crs nothing to do ?"
+		LN
+		return 0
+
+		# Code gardé pour éventuelles évolutions.
+		if [ $role == undef ]
+		then
+			error "$db[$pdb] : service $service exists and no role specified."
+			LN
+			info "$str_usage"
+			LN
+			exit 1
+		fi
 	else
 		action=add
 	fi
 
-	if [ $action == modify ]
-	then
-		error "modify service without crs nothing to do."
-		LN
-		return 0
-	fi
-
-	if [[ $action == modify && $role == undef ]]
-	then
-		error "$pdb : service $service exists and no role specified."
-		LN
-		info "$str_usage"
-		LN
-		exit 1
-	fi
-
+	# $1 pdb name
+	# $2 service name
 	function plsql_create_service
 	{
-		set_sql_cmd "exec dbms_service.create_service( service_name=>'$service', network_name=>'$service' );"
+		set_sql_cmd "alter session set container=$1;"
+		set_sql_cmd "exec dbms_service.create_service( service_name=>'$2', network_name=>'$2' );"
 	}
 
-	info "$pdb : create service $service"
-	sqlplus_cmd_with	"sys/$oracle_password@localhost:1521/$pdb as sysdba" \
-						"$(plsql_create_service)"
+	# $1 pdb name
+	# $2 service name
+	function plsql_start_service
+	{
+		set_sql_cmd "alter session set container=$1;"
+		set_sql_cmd "exec dbms_service.start_service( '$2' );"
+	}
+
+	info "$db[$pdb] : create service $service"
+	sqlplus_cmd "$(plsql_create_service $pdb $service)"
 	LN
 
 	if [ $action == add ]
 	then
 		if [ $start == yes ]
 		then
-			function plsql_start_service
-			{
-				set_sql_cmd "alter session set container=$pdb;"
-				set_sql_cmd "exec dbms_service.start_service( '$service' );"
-			}
-			info "$pdb : start service $service"
-			sqlplus_cmd "$(plsql_start_service)"
+			info "$db[$pdb] : start service $service"
+			sqlplus_cmd "$(plsql_start_service $pdb $service)"
 			LN
 		fi
 

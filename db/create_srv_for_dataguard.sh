@@ -7,6 +7,12 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+
+#	****************************************************************************
+#	Le scripts db/stby/create_dataguard.sh la fonction create_dataguard_services
+#	utilise une autre méthode pour crééer les services.
+#	****************************************************************************
+
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
@@ -82,26 +88,48 @@ else
 	typeset -r crs_used=no
 fi
 
-exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
-							-db=$db						\
-							-pdb=$pdb					\
-							-role=primary				\
-							-start=yes
-LN
+# [-c]
+# $@ command
+#
+# Utilise la variable standby_host
+function ssh_stby
+{
+	if [ "$1" == "-c" ]
+	then
+		typeset farg="-c"
+		shift
+	else
+		typeset farg
+	fi
 
-#	Il faut démarrer les services stby, puis les stopper sinon la création
-#	des services échouera sur la stby.
-exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
-							-db=$db						\
-							-pdb=$pdb					\
-							-role=physical_standby		\
-							-start=yes
-LN
+	exec_cmd $farg "ssh -t ${standby_host} '. .bash_profile; $@'"
+}
 
-if [ $crs_used == yes ]
-then
+#	Les services 'stby' sont démarrées, il seront stoppées par les fonctions
+#	create_standby_services[_no_crs]
+function create_or_update_primary_services
+{
+	exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
+								-db=$db						\
+								-pdb=$pdb					\
+								-role=primary				\
+								-start=yes
+	LN
+
+	#	Il faut démarrer les services stby, puis les stopper sinon la création
+	#	des services échouera sur la stby.
+	exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
+								-db=$db						\
+								-pdb=$pdb					\
+								-role=physical_standby		\
+								-start=yes
+	LN
+}
+
+function create_standby_services
+{
 	line_separator
-	info "$db stop all standby services for pdb $pdb."
+	info "$db[$pdb] : stop all standby services."
 	LN
 
 	#	Arrêt des services stdby.
@@ -111,55 +139,71 @@ then
 	exec_cmd srvctl stop service -db $db -service $(mk_java_stby_service $pdb)
 	LN
 
-	exec_cmd "ssh -t $standby_host \". .bash_profile;				\
-				~/plescripts/db/create_srv_for_single_db.sh			\
-				-db=$standby -pdb=$pdb -role=primary -start=no\""
-	LN
-
-	exec_cmd "ssh -t $standby_host \". .bash_profile;			\
-			~/plescripts/db/create_srv_for_single_db.sh			\
-			-db=$standby -pdb=$pdb -role=physical_standby -start=yes\""
-	LN
-else
 	line_separator
-	info "$pdb : stop all standby services."
+	info "Create service on standby $standby_host"
 	LN
 
+	ssh_stby "~/plescripts/db/create_srv_for_single_db.sh	\
+				-db=$standby -pdb=$pdb -role=primary -start=no"
+	LN
+
+	ssh_stby "~/plescripts/db/create_srv_for_single_db.sh	\
+			-db=$standby -pdb=$pdb -role=physical_standby -start=yes"
+	LN
+}
+
+function create_standby_services_no_crs
+{
+	# $1 pdb name
+	# $2 service name
 	function stop_stby_service
 	{
-		set_sql_cmd "exec dbms_service.stop_service( '$1' );"
+		set_sql_cmd "alter session set container=$1;"
+		set_sql_cmd "exec dbms_service.stop_service( '$2' );"
 	}
 
+	# $1 pdb name
+	function open_stby_pdb
+	{
+		set_sql_cmd "alter pluggable database $1 open read only;"
+	}
+
+	line_separator
+	info "$db[$pdb] : stop all standby services."
+	LN
+
 	typeset -r oci_stby_service=$(mk_oci_stby_service $pdb)
-	sqlplus_cmd "$(stop_stby_service $oci_stby_service)"
+	sqlplus_cmd "$(stop_stby_service $pdb $oci_stby_service)"
 	LN
 
 	typeset -r java_stby_service=$(mk_java_stby_service $pdb)
-	sqlplus_cmd "$(stop_stby_service $java_stby_service)"
+	sqlplus_cmd "$(stop_stby_service $pdb $java_stby_service)"
 	LN
-
-	function open_stby_pdb
-	{
-		set_sql_cmd "alter pluggable database $pdb open read only;"
-	}
 
 	line_separator
 	info "Open pluggable database $pdb on standby $standby"
 	sqlplus_cmd_with "sys/$oracle_password@$standby as sysdba"	\
-												"$(open_stby_pdb)"
+													"$(open_stby_pdb $pdb)"
 	LN
 
 	line_separator
 	info "Standby server $standby_host add tns alias $oci_stby_service"
-	exec_cmd "ssh -t $standby_host \". .bash_profile;				\
-				~/plescripts/db/add_tns_alias.sh					\
-					-service=$oci_stby_service -host_name=$standby_hosts\""
+	ssh_stby "~/plescripts/db/add_tns_alias.sh	\
+				-service=$oci_stby_service -host_name=$standby_hosts"
 	LN
 
 	info "Standby server $standby_host add tns alias $java_stby_service"
-	exec_cmd "ssh -t $standby_host \". .bash_profile;				\
-				~/plescripts/db/add_tns_alias.sh					\
-					-service=$java_stby_service -host_name=$standby_hosts\""
+	ssh_stby "~/plescripts/db/add_tns_alias.sh	\
+					-service=$java_stby_service -host_name=$standby_hosts"
 	LN
+}
+
+create_or_update_primary_services
+
+if [ $crs_used == yes ]
+then
+	create_standby_services
+else
+	create_standby_services_no_crs
 fi
 

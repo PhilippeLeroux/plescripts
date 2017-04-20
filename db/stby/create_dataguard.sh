@@ -35,7 +35,7 @@ typeset -r str_usage=\
 		create_dataguard_services : crée les services.
 			-skip_create_dataguard_services passe cette étape
 
-		configure_dataguard : configure le broke et le dataguard.
+		configure_dataguard : configure le broker et le dataguard.
 			-skip_configure_dataguard passe cette étape.
 "
 
@@ -151,7 +151,7 @@ function ssh_stby
 	typeset -r ssh_account="$1"
 	shift
 
-	exec_cmd $farg "ssh -t $ssh_account@${standby_host} '. .bash_profile; $@'"
+	exec_cmd $farg "ssh -t -t $ssh_account@${standby_host} '. .bash_profile; $@'</dev/null"
 }
 
 #	Exécute la commande "$@" avec sqlplus sur la standby
@@ -644,6 +644,101 @@ function configure_dataguard
 #		-	2 services (oci et java) avec le role primary sur les 2 bases.
 #		-	2 services (oci et java) avec le role standby sur les 2 bases.
 #	Les services sont créés à partir du nom du PDB
+#	****************************************************************************
+#	Attention :
+#	le script db/create_pdb.sh utilise le script db/create_srv_for_dataguard.sh
+#	****************************************************************************
+function create_dataguard_services_no_crs
+{
+typeset -r query=\
+"select
+	c.name
+from
+	gv\$containers c
+	inner join gv\$instance i
+		on  c.inst_id = i.inst_id
+	where
+		i.instance_name = '$primary'
+	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT', 'PDB_SAMPLES' );
+"
+	# $1 pdb name
+	# $2 service name
+	function stop_service
+	{
+		set_sql_cmd "alter session set container=$1;"
+		set_sql_cmd "exec dbms_service.stop_service( '$2' );"
+	}
+
+	# $1 pdb name
+	# $2 service name
+	function start_service
+	{
+		set_sql_cmd "alter session set container=$1;"
+		set_sql_cmd "exec dbms_service.start_service( '$2' );"
+	}
+
+	typeset oci_stby_service
+	typeset java_stby_service
+
+	while read pdb
+	do
+		[ x"$pdb" == x ] && continue
+
+		oci_stby_service=$(mk_oci_stby_service $pdb)
+		java_stby_service=$(mk_oci_stby_service $pdb)
+
+		line_separator
+		info "$primary[$pdb] : update services."
+		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
+							-db=$primary -pdb=$pdb				\
+							-role=primary -start=yes"
+		LN
+
+		info "$primary[$pdb] : create standby services."
+		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
+							-db=$primary -pdb=$pdb				\
+							-role=physical_standby -start=no"
+		LN
+
+		#	Inutile d'ajouter les alias oci_service et java_service, le fichier
+		#	tnsnames.ora de la Primary est copié sur le serveur de la Physical
+		#	lors de l'ajout des TNS pour le CDB.
+
+		info "Standby server $standby_host add tns alias $java_stby_service"
+		ssh_stby oracle "~/plescripts/db/add_tns_alias.sh	\
+						-service=$java_stby_service -host_name=$standby_hosts"
+		LN
+
+		info "Standby server $standby_host add tns alias $oci_stby_service"
+		ssh_stby oracle "~/plescripts/db/add_tns_alias.sh	\
+						-service=$oci_stby_service -host_name=$standby_hosts"
+		LN
+
+		info "Standby server $standby_host add tns alias $java_stby_service"
+		ssh_stby oracle "~/plescripts/db/add_tns_alias.sh	\
+						-service=$java_stby_service -host_name=$standby_hosts"
+		LN
+
+		if [ -d $wallet_path ]
+		then
+			line_separator
+			info "Standby $standby_host : wallet add sys for $pdb to wallet"
+			ssh_stby oracle "~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
+														-db=$standby -pdb=$pdb"
+			LN
+		fi
+
+	done<<<"$(sqlplus_exec_query "$query")"
+}
+
+#	Création des services :
+#		-	2 services (oci et java) avec le role primary sur les 2 bases.
+#		-	2 services (oci et java) avec le role standby sur les 2 bases.
+#	Les services sont créés à partir du nom du PDB
+#	****************************************************************************
+#	Attention :
+#	le script db/create_pdb.sh utilise le script db/create_srv_for_dataguard.sh
+#	****************************************************************************
 function create_dataguard_services
 {
 typeset -r query=\
@@ -693,7 +788,7 @@ from
 						-role=physical_standby -start=no'</dev/null"
 		LN
 
-		if [[ $create_primary_cfg == yes && $crs_used == yes ]]
+		if [ $create_primary_cfg == yes ]
 		then	#(1) Il faut stopper les services stdby sur la primary.
 				#	Les services stdby démarreront automatiquement lors de
 				#	l'ouverture de la stdby en RO.
@@ -751,10 +846,10 @@ function check_ssh_prereq_and_if_stby_exist
 		exec_cmd -c ssh $standby_host "ps -ef | grep -qE 'ora_pmon_[${standby:0:1}]${standby:1}'"
 		if [ $? -eq 0 ]
 		then
-			error "$standby exist on $standby_host"
+			error "$standby exists on $standby_host"
 			errors=yes
 		else
-			info "$standby not exist on $standby_host : [$OK]"
+			info "$standby not exists on $standby_host : [$OK]"
 		fi
 		LN
 	fi
@@ -909,7 +1004,15 @@ check_prereq
 
 [ $_configure_dataguard == yes ] && configure_dataguard || true
 
-[ $_create_dataguard_services == yes ] && create_dataguard_services || true
+if [ $_create_dataguard_services == yes ]
+then
+	if [ $crs_used == yes ]
+	then
+		create_dataguard_services
+	else
+		create_dataguard_services_no_crs
+	fi
+fi
 
 if [ "$(read_flashback_value)" == YES ]
 then
@@ -929,9 +1032,13 @@ LN
 if [ $crs_used == no ]
 then
 	line_separator
-	info "Restart database on all nodes."
-	sqlplus_cmd "$(set_sql_cmd "startup force")"
-	sqlplus_cmd_on_stby "$(set_sql_cmd "startup force")"
+	info "Restart Physical standby database $standby"
+	function restart_db
+	{
+		set_sql_cmd "shu immediate"
+		set_sql_cmd "startup"
+	}
+	sqlplus_cmd_on_stby "$(restart_db)"
 	LN
 fi
 

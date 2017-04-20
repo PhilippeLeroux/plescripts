@@ -104,6 +104,7 @@ fi
 
 [ $tnsalias == undef ] && tnsalias=$service || true
 
+info "Delete TNS alias $tnsalias if exists."
 exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias"
 LN
 
