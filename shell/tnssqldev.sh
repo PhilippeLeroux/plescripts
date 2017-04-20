@@ -23,10 +23,10 @@ fi
 
 must_be_executed_on_server $client_hostname
 
-add_usage "-db=dbname"			"Database name."
-add_usage "[-pdb=pdbname]"		"PDB name."
-add_usage "[-server=auto]"		"Server name"
-add_usage "[-service=auto]"		"Service name."
+add_usage "-db=dbname"				"Database name."
+add_usage "[-pdb=pdbname]"			"PDB name."
+add_usage "[-server=auto]"			"Server name. auto read server name from cfg file."
+add_usage "[-service=auto|name]"	"Service name."
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -97,15 +97,23 @@ typeset	-ri max_nodes=$(cfg_max_nodes $db)
 info "$db #$max_nodes nodes."
 LN
 
-typeset alias_name=${db}
-
 if [ "$pdb" != undef ]
 then
-	alias_name=$(to_upper ${db}_${pdb})
-	[ "$service" == auto ] && service=$(mk_java_service $pdb) || true
+	case $service in
+		auto)
+			service=$(mk_java_service $pdb)
+			stby_service=$(mk_java_stby_service $pdb)
+			typeset -r stby_alias_name=${db}_${stby_service}
+			;;
+	esac
+	typeset -r alias_name=${db}_${service}
 else
-	alias_name=$(to_upper ${db})
-	[ "$service" == auto ] && service=$db || true
+	case "$service" in
+		auto)
+			service=$db
+			;;
+	esac
+	typeset -r alias_name=$db
 fi
 
 if [ "$server" == auto ]
@@ -149,6 +157,26 @@ LN
 
 exec_cmd "sed -i 's/$alias_name =$/$alias_name = #${ME##*/}/' $TNS_ADMIN/tnsnames.ora"
 LN
+
+if [ x"$stby_alias_name" != x ]
+then
+	info "Add alias RO on standby PDB"
+	info "    alias   $stby_alias_name"
+	info "    service $stby_service"
+	info "    server  $server"
+	LN
+
+	exec_cmd ~/plescripts/db/delete_tns_alias.sh -tnsalias=$stby_alias_name
+	LN
+
+	exec_cmd "~/plescripts/shell/gen_tns_alias.sh	-service=$stby_service		\
+													-server_list=$server	\
+													-alias_name=$stby_alias_name >> $TNS_ADMIN/tnsnames.ora"
+	LN
+
+	exec_cmd "sed -i 's/$stby_alias_name =$/$stby_alias_name = #${ME##*/}/' $TNS_ADMIN/tnsnames.ora"
+	LN
+fi
 
 if [ "$pdb" == undef ]
 then
