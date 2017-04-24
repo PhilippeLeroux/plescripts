@@ -97,6 +97,7 @@ function sqlcmd_reset_dataguard_cfg
 function remove_broker_cfg
 {
 	line_separator
+	fake_exec_cmd dgmgrl
 	dgmgrl -silent -echo<<-EOS  | tee -a $PLELIB_LOG_FILE
 	connect sys/$oracle_password
 	disable configuration;
@@ -114,6 +115,7 @@ function remove_broker_cfg
 function remove_database_from_broker
 {
 	line_separator
+	fake_exec_cmd dgmgrl
 	dgmgrl -silent -echo<<-EOS | tee -a $PLELIB_LOG_FILE
 	connect sys/$oracle_password
 	remove database $db;
