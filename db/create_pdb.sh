@@ -214,6 +214,12 @@ function create_database_trigger_no_crs
 	LN
 }
 
+# return 0 if RAC One Node, else 1
+function is_rac_one_node
+{
+	srvctl status database -db $db| grep -q "Online relocation: INACTIVE"
+}
+
 function create_pdb_services
 {
 	if [[ $crs_used == no ]]
@@ -246,6 +252,9 @@ function create_pdb_services
 		if [ $gi_count_nodes -eq 1 ]
 		then
 			exec_cmd ./create_srv_for_single_db.sh -db=$db -pdb=$pdb
+		elif is_rac_one_node
+		then
+			exec_cmd ./create_srv_for_rac_one_node_db.sh -db=$db -pdb=$pdb
 		else
 			typeset poolName="$(srvctl config database -db $db	|\
 								grep "^Server pools:" | awk '{ print $3 }')"

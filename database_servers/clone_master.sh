@@ -451,7 +451,9 @@ function configure_server
 
 	#	Si depuis la création du master le dépôt par défaut a changé, permet
 	#	de basculer sur le bon dépôt.
-	ssh_master ". .bash_profile; ~/plescripts/yum/switch_repo_to.sh -local"
+	ssh_master ". .bash_profile;						\
+					~/plescripts/yum/switch_repo_to.sh	\
+							-local -release=$orcl_yum_repository_release"
 
 	line_separator
 	configure_ifaces_hostname_and_reboot
@@ -471,7 +473,13 @@ function configure_server
 	then
 		if test_if_rpm_update_available $server_name
 		then
-			ssh_server "yum -y -q update" || true
+			if [ $orcl_yum_repository_release == R4 ]
+			then
+				ssh_server "yum -y -q install gperftools-libs"
+				ssh_server "export LD_PRELOAD=\"/usr/lib64/libtcmalloc_minimal.so.4\" && yum -y -q update"
+			else
+				ssh_server "yum -y -q update"
+			fi
 		fi
 		LN
 	fi

@@ -11,28 +11,24 @@ VirtualBox), les disques sont exportés sur le réseau via le protocole iSCSI.
 - la GATEWAY qui centralise l'accès à internet des serveurs, par défaut aucun
 serveur de base de données ne peut accéder à internet. Le firewall et SELinux sont
 activés sur ce serveur.
-- la gestion du dépôt rpm : synchronisation des dépôts Oracle sur ce serveur.
+- la gestion du dépôt logiciel Oracle, pour la mise à jour des serveurs de base de données.
 - de synchroniser l'horloge des serveurs de base de données.
 
 Type de serveurs de base de données pouvant être créé :
-- Base de données sur un serveur standalone.
+- Base de données sur un serveur standalone (sur ASM ou filesystem).
 - Base de données en RAC (pas de RAC étendue, uniquement MAA)
-- Mise en dataguard de 2 serveurs standalone.
+- Mise en dataguard de 2 serveurs standalone (sur ASM ou filesystem).
 
 Versions logiciels :
 - Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
 - Oracle 12cR1 base SINGLE et RAC.
-- Oracle 12cR2 base SINGLE EE et RAC SE2.
+- Oracle 12cR2 base SINGLE EE et RAC EE ou SE2.
 
 La création des serveurs de base de données est 100% automatisée, il n'y a pas
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
 
-La version 12cR1 d'oracle est particulièrement consommatrice en ressources mémoire
-et CPU, un certain nombre de hacks sont mis en œuvre pour pouvoir installer
-une base en SINGLE ou RAC sur un PC possédant au moins 8 Gb de RAM et un processeur
-équivalent à un i5 4ème génération.
-
-Si vous avez une configuration inférieure n'y pensez même pas.
+Le poste exécutant Virtual Box doit avoir au minimum 8Gb de RAM, pour un RAC 12cR2
+prévoir 16Gb.
 
 --------------------------------------------------------------------------------
 

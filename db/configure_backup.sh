@@ -46,6 +46,12 @@ done
 
 exit_if_ORACLE_SID_not_defined
 
+# return 0 if RAC One Node, else 1
+function is_rac_one_node
+{
+	srvctl status database -db $db| grep -q "Online relocation: INACTIVE"
+}
+
 exec_cmd "cd ~/plescripts/db"
 LN
 
@@ -56,7 +62,15 @@ exec_cmd -c "rman target sys/$oracle_password	\
 LN
 
 typeset -r DATA="$(orcl_parameter_value "db_create_file_dest")"
-typeset -r snap=$DATA/$ORACLE_SID/snapshot_ctrl_file.f
+
+if is_rac_one_node
+then
+	typeset -r db_name="$(orcl_parameter_value "db_name")"
+	typeset -r snap=$DATA/$db_name/snapshot_ctrl_file.f
+else
+	typeset -r snap=$DATA/$ORACLE_SID/snapshot_ctrl_file.f
+fi
+
 exec_cmd "rman target sys/$oracle_password	\
 				@rman/set_config.rman using \"'$snap'\""
 LN

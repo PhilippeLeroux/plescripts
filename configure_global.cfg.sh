@@ -79,14 +79,14 @@ function ask_for_variable
 	eval "$var_name=$(echo -E '$var_value')"
 }
 
-function read_dns_main_ip
+function read_gateway_ip
 {
 	typeset outp=$(cat /etc/resolv.conf | grep -E "^nameserver")
 	if [ $(wc -l<<<"$outp") -eq 1 ]
 	then
 		cut -d\  -f2<<<"$outp"
 	else
-		echo $dns_main
+		echo $gateway
 	fi
 }
 
@@ -168,12 +168,12 @@ function yum_repository
 	esac
 }
 
-function main_DNS
+function configure_gateway
 {
-	dns_main_n=$(read_dns_main_ip)
-	ask_for_variable dns_main_n "Main DNS/box IP :"
-	info -n "Ping $dns_main_n : "
-	if ping -c 1 $dns_main_n 1>/dev/null 2>&1
+	gateway_new_ip=$(read_gateway_ip)
+	ask_for_variable gateway_new_ip "Gateway IP (Box address) :"
+	info -n "Ping $gateway_new_ip"
+	if ping -c 1 $gateway_new_ip 1>/dev/null 2>&1
 	then
 		info -f "[$OK]"
 		LN
@@ -266,7 +266,7 @@ Oracle_Linux_ISO
 
 yum_repository
 
-main_DNS
+configure_gateway
 
 LUNs_storage
 
@@ -280,7 +280,7 @@ then
 fi
 
 line_separator
-exec_cmd "sed -i 's/dns_main=.*$/dns_main=$dns_main_n/g' ~/plescripts/global.cfg"
+exec_cmd "sed -i 's/gateway=.*$/gateway=$gateway_new_ip/g' ~/plescripts/global.cfg"
 LN
 
 exec_cmd "sed -i 's/hostvm=.*$/hostvm=$hostvm_type/g' ~/plescripts/global.cfg"

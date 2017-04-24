@@ -176,7 +176,7 @@ LN
 line_separator
 exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=infra
 LN
-exec_cmd ~/plescripts/yum/switch_repo_to.sh -local
+exec_cmd ~/plescripts/yum/switch_repo_to.sh -local -release=$release
 LN
 
 line_separator

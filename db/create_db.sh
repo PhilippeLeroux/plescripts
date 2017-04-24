@@ -440,51 +440,6 @@ function create_database
 	fi
 }
 
-#	Création des services pour les pdb.
-#	TODO : Pour le moment service minimum
-#	TODO : La fonction n'est plus utilisée !
-function create_services_for_pdb
-{
-	line_separator
-	info "Create service for pdb $pdb"
-	case $db_type in
-		RAC)
-			info "Create services for RAC."
-			if [ $serverPoolName == "undef" ]
-			then
-				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh	\
-								-db=$db -pdb=$pdb"
-				LN
-			else
-				exec_cmd "~/plescripts/db/create_srv_for_rac_db.sh			\
-								-db=$db -pdb=$pdb -poolName=$serverPoolName"
-				LN
-			fi
-			;;
-
-		RACONENODE)
-			info "Create services for RAC One Node."
-			typeset srv=$(mk_oci_service $pdb)
-			exec_cmd srvctl add service -db $db -service $srv -pdb $pdb
-			exec_cmd srvctl start service -db $db -service $srv
-			exec_cmd "~/plescripts/db/add_tns_alias.sh -service=$srv	\
-											-host_name=$(hostname -s)"
-			LN
-			srv=$(mk_java_service $pdb)
-			exec_cmd srvctl add service -db $db -service $srv -pdb $pdb
-			exec_cmd srvctl start service -db $db -service $srv
-			LN
-			;;
-
-		SINGLE)
-			info "Create service for SINGLE database."
-			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-										-db=$db -pdb=$pdb"
-			LN
-			;;
-	esac
-}
-
 function update_rac_oratab
 {
 	[[ $policyManaged == "yes" || $db_type == "RACONENODE" ]] && prefixInstance=${prefixInstance}_

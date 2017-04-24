@@ -151,12 +151,12 @@ function ISO_OLinux7_exists
 	LN
 }
 
-function validate_dns_main
+function validate_gateway
 {
 	line_separator
-	info -n "Validate main DNS $dns_main "
+	info -n "Validate gateway $gateway "
 
-	if ping -c 1 $dns_main >/dev/null 2>&1
+	if ping -c 1 $gateway >/dev/null 2>&1
 	then
 		info -f "[$OK]"
 	else
@@ -303,7 +303,7 @@ validate_NFS_exports
 
 ISO_OLinux7_exists
 
-validate_dns_main
+validate_gateway
 
 validate_resolv_conf
 

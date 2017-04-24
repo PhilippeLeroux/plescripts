@@ -10,24 +10,12 @@ typeset -r ME=$0
 script_banner $ME $*
 
 typeset switch_to=undef
-case "$(hostname -s)" in
-	"$infra_hostname")	# Serveur d'infra
-		typeset	release=$infra_yum_repository_release
-		;;
-
-	"$master_hostname") # Serveur Master.
-		typeset	release=$master_yum_repository_release
-		;;
-
-	*)	# Serveur base de données.
-		typeset	release=$orcl_yum_repository_release
-		;;
-esac
+typeset	release=undef
 
 typeset -r str_usage=\
 "Usage : $ME
 	-local|-internet
-	[-release=$release]	latest|R3|R4|DVD_R2|DVD_R3
+	-release=latest|R3|R4|DVD_R2|DVD_R3]
 
 Activation d'un dépôt.
 
@@ -73,11 +61,27 @@ do
 done
 
 exit_if_param_invalid switch_to "local internet"	"$str_usage"
+
+if [ "$release" == undef ]
+then
+	case "$(hostname -s)" in
+		"$infra_hostname")	# Serveur d'infra
+			typeset	release=$infra_yum_repository_release
+			;;
+
+		"$master_hostname") # Serveur Master.
+			typeset	release=$master_yum_repository_release
+			;;
+	esac
+fi
+
 exit_if_param_invalid release "latest R3 R4 DVD_R2 DVD_R3"	"$str_usage"
 
 function switch_local_repository
 {
-	info "Enable local repository"
+	info "Enable local repository : $release"
+	LN
+
 	exec_cmd "yum-config-manager --disable ol7_UEKR4 >/dev/null"
 	exec_cmd "yum-config-manager --disable ol7_UEKR3 >/dev/null"
 	exec_cmd "yum-config-manager --disable ol7_latest >/dev/null"
@@ -133,7 +137,9 @@ function switch_local_repository
 
 function switch_internet_repository
 {
-	info "Enable internet repository"
+	info "Enable internet repository : $release"
+	LN
+
 	exec_cmd "yum-config-manager --disable ol7_DVD_R2 >/dev/null"
 	exec_cmd "yum-config-manager --disable ol7_DVD_R3 >/dev/null"
 	exec_cmd "yum-config-manager --disable local_ol7_UEKR4 >/dev/null"
