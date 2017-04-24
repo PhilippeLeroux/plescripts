@@ -206,8 +206,9 @@ function sqlcmd_create_stby_redo_logs
 
 #	Affiche sur la sortie standard la configuration d'un listener statique.
 #	$1	GLOBAL_DBNAME
-#	$2	SID_NAME
-#	$3	ORACLE_HOME
+#	$2	GLOBAL_DBNAME for broker
+#	$3	SID_NAME
+#	$4	ORACLE_HOME
 #
 #	Remarque :
 #	 - Il peut y avoir plusieurs SID_LIST_LISTENER, les configurations s'ajoutent.
@@ -217,8 +218,9 @@ function sqlcmd_create_stby_redo_logs
 function make_sid_list_listener_for
 {
 	typeset	-r	g_dbname=$1
-	typeset -r	sid_name=$2
-	typeset	-r	orcl_home="$3"
+	typeset	-r	g_dbname_dgmgrl=$2
+	typeset -r	sid_name=$3
+	typeset	-r	orcl_home="$4"
 
 cat<<EOL
 
@@ -226,7 +228,7 @@ SID_LIST_LISTENER=	# Added by bibi : $sid_name
 	(SID_LIST=
 		(SID_DESC= # Peut être évité si les propriétés du dataguard sont modifiées.
 			(SID_NAME=$sid_name)
-			(GLOBAL_DBNAME=${g_dbname}_DGMGRL)
+			(GLOBAL_DBNAME=${g_dbname_dgmgrl}_DGMGRL)
 			(ORACLE_HOME=$orcl_home)
 			(ENVS="TNS_ADMIN=$orcl_home/network/admin")
 		)
@@ -243,9 +245,10 @@ EOL
 #	Ajoute une entrée statique au listener de la primaire.
 function primary_listener_add_static_entry
 {
-	typeset -r primary_sid_list=$(make_sid_list_listener_for $primary $primary "$ORACLE_HOME")
+	typeset -r primary_sid_list=$(make_sid_list_listener_for $primary $primary $primary "$ORACLE_HOME")
 	info "Add static listeners on $primary_host : "
-	info "On SINGLE GLOBAL_DBNAME == SID_NAME"
+	info "$primary_sid_list"
+	LN
 
 typeset -r script=/tmp/setup_listener.sh
 cat<<EOS > $script
@@ -277,9 +280,11 @@ EOS
 #	Ajoute une entrée statique au listener de la secondaire.
 function stby_listener_add_static_entry
 {
-	typeset -r standby_sid_list=$(make_sid_list_listener_for $standby $standby "$ORACLE_HOME")
+	typeset -r standby_sid_list=$(make_sid_list_listener_for $standby $primary $standby "$ORACLE_HOME")
 	info "Add static listeners on $standby_host : "
-	info "On SINGLE GLOBAL_DBNAME == SID_NAME"
+	info "$standby_sid_list"
+	LN
+
 typeset -r script=/tmp/setup_listener.sh
 cat<<EOS > $script
 #!/bin/bash
@@ -962,6 +967,9 @@ function stby_backup
 	then
 		exec_cmd "ssh -t $standby_host	\
 			'. .bash_profile; ~/plescripts/db/image_copy_backup.sh'"
+		LN
+	else
+		warning "$standby : no backup"
 		LN
 	fi
 }
