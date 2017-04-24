@@ -103,19 +103,20 @@ then
 		auto)
 			service=$(mk_java_service $pdb)
 			stby_service=$(mk_java_stby_service $pdb)
-			typeset -r stby_alias_name=${db}_${stby_service}
+			typeset -r stby_alias_name=$(to_upper ${db}_${pdb}_stby)
 			;;
 	esac
-	typeset -r alias_name=${db}_${service}
+	typeset -r alias_name=$(to_upper ${db}_${pdb})
 else
 	case "$service" in
 		auto)
 			service=$db
 			;;
 	esac
-	typeset -r alias_name=$db
+	typeset -r alias_name=$(to_upper $db)
 fi
 
+typeset	dataguard=no
 if [ "$server" == auto ]
 then
 	if [ $max_nodes -gt 1 ]
@@ -132,6 +133,7 @@ then
 				info "No dataguard cfg for cdb, only pdb."
 				LN
 			else
+				dataguard=yes
 				cfg_load_node_info $cfg_standby 1
 				server="'$server $cfg_server_name'"
 				info "server list : $server"
@@ -158,7 +160,7 @@ LN
 exec_cmd "sed -i 's/$alias_name =$/$alias_name = #${ME##*/}/' $TNS_ADMIN/tnsnames.ora"
 LN
 
-if [ x"$stby_alias_name" != x ]
+if [ $dataguard == yes ]
 then
 	info "Add alias RO on standby PDB"
 	info "    alias   $stby_alias_name"
