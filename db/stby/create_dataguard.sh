@@ -417,7 +417,7 @@ function run_duplicate
 	# Sur la Primary et sur la Physical les db_name sont identiques.
 	typeset db_name=$(orcl_parameter_value db_name)
 
-	info "db_name stby         : $db_name"
+	info "db_name stby        : $db_name"
 	info "db_unique_name stby : $stby_db_unique_name"
 	LN
 
