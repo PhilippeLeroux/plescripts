@@ -204,6 +204,20 @@ function sqlcmd_create_stby_redo_logs
 	done
 }
 
+# Affiche sur stdout le db_unique_name a utiliser pour la Physical stby database.
+function get_db_unique_name_for_stby
+{
+	typeset db_name=$(orcl_parameter_value db_name)
+	typeset db_unique_name=$(orcl_parameter_value db_unique_name)
+
+	if [ "$db_name" == "$db_unique_name" ]
+	then # Base à l'origine du Dataguard
+		echo "$standby"
+	else # Base créée à partir de la Primary
+		echo "$db_name"
+	fi
+}
+
 #	Affiche sur la sortie standard la configuration d'un listener statique.
 #	$1	GLOBAL_DBNAME
 #	$2	GLOBAL_DBNAME for broker
@@ -280,7 +294,8 @@ EOS
 #	Ajoute une entrée statique au listener de la secondaire.
 function stby_listener_add_static_entry
 {
-	typeset -r standby_sid_list=$(make_sid_list_listener_for $standby $primary $standby "$ORACLE_HOME")
+	typeset -r stby_db_unique_name="$(get_db_unique_name_for_stby)"
+	typeset -r standby_sid_list=$(make_sid_list_listener_for $standby $stby_db_unique_name $standby "$ORACLE_HOME")
 	info "Add static listeners on $standby_host : "
 	info "$standby_sid_list"
 	LN
@@ -398,21 +413,21 @@ EO_SSH_STBY
 #	Lance la duplication de la base avec RMAN
 function run_duplicate
 {
+	typeset stby_db_unique_name="$(get_db_unique_name_for_stby)"
+	# Sur la Primary et sur la Physical les db_name sont identiques.
 	typeset db_name=$(orcl_parameter_value db_name)
-	typeset db_unique_name=$(orcl_parameter_value db_unique_name)
 
-	if [ "$db_name" == "$db_unique_name" ]
-	then # Base à l'origine du Dataguard
-		db_unique_name="$standby"
-	else # Base créée à partir de la Primary
-		db_unique_name="$db_name"
-	fi
+	info "db_name stby         : $db_name"
+	info "db_unique_name stby : $stby_db_unique_name"
+	LN
 
 	if [ $crs_used == no ]
 	then
+		info "Create directories on stby server $standby_host"
 		exec_cmd "ssh $standby_host mkdir -p $data/$standby"
 		exec_cmd "ssh $standby_host mkdir -p $fra/$standby"
 		control_files="'$data/$standby/control01.ctl','$fra/$standby/control02.ctl'"
+		LN
 	else
 		control_files="'$data','$fra'"
 	fi
@@ -429,12 +444,12 @@ run {
 	spfile
 		parameter_value_convert '$primary','$standby'
 		set db_name='$db_name' #Obligatoire en 12.2, sinon le duplicate échoue.
-		set db_unique_name='$db_unique_name'
+		set db_unique_name='$stby_db_unique_name'
 		set db_create_file_dest='$data'
 		set db_recovery_file_dest='$fra'
 		set control_files=$control_files
 		set cluster_database='false'
-		set fal_server='$db_unique_name'
+		set fal_server='$stby_db_unique_name'
 		nofilenamecheck
 	;
 }
@@ -1047,6 +1062,12 @@ then
 		set_sql_cmd "startup"
 	}
 	sqlplus_cmd_on_stby "$(restart_db)"
+	LN
+
+	timing 10 "Waiting database synchronisation"
+	LN
+else
+	timing 20 "Waiting database synchronisation"
 	LN
 fi
 
