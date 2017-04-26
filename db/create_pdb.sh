@@ -154,6 +154,7 @@ function clone_pdb_pdbseed
 # $1 pdb name
 function clone_from_pdb
 {
+	# $1 pdb name
 	function ddl_clone_from_pdb
 	{
 		set_sql_cmd "whenever sqlerror exit 1;"
