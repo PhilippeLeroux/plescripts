@@ -1304,12 +1304,14 @@ PAUSE=OFF
 #*< Sert pour le debuggage.
 #*< Si des paramètres sont passés il sont affiché comme un message.
 #*< Pour que la fonction soit active il faut positionner la variable PAUSE à ON
-function test_pause # $1 message
+#*< $1 message (optionnel)
+function test_pause
 {
 	if [ $PAUSE == ON ]
 	then
 		[ $# -ne 0 ] && info "$@"
 		ask_for -reply_list=CR "Press enter to continue, Ctrl-C to abort."
+		LN
 	fi
 }
 
