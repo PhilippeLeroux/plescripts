@@ -73,8 +73,9 @@ function dataguard_config_available
 #*> print to stdout database role : primary or physical
 function read_database_role
 {
+	typeset -r dbn=$(to_lower $1)
 	to_lower $(dgmgrl -silent sys/Oracle12 'show configuration'	|\
-							grep $1 | cut -d- -f2 | awk '{ print $1 }')
+							grep $dbn | cut -d- -f2 | awk '{ print $1 }')
 }
 
 # arrays physical_list & stby_server_list must be declared
