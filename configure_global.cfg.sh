@@ -253,7 +253,7 @@ function network_interface
 	info "Network interface"
 	exec_cmd "ip link show | grep -vE \"(lo|vboxnet)\" | grep \"state UP\""
 	LN
-	if_net_bridgeadapter_n=$(printf "%s" $(ip link show | grep -vE "(lo|vboxnet)" | grep "state UP" | cut -d: -f2))
+	if_net_bridgeadapter_n=$(printf "%s" $(ip link show | grep -vE "(lo|vboxnet)" | grep "state UP" | head -1 | cut -d: -f2))
 	ask_for_variable if_net_bridgeadapter_n "Network interface to used for internet access."
 	LN
 }
