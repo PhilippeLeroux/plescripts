@@ -213,18 +213,18 @@ where
 	typeset -r nb_new_dbf=$(sqlplus_exec_query "$query_count"|xargs)
 	if [ $nb_new_dbf -ne 0 ]
 	then
-		error "Il est nécessaire de restaurer $nb_new_dbf dbfs"
+		error "Il est nécessaire de restaurer $nb_new_dbf datafiles"
 		error "Le script ne prend pas encore en charge cette action."
 		error "Voir la doc oracle section 13"
 		error "Puis relancer le script avec le flag -skip_recover"
 		LN
 
-		info "Liste des nouveaux dbfs."
+		info "Liste des nouveaux datafiles."
 		sqlplus_print_query "$query_print"
 		LN
 		exit 1
 	else
-		info "Pas de dbfs ajoutés sur la standby [$OK]"
+		info "Pas de datafiles ajoutés sur la standby [$OK]"
 		LN
 	fi
 }
@@ -246,15 +246,16 @@ function primary_archive_log_current
 {
 	line_separator
 	info "Switch archive log sur la Primary $1"
+	# Si le répertoire des archivelogs du jour est supprimé, la commande échoue.
 	function sqlcmd_archive_log
 	{
-		# Une seule commande suffit mais pas sur mes démo avec ASM
-		set_sql_cmd alter system archive log current;
-		set_sql_cmd alter system archive log current;
-		set_sql_cmd alter system archive log current;
+		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "alter system archive log current;"
 	}
 	sqlplus_cmd_with "sys/$oracle_password@$1 as sysdba" "$(sqlcmd_archive_log)"
+	ret=$?
 	LN
+	[ $ret -ne 0 ] && exit 1 || true
 }
 
 function stby_recover_database_and_open_RO
@@ -331,12 +332,14 @@ test_pause
 stby_abort_if_new_datafiles $stby_current_scn
 test_pause
 
+timing 10 "Attente VM/Desktop"
 stby_clearing_all_redos $sql_clear_all_redos
 test_pause
 
 primary_archive_log_current $primary_db_name
 test_pause
 
+timing 10 "Attente VM/Desktop"
 stby_recover_database_and_open_RO
 test_pause
 
@@ -344,3 +347,8 @@ stby_start_redo_apply
 test_pause
 
 stby_crosscheck_FRA
+
+line_separator
+exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show configuration'"
+exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show database $ORACLE_SID'"
+LN
