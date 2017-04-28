@@ -2,4 +2,5 @@ crosscheck backup;
 delete noprompt expired backup;
 crosscheck copy of database;
 delete noprompt expired copy of database;
-delete noprompt archivelog all;
+crosscheck archivelog all;
+delete noprompt expired archivelog all;
