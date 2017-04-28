@@ -200,7 +200,7 @@ function sqlplus_asm_cmd
 function sqlplus_exec_query_with
 {
 	typeset	-r	string_connection="$1"
-	typeset -r	seq_query="$2"
+	typeset -r	seq_query="$(double_symbol_percent "$2")"
 	printf "whenever sqlerror exit 1\nset term off echo off feed off heading off\n$seq_query" | \
 		sqlplus -s "$string_connection"
 }
@@ -232,7 +232,7 @@ typeset opv_query=\
 #*>	Affiche la requête exécutée.
 function sqlplus_print_query
 {
-	typeset -r	spq_query="$1"
+	typeset -r	seq_query="$(double_symbol_percent "$1")"
 	sqlplus_init_spool
 	fake_exec_cmd "sqlplus -s sys/$oracle_password as sysdba"
 	info "$query"
