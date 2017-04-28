@@ -112,6 +112,13 @@ exit_if_param_undef mount_point	"$str_usage"
 exit_if_param_undef suffix_vglv	"$str_usage"
 exit_if_param_undef type_fs		"$str_usage"
 
+if [[ $stripesize_kb -ne 0 && $striped == no ]]
+then
+	error "-stripesize_kb=$stripesize_kb but -striped=yes"
+	LN
+	exit 1
+fi
+
 typeset	-r	vg_name=vg${suffix_vglv}
 typeset	-r	lv_name=lv${suffix_vglv}
 
