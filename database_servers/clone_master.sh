@@ -303,7 +303,7 @@ function create_database_fs_on_new_disks
 	typeset -r cfg_disks=$cfg_path_prefix/$db/disks
 
 	#http://docs.oracle.com/database/122/VLDBG/vldb-storage.htm#VLDBG1600
-	typeset -ri stripesize_kb=$(( 1024 * 1024 ))
+	typeset -ri stripesize_kb=1024
 
 	IFS=':' read name size_disk first last<<<"$(grep FSDATA $cfg_disks)"
 	info "Create FS for DATA"
