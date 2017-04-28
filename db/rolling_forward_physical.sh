@@ -59,6 +59,60 @@ function cleanup_on_exit
 
 trap cleanup_on_exit EXIT
 
+# $1 nom du script à créer.
+# $2 nom de la primary
+# $3 nom de la standby
+function create_sql_script_to_rename_logfile
+{
+	typeset -r sql_script="$1"
+	typeset	-r prim=$(to_upper $2)
+	typeset	-r stby=$(to_upper $3)
+
+	info "Create script to rename logfile"
+
+	fake_exec_cmd "sqlplus -s sys/$oracle_password as sysdba<<-EOSQL"
+	sqlplus -s sys/$oracle_password as sysdba<<-EOSQL >/dev/null 2>&1
+	set heading off
+	set underline off
+	set echo off feed off
+	spool $sql_script append
+	set termout off
+	select
+	'alter database rename file '''||member||''' to '''||replace( member, '$prim', '$stby' )||''';'
+	from
+		v\$logfile
+	where
+		type = 'ONLINE'
+	and
+		member like '%${prim}%'
+	;
+	spool off
+	EOSQL
+	LN
+	echo "exit" >> $sql_script
+
+	exec_cmd -f "cat $sql_script"
+	LN
+
+}
+
+# $1 nom du script contenant les commandes pour renommer des logfiles.
+function stby_rename_logfile
+{
+	typeset	-r sql_script="$1"
+
+	info "Rename logfile"
+
+	sqlplus_cmd "$(set_sql_cmd "alter system set standby_file_management='manual';")"
+	LN
+
+	sqlplus_cmd "$(set_sql_cmd "@$sql_script")"
+	LN
+
+	sqlplus_cmd "$(set_sql_cmd "alter system set standby_file_management='auto';")"
+	LN
+}
+
 # $1 name sql file
 # write to $1 all commands to clear ORLs & SRLs
 function create_sql_script_to_clear_all_redo
@@ -90,18 +144,18 @@ function create_sql_script_to_clear_all_redo
 function stby_stop_redo_apply
 {
 	line_separator
-	info "$ORACLE_SID : stop redo apply"
+	info "$stby_db_name : stop redo apply"
 	exec_cmd dgmgrl -silent -echo sys/$oracle_password	\
-				\"edit database $ORACLE_SID set state='APPLY-OFF'\"
+				\"edit database $stby_db_name set state='APPLY-OFF'\"
 	LN
 }
 
 function stby_start_redo_apply
 {
 	line_separator
-	info "$ORACLE_SID : start redo apply"
+	info "$stby_db_name : start redo apply"
 	exec_cmd dgmgrl -silent -echo sys/$oracle_password	\
-				\"edit database $ORACLE_SID set state='APPLY-ON'\"
+				\"edit database $stby_db_name set state='APPLY-ON'\"
 	LN
 }
 
@@ -124,7 +178,7 @@ function stby_restart_nomount
 	}
 
 	line_separator
-	info "Start $ORACLE_SID to nomount"
+	info "Start $stby_db_name to nomount"
 	sqlplus_cmd "$(sql_cmd_restart)"
 	LN
 }
@@ -180,7 +234,7 @@ function stby_recover_database_from_service
 	typeset	-r script="/tmp/rman_refresh_stby.$$"
 
 	line_separator
-	info "Recover database $ORACLE_SID from $primary_service"
+	info "Recover database $stby_db_name from $primary_service"
 	info "Create script"
 	exec_cmd -f "echo 'recover database from service $primary_service noredo using compressed backupset;'>$script"
 	LN
@@ -288,23 +342,28 @@ function stby_crosscheck_FRA
 	LN
 }
 
+script_start
+
+typeset -r	orcl_release=$(read_orcl_release)
 typeset	-r	primary_db_name="$(read_primary_name)"
 typeset -ri stby_current_scn=$(stby_read_current_scn)
+typeset	-r	stby_db_name="$(orcl_parameter_value db_unique_name)"
 typeset	-r	stby_FRA_name="$(orcl_parameter_value db_recovery_file_dest)"
-typeset -r	dbrole="$(read_database_role $ORACLE_SID)"
+typeset -r	dbrole="$(read_database_role $stby_db_name)"
 
+info "Database version $orcl_release"
 info "Primary database : $primary_db_name"
 LN
 
-info "ORACLE_SID  : $ORACLE_SID"
-info "role        : $dbrole"
-info "current scn : $stby_current_scn"
+info "Physical    : $stby_db_name"
+info "Role        : $dbrole"
+info "Current scn : $stby_current_scn"
 info "FRA         : $stby_FRA_name"
 LN
 
 if [ "$dbrole" != "physical" ]
 then
-	error "Mauvais rôle, doit être physical"
+	error "$stby_db_name not a Physical standby database."
 	LN
 	exit 1
 fi
@@ -333,6 +392,16 @@ stby_abort_if_new_datafiles $stby_current_scn
 test_pause
 
 timing 10 "Attente VM/Desktop"
+if [ $orcl_release == "12.1" ]
+then # En 12.1.0.2 les logfiles online doivent être renommés.
+	line_separator
+
+	typeset -r sql_rename_logfile=/tmp/sql_rename_logfile.$$
+	create_sql_script_to_rename_logfile $sql_rename_logfile $primary_db_name $stby_db_name
+
+	stby_rename_logfile $sql_rename_logfile
+fi
+
 stby_clearing_all_redos $sql_clear_all_redos
 test_pause
 
@@ -350,5 +419,7 @@ stby_crosscheck_FRA
 
 line_separator
 exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show configuration'"
-exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show database $ORACLE_SID'"
+exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show database $stby_db_name'"
 LN
+
+script_stop $ME
