@@ -473,13 +473,8 @@ function configure_server
 	then
 		if test_if_rpm_update_available $server_name
 		then
-			if [ $orcl_yum_repository_release == R4 ]
-			then
-				ssh_server "yum -y -q install gperftools-libs"
-				ssh_server "export LD_PRELOAD=\"/usr/lib64/libtcmalloc_minimal.so.4\" && yum -y -q update"
-			else
-				ssh_server "yum -y -q update"
-			fi
+			ssh_server "yum -y -q install gperftools-libs"
+			ssh_server "export LD_PRELOAD=\"/usr/lib64/libtcmalloc_minimal.so.4\" && yum -y -q update"
 		fi
 		LN
 	fi
