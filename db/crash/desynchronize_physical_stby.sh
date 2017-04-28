@@ -112,15 +112,23 @@ LN
 typeset -r recovery_path="$(orcl_parameter_value db_recovery_file_dest)"
 typeset -r archivelog_path"=$recovery_path/$(to_upper $db)/archivelog"
 info "$ID remove all archivelog"
-exec_cmd "ls -rtl $archivelog_path/"
-exec_cmd "rm -rf $archivelog_path/*"
-exec_cmd "ls -rtl $archivelog_path/"
-LN
+if command_exists crsctl
+then
+	exec_cmd "sudo -iu grid asmcmd ls $archivelog_path/"
+	exec_cmd "sudo -iu grid asmcmd rm -rf $archivelog_path/*"
+	exec_cmd "sudo -iu grid asmcmd ls $archivelog_path/"
+	LN
+else
+	exec_cmd "ls -rtl $archivelog_path/"
+	exec_cmd "rm -rf $archivelog_path/*"
+	exec_cmd "ls -rtl $archivelog_path/"
+	LN
 
-info "Il faut recréer le répertoire du jour sinon la commande"
-info "alter system archive log current; ne fonctionnera pas."
-exec_cmd -c "mkdir $archivelog_path/$(date +%Y_%m_%d)"
-LN
+	info "Il faut recréer le répertoire du jour sinon la commande"
+	info "alter system archive log current; ne fonctionnera pas."
+	exec_cmd -c "mkdir $archivelog_path/$(date +%Y_%m_%d)"
+	LN
+fi
 test_pause
 
 info "Start stby database $dbstby"
