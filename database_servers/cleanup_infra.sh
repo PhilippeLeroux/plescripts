@@ -71,9 +71,7 @@ typeset -r upper_db=$(to_upper $db)
 
 if [ $delete_vms == yes ]
 then
-	line_separator
-	exec_cmd -c "~/plescripts/shell/delete_vm -db=$db -y"
-	LN
+	exec_cmd "~/plescripts/shell/delete_vm -db=$db -y"
 fi
 
 if [ -f ~/.ssh/known_hosts ]
@@ -82,22 +80,25 @@ then
 	for (( inode=1; inode <= max_nodes; ++inode ))
 	do
 		cfg_load_node_info $db $inode
+
+		info "Cleaning ssh file known_host on $client_hostname & $infra_hostname"
 		remove_from_known_hosts $cfg_server_name
 		exec_cmd "ssh -t $dns_conn					\
 				plescripts/ssh/remove_from_known_host.sh -host=$cfg_server_name"
+
 		if [[ $max_nodes -gt 1 && $inode -eq 1 ]]
 		then	# Supprime les scans.
 			remove_from_known_hosts ${db}-scan
 		fi
-		[ $delete_vms == yes ] && exec_cmd rm -rf \"$vm_path/$cfg_server_name\"
 		LN
+
 		info "Clearing arp cache."
 		#	Ne pas utiliser arp -d sinon le cache des autres serveurs n'est pas mis
 		#	à jour.
 		exec_cmd sudo ip -s -s neigh flush all
+		LN
 	done
 fi
-LN
 
 line_separator
 info "Update DNS :"
@@ -126,7 +127,3 @@ then
 	exec_cmd -c "rm -rf $cfg_path_prefix/$db"
 	LN
 fi
-
-info "To flush network :"
-info "$ ~/plescripts/virtualbox/restart_vboxdrv.sh"
-LN

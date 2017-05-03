@@ -59,7 +59,18 @@ fi
 
 exit_if_param_undef server "$str_usage"
 
-line_separator
+# $1 vm name
+# Affiche sur 1 le chemin contenant les fichiers de la VM.
+#
+# ne pas utiliser la variable vm_path de global.cfg, le chemin peut
+# être changé lors de la création de la VM via local.cfg
+function read_vm_path_folder
+{
+	# Lecture du fichier de configuration
+	typeset -r config_file=$(VBoxManage showvminfo $1|grep -E "^Config file:"|cut -d: -f2)
+	# Tous les fichiers de la VM sont dans le même répertoire que config_file.
+	sed "s/^ *//"<<<${config_file%/*}
+}
 
 #	Lecture de toutes les VMs correspondantes au pattern $server.
 typeset -a vm_list
@@ -74,13 +85,28 @@ info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
 
 [ $confirm == yes ] && confirm_or_exit "Delete them ?" || true
 
+line_separator
 info "Stop all VMs..."
 exec_cmd stop_vm $db -dataguard=no
 LN
 
+line_separator
 info "Delete all VMs.."
 for vm in ${vm_list[*]}
 do
+	vm_path_folder=$(read_vm_path_folder $vm)
+	info "vm path folder for $vm : $vm_path_folder"
+
+	if [ ! -d "$vm_path_folder" ]
+	then
+		error "$vm_path_folder not exists."
+		LN
+		exit 1
+	fi
+
 	exec_cmd -c "VBoxManage unregistervm $vm --delete"
+	LN
+
+	exec_cmd rm -rf \"$vm_path_folder\"
+	LN
 done
-LN
