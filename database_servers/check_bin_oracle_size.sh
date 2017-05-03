@@ -47,10 +47,12 @@ info "Check : $ORACLE_HOME/bin/oracle"
 exec_cmd "ls -l $ORACLE_HOME/bin/oracle"
 LN
 
-size="$(du -s $ORACLE_HOME/bin/oracle|cut -d\  -f1)"
+size="$(du -s $ORACLE_HOME/bin/oracle|awk '{ print $1 }')"
+info "$ORACLE_HOME/bin/oracle size : '$size'"
+LN
 if [ "$size" == "0" ]
 then
-	error "Invalide size :"
+	error "Invalide size : $size"
 	LN
 	exit 1
 fi
