@@ -9,7 +9,7 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage :
 $ME
-	-device_list=name : ex /dev/sdb or \"/dev/sdb /dev/sdc\"
+	-device_list=name : ex sdb or \"sdb sdc\"
 	-io_scheduler=noop|deadline|cfq create udev rule for device
 "
 
@@ -67,13 +67,24 @@ then
 fi
 
 info "Create file $rules_filename"
-cat<<EO_RULE>$rules_filename
-ACTION=="add|change", KERNEL=="$device_list", ATTR{queue/rotational}=="1", ATTR{queue/scheduler}="$io_scheduler"
-EO_RULE
+for device in $device_list
+do
+	device=${device/\/dev\//}
+	info "   device $device set io scheduler $io_scheduler"
+	cat<<-EO_RULE>>$rules_filename
+	ACTION=="add|change", KERNEL=="$device", ATTR{queue/rotational}=="1", ATTR{queue/scheduler}="$io_scheduler"
+	EO_RULE
+done
 exec_cmd "cat $rules_filename"
 LN
 
 info "Reload rules"
 exec_cmd udevadm control --reload-rules
 exec_cmd udevadm trigger
+LN
+
+timing 5
+LN
+device_list=$(sed "s/ /|/g"<<<$device_list)
+exec_cmd "lsblk -t|grep -E \"$device_list\""
 LN
