@@ -992,9 +992,9 @@ function exist_var
 #*<	Format ^var\\s*=\\s*value
 function change_value
 {
-	typeset -r var_name=$(escape_slash "$1")
-	typeset -r file=$3
-	[ "$2" == "empty" ] && new_val="" || new_val=$(escape_slash "$2")
+	typeset -r var_name="$(escape_slash "$1")"
+	typeset -r file="$3"
+	[ "$2" == "empty" ] && new_val="" || new_val="$(escape_slash "$2")"
 
 	exec_cmd "sed -i 's/^\(${var_name}\s\{0,\}=\s\{0,\}\).*/\1$new_val/' $file"
 }
@@ -1062,7 +1062,7 @@ function remove_value
 #*> exit_if_param_undef <var> [message]
 #*>
 #*> Script aborted if var == undef or == -1 or empty
-function exit_if_param_undef #var_name
+function exit_if_param_undef
 {
 	typeset -r var_name=$1
 	typeset -r var_value=$(eval echo \$$var_name)
