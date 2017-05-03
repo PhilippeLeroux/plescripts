@@ -50,3 +50,7 @@ export TMPDIR=/tmp
 alias ll='ls -rtl'
 
 . rlwrap.alias
+
+# Ne fonctionne pas avec un RAC
+alias via='vi  $ORACLE_BASE/diag/asm/$(tr [:upper:] [:lower:]<<<$ORACLE_SID)/$ORACLE_SID/trace/alert_$ORACLE_SID.log'
+alias cdt='cd  $ORACLE_BASE/diag/asm/$(tr [:upper:] [:lower:]<<<$ORACLE_SID)/$ORACLE_SID/trace'
