@@ -407,3 +407,23 @@ then
 		LN
 	fi
 fi
+
+typeset -i	nodes=1
+typeset		type=single
+typeset	-i	mem=$vm_memory_mb_for_single_db
+typeset	-i	cpu=$vm_nr_cpus_for_single_db
+if [ $max_nodes -gt 1 ]
+then
+	nodes=$max_nodes
+	type=RAC
+	mem=$vm_memory_mb_for_rac_db
+	cpus=$vm_nr_cpus_for_rac_db
+elif [ $standby != "none" ]
+then
+	nodes=2
+	type=dataguard
+fi
+$vm_scripts_path/validate_vm_parameter.sh	-type=$type		\
+											-nodes=$nodes	\
+											-cpus=$cpu		\
+											-memory=$mem
