@@ -1,0 +1,2 @@
+# Tous les autres paramètres sont dupliqués via RMAN.
+configure snapshot controlfile name to "&1";

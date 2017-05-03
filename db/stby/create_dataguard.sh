@@ -137,6 +137,8 @@ exit_if_param_undef standby_host	"$str_usage"
 # $1 account
 # $@ command
 #
+# Load .bash_profile.
+#
 # Fonction peut utilisée car ajoutée tardivement.
 function ssh_stby
 {
@@ -151,7 +153,7 @@ function ssh_stby
 	typeset -r ssh_account="$1"
 	shift
 
-	exec_cmd $farg "ssh -t -t $ssh_account@${standby_host} '. .bash_profile; $@'</dev/null"
+	exec_cmd $farg "ssh -t -t $ssh_account@${standby_host} \". .bash_profile; $@\"</dev/null"
 }
 
 #	Exécute la commande "$@" avec sqlplus sur la standby
@@ -204,7 +206,7 @@ function sqlcmd_create_stby_redo_logs
 	done
 }
 
-# Affiche sur stdout le db_unique_name a utiliser pour la Physical stby database.
+# Affiche sur stdout le db_unique_name à utiliser pour la Physical stby database.
 function get_db_unique_name_for_stby
 {
 	typeset db_name=$(orcl_parameter_value db_name)
@@ -973,15 +975,25 @@ function stby_enable_block_change_traking
 function stby_backup
 {
 	#	Nécessaire sinon le backup échoue.
-	exec_cmd "ssh $standby_host						\
-		'. .bash_profile;							\
-		rman target sys/$oracle_password @$HOME/plescripts/db/rman/purge.rman'"
+	ssh_stby oracle "rman target sys/$oracle_password	\
+							@$HOME/plescripts/db/rman/purge.rman"
+	LN
+
+	# CONFIGURE ARCHIVELOG DELETION POLICY TO APPLIED ON ALL STANDBY; est déjà
+	# positionné, je pense que c'est parceque je l'applique sur la Primary avant
+	# le duplicate.
+	typeset -r db_name="$(get_db_unique_name_for_stby)"
+	typeset -r snap=$data/$db_name/snapshot_ctrl_file.f
+
+	# ssh_stby ne fonctionne pas.
+	exec_cmd "ssh oracle@$standby_host	\
+				\". .bash_profile && rman target sys/$oracle_password	\
+				@$HOME/plescripts/db/rman/set_config_stby.rman using \'$snap\'\""
 	LN
 
 	if [ $backup == yes ]
 	then
-		exec_cmd "ssh -t $standby_host	\
-			'. .bash_profile; ~/plescripts/db/image_copy_backup.sh'"
+		ssh_stby oracle "~/plescripts/db/image_copy_backup.sh"
 		LN
 	else
 		warning "$standby : no backup"
@@ -1001,14 +1013,8 @@ else
 	_register_stby_to_GI=no
 fi
 
-if [ $crs_used == yes ]
-then
-	typeset -r data='+DATA'
-	typeset -r fra='+FRA'
-else
-	typeset -r data=$ORCL_FS_DATA
-	typeset -r fra=$ORCL_FS_FRA
-fi
+typeset	-r	data=$(orcl_parameter_value db_create_file_dest)
+typeset	-r	fra=$(orcl_parameter_value db_recovery_file_dest)
 
 info "Create dataguard :"
 info "	- Primary database          : $primary on $primary_host"

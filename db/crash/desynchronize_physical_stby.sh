@@ -116,7 +116,8 @@ if command_exists crsctl
 then
 	exec_cmd "sudo -iu grid asmcmd ls $archivelog_path/"
 	exec_cmd "sudo -iu grid asmcmd rm -rf $archivelog_path/*"
-	exec_cmd "sudo -iu grid asmcmd ls $archivelog_path/"
+	# Erreur avec la 12.1
+	exec_cmd -c "sudo -iu grid asmcmd ls $archivelog_path/"
 	LN
 else
 	exec_cmd "ls -rtl $archivelog_path/"

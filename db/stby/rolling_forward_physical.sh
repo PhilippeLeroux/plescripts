@@ -12,8 +12,6 @@ typeset -r str_usage=\
 "Usage :
 $ME
 	[-pause=$PAUSE]	ON|OFF
-
-Note : ne fonctionne pas sur Oracle 12.1 sur ASM et le wallet d'activé.
 "
 
 while [ $# -ne 0 ]
@@ -392,8 +390,8 @@ stby_abort_if_new_datafiles $stby_current_scn
 test_pause
 
 timing 10 "Attente VM/Desktop"
-if [ $orcl_release == "12.1" ]
-then # En 12.1.0.2 les logfiles online doivent être renommés.
+if [ $orcl_release == "12.1" ] && ! command_exists crsctl
+then # En 12.1.0.2 les logfiles online doivent être renommés, si storage==FS.
 	line_separator
 
 	typeset -r sql_rename_logfile=/tmp/sql_rename_logfile.$$
