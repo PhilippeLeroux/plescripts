@@ -359,10 +359,10 @@ function mk_java_stby_service
 	echo $(to_lower "$1")_stby_java
 }
 
-# print to stdout Oracle SW Version :
-#	12.1.0.2
-# or
-#	12.2.0.1
+#*> print to stdout Oracle SW Version :
+#*>	12.1.0.2
+#*> or
+#*>	12.2.0.1
 function read_orcl_version
 {
 	$ORACLE_HOME/OPatch/opatch lsinventory	|\
@@ -371,10 +371,10 @@ function read_orcl_version
 		cut -d. -f1-4
 }
 
-# print to stdout Oracle SW Version :
-#	12.1
-# or
-#	12.2
+#*> print to stdout Oracle SW Version :
+#*>	12.1
+#*> or
+#*>	12.2
 function read_orcl_release
 {
 	case "$(read_orcl_version)" in
@@ -387,4 +387,10 @@ function read_orcl_release
 		*)
 			echo "Unknow release"
 	esac
+}
+
+#*> return 0 if RAC One Node, else 1
+function is_rac_one_node
+{
+	srvctl status database -db $db| grep -q "Online relocation: INACTIVE"
 }
