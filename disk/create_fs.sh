@@ -114,7 +114,7 @@ exit_if_param_undef type_fs		"$str_usage"
 
 if [[ $stripesize_kb -ne 0 && $striped == no ]]
 then
-	error "-stripesize_kb=$stripesize_kb but -striped=yes"
+	error "-stripesize_kb=$stripesize_kb but -striped=$striped"
 	LN
 	exit 1
 fi
