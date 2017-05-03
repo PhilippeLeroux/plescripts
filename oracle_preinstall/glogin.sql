@@ -30,7 +30,7 @@ set sqlprompt '&Y> '
 
 set pagesize 24
 set linesize 120
-set numformat 999,999,999
+set numformat 999G999G999
 
 set feedback on
 set termout on
