@@ -13,7 +13,7 @@ Supprime des disques d'oracleasm et du SAN.
 	-db=name         : Identifiant de la base
 	-nr_disk=#       : N° du premier disque.
 	[-count=1]       : Nombre de disque à supprimer, par défaut 1.
-	[-vg_name=asm01] : Nom du VG contenant les LUNs sur K2, par défaut asm01.
+	[-vg_name=asm01] : Nom du VG contenant les LUNs sur $infra_hostname, par défaut asm01.
 "
 
 script_banner $ME $*
@@ -73,7 +73,7 @@ must_be_user root
 
 typeset -r upper_db=$(to_upper $db)
 
-function disk_is_candidat 
+function disk_is_candidat
 {
 	exec_cmd -f -c su - grid -c "kfod | grep -q \"$1\>\""
 }
@@ -100,7 +100,12 @@ LN
 if [ $disks_hosted_by == san ]
 then
 	line_separator
-	exec_cmd ssh -t root@K2 "~/plescripts/san/delete_db_lun.sh -db=$db -lun=$nr_disk -count=$count -vg_name=$vg_name"
+	exec_cmd ssh -t root@$infra_hostname					\
+					"~/plescripts/san/delete_db_lun.sh		\
+										-db=$db				\
+										-lun=$nr_disk		\
+										-count=$count		\
+										-vg_name=$vg_name"
 	LN
 else
 	warning "Disks not removed form VBox : DIY"
