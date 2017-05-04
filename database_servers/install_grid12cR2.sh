@@ -433,7 +433,7 @@ function run_post_install_root_scripts
 function executeConfigTools
 {
 	line_separator
-	info "Execute config tools (~3mn)"
+	info "Execute config tools (${configtools[idx_mn]})"
 	add_dynamic_cmd_param "$ORACLE_HOME/gridSetup.sh"
 	add_dynamic_cmd_param "-executeConfigTools"
 	add_dynamic_cmd_param "-responseFile /home/grid/grid_$db.rsp"
@@ -622,6 +622,7 @@ typeset -ra extract_grid_mn=( "~2mn", "~2mn" )
 typeset -ra grid_installion_mn=( "~3mn", "~12mn" )
 typeset -ra post_install_root_script_node1_mn=( "~3mn", "~22mn" )
 typeset -ra post_install_root_script_other_node_mn=( "~3mn", "~10mn" )
+typeset -ra configtools=( "~3mn", "~50mn" )
 
 if [ $max_nodes -gt 1 ]
 then
