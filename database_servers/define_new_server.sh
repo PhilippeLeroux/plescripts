@@ -387,8 +387,6 @@ normalyse_disks
 
 ./show_info_server.sh -db=$db
 
-next_instructions
-
 if [ "$standby" != none ] && cfg_exists $standby use_return_code >/dev/null 2>&1
 then
 	cfg_load_node_info $standby 1
@@ -427,3 +425,6 @@ $vm_scripts_path/validate_vm_parameter.sh	-type=$type		\
 											-nodes=$nodes	\
 											-cpus=$cpu		\
 											-memory=$mem
+
+next_instructions
+
