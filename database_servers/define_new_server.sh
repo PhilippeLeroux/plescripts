@@ -409,7 +409,7 @@ fi
 typeset -i	nodes=1
 typeset		type=single
 typeset	-i	mem=$vm_memory_mb_for_single_db
-typeset	-i	cpu=$vm_nr_cpus_for_single_db
+typeset	-i	cpus=$vm_nr_cpus_for_single_db
 if [ $max_nodes -gt 1 ]
 then
 	nodes=$max_nodes
@@ -423,7 +423,7 @@ then
 fi
 $vm_scripts_path/validate_vm_parameter.sh	-type=$type		\
 											-nodes=$nodes	\
-											-cpus=$cpu		\
+											-cpus=$cpus		\
 											-memory=$mem
 
 next_instructions
