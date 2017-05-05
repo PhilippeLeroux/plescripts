@@ -108,7 +108,7 @@ $(print_usage)
 
 \t5 : Enable flag -policyManaged
 
-\t6 : RAC 12.2.0.1 minimum 335M
+\t6 : 12.2.0.1 minimum 335M
 
 \t7 : RAC 12.2.0.1 minimum 2048M
 
@@ -355,7 +355,7 @@ function make_dbca_args
 			;;
 	esac
 
-	if [[ "${db_type:0:3}" == RAC && "$shared_pool_size" != "0" ]]
+	if [[ "$shared_pool_size" != "0" ]]
 	then
 		initParams="$initParams,shared_pool_size=$shared_pool_size"
 	fi
