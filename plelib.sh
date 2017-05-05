@@ -599,6 +599,9 @@ function shorten_command
 		ssh|sudo|su)
 			:	# lecture de la commande exécutée.
 			;;
+		LANG=*)
+			:	# call récursif avec LANG=* en premier paramètre.
+			;;
 		*)
 			echo ${argv[0]}
 			return 0
@@ -611,7 +614,7 @@ function shorten_command
 		return 0
 	fi
 
-	# Passe tous les arguments de ssh : tout ce qui commence par un -
+	# Passe tous les arguments de ssh|sudo|su : tout ce qui commence par un -
 	typeset -i argc=1
 	while [ $argc -ne $size ]
 	do
@@ -624,8 +627,8 @@ function shorten_command
 	# Ici argc pointe sur la chaîne de connexion.
 	# La commande est donc sur argc+1
 	if [ $(( argc + 1 )) -eq $size ]
-	then # Pas de commande c'est un ssh interactif
-		echo "ssh (interactif)"
+	then # Pas de commande c'est un ssh|sudo|su interactif
+		echo "${argv[0]} (interactif)"
 		return 0
 	fi
 
@@ -663,7 +666,12 @@ function shorten_command
 				fi
 			done
 
-			echo "$(shorten_command "$new_argv") (ssh)"
+			if [ "${argv[0]}" == "ssh" ]
+			then
+				echo "$(shorten_command "$new_argv") (ssh $cmd)"
+			else
+				echo "$(shorten_command "$new_argv") ($cmd)"
+			fi
 			return 0
 			;;
 
@@ -684,7 +692,8 @@ function shorten_command
 					;;
 			esac
 
-			cmd="$(unquote ${argv[argc]})"
+			echo "$(shorten_command "${argv[argc]}")"
+			return 0
 			;;
 	esac
 
