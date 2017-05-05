@@ -7,7 +7,7 @@ Une mise à jour a mis le bordel les zones sont ignorées, les fichiers `ifcfg-e
 renommés en `ifcfg-eth?.old`. Je pense que c'est un bug de NetworkManager.
 
 J'ai essayé diverses configurations, mais ça n'a rien donné de concluant. Les
-scripts de ce répertoire permettent de contourner le disfonctionnement et
+scripts de ce répertoire permettent de contourner le dysfonctionnement et
 d'affecter correctement les zones aux interfaces.
 
 ### BUG corrigé :
@@ -19,3 +19,7 @@ Le service est désactivé sur `K2`.
 
 15/02/2017 ajout du paramètre `-nm_workaround` au script 03_setup_infra_vm.sh pour
 réactiver le workaround. Par défaut le script n'est plus appelé.
+
+**28/02/2017** Si l'installation de l'OS se fait directement avec l'ISO OL7.3
+alors les zones sont de nouveaux perdus, donc par défaut le workaround est
+activé et n'est pas désactivable.
