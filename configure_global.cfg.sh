@@ -64,7 +64,7 @@ function ask_for_variable
 	if [ x"$var_value" != x ]
 	then
 		str=$(escape_anti_slash "$var_value")
-		info "Press <enter> to select : $str"
+		info "Press <enter> to select : $(replace_paths_by_shell_vars $str)"
 		info -n "Or new value : "
 	else
 		info -n "Value : "
@@ -104,7 +104,7 @@ function VMs_folder
 		fi
 
 		ask_for_variable vm_p "VMs folder :"
-		info -n "Exists $vm_p : "
+		info -n "Exists $(replace_paths_by_shell_vars $vm_p) : "
 		if [ ! -d "$vm_p" ]
 		then
 			((++count_errors))
@@ -116,6 +116,8 @@ function VMs_folder
 		fi
 	else
 		error "VirtualBox not installed or VBoxManage not in PATH"
+		((++count_errors))
+		vm_p="No VMs folder"
 		LN
 	fi
 }
@@ -123,7 +125,7 @@ function VMs_folder
 function Oracle_Linux_ISO
 {
 	ask_for_variable full_linux_iso_n "Full path for Oracle Linux $OL7_LABEL_n ISO $OracleLinux72 :"
-	info -n "Exists $full_linux_iso_n : "
+	info -n "Exists $(replace_paths_by_shell_vars $full_linux_iso_n) : "
 	if [ ! -f "$full_linux_iso_n" ]
 	then
 		((++count_errors))
@@ -250,7 +252,7 @@ function LUNs_storage
 
 function network_interface
 {
-	info "Network interface"
+	info "Network interfaces"
 	exec_cmd "ip link show | grep -vE \"(lo|vboxnet)\" | grep \"state UP\""
 	LN
 	if_net_bridgeadapter_n=$(printf "%s" $(ip link show | grep -vE "(lo|vboxnet)" | grep "state UP" | head -1 | cut -d: -f2))
@@ -271,13 +273,6 @@ configure_gateway
 LUNs_storage
 
 network_interface
-
-if [ $count_errors -ne 0 ]
-then
-	error "$count_errors errors, configuration not updated !"
-	LN
-	exit 1
-fi
 
 line_separator
 exec_cmd "sed -i 's/gateway=.*$/gateway=$gateway_new_ip/g' ~/plescripts/global.cfg"
@@ -328,4 +323,12 @@ exec_cmd "sed -i 's/master_yum_repository_release=.*/master_yum_repository_relea
 exec_cmd "sed -i 's/orcl_yum_repository_release=.*/orcl_yum_repository_release=\${ORCL_YUM_REPOSITORY_RELEASE:-$ol7}/g' ~/plescripts/global.cfg"
 LN
 
+if [ $count_errors -ne 0 ]
+then
+	error "$count_errors errors."
+	error "Correct all errors and rerun this script."
+	LN
+	exit 1
+fi
 
+exit 0

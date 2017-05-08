@@ -42,7 +42,7 @@ typeset -i count_errors=0
 function scripts_exists
 {
 	line_separator
-	info -n "Directory exists '$HOME/plescripts' "
+	info -n "Directory exists \$HOME/plescripts "
 	if [ ! -d "$HOME/plescripts" ]
 	then
 		info -f "[$KO]"
@@ -58,11 +58,11 @@ function runInstaller_exists
 {
 	line_separator
 	info "Oracle $orarel extracted :"
-	info -n "Exist $HOME/$oracle_install/database/runInstaller "
+	info -n "Exist \$HOME/$oracle_install/database/runInstaller "
 	if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
 	then
 		info -f "[$KO]"
-		error " $HOME/$oracle_install/database must contains Oracle installer."
+		error " \$HOME/$oracle_install/database must contains Oracle installer."
 		LN
 		((++count_errors))
 	else
@@ -73,11 +73,11 @@ function runInstaller_exists
 	if [ "$orarel" == "12.2" ]
 	then
 		info "Grid zip $orarel :"
-		info -n "Exist $HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip "
+		info -n "Exist \$HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip "
 		if [ ! -f "$HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip" ]
 		then
 			info -f "[$KO]"
-			error " $HOME/$oracle_install/grid must contains linuxx64_12201_grid_home.zip."
+			error " \$HOME/$oracle_install/grid must contains linuxx64_12201_grid_home.zip."
 			LN
 			((++count_errors))
 		else
@@ -87,11 +87,11 @@ function runInstaller_exists
 	elif [ "$orarel" == "12.1" ]
 	then
 		info "Grid $orarel extracted :"
-		info -n "Exist $HOME/$oracle_install/grid/runInstaller "
+		info -n "Exist \$HOME/$oracle_install/grid/runInstaller "
 		if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
 		then
 			info -f "[$KO]"
-			error " $HOME/$oracle_install/grid must contains Grid installer."
+			error " \$HOME/$oracle_install/grid must contains Grid installer."
 			LN
 			((++count_errors))
 		else
@@ -108,7 +108,7 @@ function _is_exported
 {
 	typeset -r	directory=$1
 
-	info -n "	- $directory "
+	info -n "  - $(replace_paths_by_shell_vars $directory) "
 	typeset	-r	network=$(right_pad_ip $infra_network)
 	if grep -qE "${directory}\s*${network}.*" /etc/exports 2>/dev/null
 	then
@@ -128,11 +128,11 @@ function validate_NFS_exports
 	info "Validate NFS exports from $client_hostname on network ${network} :"
 	if ! _is_exported $HOME/plescripts
 	then
-		info "\tadd to /etc/exports : $HOME/plescripts $network/$if_pub_prefix(rw,async,no_root_squash,no_subtree_check)"
+		info "    add to /etc/exports : $HOME/plescripts $network/$if_pub_prefix(rw,sync,subtree_check,no_root_squash)"
 	fi
 	if ! _is_exported $HOME/$oracle_install
 	then
-		info "\tadd to /etc/exports : $HOME/oracle_install/$orarel $network/$if_pub_prefix(ro,async,no_root_squash,no_subtree_check)"
+		info "    add to /etc/exports : $HOME/oracle_install/$orarel $network/$if_pub_prefix(ro,subtree_check)"
 	fi
 	LN
 }
@@ -140,7 +140,7 @@ function validate_NFS_exports
 function ISO_OLinux7_exists
 {
 	line_separator
-	info -n "ISO Oracle Linux $OL7_LABEL exists $full_linux_iso_name "
+	info -n "ISO Oracle Linux $OL7_LABEL exists $(replace_paths_by_shell_vars $full_linux_iso_name) "
 	if [ ! -f "$full_linux_iso_name" ]
 	then
 		info -f "[$KO]"
@@ -194,7 +194,7 @@ function validate_resolv_conf
 function _shell_in_path
 {
 	line_separator
-	info -n "\$PATH contains ~/plescripts/shell "
+	info -n "\$PATH contains \$HOME/plescripts/shell "
 	if $(test_if_cmd_exists stop_vm)
 	then
 		info -f "[$OK]"
