@@ -833,7 +833,7 @@ function exec_cmd
 				eval "$*" 2>&1 | tee -a $PLELIB_LOG_FILE
 				eval_return=${PIPESTATUS[0]}
 
-				#	ksh workaround, mais ksh n'est normallement plus utilisé :
+				#	ksh workaround, mais ksh n'est normalement plus utilisé :
 				[ x"$eval_return" == x ] &&	eval_return=0 || true
 			fi
 
@@ -849,20 +849,23 @@ function exec_cmd
 				if [[ $eval_duration -lt $PLE_SHOW_EXECUTION_TIME_AFTER && $hide_command == YES ]]
 				then
 					# Si la commande a durée plus de PLE_SHOW_EXECUTION_TIME_AFTER
-					# elle a été affichée, sinon elle ne l'est pas. Sur une erreur
-					# on affiche la commande.
+					# la commande simplifiée a été affichée, sur une erreur affichage
+					# de la commande complète.
 					my_echo "$COL" "$(date +"%Hh%M")> " "$simplified_cmd" || true
+				fi
+
+				if [ x"$shortened_cmd" == x ]
+				then
+					typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
 				fi
 
 				case "$continue_on_error" in
 					NO)
 						[ $force == YES ] && EXEC_CMD_ACTION=NOP || true # Utile, si le script appelant continue sur une erreur.
-						typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
 						error "$shortened_cmd return $eval_return"
 						exit 1
 						;;
 					YES)
-						typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
 						warning "$shortened_cmd return $eval_return, continue..."
 						;;
 				esac
