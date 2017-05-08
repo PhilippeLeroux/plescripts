@@ -586,36 +586,42 @@ function unquote
 	echo "$string"
 }
 
-#*< Extrait la commande de "$@", si une des commandes su, sudo ou ssh sont utilisées
-#*< leurs noms apparaitra.
+#*< $1|$@ commande, est utilisé par la fonction exec_cmd.
+#*< Si la commande utilise ssh|sudo|su affiche sur stdout la commande appelée.
 function shorten_command
 {
+	# Tokenize la commande passée en argument dans argv.
 	typeset	-a	argv
 	read -a argv <<<"$(unquote "$@")"
 
-	typeset -ri size=${#argv[@]}
-
 	case "${argv[0]}" in
 		ssh|sudo|su)
-			:	# lecture de la commande exécutée.
+			# Lecture de la commande exécutée par ssh|sudo|su
+			:
 			;;
 		LANG=*)
-			:	# call récursif avec LANG=* en premier paramètre.
+			# call récursif avec LANG=* en premier paramètre, le second est la
+			# commande.
+			echo ${argv[1]}
+			return 0
 			;;
 		*)
+			# pas de ssh|sudo|su c'est la commande.
 			echo ${argv[0]}
 			return 0
 			;;
 	esac
 
+	typeset -ri size=${#argv[@]}
 	if [ $size -eq 1 ]
 	then	# Il n'y a qu'une seule commande
 		echo ${argv[0]}
 		return 0
 	fi
 
+	typeset -i	argc=1
 	# Passe tous les arguments de ssh|sudo|su : tout ce qui commence par un -
-	typeset -i argc=1
+	typeset		arg
 	while [ $argc -ne $size ]
 	do
 		arg=${argv[$argc]}
@@ -624,7 +630,6 @@ function shorten_command
 		((++argc))
 	done
 
-	# Ici argc pointe sur la chaîne de connexion.
 	# La commande est donc sur argc+1
 	if [ $(( argc + 1 )) -eq $size ]
 	then # Pas de commande c'est un ssh|sudo|su interactif
@@ -632,67 +637,91 @@ function shorten_command
 		return 0
 	fi
 
-	typeset	-i	icmd=argc+1
-	typeset		cmd=${argv[icmd]}
+	case "${argv[0]}" in
+		su|sudo)
+			typeset	-i	icmd=argc
+			typeset		cmd=$(unquote ${argv[icmd]})
+			((++argc))
 
-	# cas de su ... -c
-	if [ "$cmd" == "-c" ]
-	then
-		((++icmd))
-		cmd=${argv[icmd]}
+			# Il n'y pas de façon générique pour détecter un compte.
+			case "$cmd" in
+				oracle|grid|root|$common_user_name)
+					# passe le compte.
+					((++icmd))
+					((++argc))
+					cmd=$(unquote ${argv[icmd]})
+				;;
+			esac
+
+			# cas de su ... -c
+			if [ "$cmd" == "-c" ]
+			then
+				((++icmd))
+				cmd=$(unquote ${argv[icmd]})
+				((++argc))
+			fi
+			;;
+
+		ssh) # passe la chaîne de connexion.
+			typeset	-i	icmd=argc+1
+			typeset		cmd=$(unquote ${argv[icmd]})
+			((++argc))
+			;;
+	esac
+
+	# Passe tous les arguments de ssh|sudo|su : tout ce qui commence par un -
+	typeset	arg
+	while [ $argc -ne $size ]
+	do
+		arg=${argv[$argc]}
+		[ "${arg:0:1}" != - ] && break || true
 		((++argc))
-	fi
+	done
 
-	cmd="$(unquote $cmd)"
-
-	# Passe LANG=*
-	if [ "${cmd:0:5}" == "LANG=" ]
-	then
-		((++icmd))
-		cmd=${argv[icmd]}
-		((++argc))
-	fi
+	case "$cmd" in
+		LANG=*) # Passe LANG=*
+			((++icmd))
+			cmd=${argv[icmd]}
+			((++argc))
+			;;
+	esac
 
 	case "$cmd" in
 		sudo|su)
-			typeset new_argv
-			for i in $( seq $icmd ${#argv[*]} )
-			do
-				if [ x"$new_argv" == x ]
-				then
-					new_argv="${argv[i]}"
-				else
-					new_argv="$new_argv ${argv[i]}"
-				fi
-			done
-
 			if [ "${argv[0]}" == "ssh" ]
 			then
-				echo "$(shorten_command "$new_argv") (ssh $cmd)"
+				echo "$(shorten_command "${argv[@]:icmd}") (ssh $cmd)"
 			else
-				echo "$(shorten_command "$new_argv") ($cmd)"
+				echo "$(shorten_command "${argv[@]:icmd}") ($cmd)"
 			fi
 			return 0
 			;;
 
-		cd) # cd path &&|;
-			echo "$(shorten_command "${argv[icmd+3]}")"
+		cd) # cd path && ou ;
+			icmd=icmd+2	# se positionne après le répertoire.
+			[ "${argv[icmd]}" == "&&" ] && ((++icmd)) || true
+			echo "$(shorten_command "${argv[@]:icmd}") (${argv[0]})"
 			return 0
 			;;
 
 		.) # . .bash_profile
-			argc=argc+3
-
-			#	. .bash_profile \; ....
-			# or
-			#	. .bash_profile && ....
+			argc=argc+2
 			case "${argv[$argc]}" in
 				";"|"&&")
+					#	. .bash_profile \; ....
+					# or
+					#	. .bash_profile && ....
 					((++argc))
 					;;
 			esac
 
-			echo "$(shorten_command "${argv[argc]}")"
+			if [ "${argv[argc]}" == "cd" ]
+			then
+				argc=argc+2 # Passe la commande cd 'répertoire'
+				[ "${argv[argc]}" == "&&" ] && ((++argc)) || true
+			fi
+
+			echo "$(shorten_command "${argv[@]:argc}") (${argv[0]})"
 			return 0
 			;;
 	esac
@@ -808,11 +837,10 @@ function exec_cmd
 				[ x"$eval_return" == x ] &&	eval_return=0 || true
 			fi
 
-			typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
-
 			typeset -ri eval_duration=$(( SECONDS - eval_start_at ))
 			if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 			then
+				typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
 				my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$shortened_cmd running time : $(fmt_seconds $eval_duration)"
 			fi
 
@@ -829,10 +857,12 @@ function exec_cmd
 				case "$continue_on_error" in
 					NO)
 						[ $force == YES ] && EXEC_CMD_ACTION=NOP || true # Utile, si le script appelant continue sur une erreur.
+						typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
 						error "$shortened_cmd return $eval_return"
 						exit 1
 						;;
 					YES)
+						typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
 						warning "$shortened_cmd return $eval_return, continue..."
 						;;
 				esac
