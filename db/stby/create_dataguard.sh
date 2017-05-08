@@ -624,6 +624,7 @@ function create_dataguard_config
 	info "Create data guard configuration."
 	timing 10 "Wait data guard broker"
 	LN
+	fake_exec_cmd "dgmgrl -silent -echo sys/$oracle_password"
 	dgmgrl -silent -echo sys/$oracle_password<<-EOS | tee -a $PLELIB_LOG_FILE
 	create configuration 'DGCONF' as primary database is $primary connect identifier is $primary;
 	enable configuration;
