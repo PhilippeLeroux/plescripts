@@ -10,5 +10,5 @@ select
 ,	enabled
 ,	pdb
 from
-	dba_services
+	cdb_services
 ;
