@@ -4,26 +4,32 @@
 . ~/plescripts/plelib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
+typeset -r	ME=$0
+
+typeset		db=undef
+typeset		pdb=undef
+typeset	-i	check_interval_secs=900
+typeset		service=auto
+typeset		create_crs_resource=yes
+typeset		force=no
+typeset		log=yes
+
+add_usage "-db=name"								"Database name"
+add_usage "-pdb=name"								"PDB name"
+add_usage "[-service=auto]"							"auto or service name"
+add_usage "[-check_interval=$check_interval_secs]"	"Seconds : $((check_interval_secs / 60 )) mn"
+add_usage "[-update_script_only]"					"Only update script."
+add_usage "[-force]"								"Delete service if exists."
+add_usage "[-nolog]"								"no log"
+
 typeset -r str_usage=\
 "Usage : $ME
-	-db=name
-	-pdb=name
-	-service=auto         auto or service name
-	[-update_script_only] Met uniquement à jour le script.
-	[-force]              Si le service existe, il est recréé.
-	[-nolog]              Pas de log.
+$(print_usage)
 "
-
-typeset db=undef
-typeset	pdb=undef
-typeset	service=auto
-typeset	create_crs_resource=yes
-typeset	force=no
-typeset log=yes
 
 while [ $# -ne 0 ]
 do
@@ -40,6 +46,11 @@ do
 
 		-pdb=*)
 			pdb=${1##*=}
+			shift
+			;;
+
+		-check_interval=*)
+			check_interval_secs=${1##*=}
 			shift
 			;;
 
@@ -139,6 +150,7 @@ function create_local_resource
 		info "Flag -force set, delete resource."
 		exec_cmd -c crsctl stop res $resource_name
 		exec_cmd crsctl delete res $resource_name -f
+		timing 10
 		LN
 	fi
 
@@ -147,7 +159,7 @@ function create_local_resource
 
 	add_dynamic_cmd_param "-type local_resource"
 	add_dynamic_cmd_param -nvsr "-attr \"ACTION_SCRIPT='$script_name'"
-	add_dynamic_cmd_param "     ,CHECK_INTERVAL=3600,RESTART_ATTEMPTS=10"
+	add_dynamic_cmd_param "     ,CHECK_INTERVAL=$check_interval_secs,RESTART_ATTEMPTS=10"
 	add_dynamic_cmd_param "     ,START_DEPENDENCIES='pullup:always($ora_service)'"
 	add_dynamic_cmd_param "     ,STOP_DEPENDENCIES='hard(intermediate:ora.${db}.db)'"
 	add_dynamic_cmd_param "     ,SCRIPT_TIMEOUT=300\""
