@@ -905,7 +905,7 @@ function add_dynamic_cmd_param
 	ple_dyn_param_cmd+=( "$param" )
 
 	if [[ $len -gt $ple_dyn_param_max_len &&
-							$(( len + ple_param_margin )) -lt $(term_cols) ]]
+					$(( len + ple_param_margin + 4 + 2 )) -lt $(term_cols) ]]
 	then
 		ple_dyn_param_max_len=$len
 	fi
@@ -937,15 +937,10 @@ function exec_dynamic_cmd
 
 	typeset -r cmd_name=$(replace_paths_by_shell_vars $@)
 
-	if [ $ple_dyn_param_max_len -gt $(term_cols) ]
-	then
-		ple_dyn_param_max_len=$(( $(term_cols) - 4 ))
-	fi
-
 	ple_dyn_param_max_len=ple_dyn_param_max_len+2
 
 	#	4 correspond à la largeur de la tabulation ajoutée devant les paramètres,
-	#	le but étant d'aligner le \ derrière la commande aux \ derrière les paramètres.
+	#	le but étant d'aligner le \ derrière la commande aux \ derrières les paramètres.
 	#	Ex :
 	#	10h40> ma_commande  \
 	#              -x=42    \
@@ -954,7 +949,7 @@ function exec_dynamic_cmd
 	fake_exec_cmd "$(printf "%-${l}s%s\n" "$cmd_name" "\\\\")"
 
 	#	Affiche les paramètres de la commande :
-	for (( i=0; i < ${#ple_dyn_param_cmd[@]}; i++ ))
+	for (( i=0; i < ${#ple_dyn_param_cmd[@]}; ++i ))
 	do
 		[ $i -ne 0 ] && info -f "\\\\"	# Affiche \ à la fin de la ligne précédente.
 		info -f -n "$(printf "%${ple_param_margin}s%-${ple_dyn_param_max_len}s" " " "${ple_dyn_param_cmd[$i]}")"
