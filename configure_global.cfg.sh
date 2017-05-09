@@ -300,6 +300,8 @@ LN
 
 if [ "$HOME/ISO/oracle_linux_7/$OracleLinux73" == "$full_linux_iso_n" ]
 then
+	[ "$ol7" == DVD_R2 ] && ol7=DVD_R3 || true
+
 	OL7_LABEL_n=7.3
 	line_separator
 	error "Oracle Linux $OL7_LABEL_n don't work."
