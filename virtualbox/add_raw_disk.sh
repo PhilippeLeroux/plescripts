@@ -10,7 +10,8 @@ typeset -r str_usage=\
 "Usage : $ME
 	-vm_name=name     VM name
 	-disk_name=name   Vbox disk name
-	-os_device=nam    OS disk name like /dev/sdz
+	-os_device=name   OS disk name like /dev/sdz
+	[-disk_path=name]
 
 Add raw disk to SATA controller on the first free port, the controller must exists.
 "
@@ -20,6 +21,7 @@ script_banner $ME $*
 typeset		vm_name=undef
 typeset		disk_name=undef
 typeset		os_device=undef
+typeset		disk_path=default
 
 while [ $# -ne 0 ]
 do
@@ -41,6 +43,11 @@ do
 
 		-os_device=*)
 			os_device=${1##*=}
+			shift
+			;;
+
+		-disk_path=*)
+			disk_path=${1##*=}
 			shift
 			;;
 
@@ -71,7 +78,26 @@ function get_free_SATA_port
 	echo $(( nu+1 ))
 }
 
-typeset	-r	disk_full_path="$vm_path/$vm_name/${disk_name}.vmdk"
+# $1 vm name
+# Affiche sur 1 le chemin contenant les fichiers de la VM.
+#
+# dupliquer de virtualbox/delete_vm
+function read_vm_path_folder
+{
+	# Lecture du fichier de configuration
+	typeset -r config_file=$(VBoxManage showvminfo $1	\
+										| grep -E "^Config file:"|cut -d: -f2)
+	# Tous les fichiers de la VM sont dans le même répertoire que config_file.
+	sed "s/^ *//"<<<${config_file%/*}
+}
+
+if [ "$disk_path" == default ]
+then
+	typeset	-r disk_full_path="$(read_vm_path_folder $vm_name)/${disk_name}.vdi"
+else
+	typeset	-r disk_full_path="$disk_path/${disk_name}.vdi"
+fi
+
 typeset -r	on_port=$(get_free_SATA_port)
 
 if [ ! -b $os_device ]

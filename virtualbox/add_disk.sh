@@ -15,6 +15,7 @@ typeset -r str_usage=\
 	[-mtype=auto] normal|writethrough|immutable|shareable|readonly|multiattach
 	    auto : -attache_to specified -mtype=shareable else -mtype=normal
 	[-fixed_size]    Disk size is fixed (auto with -attach_to)
+	[-disk_path=name]
 
 Add disk to SATA controller on the first free port, the controller must exists.
 "
@@ -27,6 +28,7 @@ typeset	-i	disk_mb=-1
 typeset		attach_to=no_attach
 typeset		mtype=auto
 typeset		fixed_size=Standard
+typeset		disk_path=default
 
 while [ $# -ne 0 ]
 do
@@ -66,6 +68,11 @@ do
 			shift
 			;;
 
+		-disk_path=*)
+			disk_path=${1##*=}
+			shift
+			;;
+
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -93,7 +100,25 @@ function get_free_SATA_port
 	echo $(( nu+1 ))
 }
 
-typeset	-r	disk_full_path="$vm_path/$vm_name/${disk_name}.vdi"
+# $1 vm name
+# Affiche sur 1 le chemin contenant les fichiers de la VM.
+#
+# dupliquer de virtualbox/delete_vm
+function read_vm_path_folder
+{
+	# Lecture du fichier de configuration
+	typeset -r config_file=$(VBoxManage showvminfo $1	\
+										| grep -E "^Config file:"|cut -d: -f2)
+	# Tous les fichiers de la VM sont dans le même répertoire que config_file.
+	sed "s/^ *//"<<<${config_file%/*}
+}
+
+if [ "$disk_path" == default ]
+then
+	typeset	-r disk_full_path="$(read_vm_path_folder $vm_name)/${disk_name}.vdi"
+else
+	typeset	-r disk_full_path="$disk_path/${disk_name}.vdi"
+fi
 
 typeset -r	on_port=$(get_free_SATA_port)
 
