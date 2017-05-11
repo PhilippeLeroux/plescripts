@@ -115,8 +115,8 @@ function wait_vm_until_stopped
 			info -f -n "${display_color}${secs}s${NORM}"
 			if [[ $secs -ge 30 && $secs -lt 60 ]]
 			then
-				display_color=$PINK
-			elif [[ $secs -ge 60 && $sec -lt 90 ]]
+				display_color=$PURPLE
+			elif [[ $secs -ge 60 && $secs -lt 90 ]]
 			then
 				display_color=$YELLOW
 			elif [[ $sec -ge 90 ]]
@@ -165,7 +165,7 @@ function vm_running
 }
 
 #	$1 vm name
-function stop_vm_name
+function stop_vm
 {
 	typeset -r vm_to_stop="$1"
 
@@ -225,7 +225,7 @@ else
 	line_separator
 	for vm in ${vm_list[@]}
 	do
-		stop_vm_name "$vm"
+		stop_vm "$vm"
 
 		if [[ $dataguard == yes && ${#vm_list[@]} -eq 1 ]]
 		then # Actuellement seul les serveurs standalone sont en DG.
@@ -250,7 +250,7 @@ else
 			if vm_running $vm_name
 			then
 				vm_list+=( $vm_name )
-				stop_vm_name "$vm_name"
+				stop_vm "$vm_name"
 				LN
 			else
 				info "$vm_name not running."
@@ -279,7 +279,7 @@ fi
 
 if [ "$server" == srv ]
 then # Arrêt de la VM d'infra quand tous les serveurs sont stoppés.
-	stop_vm_name $infra_hostname
+	stop_vm $infra_hostname
 	wait_vm_until_stopped $infra_hostname
 	timing 2
 fi
