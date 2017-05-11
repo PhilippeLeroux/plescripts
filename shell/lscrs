@@ -85,7 +85,7 @@ then
 	[[ -v ID_DB ]] && db=$ID_DB
 	exit_if_param_undef db "$str_usage"
 fi
-	
+
 if [ $server_name == undef ]
 then
 	if [ $nr_node -eq -1 ]
@@ -99,8 +99,11 @@ then
 	[ $server_name == undef ] && server_name=$(printf "srv%s01" ${db}) || true
 fi
 
+[ $max_nodes -gt 1 ] && exec_cmd sudo systemctl stop nscd.service || true
 wait_server $server_name
-[ $? -ne 0 ] && exit 1 || true
+ret=$?
+[ $max_nodes -gt 1 ] && exec_cmd sudo systemctl start nscd.service || true
+[ $ret -ne 0 ] && exit 1 || true
 
 start_s=$SECONDS
 typeset -i wait_time_s=$wait_time_secs
