@@ -389,8 +389,9 @@ function read_orcl_release
 	esac
 }
 
+#*> $1 db name
 #*> return 0 if RAC One Node, else 1
 function is_rac_one_node
 {
-	srvctl status database -db $db| grep -q "Online relocation: INACTIVE"
+	srvctl status database -db $1|grep -q "Online relocation: INACTIVE"
 }
