@@ -451,7 +451,6 @@ run {
 		set db_recovery_file_dest='$fra'
 		set control_files=$control_files
 		set cluster_database='false'
-		set fal_server='$stby_db_unique_name'
 		nofilenamecheck
 	;
 }
@@ -465,8 +464,6 @@ EOR
 function sql_setup_primary_database
 {
 	set_sql_cmd "alter system set standby_file_management='AUTO' scope=both sid='*';"
-
-	set_sql_cmd "alter system set fal_server='$standby' scope=both sid='*';"
 
 	set_sql_cmd "alter system set dg_broker_config_file1 = '$data/$primary/dr1db_$primary.dat' scope=both sid='*';"
 
@@ -1055,8 +1052,8 @@ stby_enable_block_change_traking
 stby_backup
 
 info "Copy glogin.sql"
-exec_cmd "scp	$ORACLE_HOME/sqlplus/admin/glogin.sql	\
-				$standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
+exec_cmd -c "scp	$ORACLE_HOME/sqlplus/admin/glogin.sql	\
+					$standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
 LN
 
 if [ $crs_used == no ]
