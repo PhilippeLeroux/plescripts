@@ -102,7 +102,7 @@ typeset -a	node_priv_names
 typeset -a	node_priv_ips
 typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
-typeset		primary_db_server=none
+typeset		primary_db=none
 
 if [ "$oracle_release" == "12.2.0.1" ]
 then
@@ -122,7 +122,7 @@ function load_node_cfg # $1 inode
 	then
 		if [ -d $cfg_path_prefix/$cfg_standby ]
 		then # La config exist, donc sur ce serveur créer une standby
-			primary_db_server=$cfg_standby
+			primary_db=$cfg_standby
 		fi
 	fi
 
@@ -340,7 +340,7 @@ function exec_post_install_root_scripts_on_node	# $1 node name
 function next_instructions
 {
 	line_separator
-	if [ $primary_db_server == none ]
+	if [ $primary_db == none ]
 	then
 		info "Database can be created :"
 		LN
@@ -362,19 +362,14 @@ function next_instructions
 			LN
 		fi
 	else
-		#	Remarque db contient le nom de la standby et standby contient le
-		#	nom de la base existante, les noms sont inversés.
-		info "Create standby database $db from $primary_db_server"
-		LN
-
 		add_dynamic_cmd_param "-user1=oracle"
 		add_dynamic_cmd_param "-server1=srv${db}01"
-		add_dynamic_cmd_param "-server2=srv${primary_db_server}01"
+		add_dynamic_cmd_param "-server2=srv${primary_db}01"
 		exec_dynamic_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh"
 		LN
 
 		info "Execute :"
-		info "$ ssh oracle@srv${primary_db_server}01"
+		info "$ ssh oracle@srv${primary_db}01"
 		info "$ cd ~/plescripts/db/stby/"
 		info "$ ./create_dataguard.sh -standby=$db -standby_host=srv${db}01"
 		LN
