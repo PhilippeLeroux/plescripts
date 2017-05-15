@@ -242,13 +242,51 @@ function remove_oracleasm_disks
 }
 
 #	Désinstalle le grid.
-function deinstall_grid
+function deinstall_grid_12cR1
 {
 	line_separator
 	warning "You must answer the questions, and follow instructions !"
 	LN
 
 	sugrid "/mnt/oracle_install/grid/runInstaller -deinstall -home \\\$ORACLE_HOME"
+	LN
+
+	execute_on_all_nodes "rm -fr /etc/oraInst.loc"
+	LN
+
+	execute_on_all_nodes "rm -fr /etc/oratab"
+	LN
+
+	execute_on_all_nodes "rm -fr /$GRID_DISK/app/grid/log"
+	LN
+}
+
+function deinstall_grid_12cR2
+{
+	line_separator
+	execute_on_all_nodes -c "crsctl stop crs"	# pour un RAC
+	exec_cmd -c "crsctl stop has"				# pour un standalone
+	LN
+
+	exec_cmd -c "~/plescripts/disk/clear_oracle_afd_disk_headers.sh"
+	LN
+
+	execute_on_all_nodes -c "rm -rf /etc/rc.d/init.d/afd"
+	execute_on_all_nodes -c "rm -rf /etc/rc.d/init.d/init.ohasd"
+	execute_on_all_nodes -c "rm -rf /etc/rc.d/init.d/ohasd"
+	LN
+
+	execute_on_all_nodes "rm -rf ${GRID_BASE%/*}/oraInventory"
+	LN
+
+	execute_on_all_nodes "find $GRID_BASE/* -maxdepth 1	-type d \
+								! -name \"12.2.0.1\" | xargs rm -rf"
+	LN
+
+	execute_on_all_nodes "rm -fr $GRID_HOME/*"
+	LN
+
+	execute_on_all_nodes "rm -fr /etc/oracle"
 	LN
 
 	execute_on_all_nodes "rm -fr /etc/oraInst.loc"
@@ -311,7 +349,12 @@ if [ $storage == ASM ]
 then
 	if grep -q remove_grid_binary <<< "$action_list"
 	then
-		deinstall_grid
+		if [ "${GRID_HOME##*/}" == "12.2.0.1" ]
+		then
+			deinstall_grid_12cR2
+		else
+			deinstall_grid_12cR1
+		fi
 	fi
 fi
 
