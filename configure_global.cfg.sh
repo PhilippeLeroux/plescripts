@@ -81,12 +81,18 @@ function ask_for_variable
 
 function read_gateway_ip
 {
-	typeset outp=$(cat /etc/resolv.conf | grep -E "^nameserver")
+	typeset outp=$(cat /etc/resolv.conf|grep -E "^nameserver")
 	if [ $(wc -l<<<"$outp") -eq 1 ]
 	then
 		cut -d\  -f2<<<"$outp"
-	else
-		echo $gateway
+	else # Plus de 1 serveur, supprime l'IP de l'infra si elle est présente.
+		outp=$(grep -vE "$infra_ip"<<<"$outp")
+		if [ $(wc -l<<<"$outp") -eq 1 ]
+		then
+			cut -d\  -f2<<<"$outp"
+		else # # Plus de 1 serveur, l'utilisateur corrigera au besoins.
+			echo $gateway	# Variable définie dans global.cfg
+		fi
 	fi
 }
 
@@ -174,7 +180,7 @@ function configure_gateway
 {
 	gateway_new_ip=$(read_gateway_ip)
 	ask_for_variable gateway_new_ip "Gateway IP (Box address) :"
-	info -n "Ping $gateway_new_ip"
+	info -n "Ping $gateway_new_ip "
 	if ping -c 1 $gateway_new_ip 1>/dev/null 2>&1
 	then
 		info -f "[$OK]"
