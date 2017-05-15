@@ -570,8 +570,7 @@ function unquote
 	# Supprime la ' ou " du début si elle est présente.
 	case "${string:0:1}" in
 		"'"|"\"")
-			echo "${string:1}"
-			return
+			string="${string:1}"
 			;;
 	esac
 
