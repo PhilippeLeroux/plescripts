@@ -40,6 +40,8 @@ prévoir 16Gb.
 
   Rechercher Oracle Linux 7.2, puis décocher les autres ISO.
 
+  ![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screenshot_ol7_iso_selection.png)
+
   L'image de l'ISO Oracle Linux 7.3 ne fonctionne pas (V834394-01.iso), java plante lors de l'installation. En partant d'une 7.2
   je mets à jour sur une 7.3 mais en conservant le noyau linux 3.8.
 
