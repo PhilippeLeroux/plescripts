@@ -56,6 +56,9 @@ then
 fi
 
 line_separator
+sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/show_corrupted_blocks.sql")"
+LN
+
 exec_cmd "rman target sys/$oracle_password @recover_corruption_list.rman"
 LN
 
