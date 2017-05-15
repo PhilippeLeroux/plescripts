@@ -302,6 +302,7 @@ function primary_archive_log_current
 	function sqlcmd_archive_log
 	{
 		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "alter system switch logfile;"
 		set_sql_cmd "alter system archive log current;"
 	}
 	sqlplus_cmd_with "sys/$oracle_password@$1 as sysdba" "$(sqlcmd_archive_log)"
@@ -314,20 +315,13 @@ function stby_recover_database_and_open_RO
 {
 	function sql_cmds
 	{
+		set_sql_cmd "recover managed standby database until consistent;"
 		set_sql_cmd "alter database flashback on;"
 		set_sql_cmd "alter database open read only;"
 	}
 
-	typeset -r rman_script=/tmp/recover_stby.$$
 	line_separator
-	info "Recover database"
-	info "Create script"
-	exec_cmd -f "echo 'alter database recover managed standby database until consistent;'>$rman_script"
-	info "Execute script"
-	exec_cmd "rman target sys/$oracle_password @$rman_script"
-	LN
-
-	info "Enable flashback & open database RO"
+	info "Recover standby database, enable flashback & open database RO"
 	sqlplus_cmd "$(sql_cmds)"
 	LN
 }
