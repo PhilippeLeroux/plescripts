@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -19,8 +18,8 @@ typeset -r str_usage="Usage : $ME
 
 typeset		vg_name=undef
 typeset		prefix=undef
-typeset -i	first_no=-1
-typeset -i	count=1
+typeset	-i	first_no=-1
+typeset	-i	count=1
 typeset		all=no
 
 while [ $# -ne 0 ]
@@ -83,6 +82,11 @@ do
 
 	clear_device /dev/$vg_name/$lv_name
 	LN
+
+	# Parfois lvremove ne fonction pas, l'erreur est
+	# device-mapper: remove ioctl on (252:21) failed: Périphérique ou ressource occupé
+	# donc ajout temporisation mais non visible.
+	sleep 1
 
 	info "remove : $lv_name"
 	exec_cmd lvremove -y $vg_name/$lv_name
