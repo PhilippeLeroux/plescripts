@@ -92,7 +92,6 @@ function file_nr_extends_ok
 }
 
 # $1 file
-# Increment count_reorgs
 function defrag_file
 {
 	typeset	-r	vdi_file="$1"
@@ -119,10 +118,18 @@ function defrag_file
 	then
 		info "Démarrage..."
 		exec_cmd sudo xfs_fsr -v \"$vdi_file\"
-		((++count_reorgs))
 		file_nr_extends_ok "$vdi_file"
 		LN
 	fi
+}
+
+function read_all_vm_paths
+{
+	while read vm_name
+	do
+		file=$(VBoxManage showvminfo $vm_name|grep -E "^Config file:"|cut -d: -f2)
+		echo "${file%/*}"
+	done<<<"$(VBoxManage list vms | cut -d\" -f2)"
 }
 
 [ $ask == yes ] && defrag=yes || true
@@ -141,26 +148,27 @@ then
 	LN
 fi
 
-typeset	-i	count_reorgs=0
-
-cmd="find \"$vm_path/\" -name *.vdi"
-fake_exec_cmd "$cmd"
-while read vdi_file
+while read vm_path2
 do
-	line_separator
-	if ! file_nr_extends_ok "$vdi_file"
-	then
-		if [ $defrag == yes ]
+	while read file_name
+	do
+		[ x"$file_name" == x ] && continue || true
+		line_separator
+		info "$file_name"
+		if ! file_nr_extends_ok "$file_name"
 		then
-			defrag_file "$vdi_file"
-		else
-			info "    Détails avec :"
-			info "    sudo xfs_bmap -v \"$vdi_file\""
-			info ""
-			info "    Défragmentation :"
-			info "       - sudo xfs_fsr -v \"$vdi_file\""
-			info "       - ${ME##*/} -defrag (Tous les fichiers seront défragmentés)"
-			LN
+			if [ $defrag == yes ]
+			then
+				defrag_file "$file_name"
+			else
+				info "    Détails avec :"
+				info "    sudo xfs_bmap -v \"$file_name\""
+				info ""
+				info "    Défragmentation :"
+				info "       - sudo xfs_fsr -v \"$file_name\""
+				info "       - ${ME##*/} -defrag (Tous les fichiers seront défragmentés)"
+				LN
+			fi
 		fi
-	fi
-done<<<"$(eval $cmd)"
+	done<<<"$(find $vm_path2 -name "*.vdi" 2>/dev/null)"
+done<<<"$(read_all_vm_paths)"
