@@ -67,12 +67,10 @@ fi
 
 warning "Le module des Guest Additions n'est pas à jour sur $host"
 LN
-info "Exécuter le script :"
-info "    - ./attach_iso_guestadditions.sh -vm_name=$host"
+exec_cmd "~/plescripts/virtualbox/guest/attach_iso_guestadditions.sh	\
+																-vm_name=$host"
 LN
 
-info "Exécuter sur $host :"
-info "    - cd ~/plescripts/virtualbox/guest"
-info "    - ./install_guestadditions.sh"
+exec_cmd "ssh -t root@$host \
+			\"\\\$HOME/plescripts/virtualbox/guest/install_guestadditions.sh\""
 LN
-exit 1

@@ -38,15 +38,13 @@ done
 LANG=C
 
 [ ! -d /media/cdrom ] && exec_cmd mkdir /media/cdrom || true
+sleep 1
 info "mount /media/cdrom"
-exec_cmd -c "mount /dev/cdrom /media/cdrom"
-exec_cmd -c "mount /dev/cdrom /media/cdrom"
-exec_cmd -c "mount /dev/cdrom /media/cdrom"
-exec_cmd -c "mount /dev/cdrom /media/cdrom"
-exec_cmd -c "mount /dev/cdrom /media/cdrom"
+exec_cmd "mount /dev/cdrom /media/cdrom"
+sleep 1
 LN
 
-exec_cmd "~/plescripts/virtualbox/guest/install_rpms.sh"
+exec_cmd "~/plescripts/virtualbox/guest/install_gcc_and_kernel_devel.sh"
 
 info "Execute VBoxLinuxAdditions.run"
 fake_exec_cmd cd /media/cdrom
