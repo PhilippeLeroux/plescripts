@@ -328,6 +328,7 @@ function exec_post_install_root_scripts_on_node	# $1 node name
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
 	exec_cmd -novar "ssh -t -t root@${node_name} \"LANG=C $script_root_sh\" </dev/null"
+	exec_cmd -novar "ssh -t -t root@${node_name} \"chown oracle:oinstall $script_root_sh\" </dev/null"
 	LN
 
 	# Je viens de découvrir ça :
