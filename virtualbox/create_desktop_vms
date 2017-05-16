@@ -43,6 +43,11 @@ do
 			shift
 			;;
 
+		-memory=*)
+			memory=${1##*=}
+			shift
+			;;
+
 		-h|-help|help)
 			info "$str_usage"
 			LN
