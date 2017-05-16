@@ -328,13 +328,13 @@ function exec_post_install_root_scripts_on_node	# $1 node name
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
 	exec_cmd -novar "ssh -t -t root@${node_name} \"LANG=C $script_root_sh\" </dev/null"
-	exec_cmd -novar "ssh -t -t root@${node_name} \"chown oracle:oinstall $script_root_sh\" </dev/null"
 	LN
 
 	# Je viens de découvrir ça :
 	# 8.3.1 Creating a Backup of the root.sh Script
 	info "Backup the root.sh script to $backup_script_root_sh"
-	exec_cmd -novar "ssh -t -t root@${node_name} 'cp $script_root_sh $backup_script_root_sh'"
+	exec_cmd -novar "ssh -t -t root@${node_name} 'cp $script_root_sh $backup_script_root_sh' </dev/null"
+	exec_cmd -novar "ssh -t -t root@${node_name} \"chown oracle:oinstall $backup_script_root_sh\" </dev/null"
 	LN
 }
 
