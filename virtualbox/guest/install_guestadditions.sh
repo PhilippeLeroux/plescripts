@@ -40,8 +40,14 @@ LANG=C
 [ ! -d /media/cdrom ] && exec_cmd mkdir /media/cdrom || true
 sleep 1
 info "mount /media/cdrom"
-exec_cmd "mount /dev/cdrom /media/cdrom"
-sleep 1
+while true
+do
+	exec_cmd -c "mount /dev/cdrom /media/cdrom"
+	ret=$?
+	[ $ret -eq 0 ] && break || true
+	[ $ret -eq 32 ] && true || break
+	sleep 1
+done
 LN
 
 exec_cmd "~/plescripts/virtualbox/guest/install_gcc_and_kernel_devel.sh"

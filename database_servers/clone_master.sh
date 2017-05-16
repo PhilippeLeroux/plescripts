@@ -727,8 +727,7 @@ if [ "$install_guestadditions" == yes ]
 then
 	fake_exec_cmd cd ~/plescripts/virtualbox/guest
 	cd ~/plescripts/virtualbox/guest
-	exec_cmd "./attach_iso_guestadditions.sh -vm_name=$server_name"
-	ssh_server "~/plescripts/virtualbox/guest/install_guestadditions.sh"
+	exec_cmd "./test_guestadditions.sh -host=$server_name"
 	fake_exec_cmd cd -
 	cd -
 	LN
