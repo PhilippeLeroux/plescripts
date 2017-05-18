@@ -19,11 +19,10 @@ export ORA_NLSZZ=$ORACLE_HOME/nls/data
 PATH=${PATH}:$HOME/bin:$ORACLE_HOME/bin
 PATH=${PATH}:/usr/bin:/bin:/usr/bin/X11:/usr/local/bin
 PATH=${PATH}:$GRID_ROOT/app/common/oracle/bin
-PATH=${PATH}:$GRID_ROOT/app/oracle/12.1.0.2/dbhome_1/OPatch
+PATH=${PATH}:$GRID_ROOT/app/oracle/RELEASE_ORACLE/dbhome_1/OPatch
 export PATH
 
 LD_LIBRARY_PATH=$ORACLE_HOME/lib
-LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$ORACLE_HOME/oracm/lib
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/lib:/usr/lib:/usr/local/lib
 export LD_LIBRARY_PATH
 

@@ -20,7 +20,10 @@ export ORA_NLSZZ=$ORACLE_HOME/nls/data
 PATH=${PATH}:$HOME/bin:$ORACLE_HOME/bin:$GRID_HOME/bin
 PATH=${PATH}:/usr/bin:/bin:/usr/bin/X11:/usr/local/bin
 PATH=${PATH}:$ORCL_ROOT/app/common/oracle/bin
-PATH=${PATH}:$ORCL_ROOT/app/oracle/12.1.0.2/dbhome_1/OPatch
+PATH=${PATH}:$ORCL_ROOT/app/oracle/RELEASE_ORACLE/dbhome_1/OPatch
+PATH=${PATH}:$ORACLE_HOME/jdk/bin
+# 12c sqlcl ne fonctionne pas.
+PATH=${PATH}:$ORACLE_HOME/sqldeveloper/sqlcl/bin
 export PATH
 
 LD_LIBRARY_PATH=$ORACLE_HOME/lib
@@ -28,8 +31,7 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$ORACLE_HOME/oracm/lib
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/lib:/usr/lib:/usr/local/lib
 export LD_LIBRARY_PATH
 
-CLASSPATH=$ORACLE_HOME/JRE
-CLASSPATH=${CLASSPATH}:$ORACLE_HOME/jlib
+CLASSPATH=$ORACLE_HOME/jlib
 CLASSPATH=${CLASSPATH}:$ORACLE_HOME/rdbms/jlib
 CLASSPATH=${CLASSPATH}:$ORACLE_HOME/network/jlib
 export CLASSPATH
@@ -67,6 +69,8 @@ alias ll='ls -rtl'
 alias sugrid='sudo -u grid -i'
 
 . rlwrap.alias
+
+export SQLPATH=~/plescripts/db/sql
 
 alias lsdiag="sp @\"$HOME/db/sql/lsdiag\""
 alias lspdbs="sp @\"$HOME/db/sql/lspdbs\""
