@@ -82,11 +82,18 @@ LN
 if [ $disks_hosted_by == san ]
 then
 	line_separator
+	info "Update lvm conf (Datera preco)"
+	exec_cmd 'sed -i "s/write_cache_state =.*/write_cache_state = 0/" /etc/lvm/lvm.conf'
+	exec_cmd 'sed -i "s/readahead =.*/readahead = \"none\"/" /etc/lvm/lvm.conf'
+	LN
+
+	line_separator
 	info "Create VG asm01 on first unused disk :"
-	exec_cmd ~/plescripts/san/create_vg.sh	\
-							-device=auto	\
-							-vg=asm01		\
-							-add_partition=no
+	exec_cmd ~/plescripts/san/create_vg.sh		\
+							-device=auto		\
+							-vg=asm01			\
+							-add_partition=no	\
+							-io_scheduler=cfq
 	LN
 
 	line_separator
