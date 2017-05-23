@@ -9,14 +9,16 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
-	[-device=<str>] Nom du disque à utiliser, par exemple sdb ou auto.
-	[-vg=<str>]     Nom du VG à créer, par exemple asm01.
+	-device=name         Nom du disque à utiliser, par exemple sdb ou auto.
+	-vg=name             Nom du VG à créer, par exemple asm01.
+	[-io_scheduler=none] noop|deadline|cfq create udev rule for device
 "
 
 script_banner $ME $*
 
 typeset	device=undef
 typeset vg=undef
+typeset io_scheduler=none
 
 while [ $# -ne 0 ]
 do
@@ -37,6 +39,11 @@ do
 			shift
 			;;
 
+		-io_scheduler=*)
+			io_scheduler=$(to_lower ${1##*=})
+			shift
+			;;
+
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -54,6 +61,8 @@ done
 
 exit_if_param_undef device	"$str_usage"
 exit_if_param_undef vg		"$str_usage"
+
+exit_if_param_invalid io_scheduler "none noop deadline cfq" "$str_usage"
 
 #	exit if device $1 not exists
 function exit_if_device_not_exists
@@ -102,6 +111,14 @@ then
 	device=${device##*/}
 	info "Disk found : $device"
 	LN
+fi
+
+if [ $io_scheduler != none ]
+then
+	line_separator
+	exec_cmd ~/plescripts/disk/create_udev_rule_io_scheduler.sh		\
+											-device_list=$device	\
+											-io_scheduler=$io_scheduler
 fi
 
 line_separator
