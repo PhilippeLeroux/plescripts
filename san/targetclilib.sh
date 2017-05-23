@@ -1,4 +1,3 @@
-
 # vim: ts=4:sw=4
 #/bin/bash
 
@@ -6,7 +5,7 @@
 
 #
 typeset		working_vg=no_vg_define
-typeset -r	backstore_type=block
+typeset	-r	backstore_type=block
 
 function set_targetcli_default_settings
 {
@@ -66,6 +65,7 @@ function create_iscsi_initiator
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute cache_dynamic_acls=0
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute demo_mode_write_protect=0
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute generate_node_acls=0
+	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute default_cmdsn_depth=64
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/portals/ create $l_portal
 
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/acls create $l_initiator_name
@@ -134,7 +134,7 @@ function create_lun
 	typeset -r disk_name=$(get_disk_name $1 $3)
 	typeset -r l_initiator_name=$2
 
-    exec_cmd -c targetcli /iscsi/$l_initiator_name/tpg1/luns/ create /backstores/$backstore_type/${disk_name} $1 true
+	exec_cmd -c targetcli /iscsi/$l_initiator_name/tpg1/luns/ create /backstores/$backstore_type/${disk_name} $1 true
 }
 
 #	$1	from
