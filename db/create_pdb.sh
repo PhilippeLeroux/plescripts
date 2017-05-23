@@ -140,12 +140,55 @@ exit_if_database_not_exists $db
 
 exit_if_ORACLE_SID_not_defined
 
+function sql_lspdbs
+{
+typeset query=\
+"select
+    i.instance_name
+,   case when c.name = upper( '$pdb' ) then '*'||c.name||'*' else c.name end name
+,   c.open_mode
+,	round( c.total_size / 1024 / 1024, 0 ) \"Size (Mb)\"
+,	c.recovery_status
+,	nvl(pss.state,'NOT SAVED') \"State\"
+from
+    gv\$containers c
+    inner join gv\$instance i
+        on  c.inst_id = i.inst_id
+	left join dba_pdb_saved_states pss
+		on	c.con_uid = pss.con_uid
+		and	c.guid = pss.guid
+order by
+    c.name
+,   i.instance_name;"
+
+	echo "set lines 150"
+	echo "col instance_name	for	a10		head \"Instance\""
+	echo "col name			for	a12		head \"PDB name\""
+	echo "col open_mode					head \"Open mode\""
+	echo "$query"
+}
+
+function print_pdbs_status
+{
+	info "Primary $db status :"
+	sqlplus_cmd "$(sql_lspdbs)"
+	LN
+
+	if [ $dataguard == yes ]
+	then
+		info "Standby $stby_name status :"
+		typeset conn_string="sys/$oracle_password@$stby_name as sysdba"
+		sqlplus_cmd_with $conn_string "$(sql_lspdbs)"
+		LN
+	fi
+}
+
 function clone_pdb_pdbseed
 {
 	function ddl_create_pdb
 	{
 		set_sql_cmd "whenever sqlerror exit 1;"
-		set_sql_cmd "create pluggable database $pdb admin user $admin_user identified by $admin_pass;"
+		set_sql_cmd "create pluggable database $pdb admin user $admin_user identified by $admin_pass standbys=all;"
 	}
 	sqlplus_cmd "$(ddl_create_pdb)"
 	[ $? -ne 0 ] && exit 1 || true
@@ -166,7 +209,7 @@ function clone_from_pdb
 			set_sql_cmd "alter pluggable database $1 close immediate instances=all;"
 			set_sql_cmd "alter pluggable database $1 open read only instances=all;"
 		fi
-		set_sql_cmd "create pluggable database $pdb from $1;"
+		set_sql_cmd "create pluggable database $pdb from $1 standbys=all;"
 		if [ $dataguard == yes ]
 		then
 			set_sql_cmd "alter pluggable database $1 close immediate instances=all;"
@@ -183,38 +226,36 @@ function clone_from_pdb
 	[ $? -ne 0 ] && exit 1 || true
 }
 
-# Primary database : no parameter
-# Physical database : -physical
-function pdb_seed_ro_and_save_state
+# $1 pdb name
+# Attention pour pouvoir ouvrir en RO un pdb, il doit d'abord avoir été ouvert
+# en RW.
+function pdb_seed_open_read_only
 {
+	typeset pdb_name=$1
 	#	Sur un dataguard le PDB doit être ouvert pour être clonable.
 	#	Il sera donc un RO comme PDB$SEED.
-	#	Il n'a pas de services, donc son état doit être sauvegardé sur toutes
-	#	les bases d'un dataguard.
-	set_sql_cmd "alter pluggable database $pdb close instances=all;"
+	set_sql_cmd "alter pluggable database $pdb_name close instances=all;"
 	set_sql_cmd "whenever sqlerror exit 1;"
-	if [ "$1" != -physical ]
-	then
-		set_sql_cmd "alter pluggable database $pdb open read write instances=all;"
-		set_sql_cmd "alter pluggable database $pdb close instances=all;"
-	fi
-	set_sql_prompt "Open seed pdb $pdb RO and save state"
-	set_sql_cmd "alter pluggable database $pdb open read only instances=all;"
-	set_sql_cmd "alter pluggable database $pdb save state instances=all;"
+
+	set_sql_prompt "Open seed pdb $pdb_name RO"
+	set_sql_cmd "alter pluggable database $pdb_name open read only instances=all;"
 }
 
 function create_database_trigger_no_crs
 {
-	info "Create trigger open_stby_pdbs_ro"
+	info "Create trigger open_stby_pdbs_ro (open pdbs RO on standby)"
 	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_open_stby_pdbs_ro.sql")"
 	LN
 
 	typeset pdbconn="sys/$oracle_password@localhost:1521/$pdb as sysdba"
 	info "Create trigger start_pdb_services"
-	sqlplus_cmd_with "$pdbconn"  "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
+	sqlplus_cmd_with "$pdbconn"	\
+		"$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
 	LN
 }
 
+# TODO : utiliser 'service_name_convert' de 'create pluggable ....' ??  et avec
+# le CRS sa donne quoi ??
 function create_pdb_services
 {
 	if [[ $crs_used == no ]]
@@ -300,6 +341,14 @@ function create_wallet
 	fi
 }
 
+# $1 pdb name
+function open_pdb_and_save_state
+{
+	typeset pdb_name=$1
+	set_sql_cmd "alter pluggable database $pdb_name open instances=all;"
+	set_sql_cmd "alter pluggable database $pdb_name save state;"
+}
+
 [ $is_seed == yes ] && wallet=no || true
 
 typeset	-r dataguard=$(dataguard_config_available)
@@ -351,29 +400,20 @@ then
 	LN
 fi
 
-if [ $is_seed == yes ]
-then
-	info "Open RO $pdb and save state."
-	sqlplus_cmd "$(pdb_seed_ro_and_save_state)"
-	LN
-else
-	function open_pdb_and_save_state
-	{
-		set_sql_cmd "alter pluggable database $pdb open instances=all;"
-		set_sql_cmd "alter pluggable database $pdb save state;"
-	}
-	info "Open RW $pdb and save state."
-	sqlplus_cmd "$(open_pdb_and_save_state)"
-	LN
-
-	create_pdb_services
-fi
+info "Open RW $db[$pdb] and save state."
+# Pour ouvrir un PDB RO il faut d'abord l'ouvrir en RW, sinon l'ouverture échoue.
+# si $is_seed == yes l'ouverture de la base en RO ne posera pas de problème.
+sqlplus_cmd "$(open_pdb_and_save_state $pdb)"
+LN
 
 if [[ $dataguard == yes && ${#physical_list[*]} -ne 0 ]]
 then
 	function add_temp_tbs_to
 	{
-		set_sql_cmd "alter session set container=$1;"
+		typeset _pdb=$1
+		set_sql_cmd "alter pluggable database $_pdb open read only instances=all;"
+		set_sql_cmd "whenever sqlerror exit 0;"
+		set_sql_cmd "alter session set container=$_pdb;"
 		set_sql_cmd "alter tablespace temp add tempfile;"
 	}
 
@@ -381,25 +421,29 @@ then
 	info "12c : temporary tablespace not created on standby."
 	for stby_name in ${physical_list[*]}
 	do
-		sqlplus_cmd_with sys/$oracle_password@$stby_name as sysdba	\
-											"$(add_temp_tbs_to $pdb)"
-		if [ $is_seed == yes ]
-		then
-			sqlplus_cmd_with sys/$oracle_password@$stby_name as sysdba	\
-								"$(pdb_seed_ro_and_save_state -physical)"
-		fi
+		typeset conn_string="sys/$oracle_password@$stby_name as sysdba"
+		sqlplus_cmd_with $conn_string "$(add_temp_tbs_to $pdb)"
 		LN
 	done
 fi
+
+if [ $is_seed == yes ]
+then
+	info "Open read only seed : $db[$pdb]"
+	sqlplus_cmd "$(pdb_seed_open_read_only $pdb)"
+	LN
+fi
+
+print_pdbs_status
+
+[ $is_seed == no ] && create_pdb_services || true
 
 [ $wallet == yes ] && create_wallet || true
 
 if [ $sampleSchema == yes ]
 then
-	info "Create sample schemas on $pdb"
-	exec_cmd ~/plescripts/db/create_sample_schemas.sh	\
-						-db=$db							\
-						-pdb=$pdb
+	info "Create sample schemas on $db[$pdb]"
+	exec_cmd ~/plescripts/db/create_sample_schemas.sh -db=$db -pdb=$pdb
 	LN
 fi
 
@@ -417,8 +461,10 @@ group by
 	name
 ;"
 
-info "$pdb violations"
+info "$db[$pdb] violations"
 sqlplus_print_query "$violations"
 LN
+
+[ $is_seed == no ] && print_pdbs_status || true
 
 [ $log == yes ] && script_stop ${ME##*/} || true
