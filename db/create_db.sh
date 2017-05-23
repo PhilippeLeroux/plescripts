@@ -520,9 +520,13 @@ function next_instructions
 		then
 			info "From virtual-host $client_hostname execute :"
 			info "$ cd ~/plescripts/database_servers"
-			typeset params
-			[ $crs_used == no ] && params="-storage=FS" || true
-			info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db) -rel=$orcl_release $params"
+			typeset params="-rel=$orcl_release"
+			[ $crs_used == no ] && params="$params -storage=FS" || true
+			if [ $disks_hosted_by != $cfg_luns_hosted_by ]
+			then
+				params="$params -luns_hosted_by=$cfg_luns_hosted_by"
+			fi
+			info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db) $params"
 			LN
 		fi
 	fi
@@ -601,7 +605,7 @@ then
 	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
 	LN
 else
-	typeset -i disk_size=$(to_mb $(df -h /$ORCL_FRA_FS_DISK | tail -1 | awk '{ print $2 }'))
+	typeset -i disk_size=$(df --block-size=$((1024*1024)) /$ORCL_FRA_FS_DISK | tail -1 | awk '{ print $2 }')
 	typeset -i fra_size=$(compute -i "$disk_size * 0.9")
 	sqlplus_cmd "$(set_sql_cmd "alter system set db_recovery_file_dest_size=${fra_size}M scope=both sid='*';")"
 	LN
