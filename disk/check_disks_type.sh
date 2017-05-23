@@ -74,8 +74,8 @@ do
 						;;
 					LVM2_member)
 						LN
-						info "\tlsblk $part_name"
-						lsblk $part_name | sed "s/^/\t\t/g"
+						info "\tlsblk -t $part_name"
+						lsblk -t $part_name | sed "s/^/\t/g"
 						;;
 					*)
 						LN
@@ -89,8 +89,8 @@ do
 		elif [ $afdonly == no ]
 		then
 			info "disk $disk $(fmt_bytesU_2_better $size_b) type $type"
-			info "\tlsblk $disk"
-			lsblk $disk | sed "s/^/\t\t/g"
+			info "\tlsblk -t $disk"
+			lsblk -t $disk | sed "s/^/\t/g"
 		else
 			continue	# pour éviter le LN
 		fi
