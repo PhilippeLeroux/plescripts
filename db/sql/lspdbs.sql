@@ -1,8 +1,9 @@
 -- vim: ts=4:sw=4
-set lines 150
+set lines 130
 col	instance_name	for	a10		head "Instance"
 col	name			for	a12		head "PDB name"
 col	open_mode					head "Open mode"
+col recovery_status				head "Reco status"
 select
     i.instance_name
 ,   c.name
@@ -10,7 +11,6 @@ select
 ,	to_char( c.open_time, 'YY/MM/DD HH24:MI' ) "Open time"
 ,	round( c.total_size / 1024 / 1024, 0 ) "Size (Mb)"
 ,	c.recovery_status
-,	c.restricted
 ,	nvl(pss.state,'NOT SAVED') "State"
 from
     gv$containers c
