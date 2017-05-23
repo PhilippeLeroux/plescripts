@@ -80,7 +80,8 @@ typeset db_role="$(read_database_role $db)"
 
 while read service_name
 do
-	[ x"$service_name" == x ] && continue || true
+	[[ x"$service_name" == x || "$service_name" == dba_services ]]	\
+														&& continue || true
 
 	function sql_drop_service
 	{
