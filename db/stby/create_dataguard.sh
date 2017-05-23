@@ -655,8 +655,13 @@ function configure_dataguard
 
 	# Remarque : si la base n'est pas en 'Real Time Query' relancer la base
 	# pour que le 'temporary file' soit crée.
+	function open_ro
+	{
+		set_sql_cmd "alter database open read only;"
+		set_sql_cmd "alter pluggable database all open;"
+	}
 	info "Open read only $standby for Real Time Query"
-	sqlplus_cmd_on_stby "$(set_sql_cmd "alter database open read only;")"
+	sqlplus_cmd_on_stby "$(open_ro)"
 	LN
 }
 
@@ -1056,24 +1061,8 @@ exec_cmd -c "scp	$ORACLE_HOME/sqlplus/admin/glogin.sql	\
 					$standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
 LN
 
-if [ $crs_used == no ]
-then
-	line_separator
-	info "Restart Physical standby database $standby"
-	function restart_db
-	{
-		set_sql_cmd "shu immediate"
-		set_sql_cmd "startup"
-	}
-	sqlplus_cmd_on_stby "$(restart_db)"
-	LN
-
-	timing 10 "Waiting database synchronisation"
-	LN
-else
-	timing 20 "Waiting database synchronisation"
-	LN
-fi
+timing 20 "Waiting database synchronisation"
+LN
 
 exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
 
