@@ -544,8 +544,21 @@ function disable_cgroup_memory
 	ssh_server "$sed_cmd"
 	LN
 
-	ssh_server "~/plescripts/grub2/grub2_mkconfig.sh"
-	LN
+	if [ "$ol7_kernel_version" == latest ]
+	then
+		ssh_server "~/plescripts/grub2/grub2_mkconfig.sh"
+		LN
+	else
+		ssh_server -c "~/plescripts/database_servers/install_kernel.sh	\
+												-version=$ol7_kernel_version"
+		if [ $? -ne 0 ]
+		then
+			ssh_server "~/plescripts/grub2/grub2_mkconfig.sh"
+			LN
+		else
+			LN
+		fi
+	fi
 }
 
 function copy_color_file

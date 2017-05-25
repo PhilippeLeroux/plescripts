@@ -14,11 +14,14 @@ typeset -r parameters_usage="$(print_usage)"
 reset_usage
 
 add_usage "ORACLE_RELEASE=${ORACLE_RELEASE:-$oracle_release}"	"*12.1.0.2*|12.2.0.1"
+
 add_usage new_line
-add_usage "ORCL_YUM_REPOSITORY_RELEASE=${ORCL_YUM_REPOSITORY_RELEASE:-$orcl_yum_repository_release}" "*R3*|R4 Oracle Linux 7 repository"
+add_usage "ORCL_YUM_REPOSITORY_RELEASE=${ORCL_YUM_REPOSITORY_RELEASE:-$orcl_yum_repository_release}"	"*R3*|R4 Oracle Linux 7 repository"
+add_usage "OL7_KERNEL_VERSION=${OL7_KERNEL_VERSION:-$ol7_kernel_version}"								"latest or kernel version, only for BDD servers"
+
+add_usage new_line
 case "$ORACLE_RELEASE" in
 	12.1*)
-		add_usage new_line
 		add_usage "VM_MEMORY_MB_FOR_SINGLE_DB_121=${VM_MEMORY_MB_FOR_SINGLE_DB_121:-$vm_memory_mb_for_single_db}"	"VM memory for SINGLE DB 12.1"
 		add_usage "VM_NR_CPUS_FOR_SINGLE_DB_121=${VM_NR_CPUS_FOR_SINGLE_DB_121:-$vm_nr_cpus_for_single_db}"			"VM #cpu for SINGLE DB 12.1"
 		add_usage new_line
@@ -26,7 +29,6 @@ case "$ORACLE_RELEASE" in
 		add_usage "VM_NR_CPUS_FOR_RAC_DB_121=${VM_NR_CPUS_FOR_RAC_DB_121:-$vm_nr_cpus_for_rac_db}"					"VM #cpu for RAC DB 12.1"
 		;;
 	12.2*)
-		add_usage new_line
 		add_usage "VM_MEMORY_MB_FOR_SINGLE_DB_122=${VM_MEMORY_MB_FOR_SINGLE_DB_122:-$vm_memory_mb_for_single_db}"	"VM memory for SINGLE DB 12.2"
 		add_usage "VM_NR_CPUS_FOR_SINGLE_DB_122=${VM_NR_CPUS_FOR_SINGLE_DB_122:-$vm_nr_cpus_for_single_db}"			"VM #cpu for SINGLE DB 12.2"
 		add_usage new_line
@@ -34,6 +36,7 @@ case "$ORACLE_RELEASE" in
 		add_usage "VM_NR_CPUS_FOR_RAC_DB_122=${VM_NR_CPUS_FOR_RAC_DB_122:-$vm_nr_cpus_for_rac_db_122}"				"VM #cpu for RAC DB 12.2"
 		;;
 esac
+
 add_usage new_line
 add_usage "VM_PATH=${VM_PATH:-$vm_path}" "Where to create VM"
 typeset -r vm_params="$(print_usage)"
@@ -116,6 +119,7 @@ case $var in
 	ORACLE_RELEASE) ;;
 
 	ORCL_YUM_REPOSITORY_RELEASE) ;;
+	OL7_KERNEL_VERSION) ;;
 
 	VM_MEMORY_MB_FOR_SINGLE_DB_121) ;;
 	VM_MEMORY_MB_FOR_RAC_DB_121) ;;

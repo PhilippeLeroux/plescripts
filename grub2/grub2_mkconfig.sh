@@ -8,8 +8,12 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME
+	[-version=version like -version=3.8.13-118.17.5, default latest
+
 	Generate grub config file.
 "
+
+typeset version=latest
 
 while [ $# -ne 0 ]
 do
@@ -19,8 +23,8 @@ do
 			shift
 			;;
 
-		-db=*)
-			db=${1##*=}
+		-version=*)
+			version=${1##*=}
 			shift
 			;;
 
@@ -53,9 +57,25 @@ info "Search kernel UEK"
 #	saved_entry=Oracle Linux Server 7.3, with Unbreakable Enterprise Kernel 3.8.13-118.15.1.el7uek.x86_64
 
 #	Le premier kernel UEK est celui à utiliser.
-UEK=$(grep -E "^menuentry.*Unbreakable Enterprise Kernel.*" /boot/grub2/grub.cfg | cut -d\' -f2 | head -1)
+if [ "$version" == latest ]
+then
+	info "Enable latest kernel"
+	UEK=$(grep -E "^menuentry.*Unbreakable Enterprise Kernel.*" /boot/grub2/grub.cfg | cut -d\' -f2 | head -1)
+	LN
+else
+	info "Enable kernel $version"
+	UEK=$(grep -E "^menuentry.*Unbreakable Enterprise Kernel.*${version}*" /boot/grub2/grub.cfg | cut -d\' -f2 | head -1)
+	if [ x"$UEK" == x ]
+	then
+		error "Kernel '$version' not installed ?"
+		exec_cmd "yum list kernel-uek"
+		LN
+		exit 1
+	fi
+	LN
+fi
+
 info "boot on $UEK"
-#	C'est déjà celui par défaut, mais il faut quand même le préciser.
 exec_cmd "grub2-set-default '$UEK'"
 LN
 
