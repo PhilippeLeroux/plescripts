@@ -170,5 +170,5 @@ do
 				LN
 			fi
 		fi
-	done<<<"$(find $vm_path2 -name "*.vdi" 2>/dev/null)"
+	done<<<"$(find "$vm_path2" -name "*.vdi" 2>/dev/null)"
 done<<<"$(read_all_vm_paths)"
