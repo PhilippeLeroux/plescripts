@@ -113,14 +113,6 @@ then
 	LN
 fi
 
-if [ $io_scheduler != none ]
-then
-	line_separator
-	exec_cmd ~/plescripts/disk/create_udev_rule_io_scheduler.sh		\
-											-device_list=$device	\
-											-io_scheduler=$io_scheduler
-fi
-
 line_separator
 info "Create VG $vg on device $device"
 line_separator
@@ -143,3 +135,10 @@ info "New size :"
 exec_cmd "vgs $vg"
 LN
 
+if [ $io_scheduler != none ]
+then
+	line_separator
+	exec_cmd ~/plescripts/disk/create_udev_rule_io_scheduler.sh		\
+											-device_list=$device	\
+											-io_scheduler=$io_scheduler
+fi

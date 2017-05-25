@@ -85,6 +85,3 @@ LN
 
 timing 5
 LN
-device_list=$(sed "s/ /|/g"<<<$device_list)
-exec_cmd "lsblk -t|grep -E \"$device_list\""
-LN

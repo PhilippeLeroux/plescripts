@@ -74,8 +74,6 @@ exec_cmd nmcli connection modify			$if_net_name	\
 LN
 update_value UUID	$(uuidgen $if_net_name)	$if_net_file
 LN
-exec_cmd ifup $if_net_name
-LN
 
 line_separator
 info "Create links on frequently used directories"

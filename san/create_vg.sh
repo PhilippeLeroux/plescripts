@@ -137,13 +137,6 @@ LN
 
 device=/dev/$device
 
-if [ $io_scheduler != none ]
-then
-	exec_cmd ~/plescripts/disk/create_udev_rule_io_scheduler.sh		\
-											-device_list=$device	\
-											-io_scheduler=$io_scheduler
-fi
-
 if [ $add_partition == yes ]
 then
 	add_partition_to $device
@@ -161,3 +154,10 @@ LN
 
 exec_cmd "vgdisplay $vg"
 LN
+
+if [ $io_scheduler != none ]
+then
+	exec_cmd ~/plescripts/disk/create_udev_rule_io_scheduler.sh		\
+											-device_list=$device	\
+											-io_scheduler=$io_scheduler
+fi
