@@ -69,7 +69,7 @@ then
 	error "LV errors : $lv_errors"
 	LN
 
-	exec_cmd abrt-cli list
+	exec_cmd -c abrt-cli list
 	LN
 
 	restart_target
