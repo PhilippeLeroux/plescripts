@@ -3,13 +3,15 @@
 Les scripts doivent être exécutés depuis le serveur K2 dans le répertoire ~/plescripts/dns
 et avec le compte root.
 
-__Scripts pouvant être utiles :__
+__Ajout/suppression de serveurs :__
 
 *	Visualiser tous les serveurs enregistrés dans le DNS : `./show_dns.sh`
 
-*	Supprimer toutes les IPs d'un serveur, ex :`./remove_db_from_dns.sh -db=babar`
+*	Ajouter un serveur : `./add_server_2_dns.sh -name=srvtchourie01 -ip_node=110`
 
-*	Supprime un serveur du DNS : `./remove_server.sh -name=<server_name>`
+*	Supprimer toutes les IPs d'un serveur, ex :`./remove_db_from_dns.sh -db=tchourie`
+
+*	Supprime un serveur du DNS : `./remove_server.sh -name=srvtchourie01`
 
 --------------------------------------------------------------------------------
 

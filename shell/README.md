@@ -52,7 +52,7 @@
 	
 	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/monitor_io_rac.png)
 	
-- show_grid_status -db=<str> ou base définie par set_db
+- lscrs -db=<str> ou base définie par set_db
 
 	Appel de crsclt stat res -t, dans le cas d'un RAC utilise l'adresse de SCAN.
 

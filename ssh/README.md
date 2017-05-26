@@ -1,15 +1,17 @@
 ### Liste des équivalences ssh.
 
-L'utilisateur local du client/serveur host a une équivalence avec les comptes root des
+`virtual-host` est le poste exécutant VirtualBox
+
+L'utilisateur local du virtual-host a une équivalence avec les comptes root des
 VMs :
 * K2
-* nfsorclmaster
+* orclmaster
 
-nfsorclmaster est cloné pour tout nouveau serveur Oracle, le fichier 'know_host'
+orclmaster est cloné pour tout nouveau serveur Oracle, le fichier `know_host`
 est mis à jour pour que l'équivalence reste valide.
 
 Lors de la configuration du serveur Oracle une équivalence ssh est établie entre
-l'utilisateur local du client/serveur host avec les comptes oracle et grid.
+l'utilisateur local du virtual-host avec les comptes oracle et grid.
 
 Liste des équivalences ssh :
 
@@ -32,7 +34,7 @@ le compte root du serveur K2.
 	Effectue les équivalences SSH entre l'utilisateur local et les comptes root,
 	grid et oracle d'un serveur.
 
-	Doit être exécuté depuis le client/serveur host.
+	Doit être exécuté depuis le virtual-host.
 
 *	make_ssh_user_equivalence_with.sh
 
@@ -43,7 +45,7 @@ le compte root du serveur K2.
 
 	Effectue les équivalences SSH entre un utilisateur de 2 VMs.
 
-	Le script doit être lancé depuis le client/serveur host qui a déjà une équivalence
+	Le script doit être lancé depuis le virtual-host qui a déjà une équivalence
 	avec l'utilisateur root des 2 VMs. Aucun mot de passe ne sera donc demandé.
 
 *	setup_rac_ssh_equivalence.sh
@@ -51,7 +53,7 @@ le compte root du serveur K2.
 	Effectue toutes les équivalences SSH pour les utilisateurs root, grid et oracle
 	nécessaires pour des VMs en RAC.
 	
-	Le script doit être lancé depuis le client/serveur host qui a déjà une équivalence
+	Le script doit être lancé depuis le virtual-host qui a déjà une équivalence
 	avec l'utilisateur root des 2 VMs. Aucun mot de passe ne sera donc demandé.
 
 
@@ -74,10 +76,10 @@ le compte root du serveur K2.
 
 	Supprime les équivalences SSH pour les utilisateurs root, grid et oracle.
 
-	Doit être exécuté depuis le client/serveur host.
+	Doit être exécuté depuis le virtual-host.
 
 *	cleaning_known_hosts.sh
 
-	Nettoie le fichier .know_hosts du client/serveur host. Compare les serveurs
-	présents dans .know_hosts et le DNS, si un serveur est présent dans .know_hosts
-	mais pas dans le DNS il est alors supprimé de .know_hosts.
+	Nettoie le fichier `.know_hosts` du virtual-host. Compare les serveurs
+	présents dans `.know_hosts` et le DNS, si un serveur est présent dans `.know_hosts`
+	mais pas dans le DNS il est alors supprimé de `.know_hosts`.
