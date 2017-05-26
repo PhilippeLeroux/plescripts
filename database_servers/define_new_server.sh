@@ -397,15 +397,6 @@ then
 	fi
 fi
 
-if [[ $rel == "12.2" && $max_nodes -gt 1 ]]
-then
-	if [[ $OH_FS != ocfs2 ]]
-	then
-		warning "Advice with RAC $rel add option : -OH_FS=ocfs2"
-		LN
-	fi
-fi
-
 typeset -i	nodes=1
 typeset		type=single
 typeset	-i	mem=$vm_memory_mb_for_single_db
