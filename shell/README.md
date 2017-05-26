@@ -24,7 +24,9 @@
 
 - oracle_logs -db=<str>	ou base définie par set_db
 
-	Afficher le ou les fichiers d'alertlog Oracle.
+	Visualiser le fichier d'alertlog Oracle :
+	* Pour un RAC l'alertlog du serveur 1 est en haut et l'alertlog du serveur 2 en bas.
+	* Si la base est en Dataguard le fichier de log du broker est affiché en dessous de l'alertlog de la base.
 
 	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/oracle_logs.png)
 
