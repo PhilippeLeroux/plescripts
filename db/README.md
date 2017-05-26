@@ -1,3 +1,7 @@
+#### Création d'un base de donnée
+
+[Instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-d'une-base-de-donn%C3%A9e)
+
 #### PDB
 
 * [Création d'un PDB](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-d'un-PDB)
@@ -19,5 +23,11 @@
 * [Convertir une Physical standby en Primary](https://github.com/PhilippeLeroux/plescripts/wiki/convert_stby)
 
 * [Mémo création Dataguard base sur FS](https://github.com/PhilippeLeroux/plescripts/wiki/M%C3%A9mo-cr%C3%A9ation-stby-sur-FS)
+
+--------------------------------------------------------------------------------
+
+#### DBFS
+
+* [Configuration d'un DBFS](https://github.com/PhilippeLeroux/plescripts/wiki/dbfs)
 
 
