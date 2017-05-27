@@ -140,11 +140,11 @@ exit_if_param_invalid storage "ASM FS" "$str_usage"
 
 exit_if_param_invalid OH_FS "ocfs2 $rdbms_fs_type" "$str_usage"
 
-if [[ $OH_FS != $rdbms_fs_type && $max_nodes -eq 1 ]]
+if [[ $max_nodes -eq 1 ]]
 then
-	error  "ORACLE_HOME on $OH_FS only for RAC."
-	LN
-	exit 1
+	OH_FS=$rdbms_fs_type
+else # sinon RAC.
+	[ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
 fi
 
 function validate_config

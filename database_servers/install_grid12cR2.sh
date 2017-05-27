@@ -310,7 +310,7 @@ function start_grid_installation
 	# Parfois le link échoue : favorise le swap
 	info "Adjust swappiness for link step."
 	typeset -r vm_swappiness=$(ssh root@${node_names[0]} 'sysctl -n vm.swappiness')
-	exec_cmd "ssh root@${node_names[0]} 'sysctl -w vm.swappiness=60'"
+	exec_cmd "ssh root@${node_names[0]} 'sysctl -w vm.swappiness=90'"
 	LN
 	
 	line_separator

@@ -7,7 +7,9 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Ne pas utiliser ce script directement."
+"Ne pas utiliser ce script directement mais :
+./uninstall.sh -oracle
+"
 
 script_banner $ME $*
 
@@ -49,6 +51,11 @@ EOS
 fi
 LN
 
+line_separator
+exec_cmd "rm -rf ${ORACLE_BASE%/*}/oraInventory"
+exec_cmd "rm -rf $ORACLE_HOME/*"
+LN
+
 if test_if_cmd_exists olsnodes
 then
 	# En 12.2 l'ORACLE_HOME des autres nœuds ne sont pas supprimés.
@@ -56,7 +63,8 @@ then
 	do
 		[[ x"$node" == x || "$node" == $(hostname -s) ]] && continue || true
 
-		exec_cmd "ssh $node '. .bash_profile && [ -d \$ORACLE_HOME ] && rm -rf \$ORACLE_HOME/* || true'<</dev/null"
+		exec_cmd "ssh $node '. .bash_profile && rm -rf ${ORACLE_BASE%/*}/oraInventory || true'</dev/null"
+		exec_cmd "ssh $node '. .bash_profile && rm -rf $ORACLE_HOME/* || true'</dev/null"
 		LN
 	done<<<"$(olsnodes)"
 fi
