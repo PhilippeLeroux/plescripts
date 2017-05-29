@@ -97,7 +97,7 @@ chmod u+x /tmp/stop_orcl.sh
 exec_cmd -c "su - oracle -c /tmp/stop_orcl.sh"
 LN
 
-pid_list="$(ps -ef|grep -iE "[o]ra_pmon_${ds}"|\
+pid_list="$(ps -ef|grep -iE "[o]ra_pmon_${db}"|\
 					tr -s [:space:] | cut -d\  -f2 | xargs)"
 if [ x"$pid_list" != x ]
 then
@@ -118,7 +118,7 @@ oracle_rm_5="su - oracle -c \"rm -rf \\\$TNS_ADMIN/tnsnames.ora\""
 oracle_rm_6="su - oracle -c \"rm -rf \\\$TNS_ADMIN/listener.ora\""
 oracle_rm_7="su - oracle -c \"rm -rf \\\$TNS_ADMIN/sqlnet.ora\""
 
-clean_oratab_cmd1="sed  \"/$db[_|0-9]\{0,1\}.*/d\" /etc/oratab > /tmp/oratab"
+clean_oratab_cmd1="sed  \"/${db:0:8}[_|0-9]\{0,1\}.*/d\" /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
 
 execute_on_all_nodes "$oracle_rm_1"

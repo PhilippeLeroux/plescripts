@@ -57,8 +57,8 @@ LN
 
 typeset -r DATA="$(orcl_parameter_value "db_create_file_dest")"
 
-typeset -r db_name="$(orcl_parameter_value "db_name")"
-typeset -r snap=$DATA/$db_name/snapshot_ctrl_file.f
+typeset -r db_unique_name="$(orcl_parameter_value "db_unique_name")"
+typeset -r snap=$DATA/$db_unique_name/snapshot_ctrl_file.f
 
 exec_cmd "rman target sys/$oracle_password	\
 				@rman/set_config.rman using \"'$snap'\""
