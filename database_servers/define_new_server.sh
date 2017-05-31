@@ -130,6 +130,20 @@ exit_if_param_invalid rel "12.1 12.2" "$str_usage"
 
 exit_if_param_undef db	"$str_usage"
 
+if [ ${#db} -gt 8 ]
+then
+	error "db $db exceed 8 characteres."
+	LN
+	exit 1
+fi
+
+if [ ${#standby} -gt 8 ]
+then
+	error "Standby $standby exceed 8 characteres."
+	LN
+	exit 1
+fi
+
 exit_if_param_invalid storage "ASM FS" "$str_usage"
 
 [[ $max_nodes -gt 1 && $db_type != rac ]] && db_type=rac || true
