@@ -257,7 +257,7 @@ function must_be_executed_on_server
 	fi
 }
 
-#*> $1 user list (separator space) Ex : "root" or "root or grid"
+#*> $1 user list (separator space) Ex : "root" or "root grid"
 #*> exit 1 if curent user name is different.
 #*> Variable $ME must be initialised with $0 (name of the script)
 function must_be_user

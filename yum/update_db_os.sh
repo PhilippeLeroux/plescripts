@@ -9,7 +9,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME [-emul]
-	Database and crs are stopped, after update, server is bounced.
+	Database & crs are stopped, after update server is bounced.
 	Script must be executed on all members of cluster dataguard or RAC.
 "
 
@@ -46,14 +46,17 @@ function update_oracle_asm_configuration
 	LN
 }
 
+must_be_user root
+
 ple_enable_log
 
 script_banner $ME $*
 
-if ! test_if_cmd_exists crsctl
+if test_if_cmd_exists crsctl
 then
-	error "Work only with Grid Infra started..."
-	exit 1
+	typeset -r crs_used=yes
+else
+	typeset -r crs_used=no
 fi
 
 if ! test_if_rpm_update_available -show
@@ -69,10 +72,18 @@ then
 	info "Update : $gi_current_node"
 	LN
 
-	line_separator
-	info "Stop Grid Infra :"
-	exec_cmd "crsctl stop has"
-	LN
+	if [ $crs_used == yes ]
+	then
+		line_separator
+		info "Stop Grid Infra :"
+		exec_cmd "crsctl stop has"
+		LN
+	else
+		line_separator
+		info "Stop database :"
+		exec_cmd "su - oracle -c '~/plescripts/db/stop_db.sh'"
+		LN
+	fi
 
 	line_separator
 	info "update :"
