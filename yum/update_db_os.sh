@@ -40,35 +40,47 @@ done
 #	Donc elle est refaite par précaution.
 function update_oracle_asm_configuration
 {
+	if command_exists oracleasm
+	then
+		line_separator
+		info "Configure oracleasm :"
+		exec_cmd "~/plescripts/oracle_preinstall/configure_oracleasm.sh"
+		LN
+	fi
+}
+
+function reboot_server
+{
 	line_separator
-	info "Configure oracleasm :"
-	exec_cmd "~/plescripts/oracle_preinstall/configure_oracleasm.sh"
+	info "Reboot"
+	exec_cmd -c systemctl reboot
 	LN
 }
 
-must_be_user root
+function execute_yum_update
+{
+	line_separator
+	info "update :"
+	exec_cmd "yum -y update"
+	LN
+}
 
-ple_enable_log
+function check_module_vboxguest
+{
+	typeset -r guest=$(modinfo vboxguest -F vermagic 2>/dev/null|cut -d\  -f1)
 
-script_banner $ME $*
+	if [ x"$guest" != x ]
+	then
+		warning "Module vboxguest installed."
+		warning "From $client_hostname execute :"
+		warning "$ cd ~/plescripts/virtualbox/guest"
+		warning "$ ./test_guestadditions.sh -host=$(hostname -s)"
+		LN
+	fi
+}
 
-if test_if_cmd_exists crsctl
-then
-	typeset -r crs_used=yes
-else
-	typeset -r crs_used=no
-fi
-
-if ! test_if_rpm_update_available -show
-then
-	info "No update."
-	exit 0
-fi
-
-confirm_or_exit "Update available, update"
-
-if [ $gi_count_nodes -eq 1 ]
-then
+function update_standalone_server
+{
 	info "Update : $gi_current_node"
 	LN
 
@@ -85,21 +97,17 @@ then
 		LN
 	fi
 
-	line_separator
-	info "update :"
-	exec_cmd "yum -y update"
-	LN
+	execute_yum_update
 
-	if test_if_cmd_exists oracleasm
-	then
-		update_oracle_asm_configuration
-	fi
+	update_oracle_asm_configuration
 
-	line_separator
-	info "Reboot"
-	exec_cmd -c systemctl reboot
-	LN
-else
+	check_module_vboxguest
+
+	reboot_server
+}
+
+function update_cluster_server
+{
 	info "Update : $gi_current_node $gi_node_list"
 	LN
 
@@ -108,23 +116,45 @@ else
 	exec_cmd "crsctl stop crs"
 	LN
 
-	line_separator
-	exec_cmd "yum -y update"
-	LN
+	execute_yum_update
 
-	if test_if_cmd_exists oracleasm
-	then
-		update_oracle_asm_configuration
-	fi
+	update_oracle_asm_configuration
 
 	line_separator
-	info "Si des FS du type OCFS2 sont utilisés, mettre à jour la configuration."
+	info "Si OCFS2 est utilisé, mettre à jour la configuration."
 	LN
 	info "Mettre à jour les noeuds $gi_node_list"
 	LN
 
-	line_separator
-	info "Reboot"
-	exec_cmd -c systemctl reboot
-	LN
+	check_module_vboxguest
+
+	reboot_server
+}
+
+must_be_user root
+
+ple_enable_log
+
+script_banner $ME $*
+
+if command_exists crsctl
+then
+	typeset -r crs_used=yes
+else
+	typeset -r crs_used=no
+fi
+
+if ! test_if_rpm_update_available -show
+then
+	info "No update."
+	exit 0
+fi
+
+confirm_or_exit "Update available, update"
+
+if [ $gi_count_nodes -eq 1 ]
+then
+	update_standalone_server
+else
+	update_cluster_server
 fi
