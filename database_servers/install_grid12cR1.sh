@@ -346,12 +346,17 @@ function run_post_install_root_scripts_on_node	# $1 node# $2 server_name
 function print_manual_workaround
 {
 	typeset node_name=$1
-	info "Manual workaround"
-	info "> ssh root@${node_name}"
-	info "> $ORACLE_HOME/root.sh"
-	info "log $OK : ./install_grid12cR1.sh -db=$db -skip_grid_install -skip_root_scripts"
-	info "log $KO : reboot servers, wait crs up and"
-	info "$ ./install_grid12cR1.sh -db=$db -skip_grid_install"
+	info "Manual workaround, execute :"
+	LN
+
+	info "From $node_name :"
+	info "$ ssh root@${node_name}"
+	info "$ $ORACLE_HOME/root.sh"
+	info "$ exit"
+	LN
+
+	info "From $client_hostname :"
+	info "$ ./install_grid12cR1.sh -db=$db -skip_grid_install -skip_root_scripts"
 	LN
 }
 
