@@ -73,9 +73,6 @@ function ask_for_variable
 
 	[ x"$keyboard" != x ] && var_value="$keyboard"
 
-	#var_value=$(escape_anti_slash $var_value)
-	#var_value=$(escape_slash "$var_value")
-
 	eval "$var_name=$(echo -E '$var_value')"
 }
 
@@ -327,7 +324,6 @@ LN
 
 info "Configure repository OL7"
 exec_cmd "sed -i 's/infra_yum_repository_release=.*/infra_yum_repository_release=$ol7/g' ~/plescripts/global.cfg"
-exec_cmd "sed -i 's/master_yum_repository_release=.*/master_yum_repository_release=$ol7/g' ~/plescripts/global.cfg"
 exec_cmd "sed -i 's/orcl_yum_repository_release=.*/orcl_yum_repository_release=\${ORCL_YUM_REPOSITORY_RELEASE:-$ol7}/g' ~/plescripts/global.cfg"
 LN
 

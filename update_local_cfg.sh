@@ -16,7 +16,7 @@ reset_usage
 add_usage "ORACLE_RELEASE=${ORACLE_RELEASE:-$oracle_release}"	"*12.1.0.2*|12.2.0.1"
 
 add_usage new_line
-add_usage "ORCL_YUM_REPOSITORY_RELEASE=${ORCL_YUM_REPOSITORY_RELEASE:-$orcl_yum_repository_release}"	"*R3*|R4 Oracle Linux 7 repository"
+add_usage "ORCL_YUM_REPOSITORY_RELEASE=${ORCL_YUM_REPOSITORY_RELEASE:-$orcl_yum_repository_release}"	"latest|*R3*|R4 Oracle Linux 7 repository"
 add_usage "OL7_KERNEL_VERSION=${OL7_KERNEL_VERSION:-$ol7_kernel_version}"								"latest or kernel version, only for BDD servers"
 
 add_usage new_line
@@ -155,26 +155,27 @@ typeset -r local_cfg=~/plescripts/local.cfg
 
 [ ! -f $local_cfg ] && touch $local_cfg || true
 
-if [ $var == VM_PATH ]
-then
-	# Remplace ~ par HOME
-	value="${value/\~/$HOME}"
-	if [ ! -d "$value" ]
-	then
-		error "Directory '$value' not exists"
-		LN
-		exit 1
-	fi
-	# L'affectation doit se faire avec des 2x quotes pour les espaces & co.
-	value="\\\"$value\\\""
-fi
-
 if [ "$value" == remove ]
 then
 	info "Remove variable $var"
 	remove_value $var $local_cfg
 	LN
 else
+
+	if [ $var == VM_PATH ]
+	then
+		# Remplace ~ par HOME
+		value="${value/\~/$HOME}"
+		if [ ! -d "$value" ]
+		then
+			error "Directory '$value' not exists"
+			LN
+			exit 1
+		fi
+		# L'affectation doit se faire avec des 2x quotes pour les espaces & co.
+		value="\\\"$value\\\""
+	fi
+
 	info "Update $var = $value"
 	update_value $var "$value" "$local_cfg"
 	LN
