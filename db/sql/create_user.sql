@@ -73,3 +73,6 @@ begin
 	exec( 'grant select on v_$sql						to &username' );
 end;
 /
+
+prompt
+@create_role_plustrace.sql
