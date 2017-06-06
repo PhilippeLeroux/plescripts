@@ -26,8 +26,13 @@
 
 --------------------------------------------------------------------------------
 
+#### Ajout/suppression de disques à un DG.
+
+* [Ajout de disques](https://github.com/PhilippeLeroux/plescripts/wiki/Disk-Group-ajout-disque)
+* [Suppression de disques](https://github.com/PhilippeLeroux/plescripts/wiki/Disk-Group-suppression-disque)
+
+--------------------------------------------------------------------------------
+
 #### DBFS
 
 * [Configuration d'un DBFS](https://github.com/PhilippeLeroux/plescripts/wiki/dbfs)
-
-

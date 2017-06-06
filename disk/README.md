@@ -1,8 +1,8 @@
 Cette page décrit brièvement les scripts, pour avoir des informations plus fonctionnelles
 sur leur utilisation :
 
-* [Ajout de disques](https://github.com/PhilippeLeroux/plescripts/wiki/01-Ajout-de-disques-sur-des-DGs-Oracle)
-* [Suppression de disques](https://github.com/PhilippeLeroux/plescripts/wiki/02-Suppression-de-disques-sur-des-DGs-Oracle)
+* [Ajout de disques](https://github.com/PhilippeLeroux/plescripts/wiki/Disk-Group-ajout-disque)
+* [Suppression de disques](https://github.com/PhilippeLeroux/plescripts/wiki/Disk-Group-suppression-disque)
 
 --------------------------------------------------------------------------------
 
