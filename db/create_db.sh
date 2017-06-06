@@ -23,7 +23,13 @@ typeset	-r	orcl_release="$(read_orcl_release)"
 typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
-[[ $gi_count_nodes -ne 1 ]] && totalMemory=$(to_mb $shm_for_db) || true
+typeset	-i	memoryTarget=0
+if [[ $gi_count_nodes -ne 1 ]]
+then
+	totalMemory=$(to_mb $shm_for_db)
+else # Bug Oracle sur une base single totalMemory est ignoré.
+	memoryTarget=$(to_mb $shm_for_db)
+fi
 case "$orcl_release" in
 	12.1)
 		typeset	shared_pool_size="344M"	# Strict minimum 256M
@@ -70,7 +76,8 @@ add_usage "-db=name"								"Database name."
 add_usage "[-lang=$lang]"							"Language."
 add_usage "[-sampleSchema=$sampleSchema]"			"yes|no (pdb only)"
 add_usage "[-sysPassword=$sysPassword]"
-add_usage "[-totalMemory=$totalMemory]"				"Unit Mb, 0 to disable."
+add_usage "[-totalMemory=$totalMemory]"				"RAC : Unit Mb, 0 to disable."
+add_usage "[-memoryTarget=$memoryTarget]"			"SINGLE Unit Mb, 0 to disable."
 # 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
 # minimum de 256M sinon la création échoue, sur un FS mettre 0 est OK
 add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting (6)"
@@ -131,6 +138,11 @@ do
 
 		-totalMemory=*)
 			totalMemory=${1##*=}
+			shift
+			;;
+
+		-memoryTarget=*)
+			memoryTarget=${1##*=}
 			shift
 			;;
 
@@ -310,15 +322,6 @@ function make_dbca_args
 	if [ "$cdb" = yes ]
 	then
 		add_dynamic_cmd_param "-createAsContainerDatabase true"
-
-		if [ 0 -eq 1 ]; then # Mutualisation du code de création des PDBs.
-		if [ "$pdb" != undef ]
-		then
-			add_dynamic_cmd_param "    -numberOfPDBs     $numberOfPDBs"
-			add_dynamic_cmd_param "    -pdbName          $pdb"
-			add_dynamic_cmd_param "    -pdbAdminPassword $sysPassword"
-		fi
-		fi # [ 0 -eq 1 ]; then
 	else
 		add_dynamic_cmd_param "-createAsContainerDatabase false"
 	fi
@@ -347,6 +350,16 @@ function make_dbca_args
 	then
 		# set pga_aggregate_limit for test not prod.
 		initParams="$initParams,pga_aggregate_limit=$pga_aggregate_limit"
+	fi
+
+	if [ $memoryTarget -ne 0 ]
+	then # Ne doit être définie que pour une base single : bug Oracle.
+		if [[ "$shm_for_db" != "0" && $memoryTarget -gt $(to_mb $shm_for_db) ]]
+		then
+			warning "memoryTarget (${memoryTarget}M) > shm_for_db ($shm_for_db)"
+		fi
+
+		initParams="$initParams,memory_target=${memoryTarget}m"
 	fi
 
 	case $lang in
