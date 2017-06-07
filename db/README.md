@@ -6,6 +6,8 @@
 
 * [Création d'un PDB](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-d'un-PDB)
 
+* [Création d'un utilisateur](https://github.com/PhilippeLeroux/plescripts/wiki/create_database_user)
+
 * [Cloner un PDB à travers le réseau](https://github.com/PhilippeLeroux/plescripts/wiki/Clonage-d'un-PDB)
 
 --------------------------------------------------------------------------------

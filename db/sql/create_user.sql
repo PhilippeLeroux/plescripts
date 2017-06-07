@@ -1,9 +1,11 @@
 -- vim: ts=4:sw=4
+
 set ver off
-define username=ple
+accept username prompt 'User name : ' 
 define tbs='&username.tbs'
 
 set serveroutput on size unlimited
+
 declare
 LN constant char(1) := chr(10);
 
