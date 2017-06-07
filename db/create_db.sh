@@ -19,12 +19,19 @@ typeset -r ME=$0
 #	Pour éviter ce message d'erreur utiliser le paramètre -shared_pool_size=256M
 #	Cf select name, round( bytes/1024/1024, 2) "Size Mb" from v$sgainfo order by 2 desc;
 
+if command_exists crsctl
+then
+	typeset	-r	crs_used=yes
+else
+	typeset	-r	crs_used=no
+fi
+
 typeset	-r	orcl_release="$(read_orcl_release)"
 typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
 typeset	-i	memoryTarget=0
-if [[ $gi_count_nodes -ne 1 ]]
+if [ $crs_used == yes ]
 then
 	totalMemory=$(to_mb $shm_for_db)
 else # Bug Oracle sur une base single totalMemory est ignoré.
@@ -76,8 +83,13 @@ add_usage "-db=name"								"Database name."
 add_usage "[-lang=$lang]"							"Language."
 add_usage "[-sampleSchema=$sampleSchema]"			"yes|no (pdb only)"
 add_usage "[-sysPassword=$sysPassword]"
-add_usage "[-totalMemory=$totalMemory]"				"RAC : Unit Mb, 0 to disable."
-add_usage "[-memoryTarget=$memoryTarget]"			"SINGLE Unit Mb, 0 to disable."
+if [ $crs_used == yes ]
+then
+	add_usage "[-totalMemory=$totalMemory]"				"Unit Mb, 0 to disable."
+else	# utiliser memory_target avec le crs fait planter la création de la base.
+		# Avec le crs 800m est lu 80m
+	add_usage "[-memoryTarget=$memoryTarget]"			"Unit Mb, 0 to disable."
+fi
 # 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
 # minimum de 256M sinon la création échoue, sur un FS mettre 0 est OK
 add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting (6)"
@@ -411,17 +423,6 @@ function load_node_list_and_update_dbtype
 	[ x"$node_list" == x ] && node_list=undef || true
 }
 
-# print to stdout yes or no
-function test_if_crs_used
-{
-	if test_if_cmd_exists crsctl
-	then
-		echo yes
-	else
-		echo no
-	fi
-}
-
 #	Création de la base.
 #	Ne rends pas la main sur une erreur.
 function create_database
@@ -571,8 +572,6 @@ stats_tt start create_$lower_db
 typeset prefixInstance=${db:0:8}
 
 load_node_list_and_update_dbtype
-
-typeset -r crs_used=$(test_if_crs_used)
 
 if [[ $crs_used == no && "$data" == DATA && "$fra" == FRA ]]
 then
