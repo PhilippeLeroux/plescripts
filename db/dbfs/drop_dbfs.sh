@@ -75,6 +75,13 @@ fi
 
 . $dbfs_cfg_file
 
+if command_exists crsctl
+then
+	typeset	-r	crs_used=yes
+else
+	typeset	-r	crs_used=no
+fi
+
 if [ "$(dataguard_config_available)" == yes ]
 then
 	typeset	-r role=$(read_database_role $db)
@@ -82,11 +89,14 @@ else
 	typeset	-r role=primary
 fi
 
-line_separator
-exec_cmd -c  "crsctl stop res pdb.${pdb}.dbfs -f"
-LN
-exec_cmd -c  "crsctl delete res pdb.${pdb}.dbfs -f"
-LN
+if [ $crs_used == yes ]
+then
+	line_separator
+	exec_cmd -c  "crsctl stop res pdb.${pdb}.dbfs -f"
+	LN
+	exec_cmd -c  "crsctl delete res pdb.${pdb}.dbfs -f"
+	LN
+fi
 
 if [[ $drop_user == yes && $role == primary ]]
 then
@@ -112,8 +122,11 @@ LN
 execute_on_all_nodes "rm -f $dbfs_cfg_file"
 LN
 
-execute_on_all_nodes "sudo -iu grid rm /home/grid/mount-dbfs-$pdb"
-LN
+if [ $crs_used == yes ]
+then
+	execute_on_all_nodes "sudo -iu grid rm /home/grid/mount-dbfs-$pdb"
+	LN
+fi
 
 exec_cmd "su - root -c 'plescripts/db/dbfs/root_clean_mount_point.sh	\
 									-pdb=$pdb -service=$service'"

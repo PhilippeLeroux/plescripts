@@ -262,7 +262,7 @@ else
 
 	if [ "$(read_user)" != $account_name ]
 	then
-		error "Script not executed on primary database."
+		error "Script not executed on primary database, user $account_name not exists."
 		LN
 		exit 1
 	fi
@@ -303,7 +303,11 @@ then
 	typeset -a physical_list
 	typeset -a stby_server_list
 	load_stby_database
-	warning "Execute script on servers ${stby_server_list[*]}"
-	info "Script $ME -db=<stby name> -pdb=$pdb -service=$service"
-	LN
+	for (( i=0; i<${#physical_list[*]}; ++i ))
+	do
+		warning "On servers ${stby_server_list[i]}"
+		info "$ cd ~/plescripts/db/dbfs"
+		info "$ ./$ME -db=${physical_list[i]} -pdb=$pdb -service=$service"
+		LN
+	done
 fi

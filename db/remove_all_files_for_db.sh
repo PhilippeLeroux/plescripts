@@ -67,6 +67,12 @@ exec_cmd "su - oracle -c '~/plescripts/db/wallet/delete_all_credentials.sh'"
 exec_cmd "su - oracle -c '~/plescripts/db/wallet/drop_wallet.sh'"
 LN
 
+line_separator
+# Point de montage non supprimé et fstab non mis à jour.
+info "Drop DBFS config"
+exec_cmd "su - oracle -c 'rm -f *dbfs.cfg'"
+LN
+
 if [ $crs_used == yes ]
 then
 	line_separator
