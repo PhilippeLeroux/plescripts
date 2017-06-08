@@ -187,14 +187,19 @@ function create_standby_services_no_crs
 	LN
 
 	line_separator
-	info "Standby server $standby_host add tns alias $oci_stby_service"
-	ssh_stby "~/plescripts/db/add_tns_alias.sh	\
-				-service=$oci_stby_service -host_name=$standby_hosts"
+	info "Add alias $oci_stby_service"
+	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+				-service=$oci_stby_service		\
+				-host_name=$primary_host		\
+				-dataguard_list=$standby_host"
 	LN
 
-	info "Standby server $standby_host add tns alias $java_stby_service"
-	ssh_stby "~/plescripts/db/add_tns_alias.sh	\
-					-service=$java_stby_service -host_name=$standby_hosts"
+	info "Add alias $java_stby_service"
+	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+				-service=$java_stby_service		\
+				-host_name=$primary_host		\
+				-dataguard_list=$standby_host	\
+				-copy_server_list=$standby_host"
 	LN
 }
 

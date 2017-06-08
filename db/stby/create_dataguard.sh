@@ -360,6 +360,8 @@ function add_stby_redolog
 #	Configure les fichiers tnsnames sur le serveur primaire et secondaire.
 #	1	Sur le serveur primaire si le fichier existe, il est supprimé.
 #	2	Sur le serveur secondaire le fichier est écrasé par celui du primaire.
+#
+#	Ajoute les alias pour les connexions sur les CDBs, pas les PDBs.
 function setup_tnsnames
 {
 	line_separator
@@ -725,23 +727,19 @@ from
 							-role=physical_standby -start=no"
 		LN
 
-		#	Inutile d'ajouter les alias oci_service et java_service, le fichier
-		#	tnsnames.ora de la Primary est copié sur le serveur de la Physical
-		#	lors de l'ajout des TNS pour le CDB.
-
-		info "Standby server $standby_host add tns alias $java_stby_service"
-		ssh_stby oracle "~/plescripts/db/add_tns_alias.sh	\
-						-service=$java_stby_service -host_name=$standby_hosts"
+		info "Add alias $oci_stby_service"
+		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$oci_stby_service		\
+					-host_name=$primary_host		\
+					-dataguard_list=$standby_host"
 		LN
 
-		info "Standby server $standby_host add tns alias $oci_stby_service"
-		ssh_stby oracle "~/plescripts/db/add_tns_alias.sh	\
-						-service=$oci_stby_service -host_name=$standby_hosts"
-		LN
-
-		info "Standby server $standby_host add tns alias $java_stby_service"
-		ssh_stby oracle "~/plescripts/db/add_tns_alias.sh	\
-						-service=$java_stby_service -host_name=$standby_hosts"
+		info "Add alias $java_stby_service"
+		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$java_stby_service		\
+					-host_name=$primary_host		\
+					-dataguard_list=$standby_host	\
+					-copy_server_list=$standby_host"
 		LN
 
 		if [ -d $wallet_path ]
@@ -813,17 +811,54 @@ from
 						-role=physical_standby -start=no'</dev/null"
 		LN
 
+		typeset	oci_stby_service=$(mk_oci_stby_service $pdb)
+		typeset	java_stby_service=$(mk_java_stby_service $pdb)
+
 		if [ $create_primary_cfg == yes ]
 		then	#(1) Il faut stopper les services stdby sur la primary.
 				#	Les services stdby démarreront automatiquement lors de
 				#	l'ouverture de la stdby en RO.
 			info "(1) Stop stby services on primary $primary :"
 			exec_cmd "srvctl stop service -db $primary	\
-										-service $(mk_oci_stby_service $pdb)"
+										-service $oci_stby_service" 
 			exec_cmd "srvctl stop service -db $primary	\
-										-service $(mk_java_stby_service $pdb)"
+										-service $java_stby_service"
 			LN
 		fi
+
+		info "Aliases created by create_srv_for_single_db.sh are not adapted for a dataguard."
+
+		info "Uodate alias $oci_stby_service"
+		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$oci_stby_service		\
+					-host_name=$primary_host		\
+					-dataguard_list=$standby_host"
+		LN
+
+		info "Uodate alias $java_stby_service"
+		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$java_stby_service		\
+					-host_name=$primary_host		\
+					-dataguard_list=$standby_host"
+		LN
+
+		typeset	oci_service=$(mk_oci_service $pdb)
+		typeset	java_service=$(mk_java_service $pdb)
+
+		info "Uodate alias $oci_service"
+		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$oci_service			\
+					-host_name=$primary_host		\
+					-dataguard_list=$standby_host"
+		LN
+
+		info "Uodate alias $java_service"
+		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$java_service			\
+					-host_name=$primary_host		\
+					-dataguard_list=$standby_host	\
+					-copy_server_list=$standby_host"
+		LN
 
 		if [ -d $wallet_path ]
 		then
@@ -1034,8 +1069,8 @@ check_prereq
 
 [ $_register_stby_to_GI == yes ] && register_stby_to_GI || true
 
-[ $_configure_dataguard == yes ] && configure_dataguard || true
-
+# Il faut configurer les services avant d'appeler configure_dataguard qui
+# démarrera les service stby lors de l'ouverture de la base en RO.
 if [ $_create_dataguard_services == yes ]
 then
 	if [ $crs_used == yes ]
@@ -1045,6 +1080,8 @@ then
 		create_dataguard_services_no_crs
 	fi
 fi
+
+[ $_configure_dataguard == yes ] && configure_dataguard || true
 
 if [ "$(read_flashback_value)" == YES ]
 then
@@ -1065,5 +1102,14 @@ timing 20 "Waiting database synchronisation"
 LN
 
 exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
+
+if [ "$(find ~ -name "*_dbfs.cfg"|wc -l)" != 0 ]
+then
+	warning "Update DBFS configuration on $standby_host"
+	exec_cmd "scp ~/*dbfs.cfg $standby_host:~/"
+	info "$ cd ~/plescripts/db/dbfs"
+	info "$ ./create_dbfs.sh -db=$standby -pdb=<pdb name> -service=<service name>"
+	LN
+fi
 
 script_stop $ME $primary with $standby

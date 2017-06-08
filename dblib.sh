@@ -256,7 +256,10 @@ function service_exists
 			return 0
 		fi
 	else # ne test pas la base $1
-		grep -q "Service \"$2\" has .*"<<<"$(lsnrctl status)"
+		typeset -r sql="select count(*) from dba_services where name = lower( '$2' );"
+		typeset -r ok="$(sqlplus_exec_query_with "sys/Oracle12@localhost:1521/pdb01 as sysdba" "$sql"|tail -1|tr -d [:space:])"
+		[ "$ok" == "1" ] && return 0 || return 1
+		#grep -q "Service \"$2\" has .*"<<<"$(lsnrctl status)"
 	fi
 }
 

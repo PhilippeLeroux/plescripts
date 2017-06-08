@@ -11,6 +11,7 @@ typeset -r str_usage=\
 	-service=name    Nom du service qui sera aussi le nom de l'alias
 	-host_name=name  Nom de l'hôte.
 	[-tnsalias=name] Nom de l'alias TNS, par défaut c'est le nom du service.
+	[-dataguard_list=server list] Nom des autres serveurs du dataguard.
 	[-copy_server_list=] Copie avec scp le tnsnames sur la liste des servers.
 "
 
@@ -20,6 +21,7 @@ typeset service=undef
 typeset host_name=undef
 typeset copy_server_list
 typeset tnsalias=undef
+typeset dataguard_list=undef
 
 while [ $# -ne 0 ]
 do
@@ -47,6 +49,11 @@ do
 
 		-copy_server_list=*)
 			copy_server_list="${1##*=}"
+			shift
+			;;
+
+		-dataguard_list=*)
+			dataguard_list="${1##*=}"
 			shift
 			;;
 
@@ -109,8 +116,20 @@ exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias"
 LN
 
 info "Append new alias : $tnsalias"
-get_alias_for $tnsalias $service $host_name >> $tnsnames_file
-LN
+#get_alias_for $tnsalias $service $host_name >> $tnsnames_file
+#LN
+if [ "$dataguard_list" == undef ]
+then
+	exec_cmd "~/plescripts/shell/gen_tns_alias.sh			\
+						-service=$service					\
+						-alias_name=$tnsalias				\
+						-server_list=$host_name >> $tnsnames_file"
+else
+	exec_cmd "~/plescripts/shell/gen_tns_alias.sh			\
+				-service=$service							\
+				-alias_name=$tnsalias						\
+				-server_list=\"$host_name $dataguard_list\" >> $tnsnames_file"
+fi
 
 for server_name in $copy_server_list
 do
