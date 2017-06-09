@@ -305,9 +305,10 @@ then
 	load_stby_database
 	for (( i=0; i<${#physical_list[*]}; ++i ))
 	do
-		warning "On servers ${stby_server_list[i]}"
+		warning "On server ${stby_server_list[i]}"
+		info "$ ssh oracle@${physical_list[i]}"
 		info "$ cd ~/plescripts/db/dbfs"
-		info "$ ./$ME -db=${physical_list[i]} -pdb=$pdb -service=$service"
+		info "$ $ME -db=${physical_list[i]} -pdb=$pdb -service=$service"
 		LN
 	done
 fi
