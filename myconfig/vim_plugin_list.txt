@@ -1,16 +1,16 @@
 #	Intégration de git dans vim
 //github.com/tpope/vim-fugitive.git
 
+#	Affiche des indicateurs sur les lignes modifiées/ajoutées/supprimées
+https://github.com/airblade/vim-gitgutter.git
+
+
 #	Browser
 //github.com/scrooloose/nerdtree.git
 //github.com/Xuyuanp/nerdtree-git-plugin.git
 
 #	Plante
 # https://github.com/jistr/vim-nerdtree-tabs.git
-
-#	Suivie des modifs
-#https://github.com/mhinz/vim-signify.git
-https://github.com/airblade/vim-gitgutter.git
 
 # airline
 //github.com/vim-airline/vim-airline
@@ -30,14 +30,18 @@ https://github.com/xero/sourcerer.vim.git
 #	Util dans un terminal toggle la sourie entre le terminal et vim
 https://github.com/nvie/vim-togglemouse.git
 
-#	Montre les undo sous forme arborescente.
-//github.com/mbbill/undotree.git
+#	Montre les undo sous forme arborescente. Je ne m'en sers plus
+#//github.com/mbbill/undotree.git
 
 #	Markdown
 https://github.com/suan/vim-instant-markdown.git
 
-# Grammaire
-//github.com/rhysd/vim-grammarous.git
+# Grammaire : remplacé par Grammalecte
+#//github.com/rhysd/vim-grammarous.git
+
+# Grammalecte :
+# Il faut également télécharger : http://www.dicollecte.org/grammalecte/oxt/Grammalecte-fr-v0.5.17.zip
+https://github.com/dpelle/vim-Grammalecte
 
 #	Man
 https://github.com/vim-utils/vim-man.git

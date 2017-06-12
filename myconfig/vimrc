@@ -93,7 +93,7 @@ filetype plugin indent on
 
 " Change the mapleader from \ to ,
 let mapleader=","
-let maplocalleader="\\"
+let maplocalleader=","
 
 "	Recharge automatiquement les fichiers modifiés.
 set autoread
@@ -140,8 +140,10 @@ nnoremap <F2> :call FrDictionnaire()<CR>
 nnoremap <F4> :call USDictionnaire()<CR>
 
 "	============================================================================
-source $HOME/vimfunc/FrGrammaire.vim
-nnoremap <C-g> :call FrGrammaire()<CR>
+"	source $HOME/vimfunc/FrGrammaire.vim
+"	nnoremap <C-g> :call FrGrammaire()<CR>
+source $HOME/vimfunc/FrGrammalecte.vim
+nnoremap <C-g> :call FrGrammalecte()<CR>
 
 "	============================================================================
 source $HOME/vimfunc/folding.vim
@@ -185,8 +187,8 @@ map <silent> <F6> :call ToggleColorscheme()<CR>
 "	============================================================================
 "	UndoTree
 "	============================================================================
-let g:undotree_WindowLayout=3
-nnoremap <silent> <F7> :UndotreeToggle<CR>
+"let g:undotree_WindowLayout=3
+"nnoremap <silent> <F7> :UndotreeToggle<CR>
 
 "	============================================================================
 "	clean_log

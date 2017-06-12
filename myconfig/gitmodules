@@ -31,9 +31,6 @@
 [submodule "bundle/vim-togglemouse"]
 	path = bundle/vim-togglemouse
 	url = git://github.com/nvie/vim-togglemouse.git
-[submodule "bundle/undotree"]
-	path = bundle/undotree
-	url = git://github.com/mbbill/undotree.git
 [submodule "bundle/vim-instant-markdown"]
 	path = bundle/vim-instant-markdown
 	url = git://github.com/suan/vim-instant-markdown.git
@@ -49,3 +46,6 @@
 [submodule "bundle/vim-session"]
 	path = bundle/vim-session
 	url = git://github.com/xolox/vim-session.git
+[submodule "bundle/vim-Grammalecte"]
+	path = bundle/vim-Grammalecte
+	url = git://github.com/dpelle/vim-Grammalecte
