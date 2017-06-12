@@ -164,8 +164,14 @@ function remove_SRLs
 function drop_all_services
 {
 	line_separator
-	exec_cmd -c ~/plescripts/db/drop_all_services.sh -db=$db
-	LN
+	if [ $crs_used == yes ]
+	then
+		exec_cmd -c ~/plescripts/db/drop_all_services.sh -db=$db
+		LN
+	else
+		exec_cmd -c ~/plescripts/db/fsdb_drop_all_services.sh -db=$db
+		LN
+	fi
 }
 
 function create_services_for_single_db
@@ -211,6 +217,7 @@ if [[ x"$role_cfg" != x && "$role" != "$role_cfg" ]]
 then
 	error "role $role invalid ?"
 	LN
+	exit 1
 fi
 
 if [ $role == physical ]
@@ -224,16 +231,9 @@ fi
 
 remove_SRLs
 
-if [ $crs_used == yes ]
-then
-	drop_all_services
+drop_all_services
 
-	create_services_for_single_db
-else
-	line_separator
-	exec_cmd "$HOME/plescripts/db/fsdb_drop_all_stby_services.sh -db=$db"
-	LN
-fi
+create_services_for_single_db
 
 line_separator
 sqlplus_cmd "$(sqlcmd_reset_dataguard_cfg)"
@@ -247,8 +247,7 @@ then
 fi
 
 if [ $crs_used == yes ]
-then
-	# startup avec sqlplus ne fonctionne pas avec le wallet.
+then # startup avec sqlplus ne fonctionne pas avec le wallet.
 	exec_cmd srvctl start database -db $db
 	LN
 else

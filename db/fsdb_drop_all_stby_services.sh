@@ -55,24 +55,36 @@ where
 	name != 'PDB\$SEED'
 ;"
 
-while read pdb
-do
-	[ x"$pdb" == x ] && continue || true
-	[ "${pdb:0:4}" == "SQL>" ] && continue || true
-
+# $1 pdb
+# $2 service
+function drop_service
+{
 	function sql_drop_service
 	{
 		set_sql_cmd "alter session set container=$1;"
 		set_sql_cmd "exec dbms_service.stop_service( '$2' );"
 		set_sql_cmd "exec dbms_service.delete_service( '$2' );"
 	}
-	srv=$(mk_oci_stby_service $pdb)
+
+	typeset pdb=$1
+	typeset srv=$2
+
 	info "$pdb : $srv"
 	sqlplus_cmd "$(sql_drop_service $pdb $srv)"
-	srv=$(mk_java_stby_service $pdb)
-	info "$pdb : $srv"
-	sqlplus_cmd "$(sql_drop_service $pdb $srv)"
+	exec_cmd $HOME/plescripts/db/delete_tns_alias.sh -tnsalias=$srv
 	LN
+}
+
+while read pdb
+do
+	[ x"$pdb" == x ] && continue || true
+	[ "${pdb:0:4}" == "SQL>" ] && continue || true
+
+	drop_service $pdb $(mk_oci_service $pdb)
+	drop_service $pdb $(mk_oci_stby_service $pdb)
+	drop_service $pdb $(mk_java_service $pdb)
+	drop_service $pdb $(mk_java_stby_service $pdb)
+
 	sqlplus_cmd "$(set_sql_cmd "alter system register;")"
 	LN
 done<<<"$(sqlplus_exec_query "$(set_sql_cmd $query)")"

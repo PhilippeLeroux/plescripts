@@ -2,6 +2,7 @@
 create or replace
 trigger start_pdb_services after startup on pluggable database
 begin
+--	Le trigger doit être crée sur le PDB.
 
 	if sys_context('USERENV', 'DATABASE_ROLE') = 'PRIMARY'
 	then

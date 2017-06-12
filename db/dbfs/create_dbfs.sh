@@ -306,7 +306,7 @@ then
 	for (( i=0; i<${#physical_list[*]}; ++i ))
 	do
 		warning "On server ${stby_server_list[i]}"
-		info "$ ssh oracle@${physical_list[i]}"
+		info "$ ssh oracle@${stby_server_list[i]}"
 		info "$ cd ~/plescripts/db/dbfs"
 		info "$ $ME -db=${physical_list[i]} -pdb=$pdb -service=$service"
 		LN

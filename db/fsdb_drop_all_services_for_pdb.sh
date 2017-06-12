@@ -96,7 +96,7 @@ do
 		sqlplus_cmd "$(sql_drop_service $pdb $service_name)"
 		LN
 	fi
-	exec_cmd ~/plescripts/db/delete_tns_alias.sh -tnsalias=$service_name
+	exec_cmd $HOME/plescripts/db/delete_tns_alias.sh -tnsalias=$service_name
 	LN
 done<<<"$(sql_query_read_service)"
 

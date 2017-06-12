@@ -134,6 +134,19 @@ typeset -r primary=$ORACLE_SID
 exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
 
+# Requête permettant de lire tous les PDBs existant sur la base $primary
+typeset -r sql_read_pdbs=\
+"select
+	c.name
+from
+	gv\$containers c
+	inner join gv\$instance i
+		on  c.inst_id = i.inst_id
+	where
+		i.instance_name = '$primary'
+	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT', 'PDB_SAMPLES' );
+"
+
 # $1 account
 # $@ command
 #
@@ -677,17 +690,6 @@ function configure_dataguard
 #	****************************************************************************
 function create_dataguard_services_no_crs
 {
-typeset -r query=\
-"select
-	c.name
-from
-	gv\$containers c
-	inner join gv\$instance i
-		on  c.inst_id = i.inst_id
-	where
-		i.instance_name = '$primary'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT', 'PDB_SAMPLES' );
-"
 	# $1 pdb name
 	# $2 service name
 	function stop_service
@@ -712,7 +714,7 @@ from
 		[ x"$pdb" == x ] && continue
 
 		oci_stby_service=$(mk_oci_stby_service $pdb)
-		java_stby_service=$(mk_oci_stby_service $pdb)
+		java_stby_service=$(mk_java_stby_service $pdb)
 
 		line_separator
 		info "$primary[$pdb] : update services."
@@ -727,21 +729,6 @@ from
 							-role=physical_standby -start=no"
 		LN
 
-		info "Add alias $oci_stby_service"
-		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-					-service=$oci_stby_service		\
-					-host_name=$primary_host		\
-					-dataguard_list=$standby_host"
-		LN
-
-		info "Add alias $java_stby_service"
-		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-					-service=$java_stby_service		\
-					-host_name=$primary_host		\
-					-dataguard_list=$standby_host	\
-					-copy_server_list=$standby_host"
-		LN
-
 		if [ -d $wallet_path ]
 		then
 			line_separator
@@ -751,7 +738,7 @@ from
 			LN
 		fi
 
-	done<<<"$(sqlplus_exec_query "$query")"
+	done<<<"$(sqlplus_exec_query "$sql_read_pdbs")"
 }
 
 #	Création des services :
@@ -820,45 +807,11 @@ from
 				#	l'ouverture de la stdby en RO.
 			info "(1) Stop stby services on primary $primary :"
 			exec_cmd "srvctl stop service -db $primary	\
-										-service $oci_stby_service" 
+										-service $oci_stby_service"
 			exec_cmd "srvctl stop service -db $primary	\
 										-service $java_stby_service"
 			LN
 		fi
-
-		info "Aliases created by create_srv_for_single_db.sh are not adapted for a dataguard."
-
-		info "Uodate alias $oci_stby_service"
-		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-					-service=$oci_stby_service		\
-					-host_name=$primary_host		\
-					-dataguard_list=$standby_host"
-		LN
-
-		info "Uodate alias $java_stby_service"
-		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-					-service=$java_stby_service		\
-					-host_name=$primary_host		\
-					-dataguard_list=$standby_host"
-		LN
-
-		typeset	oci_service=$(mk_oci_service $pdb)
-		typeset	java_service=$(mk_java_service $pdb)
-
-		info "Uodate alias $oci_service"
-		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-					-service=$oci_service			\
-					-host_name=$primary_host		\
-					-dataguard_list=$standby_host"
-		LN
-
-		info "Uodate alias $java_service"
-		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-					-service=$java_service			\
-					-host_name=$primary_host		\
-					-dataguard_list=$standby_host	\
-					-copy_server_list=$standby_host"
-		LN
 
 		if [ -d $wallet_path ]
 		then
@@ -1039,6 +992,25 @@ function stby_backup
 	fi
 }
 
+function dbfs_instructions
+{
+	line_separator
+	warning "Update DBFS configuration on $standby_host"
+	LN
+
+	info "$ ssh $standby_host"
+	info "$ cd ~/plescripts/db/dbfs"
+	LN
+
+	while read pdb
+	do
+		[ x"$pdb" == x ] && continue || true
+
+		info "$ ./create_dbfs.sh -db=$(to_lower $standby) -pdb=$(to_lower $pdb)"
+		LN
+	done<<<"$(sqlplus_exec_query "$sql_read_pdbs")"
+}
+
 typeset	-r	primary_host=$(hostname -s)
 
 script_start
@@ -1079,6 +1051,10 @@ then
 	else
 		create_dataguard_services_no_crs
 	fi
+
+	line_separator
+	exec_cmd "~/plescripts/db/update_tns_alias_for_dataguard.sh	\
+						-db=$primary -pdb=all -dataguard_list=$standby_host"
 fi
 
 [ $_configure_dataguard == yes ] && configure_dataguard || true
@@ -1105,11 +1081,7 @@ exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
 
 if [ "$(find ~ -name "*_dbfs.cfg"|wc -l)" != 0 ]
 then
-	warning "Update DBFS configuration on $standby_host"
-	exec_cmd "scp ~/*dbfs.cfg $standby_host:~/"
-	info "$ cd ~/plescripts/db/dbfs"
-	info "$ ./create_dbfs.sh -db=$standby -pdb=<pdb name> -service=<service name>"
-	LN
+	dbfs_instructions
 fi
 
 script_stop $ME $primary with $standby

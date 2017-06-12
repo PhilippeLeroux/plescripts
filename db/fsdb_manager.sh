@@ -49,10 +49,10 @@ function start_db
 	ORACLE_SID=$OSID
 	ORAENV_ASK=NO . oraenv
 	fake_exec_cmd "sqlplus -s sys/$oracle_password as sysdba"
-	sqlplus -s sys/$oracle_password as sysdba<<EOS
+	sqlplus -s sys/$oracle_password as sysdba<<-EOS
 	prompt startup
 	startup
-EOS
+	EOS
 }
 
 function stop_db
@@ -62,10 +62,10 @@ function stop_db
 	ORACLE_SID=$OSID
 	ORAENV_ASK=NO . oraenv
 	fake_exec_cmd "sqlplus -s sys/$oracle_password as sysdba"
-	sqlplus -s sys/$oracle_password as sysdba<<EOS
+	sqlplus -s sys/$oracle_password as sysdba<<-EOS
 	prompt shutdown immediate
 	shutdown immediate
-EOS
+	EOS
 }
 
 typeset -i count_error=0
@@ -82,18 +82,18 @@ case $action in
 
 	start)
 		exec_cmd -c lsnrctl $action
-		[ $? -ne 0 ] && count_error=count_error+1 || true
+		[ $? -ne 0 ] && $((++count_error)) || true
 		LN
 		;;
 esac
 
 while IFS=':' read OSID OHOME MANAGED
 do
-	if [ $MANAGED = Y ]
+	if [ "$MANAGED" == Y ]
 	then
 		info "$action database $OSID"
 		[ $action == start ] && start_db $OSID || stop_db $OSID
-		[ $? -ne 0 ] && count_error=count_error+1
+		[ $? -ne 0 ] && $((++count_error)) || true
 	else
 		info "$OSID ignored."
 	fi

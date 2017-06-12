@@ -185,22 +185,6 @@ function create_standby_services_no_crs
 	sqlplus_cmd_with "sys/$oracle_password@$standby as sysdba"	\
 													"$(open_stby_pdb $pdb)"
 	LN
-
-	line_separator
-	info "Add alias $oci_stby_service"
-	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-				-service=$oci_stby_service		\
-				-host_name=$primary_host		\
-				-dataguard_list=$standby_host"
-	LN
-
-	info "Add alias $java_stby_service"
-	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-				-service=$java_stby_service		\
-				-host_name=$primary_host		\
-				-dataguard_list=$standby_host	\
-				-copy_server_list=$standby_host"
-	LN
 }
 
 create_or_update_primary_services
@@ -211,4 +195,8 @@ then
 else
 	create_standby_services_no_crs
 fi
+
+line_separator
+exec_cmd "~/plescripts/db/update_tns_alias_for_dataguard.sh	\
+								-pdb=$pdb -dataguard_list=$standby_host"
 

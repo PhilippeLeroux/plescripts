@@ -17,6 +17,8 @@ typeset -r str_usage=\
 Si le service existe et que le rôle est définie :
 	- avec le CRS le service est modifié en fonction du rôle.
 	- sans le CRS pas d'action.
+
+Note : -role agit uniquement sur le nom du service.
 "
 
 script_banner $ME $*
@@ -156,11 +158,11 @@ function create_or_modify_oci_service
 			exec_cmd srvctl start service -service $service -db $db
 			LN
 		fi
-
-		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-						-service=$service -host_name=$(hostname -s)"
-		LN
 	fi
+
+	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$service -host_name=$(hostname -s)"
+	LN
 }
 
 function create_or_modify_java_service
@@ -224,6 +226,10 @@ function create_or_modify_java_service
 		exec_cmd srvctl start service -service $service -db $db
 		LN
 	fi
+
+	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$service -host_name=$(hostname -s)"
+	LN
 }
 
 #	============================================================================
@@ -294,11 +300,11 @@ function create_service_no_crs
 			sqlplus_cmd "$(plsql_start_service $pdb $service)"
 			LN
 		fi
-
-		exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-						-service=$service -host_name=$(hostname -s)"
-		LN
 	fi
+
+	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$service -host_name=$(hostname -s)"
+	LN
 }
 
 function create_or_modify_oci_service_no_crs
