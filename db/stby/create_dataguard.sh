@@ -923,6 +923,30 @@ from
 	fi
 }
 
+function check_tuned_profile
+{
+	line_separator
+	typeset	-r	local_profile="$(tuned-adm active | awk '{ print $4 }')"
+	typeset		stby_profile=$(ssh $standby_host "/usr/sbin/tuned-adm active")
+	stby_profile=$(echo $stby_profile|awk '{ print $4 }')
+	info -n "Tuned profile $local_profile, on $standby_host $stby_profile : "
+	if [ "$local_profile" != "$stby_profile" ]
+	then
+		info -f "[$KO]"
+		info "To enable $local_profile"
+		info "$ ssh root@$standby_host"
+		info "$ tuned-adm profile $local_profile"
+		LN
+		info "Check values of file /usr/lib/tuned/$local_profile/tuned.conf"
+		LN
+		return 1
+	fi
+
+	info -f "[$OK]"
+	LN
+	return 0
+}
+
 function check_prereq
 {
 	typeset errors=no
@@ -938,6 +962,11 @@ function check_prereq
 	fi
 
 	if ! check_log_mode
+	then
+		errors=yes
+	fi
+
+	if ! check_tuned_profile
 	then
 		errors=yes
 	fi
