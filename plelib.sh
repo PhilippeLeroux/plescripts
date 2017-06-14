@@ -1464,8 +1464,13 @@ function to_mb
 			compute -i "$size_value/1024"
 			;;
 
-		*)
+		*b|*B)
 			compute -i "$size_value/1024/1024"
+			;;
+
+		*)
+			echo "function to_mb unit missing."
+			exit 1
 			;;
 	esac
 }
