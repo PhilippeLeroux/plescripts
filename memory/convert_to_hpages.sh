@@ -39,6 +39,8 @@ script_banner $ME $*
 
 must_be_user root
 
+# $1 parameter
+# print to stdout parameter value
 function read_orcl_parameter
 {
 	typeset	-r	param=$1
@@ -50,43 +52,41 @@ function read_orcl_parameter
 EOS
 }
 
-function read_asm_parameter
+# $1 file name
+function create_orcl_pfile
 {
-	typeset	-r	param=$1
-
-	su - grid<<EOS | tail -2 | head -1 | tr -s [:space:] | cut -d\  -f4
+	su - oracle<<-EOS
 	sqlplus -s sys/$oracle_password as sysdba
-	set heading off
-	show parameter $param
-EOS
+	create pfile='$1' from spfile;
+	EOS
 }
 
-function set_orcl_sga_to
+# $1 SGA size
+# $2 PGA size
+function set_orcl_memory_to
 {
 	typeset	-r	sga=$1
+	typeset	-r	pga=$2
 
-	su - oracle<<EOS
+	[ $EXEC_CMD_ACTION == NOP ] && return 0 || true
+
+	su - oracle<<-EOS
 	sqlplus -s sys/$oracle_password as sysdba
 	create pfile='pfile_original.txt' from spfile;
 	alter system set sga_max_size=$sga scope=spfile sid='*';
 	alter system set sga_target=$sga scope=spfile sid='*';
 	alter system set memory_max_target=0 scope=spfile sid='*';
 	alter system set memory_target=0 scope=spfile sid='*';
-EOS
+	alter system set pga_aggregate_target=$pga scope=spfile sid='*';
+	EOS
 }
 
-function set_asm_sga_to
-{
-	typeset	-r	sga=$1
-
-	su - grid<<EOS
-	sqlplus -s sys/$oracle_password as sysdba
-	create pfile='pfile_original.txt' from spfile;
-	alter system set sga_max_size=$sga scope=spfile sid='*';
-	alter system set sga_target=$sga scope=spfile sid='*';
-	alter system set memory_max_target=0 scope=spfile sid='*';
-EOS
-}
+if command_exists crsctl
+then
+	typeset -r crs_used=yes
+else
+	typeset -r crs_used=no
+fi
 
 typeset	-r tuned_profile_name=ple-hporacle
 typeset -r tuned_profile_file="/usr/lib/tuned/$tuned_profile_name/tuned.conf"
@@ -98,20 +98,23 @@ then
 	confirm_or_exit "Tuned profile $tuned_profile_name is active, continue"
 fi
 
-orcl_sga_max_size_str=$(read_orcl_parameter sga_max_size)
-asm_sga_max_size_str=$(read_asm_parameter sga_max_size)
+ORACLE_SID=$(su - oracle -c "echo \$ORACLE_SID")
 
-orcl_sga_max_size_mb=$(to_mb $orcl_sga_max_size_str)
-asm_sga_max_size_mb=$(to_mb $asm_sga_max_size_str)
+create_orcl_pfile /tmp/orcl_pfile.txt
 
-sga_total_mb=$(( orcl_sga_max_size_mb + asm_sga_max_size_mb ))
+orcl_sga_max_size_str=$(grep "__sga_target" /tmp/orcl_pfile.txt | cut -d= -f2)
+orcl_sga_max_size_mb=$(to_mb ${orcl_sga_max_size_str}b)
 
-total_hpages=$(count_hugepages_for_sga_of ${sga_total_mb}M)
+orcl_pga_max_size_str=$(grep "__pga_aggregate_target" /tmp/orcl_pfile.txt | cut -d= -f2)
+orcl_pga_max_size_mb=$(to_mb ${orcl_pga_max_size_str}b)
 
-info "Oracle      : $orcl_sga_max_size_str"
-info "ASM         : $asm_sga_max_size_str"
-info "Total SGA   : $(fmt_number $sga_total_mb)M"
-info "Huge pages  : $(fmt_number $total_hpages)"
+info "$ORACLE_SID : sga = ${orcl_sga_max_size_mb}Mb pga=${orcl_pga_max_size_mb}Mb"
+LN
+
+total_hpages=$(count_hugepages_for_sga_of ${orcl_sga_max_size_mb}M)
+
+info "$ORACLE_SID : ${orcl_sga_max_size_mb}Mb"
+info "Huge pages : $(fmt_number $total_hpages)"
 LN
 
 info "Setup huge pages : $total_hpages + 1"
@@ -119,31 +122,46 @@ update_value vm.nr_hugepages "$(( total_hpages + 1 )) # Oracle+ASM" $tuned_profi
 LN
 
 info "Setup instances for hpage"
-set_orcl_sga_to $orcl_sga_max_size_str
-set_asm_sga_to $asm_sga_max_size_str
+set_orcl_memory_to $orcl_sga_max_size_str $orcl_pga_max_size_str
 LN
 
-info "Stop has"
-exec_cmd "crsctl stop has"
-LN
+if [ $crs_used == yes ]
+then
+	info "Stop has"
+	exec_cmd "crsctl stop has"
+	LN
+else
+	info "Stop database"
 
-info "Enable tuned profile hple-oracle"
+	if [ $EXEC_CMD_ACTION == EXEC ]
+	then
+		exec_cmd "su - oracle -c \"~/plescripts/db/stop_db.sh\""
+	fi
+	LN
+fi
+
+info "Enable tuned profile ple-oracle"
 exec_cmd "tuned-adm profile ple-hporacle"
 LN
 
-info "Disable /dev/shm"
-exec_cmd "sed -i \"/\/dev\/shm/d\" /etc/fstab"
-exec_cmd "echo \"tmpfs   /dev/shm    tmpfs   defaults,size=0 0 0\" >> /etc/fstab"
-exec_cmd "mount -o remount /dev/shm"
-LN
+if [ $crs_used == yes ]
+then
+	info "Start has"
+	exec_cmd "crsctl start has"
+	[ $EXEC_CMD_ACTION == EXEC ] && timing 120 "Waiting has" || true
+	LN
 
-info "Start has"
-exec_cmd "crsctl start has"
-timing 120 "Waiting has"
-LN
+	exec_cmd "crsctl stat res -t"
+	LN
+else
+	info "Start database"
 
-exec_cmd "crsctl stat res -t"
-LN
+	if [ $EXEC_CMD_ACTION == EXEC ]
+	then
+		exec_cmd "su - oracle -c \"~/plescripts/db/start_db.sh -oracle_sid=$ORACLE_SID\""
+	fi
+	LN
+fi
 
 exec_cmd "su - oracle -c \"plescripts/memory/show_pages.sh\""
 LN
