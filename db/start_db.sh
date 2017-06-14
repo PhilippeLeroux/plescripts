@@ -10,11 +10,18 @@ typeset -r ME=$0
 typeset -r str_usage=\
 "Usage : $ME"
 
+typeset oracle_sid=undef
+
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-oracle_sid=*)
+			oracle_sid=${1##*=}
 			shift
 			;;
 
@@ -37,7 +44,13 @@ done
 
 script_banner $ME $*
 
-exit_if_ORACLE_SID_not_defined
+if [ "$oracle_sid" == undef ]
+then
+	exit_if_ORACLE_SID_not_defined
+else
+	export ORACLE_SID=$oracle_sid
+	ORAENV_ASK=NO . oraenv
+fi
 
 sqlplus_cmd "$(set_sql_cmd "startup")"
 LN
