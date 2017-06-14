@@ -35,6 +35,10 @@ else
 	let &mouse=""
 endif
 
+if v:version <= 704
+	call add(g:pathogen_disabled, 'vim-Grammalecte')
+endif
+
 call pathogen#infect()
 call pathogen#helptags()
 
@@ -142,8 +146,10 @@ nnoremap <F4> :call USDictionnaire()<CR>
 "	============================================================================
 "	source $HOME/vimfunc/FrGrammaire.vim
 "	nnoremap <C-g> :call FrGrammaire()<CR>
-source $HOME/vimfunc/FrGrammalecte.vim
-nnoremap <C-g> :call FrGrammalecte()<CR>
+if v:version > 704
+	source $HOME/vimfunc/FrGrammalecte.vim
+	nnoremap <C-g> :call FrGrammalecte()<CR>
+endif
 
 "	============================================================================
 source $HOME/vimfunc/folding.vim
