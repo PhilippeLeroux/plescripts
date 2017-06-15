@@ -20,6 +20,7 @@ Type de serveurs de base de données pouvant être créé :
 - Mise en dataguard de 2 serveurs standalone (sur ASM ou filesystem).
 
 Versions logiciels :
+- VirtualBox version minimum 5.1
 - Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
 - Oracle 12cR1 base SINGLE et RAC.
 - Oracle 12cR2 base SINGLE EE et RAC EE ou SE2.
@@ -27,19 +28,11 @@ Versions logiciels :
 La création des serveurs de base de données est 100% automatisée, il n'y a pas
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
 
-Le poste exécutant Virtual Box doit avoir au minimum 8Gb de RAM, pour un RAC 12cR2
+Le poste exécutant VirtualBox doit avoir au minimum 8Gb de RAM, pour un RAC 12cR2
 prévoir 16Gb.
 
---------------------------------------------------------------------------------
-
-### Logiciels utilisés :
-
-* VirtualBox
-
-* Oracle Linux 7.2
-
-* Oracle database & Grid Infrastructure : [12cR1](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
-ou [12cR2](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/oracle12c-linux-12201-3608234.html)
+Les scripts fonctionnent sous Linux uniquement, j'utilise tumbleweed, je ne prévois
+pas de faire un portage sous MS Windows.
 
 --------------------------------------------------------------------------------
 
@@ -51,14 +44,14 @@ Suivre les [instructions ici](https://github.com/PhilippeLeroux/plescripts/wiki/
 
 --------------------------------------------------------------------------------
 
-### Création des VMs `orclmaster` et `K2`.
+### Création des VMs `orclmaster` et `K2`
 2 VMs sont nécessaires pour commencer : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Création-des-VMs-orclmaster-et-K2)
  - `orclmaster` qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle, pas besoins de réinstaller OL7.
  - `K2` qui est le serveur d'infrastructure (DNS, SAN, Gateway, NTP server, ...)
 
 --------------------------------------------------------------------------------
 
-### Création des serveurs de base de données Oracle.
+### Création des serveurs de base de données Oracle
 
 * Création serveurs : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers)
 
