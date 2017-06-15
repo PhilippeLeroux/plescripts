@@ -32,7 +32,7 @@ Le poste exécutant VirtualBox doit avoir au minimum 8Gb de RAM, pour un RAC 12c
 prévoir 16Gb.
 
 Les scripts fonctionnent sous Linux uniquement, j'utilise tumbleweed, je ne prévois
-pas de faire un portage sous MS Windows.
+pas de faire un portage sur MS Windows.
 
 --------------------------------------------------------------------------------
 
