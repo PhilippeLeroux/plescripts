@@ -1469,7 +1469,7 @@ function to_mb
 			;;
 
 		*)
-			echo "function to_mb unit missing."
+			echo "call to function 'to_mb $1' unit missing or invalid."
 			exit 1
 			;;
 	esac
