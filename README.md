@@ -32,29 +32,14 @@ prévoir 16Gb.
 
 --------------------------------------------------------------------------------
 
-### Télécharger les logiciels suivants :
+### Logiciels utilisés :
 
-* VirtualBox : `zypper install [...]` ou `yum install [...]` ou `apt-get install [...]` en fonction de la distribution.
+* VirtualBox
 
-* Oracle Linux 7.2 : uniquement la première image ISO V100082-01.iso est nécessaire.
-
-	2 façons pour récupérer l'ISO :
-	* Cliquer sur le lien [V100082-01.iso](https://edelivery.oracle.com/osdc/faces/SearchSoftware)
-	et rechercher Oracle Linux 7.2, puis décocher les autres ISO.
-
-		![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screenshot_ol7_iso_selection.png)
-
-		L'image de l'ISO Oracle Linux 7.3 ne fonctionne pas (V834394-01.iso) avec
-		Oracle 12cR2, java plante lors de l'installation. En partant d'une 7.2 je
-		mets à jour sur une 7.3 mais en conservant le noyau linux 3.8.
-
-	* Une fois que le dépôt sera cloné le script `wget_ol7_iso.sh` effectuera le
-	téléchargement, les instructions sont fournies plus loin.
+* Oracle Linux 7.2
 
 * Oracle database & Grid Infrastructure : [12cR1](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/database12c-linux-download-2240591.html)
 ou [12cR2](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/oracle12c-linux-12201-3608234.html)
-
-* Cloner le dépôt `plescripts` dans le répertoire $HOME (instructions fournies plus loin).
 
 --------------------------------------------------------------------------------
 
