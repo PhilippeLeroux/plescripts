@@ -152,7 +152,7 @@ from
 #
 # Load .bash_profile.
 #
-# Fonction peut utilisée car ajoutée tardivement.
+# Fonction peu utilisée car ajoutée tardivement.
 function ssh_stby
 {
 	if [ "$1" == "-c" ]
@@ -581,6 +581,7 @@ function sql_mount_db_and_start_recover
 }
 
 # $1 Y|N
+# Ajoute la base $standby dans /etc/oratab si elle n'y est pas.
 function stdby_update_oratab
 {
 	typeset -r autostartup="$1"
@@ -836,6 +837,7 @@ function sql_enable_flashback
 #	Vérifie :
 #		- si l'équivalence ssh entre les serveurs existe.
 #		- si la base sur serveur standby existe déjà.
+#	return 1 if error, else 0
 function check_ssh_prereq_and_if_stby_exist
 {
 	typeset errors=no
@@ -872,6 +874,7 @@ function check_ssh_prereq_and_if_stby_exist
 
 #	Valide les paramètres.
 #	Si la configuration dataguard existe alors il faut utiliser le paramètre -create_primary_cfg=no
+#	return 1 if error, else 0
 function check_params
 {
 	typeset errors=no
@@ -899,6 +902,8 @@ function check_params
 	[ $errors == yes ] && return 1 || return 0
 }
 
+#	Vérifie si la base est en mode Archive Log
+#	return 1 if error, else 0
 function check_log_mode
 {
 typeset -r query=\
@@ -923,6 +928,8 @@ from
 	fi
 }
 
+#	Vérifie que le 'Tuned Profile' actif est le même sur les deux serveurs.
+#	return 1 if error, else 0
 function check_tuned_profile
 {
 	line_separator
@@ -933,11 +940,9 @@ function check_tuned_profile
 	if [ "$local_profile" != "$stby_profile" ]
 	then
 		info -f "[$KO]"
-		info "To enable $local_profile"
-		info "$ ssh root@$standby_host"
-		info "$ tuned-adm profile $local_profile"
-		LN
-		info "Check values of file /usr/lib/tuned/$local_profile/tuned.conf"
+		info "To enable $local_profile on $standby_host"
+		info "$ scp /usr/lib/tuned/$local_profile/tuned.conf root@${standby_host}:/usr/lib/tuned/$local_profile/tuned.conf"
+		info "$ ssh root@$standby_host \"tuned-adm profile $local_profile\""
 		LN
 		return 1
 	fi
@@ -947,6 +952,8 @@ function check_tuned_profile
 	return 0
 }
 
+#	Vérifie l'ensemble des prés requis nécessaire pour créer un Dataguard
+#	return 1 if error, else 0
 function check_prereq
 {
 	typeset errors=no
