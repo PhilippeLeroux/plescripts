@@ -2,12 +2,16 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/memory/memorylib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-typeset -r str_usage="Usage : $ME"
+typeset -r str_usage="Usage : $ME [-local_only]"
+
+typeset	local_only=no
 
 while [ $# -ne 0 ]
 do
@@ -15,6 +19,11 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
+			shift
+			;;
+
+		-local_only)
+			local_only=yes
 			shift
 			;;
 
@@ -88,15 +97,6 @@ function print_hpages_orcl_instance
 	fi
 }
 
-#	Ne fonctionne pas : pas de moyen fiable de trouver l'information.
-function print_hpages_asm_instance
-{
-	typeset	-r ASM=$1
-
-	typeset -r alog="$GRID_BASE/diag/asm/+asm/$ASM/trace/alert_$ASM.log"
-	read_hpages_from_alert_log $alog
-}
-
 #	Affiche le nombre de hpages souhaitées par -MGMTDB
 function print_hpages_mgmtdb
 {
@@ -122,7 +122,6 @@ typeset -i shm_max_size_mb=-1
 typeset -i shm_used_mb=-1
 
 read fs shm_max_size_mb shm_used_mb rem<<<"$(df -m /dev/shm | tail -1)"
-typeset -ri actual_hpages=$(sysctl -n vm.nr_hugepages)
 
 print_hpages_orcl_instance
 print_hpages_mgmtdb
@@ -156,3 +155,20 @@ info "SGA"
 info "  Small pages          : $(fmt_number $total_smallpages_used_mb)Mb (/dev/shm)"
 info "  Huge pages           : $(fmt_number $total_hpages_used_mb)Mb"
 LN
+
+if [ $local_only != yes ]
+then
+	if [ $gi_count_nodes -gt 1 ]
+	then
+		execute_on_other_nodes ". .bash_profile && plescripts/memory/show_pages.sh -local_only"
+	elif [ "$(dataguard_config_available)" == yes ]
+	then
+		typeset -a stby_server_list
+		typeset -a physical_list
+		load_stby_database
+		for server in ${stby_server_list[*]}
+		do
+			exec_cmd "ssh -t -t $server \". .bash_profile && plescripts/memory/show_pages.sh -local_only\""
+		done
+	fi
+fi
