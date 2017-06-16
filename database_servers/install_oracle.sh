@@ -306,6 +306,7 @@ function start_oracle_installation
 	then
 		LN
 		restore_swappiness
+		error "Oracle installation failed."
 		exit 1
 	fi
 	LN
