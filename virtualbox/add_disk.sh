@@ -18,6 +18,7 @@ typeset -r str_usage=\
 	[-disk_path=name]
 
 Add disk to SATA controller on the first free port, the controller must exists.
+Disk is created if not exists.
 "
 
 script_banner $ME $*
@@ -135,7 +136,7 @@ fi
 
 
 line_separator
-if [ ! -d "$disk_full_path" ]
+if [ ! -f "$disk_full_path" ]
 then
 	info "Create disk : '$disk_full_path'"
 	exec_cmd VBoxManage createhd						\
