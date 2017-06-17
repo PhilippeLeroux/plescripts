@@ -46,7 +46,7 @@ exit_if_param_undef host "$str_usage"
 
 exit_if_cannot_connect_to $host
 
-typeset		guest_version=$(ssh root@${host} 'modinfo vboxguest -F version|cut -d\  -f1')
+typeset		guest_version=$(ssh root@${host} 'modinfo vboxguest -F version 2>/dev/null|cut -d\  -f1')
 [ x"$guest_version" == x ] && guest_version="not installed" || true
 typeset -r	vbox_version=$(VBoxManage --version | cut -d_ -f1)
 
@@ -65,8 +65,21 @@ then
 	exit 0
 fi
 
-warning "Le module des Guest Additions n'est pas à jour sur $host"
-LN
+if [ "$guest_version" == "not installed" ]
+then
+	info "Le module des Guest Additions n'est pas installé sur $host"
+	LN
+
+	confirm_or_exit "Installer"
+	LN
+else
+	warning "Le module des Guest Additions n'est pas à jour sur $host"
+	LN
+
+	confirm_or_exit "Mettre à jour"
+	LN
+fi
+
 exec_cmd "~/plescripts/virtualbox/guest/attach_iso_guestadditions.sh	\
 																-vm_name=$host"
 LN
