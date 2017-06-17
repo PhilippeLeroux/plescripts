@@ -100,9 +100,21 @@ typeset -r pfile=/tmp/orcl_pfile.txt
 create_orcl_pfile $pfile
 
 orcl_sga_max_size_str=$(grep "__sga_target" $pfile | tail -1 | cut -d= -f2)
+if [ x"$orcl_sga_max_size_str" == x ]
+then
+	error "Cannot read parameter __sga_target"
+	LN
+	exit 1
+fi
 orcl_sga_max_size_mb=$(to_mb "${orcl_sga_max_size_str}b")
 
 orcl_pga_max_size_str=$(grep "__pga_aggregate_target" $pfile | tail -1 | cut -d= -f2)
+if [ x"$orcl_pga_max_size_str" == x ]
+then
+	error "Cannot read parameter __pga_aggregate_target"
+	LN
+	exit 1
+fi
 orcl_pga_max_size_mb=$(to_mb "${orcl_pga_max_size_str}b")
 
 info "$ORACLE_SID : sga = ${orcl_sga_max_size_mb}Mb pga=${orcl_pga_max_size_mb}Mb"

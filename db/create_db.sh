@@ -31,7 +31,7 @@ typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
 typeset	-i	memoryTarget=0
-if [ $crs_used == yes ]
+if [ $gi_count_nodes -gt 1 ]
 then
 	totalMemory=$(to_mb $shm_for_db)
 else # Bug Oracle sur une base single totalMemory est ignoré.
