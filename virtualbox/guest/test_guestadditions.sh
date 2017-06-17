@@ -8,11 +8,12 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME -host=<str>"
+"Usage : $ME -host=<str> [-y]"
 
 script_banner $ME $*
 
 typeset	host=undef
+typeset confirm=yes
 
 while [ $# -ne 0 ]
 do
@@ -24,6 +25,11 @@ do
 
 		-host=*)
 			host=${1##*=}
+			shift
+			;;
+
+		-y)
+			confirm=no
 			shift
 			;;
 
@@ -70,14 +76,20 @@ then
 	info "Le module des Guest Additions n'est pas installé sur $host"
 	LN
 
-	confirm_or_exit "Installer"
-	LN
+	if [ $confirm == yes ]
+	then
+		confirm_or_exit "Installer"
+		LN
+	fi
 else
 	warning "Le module des Guest Additions n'est pas à jour sur $host"
 	LN
 
-	confirm_or_exit "Mettre à jour"
-	LN
+	if [ $confirm == yes ]
+	then
+		confirm_or_exit "Mettre à jour"
+		LN
+	fi
 fi
 
 exec_cmd "~/plescripts/virtualbox/guest/attach_iso_guestadditions.sh	\

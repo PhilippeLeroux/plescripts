@@ -740,7 +740,7 @@ if [ "$install_guestadditions" == yes ]
 then
 	fake_exec_cmd cd ~/plescripts/virtualbox/guest
 	cd ~/plescripts/virtualbox/guest
-	exec_cmd "./test_guestadditions.sh -host=$server_name"
+	exec_cmd "./test_guestadditions.sh -host=$server_name -y"
 	fake_exec_cmd cd -
 	cd -
 	LN
