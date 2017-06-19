@@ -52,7 +52,7 @@ function read_hpages_from_alert_log
 		typeset -i	available_pages expected_pages allocated_pages
 		read page_size_kb available_pages expected_pages allocated_pages errors <<<$(grep -E "^\s*2048K\s*[0-9].*" $alog | tail -1)
 
-		typeset	-ri	page_size_b=$(convert_2_bytes $page_size_kb)
+		typeset	-ri	page_size_b=$(to_bytes $page_size_kb)
 
 		typeset -ri	available_pages_size=available_pages*page_size_b
 		typeset -ri	expected_pages_size=expected_pages*page_size_b

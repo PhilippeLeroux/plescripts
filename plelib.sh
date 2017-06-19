@@ -1477,7 +1477,7 @@ function to_mb
 
 #*> Convert value $1 to bytes
 #*> Units can be b,k,m or g (or upper case)
-function convert_2_bytes
+function to_bytes
 {
 	typeset -r	str_value=$1
 	typeset -r	last_car=${str_value:${#str_value}-1}
@@ -1526,7 +1526,7 @@ function fmt_bytesU_2_better
 		shift
 	fi
 
-	typeset -ri bytes=$(convert_2_bytes $1)
+	typeset -ri bytes=$(to_bytes $1)
 
 	if [ $bytes -ge $(( 1024*1024*1024 )) ]
 	then	# Gb
