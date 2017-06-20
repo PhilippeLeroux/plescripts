@@ -109,13 +109,7 @@ function dev_shm_setting
 
 	case "$max_shm_size" in
 		config)
-			if [ $db_type == single_fs ]
-			then	# En mode fs on laisse le défaut.
-				exec_cmd "echo \"tmpfs	/dev/shm	tmpfs	defaults 0 0\" >> /etc/fstab"
-			else
-				[ $db_type == single ] && shm_size=$min_shm_size_single || shm_size=$min_shm_size_rac
-				exec_cmd "echo \"tmpfs	/dev/shm	tmpfs	defaults,size=$shm_size 0 0\" >> /etc/fstab"
-			fi
+			exec_cmd "echo \"tmpfs	/dev/shm	tmpfs	defaults,size=$shm_size 0 0\" >> /etc/fstab"
 			LN
 			;;
 
@@ -125,7 +119,7 @@ function dev_shm_setting
 			;;
 
 		*)
-			error "max_shm_size='$max_shm_size' invalid."
+			error "max_shm_'$max_shm_size' invalid."
 			exit 1
 			;;
 	esac
@@ -133,13 +127,21 @@ function dev_shm_setting
 
 function create_tuned_profiles
 {
-	exec_cmd "~/plescripts/oracle_preinstall/create_tuned_profiles.sh"
+	exec_cmd "~/plescripts/oracle_preinstall/create_tuned_profiles.sh	\
+														-shm_size=$shm_size"
 }
 
 function setup_ssh_config
 {
 	exec_cmd "sed -i 's/.*LoginGraceTime.*/LoginGraceTime 0/' /etc/ssh/sshd_config"
 }
+
+if [ $db_type == single_fs ]
+then
+	typeset -ri shm_size=$(to_bytes $shm_for_db)
+else
+	typeset -ri shm_size=$(( $(to_bytes $shm_for_db) + $(to_bytes $hack_asm_memory) ))
+fi
 
 line_separator
 memory_setting

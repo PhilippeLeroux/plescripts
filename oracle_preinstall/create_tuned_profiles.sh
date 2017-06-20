@@ -7,15 +7,23 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r str_usage=\
-"Usage : $ME"
+"Usage : $ME
+	-shm_size=bytes	size to allocate for huge pages."
 
 script_banner $ME $*
+
+typeset -i shm_size=-1
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-shm_size=*)
+			shm_size=${1##*=}
 			shift
 			;;
 
@@ -34,6 +42,10 @@ do
 	esac
 done
 
+exit_if_param_undef shm_size "$str_usage"
+
+must_be_user root
+
 typeset	-r	root_tuned=/usr/lib/tuned
 
 #	============================================================================
@@ -42,7 +54,11 @@ typeset	-r	small_pages_profile=ple-oracle
 typeset	-r	oracle_profile_path=$root_tuned/$small_pages_profile
 typeset	-r	oracle_profile_conf=$oracle_profile_path/tuned.conf
 
-[ ! -d $oracle_profile_path ] && exec_cmd "mkdir $oracle_profile_path" && LN
+if [ ! -d $oracle_profile_path ]
+then
+	exec_cmd "mkdir $oracle_profile_path"
+	LN
+fi
 
 cat <<EOS>$oracle_profile_conf
 #
@@ -75,15 +91,14 @@ typeset	-r	huge_pages_profile=ple-hporacle
 typeset	-r	hporacle_profile_path=$root_tuned/$huge_pages_profile
 typeset	-r	hporacle_profile_conf=$hporacle_profile_path/tuned.conf
 
-[ ! -d $hporacle_profile_path ] && exec_cmd "mkdir $hporacle_profile_path" && LN
-
-if [[ "$hack_asm_memory" == "0" || "$shm_for_db" == "0" ]]
+if [ ! -d $hporacle_profile_path ]
 then
-	typeset	-ri	total_hp=0
-else
-	#	2 == Taille d'un hpage en Mb
-	typeset	-ri	total_hp=$(( $(to_mb $hack_asm_memory) + $(to_mb $shm_for_db) / 2 ))
+	exec_cmd "mkdir $hporacle_profile_path"
+	LN
 fi
+
+#	2 == Taille d'un hpage en Mb
+typeset	-ri	total_hp=$(( shm_size / 1024 / 1024 / 2 ))
 
 cat <<EOS>$hporacle_profile_conf
 #
@@ -95,14 +110,12 @@ include=$small_pages_profile
 
 [sysctl]
 vm.hugetlb_shm_group=${id_group_dba} # group dba
-vm.nr_hugepages=$total_hp # asm + databases
+vm.nr_hugepages=$total_hp
 EOS
 
 info "Create tuned profile : $huge_pages_profile"
 exec_cmd "cat $hporacle_profile_conf"
 LN
-
-#	============================================================================
 
 line_separator
 info "Active le profile $small_pages_profile"
