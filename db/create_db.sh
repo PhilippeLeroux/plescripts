@@ -83,7 +83,7 @@ add_usage "-db=name"								"Database name."
 add_usage "[-lang=$lang]"							"Language."
 add_usage "[-sampleSchema=$sampleSchema]"			"yes|no (pdb only)"
 add_usage "[-sysPassword=$sysPassword]"
-if [ $crs_used == yes ]
+if [ $gi_count_nodes -gt 1 ]
 then
 	add_usage "[-totalMemory=$totalMemory]"				"Unit Mb, 0 to disable."
 else	# utiliser memory_target avec le crs fait planter la création de la base.
