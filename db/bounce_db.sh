@@ -37,16 +37,27 @@ done
 
 script_banner $ME $*
 
-exit_if_ORACLE_SID_not_defined
-
 function sql_bounce
 {
 	set_sql_cmd "shutdown immediate;"
 	set_sql_cmd "startup;"
 }
 
-sqlplus_cmd "$(sql_bounce)"
-LN
+if command_exists crsctl
+then
+	typeset -r db_name=$(srvctl config database)
+	exec_cmd srvctl stop database -db $db_name
+	LN
 
+	exec_cmd srvctl start database -db $db_name
+	LN
+else
+	exit_if_ORACLE_SID_not_defined
+
+	sqlplus_cmd "$(sql_bounce)"
+	LN
+fi
+
+line_separator
 sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/lspdbs.sql")"
 LN

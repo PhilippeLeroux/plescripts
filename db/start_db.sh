@@ -52,8 +52,16 @@ else
 	ORAENV_ASK=NO . oraenv
 fi
 
-sqlplus_cmd "$(set_sql_cmd "startup")"
-LN
+if command_exists crsctl
+then
+	typeset -r db_name=$(srvctl config database)
+
+	exec_cmd srvctl start database -db $db_name
+	LN
+else
+	sqlplus_cmd "$(set_sql_cmd "startup")"
+	LN
+fi
 
 sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/lspdbs.sql")"
 LN
