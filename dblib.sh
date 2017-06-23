@@ -36,7 +36,7 @@ function load_oraenv_for
 #*> exit 1 if $1 not exists.
 function exit_if_database_not_exists
 {
-	if test_if_cmd_exists crsctl
+	if command_exists crsctl
 	then
 		srvctl status database -db $1 >/dev/null 2>&1
 		typeset ret=$?
@@ -245,9 +245,11 @@ function sqlplus_print_query
 #*> $2 service name
 #*>
 #*> return 1 if db name or service name not exists, else return 0
+#*>
+#*> Si le crs n'est pas utilisé et que le pdb est fermé return 1
 function service_exists
 {
-	if test_if_cmd_exists crsctl
+	if command_exists crsctl
 	then
 		if grep -qE "^PRCR-1001"<<<"$(srvctl config service -db $1 -service $2)"
 		then
@@ -256,10 +258,14 @@ function service_exists
 			return 0
 		fi
 	else # ne test pas la base $1
-		typeset -r sql="select count(*) from dba_services where name = lower( '$2' );"
-		typeset -r ok="$(sqlplus_exec_query_with "sys/Oracle12@localhost:1521/pdb01 as sysdba" "$sql"|tail -1|tr -d [:space:])"
+		# $1 service name
+		function sql
+		{
+			set_sql_cmd "set term off echo off feed off tim off heading off;"
+			set_sql_cmd "select count(*) from cdb_services where name = lower( '$1' );"
+		}
+		typeset -r ok="$(sqlplus_exec_query "$(sql $2)"|tail -1|tr -d [:space:])"
 		[ "$ok" == "1" ] && return 0 || return 1
-		#grep -q "Service \"$2\" has .*"<<<"$(lsnrctl status)"
 	fi
 }
 
@@ -290,13 +296,13 @@ function exit_if_service_not_exists
 #*> return 0 if service running else return 1
 function service_running
 {
-	if test_if_cmd_exists crsctl
+	if command_exists crsctl
 	then
 		typeset -r db_name_l=$1
 		typeset -r service_name_l=$(to_lower $2)
 		grep -iqE "Service $service_name_l is running.*"<<<"$(LANG=C srvctl status service -db $db_name_l -s $service_name_l)"
 	else
-		service_exists $1 $2
+		grep -qi "Service \"$2\" has .*"<<<"$(lsnrctl status)"
 	fi
 }
 
