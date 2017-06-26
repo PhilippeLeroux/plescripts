@@ -44,8 +44,6 @@ do
 	esac
 done
 
-script_start
-
 script_banner $ME $*
 
 must_be_executed_on_server $client_hostname
@@ -71,7 +69,7 @@ then
 	LN
 fi
 
-for (( inode=1; inode <= $max_nodes; ++inode ))
+for (( inode=1; inode <= max_nodes; ++inode ))
 do
 	cfg_load_node_info $db $inode
 	exec_cmd "ssh oracle@${cfg_server_name} 'rm -rf db-sample-schemas-${oracle_release}'"
@@ -84,5 +82,3 @@ do
 		LN
 	fi
 done
-
-script_stop $ME
