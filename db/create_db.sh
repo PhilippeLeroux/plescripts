@@ -31,7 +31,7 @@ typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
 typeset	-i	memoryTarget=0
-if [ $gi_count_nodes -gt 1 ]
+if [[ $gi_count_nodes -gt 1 ]]
 then
 	totalMemory=$(to_mb $shm_for_db)
 else # Bug Oracle sur une base single totalMemory est ignoré.
@@ -341,6 +341,19 @@ function make_dbca_args
 	add_dynamic_cmd_param "-sysPassword    $sysPassword"
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
 	add_dynamic_cmd_param "-redoLogFileSize $redoSize"
+
+	#	Le paramètre totalMemory fonctionne pour :
+	#		- Base single sur FS 12.1, l'utilisation du paramètre memory_target fait planter dbca
+	#		- Base RAC 12.1 et 12.2
+	#
+	#	Le paramètre memory_target fonctionne pour les bases singles sur
+	#	FS en 12.2 sur ASM en 12.2 et 12.1, avec l'utilisation de totalMemory
+	#	dbca ne positionne pas memory_target
+	if [[ $orcl_release == 12.1 && $crs_used == no && ${db_type:0:3} == RAC ]]
+	then
+		totalMemory=$memoryTarget
+		memoryTarget=0
+	fi
 
 	if [ $totalMemory -ne 0 ]
 	then
