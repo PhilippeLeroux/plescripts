@@ -36,9 +36,9 @@ do
 	esac
 done
 
-typeset -i count_missing_hpages=0
+typeset -i missing_hpages=0
 
-#	Incrémente la variable count_missing_hpages
+#	Initialise la variable missing_hpages
 #	$1 full path alertlog
 function read_hpages_from_alert_log
 {
@@ -70,7 +70,7 @@ function read_hpages_from_alert_log
 			warning "Not enougth large pages !"
 			warning "----------------------------------------------------"
 			LN
-			count_missing_hpages=count_missing_hpages+expected_pages
+			missing_hpages=expected_pages
 		fi
 	else
 		warning "Fichier alertlog non trouvé :"
@@ -111,8 +111,6 @@ function print_hpages_mgmtdb
 	fi
 }
 
-typeset	-i	total_memory_used_mb=0
-
 typeset -ri hpage_size_mb=$(to_mb $(get_hugepages_size_kb)K)
 typeset -ri	hpage_total=$(get_hugepages_total)
 typeset -ri	hpage_free=$(get_hugepages_free)
@@ -136,14 +134,12 @@ info "Hpage total            : $(fmt_number $hpage_total) = $(fmt_number $(( hpa
 info "Hpage free             : $(fmt_number $hpage_free) = $(fmt_number $(( hpage_free * hpage_size_mb )))Mb"
 info "Hpage used             : $(fmt_number $hpage_used) = $(fmt_number $(( hpage_used * hpage_size_mb )))Mb"
 LN
-typeset -ri total_hpages_used_mb=total_memory_used_mb+hpage_used
 
 line_separator
 info "/dev/shm :"
 info "Shm max size           : $(fmt_number $shm_max_size_mb)Mb"
 info "Shm used               : $(fmt_number $shm_used_mb)Mb"
 LN
-typeset -ri total_smallpages_used_mb=total_memory_used_mb+shm_used_mb
 
 line_separator
 max_memory_mb=$(compute -i "$(memory_total_kb) / 1024")
@@ -152,8 +148,8 @@ info "Max memory             : $(fmt_number $max_memory_mb)Mb"
 info "Free memory            : $(fmt_number $free_memory_mb)Mb"
 info
 info "SGA"
-info "  Small pages          : $(fmt_number $total_smallpages_used_mb)Mb (/dev/shm)"
-info "  Huge pages           : $(fmt_number $total_hpages_used_mb)Mb"
+info "  Small pages          : $(fmt_number $shm_used_mb)Mb (/dev/shm)"
+info "  Huge pages           : $(fmt_number $hpage_used) = $(fmt_number $(( hpage_used * hpage_size_mb )))Mb"
 LN
 
 if [ $local_only != yes ]
