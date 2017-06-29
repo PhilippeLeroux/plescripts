@@ -31,7 +31,13 @@ typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
 typeset	-i	memoryTarget=0
-if [[ $gi_count_nodes -gt 1 ]]
+if [[ $gi_count_nodes -eq 1 && $orcl_release == 12.2 ]]
+then
+	typeset -r set_param_totalMemory=no
+else
+	typeset -r set_param_totalMemory=yes
+fi
+if [ $set_param_totalMemory == yes ]
 then
 	totalMemory=$(to_mb $shm_for_db)
 else # Bug Oracle sur une base single totalMemory est ignoré.
@@ -83,7 +89,7 @@ add_usage "-db=name"								"Database name."
 add_usage "[-lang=$lang]"							"Language."
 add_usage "[-sampleSchema=$sampleSchema]"			"yes|no (pdb only)"
 add_usage "[-sysPassword=$sysPassword]"
-if [ $gi_count_nodes -gt 1 ]
+if [ $set_param_totalMemory == yes ]
 then
 	add_usage "[-totalMemory=$totalMemory]"				"Unit Mb, 0 to disable."
 else	# utiliser memory_target avec le crs fait planter la création de la base.
@@ -349,11 +355,11 @@ function make_dbca_args
 	#	Le paramètre memory_target fonctionne pour les bases singles sur
 	#	FS en 12.2 sur ASM en 12.2 et 12.1, avec l'utilisation de totalMemory
 	#	dbca ne positionne pas memory_target
-	if [[ $orcl_release == 12.1 && $crs_used == no && ${db_type:0:3} == RAC ]]
-	then
-		totalMemory=$memoryTarget
-		memoryTarget=0
-	fi
+	#if [[ $orcl_release == 12.1 && $crs_used == no ]]
+	#then
+	#	totalMemory=$memoryTarget
+	#	memoryTarget=0
+	#fi
 
 	if [ $totalMemory -ne 0 ]
 	then
@@ -580,6 +586,15 @@ exit_if_param_invalid	wallet				"yes no"	"$str_usage"
 
 adjust_parameters
 
+if [ "$(tuned-adm active | awk '{ print $4 }')" == "ple-hporacle" ]
+then
+	error "Tuned profile active is ple-hporacle (Huge page configuration)"
+	error "With user root, activate profile ple-oracle : "
+	error "$ su - root -c \"tuned-adm profile ple-oracle\""
+	LN
+	exit 1
+fi
+
 stats_tt start create_$lower_db
 
 typeset prefixInstance=${db:0:8}
@@ -705,3 +720,9 @@ script_stop $ME $lower_db
 LN
 
 next_instructions
+
+# Sauvegarde la log sur le serveur.
+[ ! -d ~/logs ] && mkdir ~/logs || true
+
+exec_cmd "cp \"$PLELIB_LOG_FILE\" $HOME/logs"
+clean_log_file "$HOME/logs/${PLELIB_LOG_FILE/$PLELOG_PATH\/}"
