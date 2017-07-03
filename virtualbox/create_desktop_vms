@@ -12,6 +12,7 @@ typeset	memory=2048
 typeset	cpus=2
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 
 typeset -r str_usage=\

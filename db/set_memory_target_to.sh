@@ -8,14 +8,15 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	[-memory_target=value|max]	ex 1024M or 1G. value can be negative.
-	[-show_only]
+	[-apply]
 "
 
 typeset 	memory_target=undef
-typeset		show_only=no
+typeset		apply=no
 
 while [ $# -ne 0 ]
 do
@@ -30,8 +31,8 @@ do
 			shift
 			;;
 
-		-show_only)
-			show_only=yes
+		-apply)
+			apply=yes
 			shift
 			;;
 
@@ -50,11 +51,9 @@ do
 	esac
 done
 
-#ple_enable_log
+#ple_enable_log -params $PARAMS
 
-script_banner $ME $*
-
-if [ $show_only == no ]
+if [ $apply == yes ]
 then
 	exit_if_param_undef memory_target	"$str_usage"
 fi
@@ -143,23 +142,25 @@ info -n	"memory_target  : $(fmt_bytesU_2_better $cur_memory_target)"
 info -f	", maximum : $(fmt_bytesU_2_better $max_memory_target) ($(fmt_number $(to_mb ${max_memory_target}b))Mb)"
 LN
 
-info -n "set memory_target to $(fmt_bytesU_2_better $memory_target) : "
-if [ $memory_target -ne -1 ]
+if [ $memory_target -eq -1 ]
 then
-	typeset -ri	diff=$(( memory_target - cur_memory_target ))
-	if [ $diff -gt 0 ]
+	exit 0
+fi
+
+info -n "set memory_target to $(fmt_bytesU_2_better $memory_target) : "
+typeset -ri	diff=$(( memory_target - cur_memory_target ))
+if [ $diff -gt 0 ]
+then
+	info -f "increase of $(fmt_bytesU_2_better $diff)"
+	if [ $memory_target -gt $max_memory_target ]
 	then
-		info -f "increase of $(fmt_bytesU_2_better $diff)"
-		if [ $memory_target -gt $max_memory_target ]
-		then
-			LN
-			error "/dev/shm is too low."
-			LN
-			exit 1
-		fi
-	else
-		info -f "decrease of $(fmt_bytesU_2_better $(abs $diff))"
+		LN
+		error "/dev/shm is too low."
+		LN
+		exit 1
 	fi
+else
+	info -f "decrease of $(fmt_bytesU_2_better $(abs $diff))"
 fi
 LN
 
@@ -178,7 +179,12 @@ then
 	exit 1
 fi
 
-[ $show_only == yes ] && exit 0 || true
+if [ $apply == no ]
+then
+	info "add flag -apply to apply configuration."
+	LN
+	exit 0
+fi
 
 typeset -r backup_pfile='/tmp/p.txt'
 

@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : ${ME##*/} <libname>
 Compte le nombre de fois qu'une fonction de la lib <libname> est utilisée dans un
@@ -13,8 +14,6 @@ script.
 
 Ex : ${0##*/} ~/plescripts/plelib.sh
 "
-
-script_banner $ME $*
 
 typeset libname=undef
 

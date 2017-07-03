@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-server1=name
@@ -14,8 +15,6 @@ typeset -r str_usage=\
 Doit être exécuté depuis : $client_hostname
 Effectue les équivalences ssh nécessaires pour un cluster RAC.
 "
-
-script_banner $ME $*
 
 typeset	server1=undef
 typeset	server2=undef

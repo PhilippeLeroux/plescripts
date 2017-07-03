@@ -6,14 +6,13 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	[-db=<str>]         Détruit la ou les VMs correspondant à la base.
 	[-server=<pattern>] Détruit les VMs correspondants au pattern.
 	[-y]
 "
-
-script_banner $ME $@
 
 typeset	db=undef
 typeset	server=undef

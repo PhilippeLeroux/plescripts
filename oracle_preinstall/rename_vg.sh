@@ -1,8 +1,8 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC

@@ -8,6 +8,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 
@@ -20,8 +21,6 @@ Dataguard : exécuter le script sur tous les nœuds.
 Note : le script create_credential.sh appel ce script si le 'wallet store'
 n'existe pas.
 "
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

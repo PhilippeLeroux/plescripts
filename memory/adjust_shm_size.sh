@@ -6,12 +6,11 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	[-sga=$shm_for_db]		(Ex : -sga=512M)
 "
-
-script_banner $ME $*
 
 typeset sga=$shm_for_db
 

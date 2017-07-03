@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	[-version=version like -version=3.8.13-118.17.5, default latest
@@ -43,9 +44,7 @@ do
 	esac
 done
 
-#ple_enable_log
-
-script_banner $ME $*
+#ple_enable_log -params $PARAMS
 
 info "Generate grub config file"
 exec_cmd grub2-mkconfig -o /boot/grub2/grub.cfg

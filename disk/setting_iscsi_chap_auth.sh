@@ -9,6 +9,7 @@ EXEC_CMD_ACTION=EXEC
 . ~/plescripts/global.cfg
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage="Usage : $ME -user=<> -password=<>"
 
 typeset user=undef

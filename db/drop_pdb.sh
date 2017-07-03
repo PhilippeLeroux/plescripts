@@ -8,6 +8,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage :
 $ME
@@ -154,9 +155,7 @@ function stop_and_remove_dbfs
 	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb -skip_drop_user"
 }
 
-[ $log == yes ] && ple_enable_log || true
-
-script_banner $ME $*
+[ $log == yes ] && ple_enable_log -params $PARAMS || true
 
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"

@@ -6,13 +6,12 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 Modifie grub2 pour démarrer le kernel avec les options no-kvmclock no-kvmclock-vsyscall
 Pour le pourquoi du comment voir la documentation ntp/readme.md
 "
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

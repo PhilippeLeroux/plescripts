@@ -4,6 +4,7 @@
 . ~/plescripts/global.cfg
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset -ri	max_offset_ms=1
 

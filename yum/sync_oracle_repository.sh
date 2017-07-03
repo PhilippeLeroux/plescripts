@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset	use_tar=none
 typeset infra_install=no
@@ -64,8 +65,6 @@ do
 			;;
 	esac
 done
-
-script_banner $ME $*
 
 exit_if_param_invalid	release	"latest R3 R4 all"	"$str_usage"
 

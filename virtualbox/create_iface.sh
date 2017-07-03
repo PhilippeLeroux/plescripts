@@ -6,10 +6,9 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME [-force_iface_name=vboxnet#]"
-
-script_banner $ME $*
 
 typeset force_iface_name=undef
 
@@ -98,4 +97,3 @@ do
 		fi
 	fi
 done
-

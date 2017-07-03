@@ -1,4 +1,5 @@
 #/bin/bash
+# vim: ts=4:sw=4
 
 typeset -r width=85
 typeset -r height=40

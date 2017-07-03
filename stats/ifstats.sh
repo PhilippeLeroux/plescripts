@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-title=<str>     titre du jeu de statistiques.
@@ -19,8 +20,6 @@ typeset -r str_usage=\
 	Utiliser ifplot.sh pour affichage graphique de la sortie.
 "
 
-
-script_banner $ME $*
 
 typeset -i	max_count=0
 typeset -i	pause_of_secs=1

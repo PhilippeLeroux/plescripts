@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset infra_install=no
 
@@ -45,9 +46,7 @@ do
 	esac
 done
 
-[ $infra_install == no ] && ple_enable_log || true
-
-script_banner $ME $*
+[ $infra_install == no ] && ple_enable_log -params $PARAMS || true
 
 must_be_executed_on_server "$client_hostname"
 

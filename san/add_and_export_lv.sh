@@ -8,6 +8,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-export_to=\"srv1 srv2 ...\" : Liste des serveurs, séparés par un espace, ou doivent être exportées les LUNs (1)

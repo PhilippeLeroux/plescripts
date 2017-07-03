@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=NOP
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME [-doit] [-force]
 	Le GI et le logiciel Oracle doivent avoir été désinstallés.
@@ -18,8 +19,6 @@ typeset -r str_usage=\
 
 	Le paramètre -force permet de ne pas tester si le Grid Infra est installé.
 "
-
-script_banner $ME $*
 
 typeset force=no
 

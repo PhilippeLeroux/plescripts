@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage="Usage : $ME"
 
 while [ $# -ne 0 ]
@@ -26,7 +27,7 @@ do
 	esac
 done
 
-ple_enable_log
+ple_enable_log -params $PARAMS
 
 line_separator
 exec_cmd sudo "systemctl enable rpcbind"

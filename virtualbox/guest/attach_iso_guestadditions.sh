@@ -6,8 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-
-script_banner $ME $*
+typeset -r PARAMS="$*"
 
 typeset guest_addition_path="$HOME/.config/VirtualBox"
 typeset vm_name=undef

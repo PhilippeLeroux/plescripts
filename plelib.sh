@@ -136,14 +136,17 @@ typeset -r PLELOG_PATH=$PLELOG_ROOT/$(date +"%Y-%m-%d")
 #	Lecture du nom du script appelant.
 typeset	-r PLESCRIPT_NAME=${0##*/}
 
-# $1 nom de la log sans le chemin (facultatif), par défaut nom du script appelant.
+# $1 nom de la log sans le chemin (facultatif), par défaut nom du script appelant
+# ou/et -params $*
+# Exemple : ple_enable_log -params $*
 function ple_enable_log
 {
-	if [ "$#" -eq 0 ]
+	if [[ "$#" -eq 0 || "$1" == "-params" ]]
 	then # Construit le nom de la log à partir du nom du script.
 		PLELIB_LOG_FILE=$PLELOG_PATH/$(date +"%Hh%Mmn%S")_${USER}_on_$(hostname -s)_${PLESCRIPT_NAME%.*}.log
 	else
 		PLELIB_LOG_FILE="$PLELOG_PATH/$(date +"%Hh%Mmn%S")_${USER}_on_$(hostname -s)_$1"
+		shift
 	fi
 
 	# Les markers sont activés avec FILE ou ENABLE, s'ils étaient désactivés ils
@@ -168,6 +171,12 @@ function ple_enable_log
 		touch $PLELIB_LOG_FILE >/dev/null 2>&1
 		chmod ug=rw,o=r $PLELIB_LOG_FILE >/dev/null 2>&1
 		[ $? -ne 0 ] && exit 1 || true
+	fi
+
+	if [[ $# -ne 0 && "$1" == "-params" ]]
+	then
+		shift
+		info "Running : ${ME/$HOME/~} $*"
 	fi
 }
 
@@ -268,20 +277,6 @@ function must_be_user
 		error "Script ${ME##*/} must be executed by user $list_user"
 		error "Current user is $USER"
 		exit 1
-	fi
-}
-
-#*> Idéalement tous les scripts doivent appeler cette fonction.
-#*> script_banner $ME $*
-#*>
-#*> Redondant avec l'affichage de la function exec_cmd, n'affichera le nom
-#*> du script que si SCRIPT_BANNER == ENABLE
-function script_banner
-{
-	if [ "$SCRIPT_BANNER" == ENABLE ]
-	then
-		info "Running : ${@/$HOME/~}"
-		LN
 	fi
 }
 

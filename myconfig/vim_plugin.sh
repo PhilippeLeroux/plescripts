@@ -8,6 +8,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r plugin_list=~/plescripts/myconfig/vim_plugin_list.txt
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-url=<url>         : Installe depuis l'url github un plugin

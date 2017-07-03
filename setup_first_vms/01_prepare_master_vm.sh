@@ -7,8 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-
-script_banner $ME $*
+typeset -r PARAMS="$*"
 
 must_be_executed_on_server "$master_hostname"
 

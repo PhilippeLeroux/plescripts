@@ -8,6 +8,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME -role=[infra|master]
 Configure NTP for infra or master server (use chrony).

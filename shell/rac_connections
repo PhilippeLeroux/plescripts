@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME <oracle|grid|root|...> [-h|-v]
 
@@ -14,8 +15,6 @@ Second parameter :
 	* -h split horizontal
 	* -v split vertical   (default)
 "
-
-script_banner $ME $*
 
 typeset	-i	count_errors=0
 typeset		split_flag=-v

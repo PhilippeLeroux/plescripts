@@ -8,6 +8,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
@@ -64,9 +65,7 @@ do
 	esac
 done
 
-[ $log == yes ] && ple_enable_log || true
-
-script_banner $ME $*
+[ $log == yes ] && ple_enable_log -params $PARAMS || true
 
 must_be_user root
 

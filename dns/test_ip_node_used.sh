@@ -3,6 +3,7 @@
 # vim: ts=4:sw=4
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME <IP node>
 	retourne 1 si 'IP node' est utilisée, 0 sinon.

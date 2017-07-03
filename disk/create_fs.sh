@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -20,8 +21,6 @@ typeset -r str_usage=\
 	[-noatime]			add option noatime to mount point options.
 	[-netdev]           add _netdev to mount point options.
 "
-
-script_banner $ME $*
 
 typeset		mount_point=undef
 typeset	-a	device_list=( "check" )

@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME [-emul]
 	Database & crs are stopped, after update server is bounced.
@@ -133,9 +134,7 @@ function update_cluster_server
 
 must_be_user root
 
-ple_enable_log
-
-script_banner $ME $*
+ple_enable_log -params $PARAMS
 
 if command_exists crsctl
 then

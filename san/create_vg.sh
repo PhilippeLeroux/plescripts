@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-device=name         OS disk name or auto.
@@ -14,8 +15,6 @@ typeset -r str_usage=\
 	[-add_partition=no]  yes|no, yes : add a partition to device.
 	[-io_scheduler=none] noop|deadline|cfq create udev rule for device
 "
-
-script_banner $ME $*
 
 typeset	device=undef
 typeset vg=undef

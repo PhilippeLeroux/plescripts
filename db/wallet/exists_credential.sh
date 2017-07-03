@@ -7,13 +7,12 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset -r str_usage=\
 "Usage : $ME -tnsalias=name -user=name
 
 return 0 if tnsalias and user exists, else return 1"
-
-script_banner $ME $*
 
 typeset	tnsalias=undef
 typeset	user=undef

@@ -7,12 +7,11 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 Ce script vérifie que le virtual-host remplie les conditions nécessaires au bon
 fonctionnement de la démo."
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

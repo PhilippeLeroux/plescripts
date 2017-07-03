@@ -7,8 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-
-script_banner $ME $*
+typeset -r PARAMS="$*"
 
 typeset		db=undef
 typeset		vmGroup

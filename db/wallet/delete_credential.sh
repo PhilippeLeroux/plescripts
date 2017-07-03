@@ -8,6 +8,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME -tnsalias=name
 
@@ -15,8 +16,6 @@ RAC : prend en charge un 'wallet store' non stocké sur un CFS.
 
 Dataguard : exécuter le script sur tous les nœuds.
 "
-
-script_banner $ME $*
 
 typeset tnsalias=undef
 

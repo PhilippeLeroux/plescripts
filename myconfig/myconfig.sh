@@ -6,16 +6,19 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset -r str_usage=\
 "Usage : $ME
 	[-restore|-backup]  -restore config, -backup config
 	[-skip_vim]         with -restore not install gvim
+	[-skip_vim_plugin]  with -restore not install gvim plugin
 	[-emul]
 "
 
 typeset	action=undef
 typeset	install_gvim=yes
+typeset	install_gvim_plugin=yes
 
 while [ $# -ne 0 ]
 do
@@ -37,6 +40,11 @@ do
 
 		-skip_vim)
 			install_gvim=no
+			shift
+			;;
+
+		-skip_vim_plugin)
+			install_gvim_plugin=no
 			shift
 			;;
 
@@ -70,7 +78,7 @@ function apply_sudo_config
 
 	line_separator
 	info "Config sudo for user $USER"
-	exec_cmd -c "sudo grep -q \"$sudo_config\" /etc/sudoers"
+	exec_cmd -f -c "sudo grep -q \"$sudo_config\" /etc/sudoers"
 	if [ $? -eq 0 ]
 	then
 		info "sudo is already configured."
@@ -80,9 +88,7 @@ function apply_sudo_config
 		exec_cmd sudo cp /etc/sudoers /etc/sudoers.backup
 		LN
 
-		typeset -i ln=$(sudo grep -qn "root ALL=(ALL) ALL" /etc/sudoers | cut -d: -f1)
-		ln=ln+1
-		exec_cmd "sudo sed -i \"${ln}i\\$sudo_config\" /etc/sudoers"
+		exec_cmd "sudo sed -i \"/root ALL=(ALL) ALL/a $sudo_config\" /etc/sudoers"
 		LN
 
 		exec_cmd -c "sudo visudo -c -f /etc/sudoers"
@@ -111,7 +117,8 @@ function restore
 		info "mode vi is enabled."
 	else
 		info "enable mode vi"
-		exec_cmd "cat ~/plescripts/setup_first_vms/for_inputrc /etc/inputrc > new_inputrc"
+		exec_cmd "sed \"1i set editing-mode vi\" /etc/inputrc > new_inputrc"
+		#exec_cmd "cat ~/plescripts/setup_first_vms/for_inputrc /etc/inputrc > new_inputrc"
 		exec_cmd "sudo mv new_inputrc /etc/inputrc"
 	fi
 	LN
@@ -162,8 +169,12 @@ function restore
 		info "[G]vim configuration :"
 		exec_cmd "~/plescripts/myconfig/vim_config.sh -restore"
 		LN
-		exec_cmd "~/plescripts/myconfig/vim_plugin.sh -init"
-		LN
+
+		if [ $install_gvim_plugin == yes ]
+		then
+			exec_cmd "~/plescripts/myconfig/vim_plugin.sh -init"
+			LN
+		fi
 	fi
 
 	line_separator

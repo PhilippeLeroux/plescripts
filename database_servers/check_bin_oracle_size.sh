@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME exit 1 if $ORACLE_HOME/bin/oracle size == 0"
 
@@ -32,9 +33,7 @@ do
 	esac
 done
 
-#ple_enable_log
-
-script_banner $ME $*
+#ple_enable_log -params $PARAMS
 
 if [ x"$ORACLE_HOME" == x ]
 then

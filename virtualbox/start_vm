@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset server=undef
 typeset	wait_os=yes
@@ -20,8 +21,6 @@ typeset -r str_usage=\
 "Usage : $ME
 $(print_usage)
 "
-
-script_banner $ME $@
 
 while [ $# -ne 0 ]
 do

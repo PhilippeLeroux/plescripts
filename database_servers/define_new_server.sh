@@ -9,6 +9,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset -r	all_params="$*"
 
@@ -41,8 +42,6 @@ add_usage "[-storage=$storage]"		"ASM|FS"
 add_usage "[-ip_node=node]"			"nœud IP, sinon prend la première IP disponible."
 
 typeset -r str_usage="Usage : $ME\n$(print_usage)"
-
-script_banner $ME $*
 
 #	rac si max_nodes vaut plus de 1
 typeset		db_type=std

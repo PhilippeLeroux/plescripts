@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -7,14 +6,13 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME -node1=<str> [-node2=<str>]
 
 Monitor un server Oracle standalone ou 2 nœuds d'un RAC via tmux.
 Le script est prévu pour être exécuté depuis le poste client.
 "
-
-script_banner $ME $*
 
 typeset	node1=undef
 typeset	node2=undef

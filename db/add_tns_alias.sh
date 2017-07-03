@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-service=name    Nom du service qui sera aussi le nom de l'alias
@@ -14,8 +15,6 @@ typeset -r str_usage=\
 	[-dataguard_list=server list] Nom des autres serveurs du dataguard.
 	[-copy_server_list=] Copie avec scp le tnsnames sur la liste des servers.
 "
-
-script_banner $ME $*
 
 typeset service=undef
 typeset host_name=undef

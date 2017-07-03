@@ -7,14 +7,13 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-device=name         Nom du disque à utiliser, par exemple sdb ou auto.
 	-vg=name             Nom du VG à créer, par exemple asm01.
 	[-io_scheduler=none] noop|deadline|cfq create udev rule for device
 "
-
-script_banner $ME $*
 
 typeset	device=undef
 typeset vg=undef

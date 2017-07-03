@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -7,12 +6,11 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME [-name=<str>]
 	Si name = auto ou est omis alors utilise le nom du serveur.
 "
-
-script_banner $ME $*
 
 typeset name=${1-auto}
 

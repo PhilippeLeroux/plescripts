@@ -6,8 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-
-script_banner $ME $*
+typeset -r PARAMS="$*"
 
 typeset switch_to=undef
 typeset	release=undef
@@ -60,7 +59,14 @@ do
 	esac
 done
 
-exit_if_param_invalid switch_to "local internet"	"$str_usage"
+if [ "$switch_to" == undef ]
+then
+	error "Flag -local or -internet missing."
+	LN
+	info "$str_usage"
+	LN
+	exit 1
+fi
 
 if [ "$release" == undef ]
 then

@@ -6,14 +6,13 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME -role=infra|master
 
 Suite à une mise à jour les zones ne sont plus présentes au boot.
 Un script les actives au démarrage.
 "
-
-script_banner $ME $*
 
 typeset	role=undef
 

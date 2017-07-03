@@ -10,6 +10,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset db=undef
 typeset action=install
@@ -78,9 +79,7 @@ do
 	esac
 done
 
-ple_enable_log
-
-script_banner $ME $*
+ple_enable_log -params $PARAMS
 
 exit_if_param_undef		db							"$str_usage"
 exit_if_param_invalid	action	"install config"	"$str_usage"

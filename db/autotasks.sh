@@ -7,10 +7,9 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME -enable|-disable|-status"
-
-script_banner $ME $*
 
 typeset action=undef
 

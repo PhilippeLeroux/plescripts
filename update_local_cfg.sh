@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 add_usage "-var=name"		"Variable name to update."
 add_usage "-value=value"	"New value or remove."
@@ -109,8 +110,6 @@ do
 			;;
 	esac
 done
-
-script_banner $ME $*
 
 exit_if_param_undef var		"$str_usage"
 exit_if_param_undef value	"$str_usage"

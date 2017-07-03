@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-server1=name
@@ -17,8 +18,6 @@ typeset -r str_usage=\
 Le script doit être exécuter depuis $client_hostname, il n'y aura pas de mot de passe
 demandé.
 "
-
-script_banner $ME $*
 
 typeset	server1=undef
 typeset	server2=undef

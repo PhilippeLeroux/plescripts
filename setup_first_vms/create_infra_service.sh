@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset		target=graphical
 typeset -r	service_name=${infra_hostname}.service
@@ -15,8 +16,6 @@ typeset -r str_usage=\
 "Usage : $ME -target=$target : graphical or multi-user
 
 Create service $service_name to start VM $infra_hostname on startup."
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

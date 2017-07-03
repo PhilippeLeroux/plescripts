@@ -8,6 +8,7 @@ EXEC_CMD_ACTION=EXEC
 PAUSE=OFF
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage :
 $ME
@@ -42,9 +43,7 @@ do
 	esac
 done
 
-ple_enable_log
-
-script_banner $ME $*
+ple_enable_log -params $PARAMS
 
 exit_if_ORACLE_SID_not_defined
 

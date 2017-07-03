@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset -i max_latency_ms=10
 
@@ -43,8 +44,6 @@ do
 			;;
 	esac
 done
-
-script_banner $ME $*
 
 must_be_user oracle
 

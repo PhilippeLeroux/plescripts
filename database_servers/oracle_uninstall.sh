@@ -6,12 +6,11 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Ne pas utiliser ce script directement mais :
 ./uninstall.sh -oracle
 "
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

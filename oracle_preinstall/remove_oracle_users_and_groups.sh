@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -7,11 +6,10 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	Supprime les comptes oracle & grid ainsi que tous les groups"
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

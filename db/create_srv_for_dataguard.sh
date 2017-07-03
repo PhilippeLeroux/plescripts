@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 #	****************************************************************************
 #	Le scripts db/stby/create_dataguard.sh la fonction create_dataguard_services
@@ -24,8 +25,6 @@ typeset -r str_usage=\
 
 	* RAC non pris en compte.
 "
-
-script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef

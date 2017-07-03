@@ -6,14 +6,13 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
 
 Remove all services for a pdb."
-
-script_banner $ME $*
 
 typeset db=undef
 typeset service=undef

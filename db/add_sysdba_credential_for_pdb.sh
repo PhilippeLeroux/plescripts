@@ -8,14 +8,13 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME -db=name -pdb=name [-service=auto]
 
 Le script prend en charge les RACs.
 
 Pour un dataguard exécuter ce script sur tous les nœuds."
-
-script_banner $ME $*
 
 typeset db=undef
 typeset pdb=undef

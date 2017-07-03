@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	Désinstalle tous les composants d'un serveur ou cluster Oracle.
@@ -134,9 +135,7 @@ do
 	esac
 done
 
-ple_enable_log
-
-script_banner $ME $*
+ple_enable_log -params $PARAMS
 
 must_be_user root
 

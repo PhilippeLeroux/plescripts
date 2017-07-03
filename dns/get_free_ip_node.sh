@@ -8,6 +8,7 @@ EXEC_CMD_ACTION=EXEC
 typeset	-ri	min_ip_node=100
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME retourne la première 'IP node' non utilisée.
 	[-range=<#>] Indique le nombre d'IP nodes non utilisées consécutives souhaité.

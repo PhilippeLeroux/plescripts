@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-vm_name=str
@@ -14,8 +15,6 @@ typeset -r str_usage=\
 
 Attention la taille des disques ne peut être diminuée.
 "
-
-script_banner $ME $*
 
 typeset		vm_name=undef
 typeset		disk_name=undef

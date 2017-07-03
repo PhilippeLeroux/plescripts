@@ -10,4 +10,3 @@ info "Install bind, bind libs and utils..."
 exec_cmd yum -y install bind bind-libs bind-utils
 
 info "Finished."
-

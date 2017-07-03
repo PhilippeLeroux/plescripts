@@ -7,12 +7,11 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	[-with_standby]
 "
-
-script_banner $ME $*
 
 typeset	with_standby=no
 

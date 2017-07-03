@@ -6,8 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
-
-script_banner $ME $*
+typeset -r PARAMS="$*"
 
 #Doit être exécuté sur le serveur d'infrastructure ou le master.
 

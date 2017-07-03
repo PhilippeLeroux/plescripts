@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
@@ -13,8 +14,6 @@ typeset -r str_usage=\
 	-device=/dev/xxx|auto	auto incompatible with -action=add
 	-action=[create|add]
 "
-
-script_banner $ME $*
 
 typeset	add_to_cluster=no
 

@@ -9,6 +9,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset	-r	orcl_release="$(read_orcl_release)"
 
@@ -115,9 +116,7 @@ do
 	esac
 done
 
-[ $log == yes ] && ple_enable_log || true
-
-script_banner $ME $*
+[ $log == yes ] && ple_enable_log -params $PARAMS || true
 
 must_be_user oracle
 

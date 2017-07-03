@@ -8,6 +8,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage="Usage : $ME
 	-vg_name=name     : nom du VG contenant les LVs.
 	-prefix=name      : préfixe du nom des LVs.

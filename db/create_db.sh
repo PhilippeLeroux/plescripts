@@ -11,6 +11,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 #	12c ajustement :
 #	ORA-04031: unable to allocate 1015832 bytes of shared memory ("shared pool","unknown object","PDB Dynamic He","Alloc/Free SWRF Metric CHBs")
@@ -348,19 +349,6 @@ function make_dbca_args
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
 	add_dynamic_cmd_param "-redoLogFileSize $redoSize"
 
-	#	Le paramètre totalMemory fonctionne pour :
-	#		- Base single sur FS 12.1, l'utilisation du paramètre memory_target fait planter dbca
-	#		- Base RAC 12.1 et 12.2
-	#
-	#	Le paramètre memory_target fonctionne pour les bases singles sur
-	#	FS en 12.2 sur ASM en 12.2 et 12.1, avec l'utilisation de totalMemory
-	#	dbca ne positionne pas memory_target
-	#if [[ $orcl_release == 12.1 && $crs_used == no ]]
-	#then
-	#	totalMemory=$memoryTarget
-	#	memoryTarget=0
-	#fi
-
 	if [ $totalMemory -ne 0 ]
 	then
 		add_dynamic_cmd_param "-totalMemory $totalMemory"
@@ -568,9 +556,7 @@ function next_instructions
 #	============================================================================
 #	MAIN
 #	============================================================================
-ple_enable_log
-
-script_banner $ME $*
+ple_enable_log -params $PARAMS
 
 script_start
 

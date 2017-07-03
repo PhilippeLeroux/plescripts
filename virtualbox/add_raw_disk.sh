@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-vm_name=name     VM name
@@ -15,8 +16,6 @@ typeset -r str_usage=\
 
 Add raw disk to SATA controller on the first free port, the controller must exists.
 "
-
-script_banner $ME $*
 
 typeset		vm_name=undef
 typeset		disk_name=undef

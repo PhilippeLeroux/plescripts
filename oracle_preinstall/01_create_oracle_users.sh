@@ -10,6 +10,7 @@ typeset ORACLE_RELEASE=undef
 typeset db_type=undef
 
 typeset	-r	ME=$0
+typeset -r PARAMS="$*"
 typeset -r	str_usage=\
 "Usage $ME
 	-release=aa.bb.cc.dd

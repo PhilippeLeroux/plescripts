@@ -4,6 +4,9 @@
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
 
+typeset -r ME=$0
+typeset -r PARAMS="$*"
+
 function count_lv_errors
 {
 	lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$" | wc -l
@@ -60,7 +63,7 @@ function backstore_exists
 vgs asm01 >/dev/null 2>&1
 [ $? -ne 0 ] && exit 0 || true
 
-ple_enable_log san_status.log
+ple_enable_log san_status.log -params $PARAMS
 
 typeset -i lv_errors=$(count_lv_errors)
 if [ $lv_errors -ne 0 ]

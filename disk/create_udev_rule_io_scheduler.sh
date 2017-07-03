@@ -6,6 +6,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage :
 $ME
@@ -49,9 +50,7 @@ do
 	esac
 done
 
-#ple_enable_log
-
-script_banner $ME $*
+#ple_enable_log -params $PARAMS
 
 exit_if_param_undef device_list "$str_usage"
 

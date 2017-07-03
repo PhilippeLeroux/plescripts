@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -14,8 +15,6 @@ typeset -r str_usage=\
 	-vm_memory_mb=#    RAM for VM.
 	[-vmGroup=name]    Group name for VM.
 "
-
-script_banner $ME $*
 
 typeset		db=undef
 typeset	-i	vm_memory_mb=-1

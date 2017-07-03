@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -9,6 +8,7 @@ EXEC_CMD_ACTION=EXEC
 . ~/plescripts/stats/statslib.sh
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-title=<str>     titre du jeu de statistiques.
@@ -18,8 +18,6 @@ typeset -r str_usage=\
 
 	Statistiques sur la consommation mémoire.
 	Utiliser memplot.sh pour affichage graphique de la sortie."
-
-script_banner $ME $*
 
 typeset -i	max_count=0
 typeset -i	pause_of_secs=1

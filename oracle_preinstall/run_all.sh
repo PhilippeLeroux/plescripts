@@ -8,6 +8,7 @@ EXEC_CMD_ACTION=EXEC
 typeset db_type=undef
 
 typeset	-r	ME=$0
+typeset -r PARAMS="$*"
 typeset -r	str_usage=\
 "Usage $ME -db_type=[single|rac|single_fs]"
 

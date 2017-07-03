@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset		defrag=no
 typeset		ask=no
@@ -23,8 +24,6 @@ typeset -r str_usage=\
 $ME
 $(print_usage)
 "
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

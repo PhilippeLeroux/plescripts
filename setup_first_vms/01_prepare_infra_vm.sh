@@ -7,10 +7,9 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME ...."
-
-script_banner $ME $*
 
 info "Update /etc/hostname with ${infra_hostname}.${infra_domain}"
 exec_cmd "echo \"${infra_hostname}.${infra_domain}\" > /etc/hostname"

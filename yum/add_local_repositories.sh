@@ -6,14 +6,13 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME -role=master|infra
 Créé les dépôts locaux yum. Les dépôts sont hébergés par $infra_hostname.
 	-role=master sur le serveur $master_hostname, ou sur un serveur de BDD.
 	-role=infra sur le serveur $infra_hostname.
 " 
-
-script_banner $ME $*
 
 typeset role=undef
 

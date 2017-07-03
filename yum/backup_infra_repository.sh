@@ -6,13 +6,12 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 
 Effectue une sauvegarde locale du dépôt yum de $infra_hostname.
 Doit être exécuté sur $client_hostname."
-
-script_banner $ME $*
 
 while [ $# -ne 0 ]
 do

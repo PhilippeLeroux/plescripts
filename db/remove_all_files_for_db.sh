@@ -7,6 +7,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage="Usage : $ME -db=name"
 
 typeset db=undef
@@ -33,7 +34,7 @@ do
 	esac
 done
 
-ple_enable_log
+ple_enable_log -params $PARAMS
 
 exit_if_param_undef db	"$str_usage"
 

@@ -9,6 +9,7 @@ EXEC_CMD_ACTION=EXEC
 #PAUSE=ON
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-standby=name             Nom de la base standby (sera créée)
@@ -124,9 +125,7 @@ do
 	esac
 done
 
-ple_enable_log
-
-script_banner $ME $*
+ple_enable_log -params $PARAMS
 
 exit_if_ORACLE_SID_not_defined
 typeset -r primary=$ORACLE_SID

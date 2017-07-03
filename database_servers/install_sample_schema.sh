@@ -8,6 +8,7 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 
 typeset db=undef
 
@@ -43,8 +44,6 @@ do
 			;;
 	esac
 done
-
-script_banner $ME $*
 
 must_be_executed_on_server $client_hostname
 

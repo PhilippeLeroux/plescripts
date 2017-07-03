@@ -7,13 +7,12 @@
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
+typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME -host=<hostname> |& -ip=<ip_addr>
 	-host : remove 'hostname' from ~/.ssh/know_hosts
 	-ip   : remove 'ip_addr' from ~/.ssh/know_hosts
 "
-
-script_banner $ME $*
 
 typeset host=undef
 typeset ip=undef
