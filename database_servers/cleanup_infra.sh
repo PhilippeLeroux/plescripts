@@ -12,7 +12,7 @@ typeset -r PARAMS="$*"
 typeset -r str_usage="
 Usage : $ME
 	-db=name
-	[-keep_vm]         keep VMs.
+	[-keep_vms]        keep VMs.
 	[-keep_cfg_files]  keep configuration files.
 "
 
