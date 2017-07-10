@@ -42,7 +42,7 @@ function cfg_max_nodes
 #*>
 #*> La fonction test_if_other_nodes_up du script clone_master.sh lie le nom
 #*> des serveurs sans passer pas cette fonction : ne pas déplacer le champs
-#*> contenant le nom de la fonction.
+#*> contenant le nom du serveur.
 function cfg_load_node_info
 {
 	typeset -r	db=$(to_lower $1)
