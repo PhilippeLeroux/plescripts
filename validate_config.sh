@@ -215,8 +215,6 @@ function _in_path
 	typeset -r	cmd=$1
 	typeset -r	cmd_msg=$2
 
-	typeset -r	distrib=$(grep ^NAME /etc/os-release | cut -d= -f2)
-
 	typeset -r msg=$(printf "%-10s " $cmd)
 	info -n "  $msg"
 	if $(test_if_cmd_exists $cmd)
@@ -231,7 +229,10 @@ function _in_path
 			info -f -n "[$KO]"
 		fi
 		info -f " $cmd_msg"
-		if [[ $option == no && $distrib == openSUSE ]]
+
+		typeset -r	distrib=$(grep ^NAME /etc/os-release | cut -d= -f2)
+
+		if [[ $option == no && $distrib =~ openSUSE ]]
 		then
 			exec_cmd -ci cnf $cmd
 			LN
@@ -258,7 +259,7 @@ function test_if_configure_global_cfg_executed
 	info -n "~/plescripts/configure_global.cfg.sh executed "
 	typeset	errors_msg
 	typeset -i exec_global=0
-	
+
 	typeset	hn=$(hostname -s)
 	if [ "$hn" != "$client_hostname" ]
 	then
@@ -266,7 +267,7 @@ function test_if_configure_global_cfg_executed
 		exec_global=1
 		errors_msg="\n\tclient_hostname=$client_hostname expected $hn"
 	fi
-	
+
 	if [ "$USER" != "$common_user_name" ]
 	then
 		((++count_errors))
