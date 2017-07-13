@@ -553,6 +553,18 @@ function next_instructions
 	fi
 }
 
+# dbca me gonfle !
+function workaround_bug_dbca_122
+{
+	if [[ "$shared_pool_size" != "0" ]]
+	then
+		line_separator
+		info "Workaround bug dbca 12.2.0.1"
+		sqlplus_cmd "$(set_sql_cmd "alter system set shared_pool_size=$shared_pool_size scope=both sid='*';")"
+		LN
+	fi
+}
+
 #	============================================================================
 #	MAIN
 #	============================================================================
@@ -623,6 +635,8 @@ then
 fi
 
 [ $crs_used == no ] && fsdb_enable_autostart || true
+
+[ $orcl_release == 12.2 ] && workaround_bug_dbca_122 || true
 
 line_separator
 info "Adjust FRA size"
