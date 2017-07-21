@@ -278,6 +278,13 @@ LUNs_storage
 
 network_interface
 
+if [ ! -d $HOME/plescripts/tmp ]
+then
+	info "Create temporary directory."
+	exec_cmd "mkdir $HOME/plescripts/tmp"
+	LN
+fi
+
 line_separator
 exec_cmd "sed -i 's/gateway=.*$/gateway=$gateway_new_ip/g' ~/plescripts/global.cfg"
 LN
