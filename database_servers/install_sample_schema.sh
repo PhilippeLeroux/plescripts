@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/networklib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/global.cfg
@@ -57,6 +58,13 @@ typeset -r	url=https://github.com/oracle/db-sample-schemas/archive/v${oracle_rel
 
 typeset -r	archive_dir="$HOME/plescripts/tmp"
 typeset -r	archive="$archive_dir/v${oracle_release}.tar.gz"
+
+if ! ping_test github.com
+then
+	warning "github.com not available."
+	LN
+	exit 0
+fi
 
 if [ ! -f "$archive" ]
 then

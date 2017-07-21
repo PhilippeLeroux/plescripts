@@ -97,7 +97,7 @@ then
 	info "cd ~/plescripts/database_servers"
 	info "./install_sample_schema.sh -db=$db"
 	LN
-	exit 1
+	exit 0
 else
 	info -f "[$OK]"
 	LN
