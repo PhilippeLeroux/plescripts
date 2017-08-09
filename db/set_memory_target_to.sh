@@ -11,11 +11,11 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
-	[-memory_target=value|max]	ex 1024M or 1G. value can be negative.
+	[-val=value|max]	ex 1024M or 1G. value can be negative.
 	[-apply]
 "
 
-typeset 	memory_target=undef
+typeset 	val=undef
 typeset		apply=no
 
 while [ $# -ne 0 ]
@@ -26,8 +26,8 @@ do
 			shift
 			;;
 
-		-memory_target=*)
-			memory_target=${1##*=}
+		-val=*)
+			val=${1##*=}
 			shift
 			;;
 
@@ -55,7 +55,7 @@ done
 
 if [ $apply == yes ]
 then
-	exit_if_param_undef memory_target	"$str_usage"
+	exit_if_param_undef val	"$str_usage"
 fi
 
 exit_if_ORACLE_SID_not_defined
@@ -118,20 +118,20 @@ then
 fi
 
 typeset set_max=no
-if [ "$memory_target" == max ]
+if [ "$val" == max ]
 then
-	typeset -i memory_target=$max_memory_target
+	typeset -i val=$max_memory_target
 	set_max=yes
-elif [ "$memory_target" == undef ]
+elif [ "$val" == undef ]
 then
-	typeset -i memory_target=-1
+	typeset -i val=-1
 else
-	typeset is_neg=$(negatif $memory_target)
+	typeset is_neg=$(negatif $val)
 
-	typeset -i memory_target=$(to_bytes $(abs $memory_target))
+	typeset -i val=$(to_bytes $(abs $val))
 	if [ $is_neg == yes ]
 	then
-		memory_target=$(( cur_memory_target - memory_target ))
+		val=$(( cur_memory_target - val ))
 	fi
 fi
 
@@ -142,17 +142,17 @@ info -n	"memory_target  : $(fmt_bytesU_2_better $cur_memory_target)"
 info -f	", maximum : $(fmt_bytesU_2_better $max_memory_target) ($(fmt_number $(to_mb ${max_memory_target}b))Mb)"
 LN
 
-if [ $memory_target -eq -1 ]
+if [ $val -eq -1 ]
 then
 	exit 0
 fi
 
-info -n "set memory_target to $(fmt_bytesU_2_better $memory_target) : "
-typeset -ri	diff=$(( memory_target - cur_memory_target ))
+info -n "set memory_target to $(fmt_bytesU_2_better $val) : "
+typeset -ri	diff=$(( val - cur_memory_target ))
 if [ $diff -gt 0 ]
 then
 	info -f "increase of $(fmt_bytesU_2_better $diff)"
-	if [ $memory_target -gt $max_memory_target ]
+	if [ $val -gt $max_memory_target ]
 	then
 		LN
 		error "/dev/shm is too low."
@@ -164,9 +164,9 @@ else
 fi
 LN
 
-if [[ $set_max == yes && $memory_target -lt $cur_memory_target ]]
+if [[ $set_max == yes && $val -lt $cur_memory_target ]]
 then
-	error "memory_target $(fmt_bytesU_2_better $memory_target) < current memory_target $(fmt_bytesU_2_better $cur_memory_target)"
+	error "memory_target $(fmt_bytesU_2_better $val) < current memory_target $(fmt_bytesU_2_better $cur_memory_target)"
 	LN
 	exit 1
 fi
@@ -196,7 +196,7 @@ function sql_set_memory_target
 }
 
 line_separator
-sqlplus_cmd "$(sql_set_memory_target $memory_target)"
+sqlplus_cmd "$(sql_set_memory_target $val)"
 exec_cmd "~/plescripts/db/bounce_db.sh"
 LN
 
