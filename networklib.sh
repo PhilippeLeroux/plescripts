@@ -12,7 +12,7 @@ function ping_test
 # return 0 if port $2 open, else return 0
 function port_open
 {
-	nc $1 $2 </dev/null >/dev/null 2>&1
+	nc -z $1 $2
 }
 
 # $1 server name
