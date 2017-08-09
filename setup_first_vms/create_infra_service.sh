@@ -64,7 +64,7 @@ fi
 
 cat<<EOS>/tmp/$service_name
 [Unit]
-Description=Start VM $infra_hostname (VirtualBox)
+Description=VM $infra_hostname (VirtualBox)
 Wants=iscsi.service
 After=iscsi.service
 
