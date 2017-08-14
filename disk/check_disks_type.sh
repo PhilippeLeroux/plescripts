@@ -55,7 +55,7 @@ do
 	then
 		if [ $afdonly == no ]
 		then
-			info -n "disk $disk $(fmt_bytesU_2_better $size_b) Unused."
+			info "disk $disk $(fmt_bytesU_2_better $size_b) ${BLINK}${UNDERLINE}Unused${NORM}."
 		fi
 	else
 		typeset -i nb_part=$(count_partition_for $disk)
