@@ -35,6 +35,11 @@ exec_cmd sudo "systemctl start rpcbind"
 LN
 
 line_separator
+info "Install nfs server."
+exec_cmd "sudo zypper install yast2-nfs-server"
+LN
+
+line_separator
 exec_cmd sudo "systemctl enable nfs-server"
 exec_cmd sudo "systemctl start nfs-server"
 LN
