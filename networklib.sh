@@ -161,6 +161,12 @@ function add_to_known_hosts
 	info "Add to $HOME/.ssh/know_hosts server : $srv_name"
 	LN
 
+	if [ ! -f ~/.ssh/known_hosts ]
+	then
+		[ ! -d ~/.ssh ] && mkdir ~/.ssh || true
+		touch ~/.ssh/known_hosts
+	fi
+
 	exec_cmd -c "sed -i '/^$srv_name.*/d' ~/.ssh/known_hosts 1>/dev/null"
 	LN
 
