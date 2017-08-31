@@ -68,6 +68,28 @@ function set_db
 
 [ -f $file_id_db ] && ID_DB=$(cat $file_id_db)
 
+# Copié de plelib.sh
+function fmt_seconds # $1 seconds
+{
+    typeset -ri seconds=$1
+
+    typeset -i minutes=$seconds/60
+
+    if [ $minutes -eq 0 ]
+    then
+        printf "%ds\n" $seconds
+    elif [ $minutes -lt 60 ]
+    then
+        typeset -i modulo=$(( seconds % 60 ))
+        printf "%dmn%02ds\n" $minutes $modulo
+    else
+        typeset -i hours=$minutes/60
+        typeset -i rem_mn=$(( minutes - hours*60 ))
+        typeset -i rem_sec=$(( seconds - (hours*60*60 + rem_mn*60) ))
+        printf "%dh%02dmn%02ds\n" $hours $rem_mn $rem_sec
+    fi
+}
+
 function timer_start {
   timer=${timer:-$SECONDS}
 }
@@ -89,9 +111,9 @@ fi
 #	Mom prompt
 if [ $(hostname -s) == kangs ]
 then
-	export PS1="[\h<<\${ID_DB}>>:\${timer_show}s:\W]\$ "
+	export PS1="[\h<<\${ID_DB}>>:\${timer_show}:\W]\$ "
 else
-	export PS1="[\u@\h:\${timer_show}s:\W]\$ "
+	export PS1="[\u@\h:\${timer_show}:\W]\$ "
 fi
 
 #	======================================================================
