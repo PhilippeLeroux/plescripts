@@ -656,7 +656,7 @@ function create_stats_services
 function test_space_on_san
 {
 	typeset	-ri	total_disk_mb=$(to_mb $(cfg_total_disk_size_gb $db)G)
-	typeset	-ri	san_free_space_mb=$(to_mb $(ssh $infra_conn LANG=C vgs $vg_name | tail -1 | awk '{ print $7 }'))
+	typeset	-ri	san_free_space_mb=$(to_mb $(ssh $infra_conn LANG=C vgs --unit G $vg_name | tail -1 | awk '{ print $7 }'))
 
 	info -n "Server $db needs $(fmt_number $total_disk_mb)Mb of disk, available on $infra_hostname $(fmt_number $san_free_space_mb)Mb : "
 	if [ $total_disk_mb -gt $san_free_space_mb ]
