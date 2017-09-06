@@ -129,7 +129,7 @@ function dev_shm_setting
 function create_tuned_profiles
 {
 	exec_cmd "~/plescripts/oracle_preinstall/create_tuned_profiles.sh	\
-														-shm_size=$shm_size"
+									-db_type=$db_type -shm_size=$shm_size"
 }
 
 function setup_ssh_config

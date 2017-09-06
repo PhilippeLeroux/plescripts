@@ -9,15 +9,23 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
-	-shm_size=bytes	size to allocate for huge pages."
+	-shm_size=bytes	size to allocate for huge pages.
+	-db_type=single|rac|single_fs
+"
 
-typeset -i shm_size=-1
+typeset -i	shm_size=-1
+typeset		db_type=undef
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-db_type=*)
+			db_type=${1##*=}
 			shift
 			;;
 
@@ -41,7 +49,8 @@ do
 	esac
 done
 
-exit_if_param_undef shm_size "$str_usage"
+exit_if_param_invalid	db_type "single rac single_fs"	"$str_usage"
+exit_if_param_undef		shm_size						"$str_usage"
 
 must_be_user root
 
@@ -59,6 +68,13 @@ then
 	LN
 fi
 
+if [[ $vm_memory_mb_for_rac_db -lt $oracle_memory_prereq || $force_swappiness_to != -1 ]]
+then # Mieux vaut swapper un max...
+	typeset -ri vm_swappiness=90
+else # Prérequi Oracle, on a assez de mémoire.
+	typeset -ri vm_swappiness=1
+fi
+
 cat <<EOS>$oracle_profile_conf
 #
 # tuned configuration
@@ -70,7 +86,8 @@ include=virtual-guest
 [sysctl]
 #	Redhat advises
 #swappiness=0 fait souvent planter l'instance du master.
-vm.swappiness = 1
+#Valeur recommandée 1, si la RAM est correcte.
+vm.swappiness = $vm_swappiness
 vm.dirty_background_ratio = 3
 vm.dirty_ratio = 80
 vm.dirty_expire_centisecs = 500
