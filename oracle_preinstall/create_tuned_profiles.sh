@@ -70,7 +70,12 @@ fi
 
 if [[ $vm_memory_mb_for_rac_db -lt $oracle_memory_prereq || $force_swappiness_to -eq 0 ]]
 then # Mieux vaut swapper un max...
-	typeset -ri vm_swappiness=90
+	if [ $force_swappiness_to -eq 0 ]
+	then
+		typeset -ri vm_swappiness=90
+	else
+		typeset -ri vm_swappiness=$force_swappiness_to
+	fi
 else # Prérequi Oracle, on a assez de mémoire.
 	typeset -ri vm_swappiness=1
 fi
