@@ -258,6 +258,15 @@ function deinstall_grid_12cR1
 
 	execute_on_all_nodes "rm -fr /$GRID_DISK/app/grid/log"
 	LN
+	
+	execute_on_all_nodes "rm -fr $GRID_HOME/*"
+	LN
+
+	execute_on_all_nodes "rm -fr $GRID_BASE/*"
+	LN
+
+	execute_on_all_nodes "rm -fr /$GRID_DISK/app/oraInventory"
+	LN
 }
 
 function deinstall_grid_12cR2

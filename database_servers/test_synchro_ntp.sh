@@ -47,7 +47,7 @@ done
 typeset -r	hn=$(hostname -s)
 typeset	-i	wait_time=10
 
-for (( iloop=0; iloop < max_loops; ++iloop ))
+for (( iloop=0; iloop <= max_loops; ++iloop ))
 do
 	[ $iloop -ne 0 ] && timing $wait_time "Waiting ntp sync" || true
 

@@ -261,8 +261,10 @@ function start_oracle_installation
 		line_separator
 		for node in ${node_names[*]}
 		do
-			exec_cmd "ssh -t root@${node}	\
-			   '~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=60'"
+			# La synchronisation est forcée, depuis les maj récentes l'appairage
+			# ne se fait plus trop de resynchronisations.
+			exec_cmd -c "ssh -t root@${node}	\
+			   '~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=4'"
 			LN
 		done
 	fi

@@ -91,6 +91,7 @@ LN
 
 line_separator
 info "Delete all VMs.."
+typeset -a dir_to_delete_list
 for vm in ${vm_list[*]}
 do
 	vm_path_folder=$(read_vm_path_folder $vm)
@@ -103,9 +104,13 @@ do
 		exit 1
 	fi
 
+	dir_to_delete_list+=( $vm_path_folder )
 	exec_cmd -c "VBoxManage unregistervm $vm --delete"
 	LN
+done
 
-	exec_cmd rm -rf \"$vm_path_folder\"
+for dir in ${dir_to_delete_list}
+do
+	exec_cmd rm -rf \"$dir\"
 	LN
 done

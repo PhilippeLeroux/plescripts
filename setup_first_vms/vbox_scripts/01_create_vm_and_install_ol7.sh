@@ -65,6 +65,7 @@ exec_cmd "$vm_scripts_path/create_iface.sh -force_iface_name=$hostifname"
 line_separator
 info "Create VM $master_hostname"
 exec_cmd VBoxManage createvm	--name $master_hostname					\
+								--groups "/Master"						\
 								--basefolder \"$vm_path\" --register
 LN
 

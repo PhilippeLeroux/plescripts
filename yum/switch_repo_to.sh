@@ -14,7 +14,7 @@ typeset	release=undef
 typeset -r str_usage=\
 "Usage : $ME
 	-local|-internet
-	-release=latest|R3|R4|DVD_R2|DVD_R3]
+	-release=latest|R3|R4|DVD_R2|DVD_R3|DVD_R4]
 
 Activation d'un dépôt.
 
@@ -81,7 +81,7 @@ then
 	esac
 fi
 
-exit_if_param_invalid release "latest R3 R4 DVD_R2 DVD_R3"	"$str_usage"
+exit_if_param_invalid release "latest R3 R4 DVD_R2 DVD_R3 DVD_R4"	"$str_usage"
 
 function switch_local_repository
 {
@@ -98,6 +98,7 @@ function switch_local_repository
 			exec_cmd "yum-config-manager --disable local_ol7_UEKR4 >/dev/null"
 			exec_cmd "yum-config-manager --disable ol7_DVD_R2 >/dev/null"
 			exec_cmd "yum-config-manager --disable ol7_DVD_R3 >/dev/null"
+			exec_cmd "yum-config-manager --disable ol7_DVD_R4 >/dev/null"
 
 			exec_cmd "yum-config-manager --enable local_ol7_latest >/dev/null"
 			;;
@@ -106,6 +107,7 @@ function switch_local_repository
 			exec_cmd "yum-config-manager --disable local_ol7_UEKR4 >/dev/null"
 			exec_cmd "yum-config-manager --disable ol7_DVD_R2 >/dev/null"
 			exec_cmd "yum-config-manager --disable ol7_DVD_R3 >/dev/null"
+			exec_cmd "yum-config-manager --disable ol7_DVD_R4 >/dev/null"
 
 			exec_cmd "yum-config-manager --enable local_ol7_latest >/dev/null"
 			exec_cmd "yum-config-manager --enable local_ol7_UEKR3 >/dev/null"
@@ -115,6 +117,7 @@ function switch_local_repository
 			exec_cmd "yum-config-manager --disable local_ol7_UEKR3 >/dev/null"
 			exec_cmd "yum-config-manager --disable ol7_DVD_R2 >/dev/null"
 			exec_cmd "yum-config-manager --disable ol7_DVD_R3 >/dev/null"
+			exec_cmd "yum-config-manager --disable ol7_DVD_R4 >/dev/null"
 
 			exec_cmd "yum-config-manager --enable local_ol7_latest >/dev/null"
 			exec_cmd "yum-config-manager --enable local_ol7_UEKR4 >/dev/null"
@@ -125,6 +128,7 @@ function switch_local_repository
 			exec_cmd "yum-config-manager --disable local_ol7_UEKR3 >/dev/null"
 			exec_cmd "yum-config-manager --disable local_ol7_UEKR4 >/dev/null"
 			exec_cmd "yum-config-manager --disable ol7_DVD_R3 >/dev/null"
+			exec_cmd "yum-config-manager --disable ol7_DVD_R4 >/dev/null"
 
 			exec_cmd "yum-config-manager --enable ol7_DVD_R2 >/dev/null"
 			;;
@@ -134,8 +138,19 @@ function switch_local_repository
 			exec_cmd "yum-config-manager --disable local_ol7_UEKR3 >/dev/null"
 			exec_cmd "yum-config-manager --disable local_ol7_UEKR4 >/dev/null"
 			exec_cmd "yum-config-manager --disable ol7_DVD_R2 >/dev/null"
+			exec_cmd "yum-config-manager --disable ol7_DVD_R4 >/dev/null"
 
 			exec_cmd "yum-config-manager --enable ol7_DVD_R3 >/dev/null"
+			;;
+
+		DVD_R4)
+			exec_cmd "yum-config-manager --disable local_ol7_latest >/dev/null"
+			exec_cmd "yum-config-manager --disable local_ol7_UEKR3 >/dev/null"
+			exec_cmd "yum-config-manager --disable local_ol7_UEKR4 >/dev/null"
+			exec_cmd "yum-config-manager --disable ol7_DVD_R2 >/dev/null"
+			exec_cmd "yum-config-manager --disable ol7_DVD_R3 >/dev/null"
+
+			exec_cmd "yum-config-manager --enable ol7_DVD_R4 >/dev/null"
 			;;
 	esac
 	LN
@@ -148,6 +163,7 @@ function switch_internet_repository
 
 	exec_cmd "yum-config-manager --disable ol7_DVD_R2 >/dev/null"
 	exec_cmd "yum-config-manager --disable ol7_DVD_R3 >/dev/null"
+	exec_cmd "yum-config-manager --disable ol7_DVD_R4 >/dev/null"
 	exec_cmd "yum-config-manager --disable local_ol7_UEKR4 >/dev/null"
 	exec_cmd "yum-config-manager --disable local_ol7_UEKR3 >/dev/null"
 	exec_cmd "yum-config-manager --disable local_ol7_latest >/dev/null"

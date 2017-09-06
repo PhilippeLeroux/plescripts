@@ -38,7 +38,7 @@ function cfg_max_nodes
 #*>		- cfg_luns_hosted_by	vbox|san
 #*>		- cfg_oracle_home		ocfs2|xfs
 #*>		- cfg_standby			standby id	or none
-#*>		- cfg_orarel			Oracle Release 12.1 or 12.2
+#*>		- cfg_orarel			Oracle Release 12.1.0.2 or 12.2.0.1
 #*>
 #*> La fonction test_if_other_nodes_up du script clone_master.sh lie le nom
 #*> des serveurs sans passer pas cette fonction : ne pas déplacer le champs

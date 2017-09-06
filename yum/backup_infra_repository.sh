@@ -41,7 +41,7 @@ must_be_executed_on_server "$client_hostname"
 # $1 backup name
 function backup_repo_on_infra
 {
-	info "Create $1 on $infra_hostname"
+	info "Create repository backup $1 from $infra_hostname to ~/plescripts/tmp"
 	exec_cmd "ssh ${infra_conn} \
 				'tar -C /repo -cf - OracleLinux		|\
 					gzip -c > ~/plescripts/tmp/$1'"

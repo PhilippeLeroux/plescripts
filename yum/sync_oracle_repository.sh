@@ -70,6 +70,7 @@ exit_if_param_invalid	release	"latest R3 R4 all"	"$str_usage"
 
 typeset	-r repo_config_path=/etc/yum.repos.d
 typeset	-r repo_config_name=public-yum-ol7.repo
+typeset -r repo_file_cfg=$repo_config_path/$repo_config_name
 
 function nfs_export_repo
 {
@@ -124,7 +125,7 @@ function sync_repo
 
 			exec_cmd reposync	--newest-only									\
 								--download_path=$infra_olinux_repository_path	\
-		 						--repoid=$repo_name
+								--repoid=$repo_name
 		else
 			exit 1
 		fi
@@ -145,6 +146,13 @@ if [ ! -d $infra_olinux_repository_path ]
 then
 	info "Create directory : $infra_olinux_repository_path"
 	exec_cmd mkdir -p $infra_olinux_repository_path
+	LN
+fi
+
+if [ ! -f ${repo_file_cfg}.original ]
+then
+	info "Backup $repo_file_cfg"
+	exec_cmd "cp $repo_file_cfg ${repo_file_cfg}.original"
 	LN
 fi
 
@@ -179,7 +187,7 @@ exec_cmd ~/plescripts/yum/switch_repo_to.sh -local -release=$infra_yum_repositor
 LN
 
 line_separator
-if test_if_rpm_update_available
+if rpm_update_available
 then
 	info "To update : yum update"
 	LN

@@ -21,7 +21,7 @@ Type de serveurs de base de données pouvant être créé :
 
 Versions logiciels :
 - VirtualBox version minimum 5.1
-- Oracle Linux 7 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
+- Oracle Linux 7.4 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
 - Oracle 12cR1 base SINGLE et RAC.
 - Oracle 12cR2 base SINGLE EE et RAC EE ou SE2.
 
@@ -31,7 +31,7 @@ besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
 Le poste exécutant VirtualBox doit avoir au minimum 8Gb de RAM, pour un RAC 12cR2
 prévoir 16Gb.
 
-Les scripts fonctionnent sous Linux uniquement, j'utilise tumbleweed, je ne prévois
+Les scripts fonctionnent sous Linux uniquement, j'utilise LEAP, je ne prévois
 pas de faire un portage sur MS Windows.
 
 --------------------------------------------------------------------------------

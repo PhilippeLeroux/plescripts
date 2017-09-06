@@ -12,13 +12,11 @@ typeset -r str_usage=\
 "Usage : $ME
 	[-restore|-backup]  -restore config, -backup config
 	[-skip_vim]         with -restore not install gvim
-	[-skip_vim_plugin]  with -restore not install gvim plugin
 	[-emul]
 "
 
 typeset	action=undef
 typeset	install_gvim=yes
-typeset	install_gvim_plugin=yes
 
 while [ $# -ne 0 ]
 do
@@ -40,11 +38,6 @@ do
 
 		-skip_vim)
 			install_gvim=no
-			shift
-			;;
-
-		-skip_vim_plugin)
-			install_gvim_plugin=no
 			shift
 			;;
 
@@ -169,12 +162,6 @@ function restore
 		info "[G]vim configuration :"
 		exec_cmd "~/plescripts/myconfig/vim_config.sh -restore"
 		LN
-
-		if [ $install_gvim_plugin == yes ]
-		then
-			exec_cmd "~/plescripts/myconfig/vim_plugin.sh -init"
-			LN
-		fi
 	fi
 
 	line_separator

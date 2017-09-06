@@ -9,6 +9,38 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
+typeset	update_os=yes
+
+typeset -r str_usage=\
+"Usage : $ME
+	[-update_os=$update_os]	yes or no
+
+Ce script doit être exécuté uniquement sur $master_hostname
+"
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-update_os=*)
+			update_os=${1##*=}
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
+
 must_be_executed_on_server "$master_hostname"
 
 #	Ce script doit être exécuté uniquement si le serveur d'infra existe.
@@ -54,13 +86,19 @@ exec_cmd "echo \"$infra_hostname:$infra_olinux_repository_path /mnt$infra_olinux
 exec_cmd mount /mnt$infra_olinux_repository_path
 LN
 
-info "Add local repositories"
-exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=master
-exec_cmd ~/plescripts/yum/switch_repo_to.sh	\
-					-local -release=$master_yum_repository_release
-LN
+if [ $update_os == yes ]
+then
+	info "Add local repositories"
+	exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=master
+	exec_cmd ~/plescripts/yum/switch_repo_to.sh	\
+						-local -release=$master_yum_repository_release
+	LN
+else
+	warning "Local repositories not added."
+	LN
+fi
 
-exec_cmd "~/plescripts/setup_first_vms/02_update_config.sh"
+exec_cmd "~/plescripts/setup_first_vms/02_update_config.sh -update_os=$update_os"
 
 exec_cmd ~/plescripts/ntp/configure_chrony.sh -role=master
 

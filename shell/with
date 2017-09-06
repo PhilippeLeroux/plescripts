@@ -16,7 +16,14 @@ else
 	exit 1
 fi
 
-cfg_exists $db
+cfg_exists $db use_return_code
+if [[ $? -eq 1 ]]
+then
+	warning "Try connection to : $db"
+	wait_server ${db}
+	[ $? -eq 0 ] && exec_cmd -ci ssh -Y $account@${db} || true
+	exit $?
+fi
 
 typeset -ri max_nodes=$(cfg_max_nodes $db)
 
@@ -29,4 +36,4 @@ info "$type node."
 typeset -r server_name=$(printf "srv%s%02d" $db $node)
 
 wait_server ${server_name}
-[ $? -eq 0 ] && exec_cmd -ci ssh -Y $account@${server_name}
+[ $? -eq 0 ] && exec_cmd -ci ssh -Y $account@${server_name} || true

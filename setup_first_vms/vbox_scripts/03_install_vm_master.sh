@@ -9,8 +9,20 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
+typeset		update_hostname=no
+typeset		update_os=yes
+
 typeset -r str_usage=\
-"Usage : $ME [-emul]
+"Usage : $ME
+	[-emul]
+
+Flag utilisé quand je créé des master différent test ou autre.
+	[-update_hostname]      Met à jour le nom du serveur puis configure le réseau.
+	[-update_os=$update_os]	no : aucun package n'est installé et les dépôts locaux ne sont pas configurés.
+
+Création de la VM ${master_hostname}.
+    - IP               : $master_ip
+    - Interface réseau : $hostifname
 
 Ce script doit être exécuté uniquement lorsque la VM d'infra est prête.
 "
@@ -20,6 +32,16 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-update_os=*)
+			update_os=${1##*=}
+			shift
+			;;
+
+		-update_hostname)
+			update_hostname=yes
 			shift
 			;;
 
@@ -67,9 +89,69 @@ function master_ssh
 	fi
 }
 
+function update_hostname_and_network
+{
+	confirm_or_exit "Mettre à jour le nom et l'IP du serveur, puis configuration réseau"
+	LN
+
+	typeset -i current_ip_node=0
+	info -n "N° du nœud IP du  master (2 par exemple) : "
+	read current_ip_node
+	LN
+
+	typeset -r current_ip=${infra_network}.${current_ip_node}
+	if ! ping_test $current_ip
+	then
+		error "IP $current_ip not pingable."
+		LN
+		exit 1
+	fi
+
+	info "Backup de ~/.ssh/known_hosts"
+	exec_cmd "cp ~/.ssh/known_hosts ~/.ssh/known_hosts.backup"
+	LN
+
+	info "Cleanup :"
+	exec_cmd ~/plescripts/shell/remove_from_known_host.sh	\
+											-ip=${current_ip}
+	LN
+
+	info "Ajout de $master_hostname dans le DNS"
+	exec_cmd "ssh -t $infra_conn \"dns/add_server_2_dns.sh -name=$master_hostname -ip_node=$master_ip_node\""
+	LN
+
+	# Une seule commande pour ne saisir qu'une seule fois le mot de passe root.
+	info "Change le nom d'hôte, l'adresse IP et reboot."
+	exec_cmd -c "ssh -t root@${current_ip} \"hostnamectl set-hostname ${master_hostname}.${infra_domain}; sed -i \"s/^IPADDR.*/IPADDR=\\\\\"$master_ip\\\\\"/\" /etc/sysconfig/network-scripts/ifcfg-$if_pub_name; reboot\""
+	LN
+
+	wait_server $master_hostname
+	LN
+
+	info "Restauration de ~/.ssh/known_hosts"
+	exec_cmd "mv ~/.ssh/known_hosts.backup ~/.ssh/known_hosts"
+	LN
+
+	info "Le script peut être lancé."
+	LN
+
+	exit 1
+}
+
+[ $update_hostname == yes ] && update_hostname_and_network || true
+
 ple_enable_log -params $PARAMS
 
 script_start
+
+if ! ssh root@K2 "dns/show_dns.sh | grep $master_hostname >/dev/null"
+then
+	LN
+	error "$master_hostname n'est pas dans le DNS."
+	LN
+	# la fonction fait un exit 1
+	update_hostname_and_network
+fi
 
 #	La VM ne doit pas être démarrée.
 stop_vm $master_hostname -dataguard=no
@@ -96,9 +178,13 @@ LN
 
 line_separator
 add_to_known_hosts $master_hostname
+LN
+
 exec_cmd -c ~/plescripts/ssh/test_ssh_equi.sh -user=root -server=$master_hostname
 if [ $? -ne 0 ]
 then
+	LN
+
 	confirm_or_exit -reply_list=CR "root password for VM $master_hostname will be asked. Press enter to continue."
 	exec_cmd ~/plescripts/ssh/make_ssh_user_equivalence_with.sh	\
 											-user=root -server=$master_hostname
@@ -123,16 +209,25 @@ master_ssh "ln -s /mnt/plescripts ~/plescripts"
 LN
 
 #	Le montage étant fait les scripts sont disponibles.
-master_ssh "~/plescripts/setup_first_vms/01_prepare_master_vm.sh"
+master_ssh "~/plescripts/setup_first_vms/01_prepare_master_vm.sh -update_os=$update_os"
 LN
 
-exec_cmd "$vm_scripts_path/stop_vm $master_hostname -dataguard=no"
-LN
+if [ $update_os == yes ]
+then
+	exec_cmd "$vm_scripts_path/stop_vm $master_hostname -dataguard=no"
+	LN
 
-info "Server $master_hostname ready."
-LN
+	info "Server $master_hostname ready."
+	LN
 
-info "Create BDD server : https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers"
-LN
+	info "Create BDD server : https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers"
+	LN
+else
+	info "Server $master_hostname ready."
+	LN
+
+	warning "Pas d'accés internet, pas de dépôts locaux, donc pas de nfs, d'iSCSI."
+	LN
+fi
 
 script_stop $ME

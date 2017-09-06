@@ -6,10 +6,11 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
-"Usage : $ME
+typeset		test_iso_ol7=yes
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+typeset	-r	str_usage=\
+"Usage : $ME [-skip_test_iso_ol7]
 Ce script vérifie que le virtual-host remplie les conditions nécessaires au bon
 fonctionnement de la démo."
 
@@ -18,6 +19,11 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-skip_test_iso_ol7)
+			test_iso_ol7=no
 			shift
 			;;
 
@@ -286,7 +292,8 @@ function test_if_configure_global_cfg_executed
 	then
 		info -f "[$KO]"
 		info "Execute : ./configure_global.cfg.sh"
-		info "Errors :$errors_msg"
+		error "Errors :$errors_msg"
+		info "vm_path = $vm_path"
 	else
 		info -f "[$OK]"
 	fi
@@ -301,7 +308,7 @@ runInstaller_exists
 
 validate_NFS_exports
 
-ISO_OLinux7_exists
+[ $test_iso_ol7 == yes ] && ISO_OLinux7_exists || true
 
 validate_gateway
 
@@ -318,8 +325,10 @@ line_separator
 if [ $count_errors -ne 0 ]
 then
 	error "Configuration failed : $count_errors errors."
+	LN
 	exit 1
 else
 	info "Configuration [$OK]"
+	LN
 	exit 0
 fi

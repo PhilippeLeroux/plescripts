@@ -143,7 +143,7 @@ else
 	typeset -r crs_used=no
 fi
 
-if ! test_if_rpm_update_available -show
+if ! rpm_update_available -show
 then
 	info "No update."
 	exit 0

@@ -9,11 +9,13 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 
 typeset	release=undef
+typeset enable_repo=yes
 
 typeset -r str_usage=\
 "Usage :
 $ME
-	-release=DVD_R2|DVD_R3
+	-release=DVD_R2|DVD_R3|DVD_R4
+	[-enable_repo=$enable_repo]	yes or no
 "
 
 while [ $# -ne 0 ]
@@ -26,6 +28,11 @@ do
 
 		-release=*)
 			release=${1##*=}
+			shift
+			;;
+
+		-enable_repo=*)
+			enable_repo=${1##*=}
 			shift
 			;;
 
@@ -46,7 +53,9 @@ done
 
 #ple_enable_log -params $PARAMS
 
-exit_if_param_invalid release "DVD_R2 DVD_R3" "$str_usage"
+exit_if_param_invalid release "DVD_R2 DVD_R3 DVD_R4" "$str_usage"
+
+must_be_executed_on_server $client_hostname
 
 case $release in
 	DVD_R2)
@@ -54,6 +63,9 @@ case $release in
 		;;
 	DVD_R3)
 		iso_name="$iso_olinux_path/V834394-01.iso"
+		;;
+	DVD_R4)
+		iso_name="$iso_olinux_path/V921569-01.iso"
 		;;
 esac
 
@@ -69,5 +81,5 @@ exec_cmd VBoxManage storageattach $infra_hostname		\
 LN
 
 exec_cmd "ssh -t root@${infra_ip} plescripts/yum/duplicate_dvd_for_repo.sh	\
-															-release=$release"
+								-release=$release -enable_repo=$enable_repo"
 LN

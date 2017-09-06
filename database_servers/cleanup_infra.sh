@@ -68,10 +68,7 @@ typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
 typeset -r upper_db=$(to_upper $db)
 
-if [ $delete_vms == yes ]
-then
-	exec_cmd "~/plescripts/shell/delete_vm -db=$db -y"
-fi
+[ $delete_vms == yes ] && exec_cmd "~/plescripts/shell/delete_vm -db=$db -y" || true
 
 if [ -f ~/.ssh/known_hosts ]
 then
@@ -109,10 +106,13 @@ info "Remove keys"
 exec_cmd "ssh -t $dns_conn plescripts/dns/clean_up_ssh_authorized_keys.sh"
 LN
 
-line_separator
-info "Update SAN :"
-exec_cmd "ssh -t $san_conn plescripts/san/reset_all_for_db.sh -db=$db"
-LN
+if [ $cfg_luns_hosted_by == san ]
+then
+	line_separator
+	info "Update SAN :"
+	exec_cmd "ssh -t $san_conn plescripts/san/reset_all_for_db.sh -db=$db"
+	LN
+fi
 
 line_separator
 info "Clean up local DNS cache :"

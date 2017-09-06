@@ -38,20 +38,6 @@ done
 typeset -r hostvm_type=linux_virtualbox
 
 #	============================================================================
-#	Pré sélection de l'image Oracle Linux 7
-typeset -r OracleLinux72=V100082-01.iso
-typeset -r OracleLinux73=V834394-01.iso
-
-full_linux_iso_n="$HOME/ISO/oracle_linux_7/$OracleLinux72"
-OL7_LABEL_n=7.2
-
-if [ 0 -eq 1 ]; then
-# Oracle Linux 7.3 ne fonctionne pas du tout, java par en core dump plus autre
-# joyeusetées.
-full_linux_iso_n="$HOME/ISO/oracle_linux_7/$OracleLinux73"
-OL7_LABEL_n=7.3
-fi
-#	============================================================================
 
 #	$1 nom de la variable à renseigner
 #	$2 Message à afficher
@@ -126,14 +112,43 @@ function VMs_folder
 	fi
 }
 
+function Oracle_Linux_Release
+{
+	OL7_LABEL_n=$OL7_LABEL
+	ask_for_variable OL7_LABEL_n "Oracle Linux release : 7.2, 7.3, 7.4 :"
+	LN
+
+	case $OL7_LABEL_n in
+		7.2|7.3|7.4)
+			;;
+		*)
+			((++count_errors))
+			error "Release $OL7_LABEL_n invalid."
+			LN
+	esac
+}
+
 function Oracle_Linux_ISO
 {
-	ask_for_variable full_linux_iso_n "Full path for Oracle Linux $OL7_LABEL_n ISO $OracleLinux72 :"
+	case "$OL7_LABEL_n" in
+	"7.2")
+		full_linux_iso_n="$iso_olinux_path/V100082-01.iso"
+		;;
+
+	"7.3")
+		full_linux_iso_n="$iso_olinux_path/V834394-01.iso"
+		;;
+
+	"7.4")
+		full_linux_iso_n="$iso_olinux_path/V921569-01.iso"
+		;;
+	esac
+
 	info -n "Exists $(replace_paths_by_shell_vars $full_linux_iso_n) : "
 	if [ ! -f "$full_linux_iso_n" ]
 	then
 		((++count_errors))
-		info -f "[$KO]"
+		info -f "[$KO] : download Oracle Linux ISO."
 		LN
 	else
 		info -f "[$OK]"
@@ -143,35 +158,34 @@ function Oracle_Linux_ISO
 
 function yum_repository
 {
-	info "Oracle Linux release."
-	if [ "$common_user_name" == "$USER" ]
-	then # global.cfg a déjà été configuré.
-		ol7=$orcl_yum_repository_release
-	else
-		ol7=DVD
-	fi
-	ask_for_variable ol7 "Oracle Linux 7.2 select DVD, Oracle Linux 7.3 select internet"
-	LN
-	case "$(to_upper $ol7)" in
-		DVD)
-			ol7=DVD_R2
+	# Il n'est pas possible de rester sur une ancienne release. Donc pour
+	# avoir du R2 ou R3 dépôt depuis le DVD.
+	case $OL7_LABEL_n in
+		7.2)
+			ol7_repository_release=DVD_R2
+			return 0
 			;;
-		INTERNET)
-			ol7=R3
+		7.3)
+			ol7_repository_release=DVD_R3
+			return 0
 			;;
-		R3)
-			: # OK
-			;;
-		R4)
-			warning "R4 la 12.1 ne s'installe pas."
+		7.4)
+			typeset do_update=yes
+			ask_for_variable do_update "Update Oracle Linux $OL7_LABEL_n release ? yes no"
+			do_update=$(to_upper $do_update)
 			LN
-			;;
-		*)
-			error "$ol7 invalid."
-			LN
-			((++count_errors))
+
+			if [ $do_update == yes ]
+			then
+				ol7_repository_release=R4
+			else
+				ol7_repository_release=DVD_R4
+			fi
+			return 0
 			;;
 	esac
+
+	return 1
 }
 
 function configure_gateway
@@ -268,9 +282,11 @@ typeset -i count_errors=0
 
 VMs_folder
 
-Oracle_Linux_ISO
+Oracle_Linux_Release
 
 yum_repository
+
+Oracle_Linux_ISO
 
 configure_gateway
 
@@ -302,38 +318,32 @@ LN
 exec_cmd "sed -i 's/if_net_bridgeadapter=.*/if_net_bridgeadapter=$if_net_bridgeadapter_n/g' ~/plescripts/global.cfg"
 LN
 
-exec_cmd "sed -i 's~vm_path=.*$~vm_path=\"\${VM_PATH:-$vm_p}\"~g' ~/plescripts/global.cfg"
-LN
+if [ "$vm_path" != "$vm_p" ]
+then
+	exec_cmd "echo \"VM_PATH=$vm_p\" >> ~/plescripts/local.cfg"
+	LN
+fi
 
 exec_cmd "sed -i 's~disks_hosted_by=.*$~disks_hosted_by=\${DISKS_HOSTED_BY:-$disks_stored_on}~g' ~/plescripts/global.cfg"
 exec_cmd "sed -i 's~san_disk=.*$~san_disk=\${SAN_DISK_TYPE:-$san_disk_type}~g' ~/plescripts/global.cfg"
 LN
 
-if [ "$HOME/ISO/oracle_linux_7/$OracleLinux73" == "$full_linux_iso_n" ]
+if [ $OL7_LABEL_n != $OL7_LABEL ]
 then
-	[ "$ol7" == DVD_R2 ] && ol7=DVD_R3 || true
-
-	OL7_LABEL_n=7.3
-	line_separator
-	error "Oracle Linux $OL7_LABEL_n don't work."
-	error "Latest tested Release is Oracle Linux 7.2 ISO : $OracleLinux72"
+	info "Configure Oracle Linux 7 release"
+	exec_cmd "echo \"OL7_LABEL=$OL7_LABEL_n\" >> $HOME/plescripts/local.cfg"
 	LN
-else
-	OL7_LABEL_n=7.2
 fi
 
-info "Setup Oracle Linux $OL7_LABEL_n"
-iso_path=${full_linux_iso_n%/*}
-iso_name=${full_linux_iso_n##*/}
-exec_cmd "sed -i 's/OL7_LABEL=.*/OL7_LABEL=$OL7_LABEL_n/g' ~/plescripts/global.cfg"
-exec_cmd "sed -i 's~iso_olinux_path=.*$~iso_olinux_path=\"$iso_path\"~g' ~/plescripts/global.cfg"
-exec_cmd "sed -i 's~full_linux_iso_name=.*$~full_linux_iso_name=\"\$iso_olinux_path/$iso_name\"~g' ~/plescripts/global.cfg"
-LN
-
 info "Configure repository OL7"
-exec_cmd "sed -i 's/infra_yum_repository_release=.*/infra_yum_repository_release=$ol7/g' ~/plescripts/global.cfg"
-exec_cmd "sed -i 's/orcl_yum_repository_release=.*/orcl_yum_repository_release=\${ORCL_YUM_REPOSITORY_RELEASE:-$ol7}/g' ~/plescripts/global.cfg"
-LN
+if	[[ $OL7_LABEL_n == 7.4 && $ol7_repository_release != R4 ]] ||	\
+	[[ $OL7_LABEL_n == 7.3 && $ol7_repository_release != R3 ]] ||	\
+	[[ $OL7_LABEL_n == 7.2  ]]
+then
+	exec_cmd "echo \"INFRA_YUM_REPOSITORY_RELEASE=$ol7_repository_release\" >> ~/plescripts/local.cfg"
+	exec_cmd "echo \"ORCL_YUM_REPOSITORY_RELEASE=$ol7_repository_release\" >> ~/plescripts/local.cfg"
+	LN
+fi
 
 if [ $count_errors -ne 0 ]
 then

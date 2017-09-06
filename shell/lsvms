@@ -1,0 +1,104 @@
+#!/bin/bash
+# vim: ts=4:sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+typeset -r ME=$0
+typeset -r PARAMS="$*"
+
+typeset -r str_usage=\
+"Usage : $ME"
+
+typeset db=undef
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
+
+#ple_enable_log -params $PARAMS
+
+function vm_running
+{
+	grep -q "$1"<<<"$(VBoxManage list runningvms)"
+}
+
+info "Infra :"
+info -n "    master $master_hostname : "
+if vm_running $master_hostname
+then
+	info -f "${UNDERLINE}running${NORM}."
+else
+	info -f "not running."
+fi
+
+info -n "    Infra  $infra_hostname : "
+if vm_running $infra_hostname
+then
+	info -f "${UNDERLINE}running${NORM}."
+else
+	info -f "not running."
+fi
+LN
+
+line_separator
+info "Databases :"
+while read fullpath
+do
+	[ x"$fullpath" == x ] && continue || true
+
+	dbid=${fullpath##*/}
+	max_nodes=$(cfg_max_nodes $dbid)
+	cfg_load_node_info $dbid 1
+	if [ $max_nodes -eq 2 ]
+	then
+		info -n "    $dbid : Oracle RAC $cfg_orarel, servers $cfg_server_name"
+		cfg_load_node_info $dbid 2
+		info -n -f ",$cfg_server_name"
+	else
+		info -n "    $dbid : Oracle $cfg_orarel, server $cfg_server_name"
+	fi
+	info -n -f ", storage $cfg_luns_hosted_by"
+	case $cfg_db_type in
+		std|rac)
+			info -n -f "/ASM"
+			;;
+
+		fs)
+			info -n -f "/FS"
+			;;
+	esac
+			
+	if [ $cfg_standby != none ]
+	then
+		info -n -f ", standby with $cfg_standby"
+	fi
+	if vm_running $cfg_server_name
+	then
+		info -f ", ${UNDERLINE}running${NORM}."
+	else
+		info -f ", not running."
+	fi
+	LN
+done<<<"$(find ~/plescripts/database_servers/* -type d)"

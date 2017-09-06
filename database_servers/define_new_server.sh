@@ -162,7 +162,7 @@ fi
 
 function validate_config
 {
-	exec_cmd -ci "~/plescripts/validate_config.sh >/tmp/vc" >/dev/null 2>&1
+	exec_cmd -ci "~/plescripts/validate_config.sh -skip_test_iso_ol7 >/tmp/vc" >/dev/null 2>&1
 	if [ $? -ne 0 ]
 	then
 		cat /tmp/vc
@@ -367,7 +367,7 @@ then
 		12.2)	rel=12.2.0.1 ;;
 	esac
 	info "Update Oracle Release"
-	exec_cmd ~/plescripts/update_local_cfg.sh -var=oracle_release -value=$rel
+	exec_cmd ~/plescripts/update_local_cfg.sh -set=oracle_release=$rel
 
 	info "Call with local config updated."
 	exec_cmd $ME $all_params

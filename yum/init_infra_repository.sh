@@ -57,6 +57,15 @@ then
 	line_separator
 	exec_cmd "~/plescripts/yum/create_repo_from_dvd.sh	\
 									-release=$infra_yum_repository_release"
+	LN
+
+	if [ $infra_yum_repository_release != $orcl_yum_repository_release ]
+	then
+			info "Cloning OL7 repository on $infra_hostname"
+			exec_cmd "ssh -t root@$infra_ip	\
+				'~/plescripts/yum/sync_oracle_repository.sh -release=$orcl_yum_repository_release'"
+			LN
+	fi
 elif [ ! -f $full_backup_name ]
 then # Pas de backup de dépôt, la synchronisation sera longue.
 	line_separator

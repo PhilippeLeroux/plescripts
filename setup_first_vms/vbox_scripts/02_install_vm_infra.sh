@@ -12,6 +12,10 @@ typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	[-emul]
+
+Création de la VM ${infra_hostname}.
+    - IP               : $infra_ip
+    - Interface réseau : $hostifname
 "
 
 while [ $# -ne 0 ]

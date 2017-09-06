@@ -1,15 +1,15 @@
 [submodule "bundle/vim-fugitive"]
 	path = bundle/vim-fugitive
 	url = git://github.com/tpope/vim-fugitive.git
+[submodule "bundle/vim-gitgutter"]
+	path = bundle/vim-gitgutter
+	url = git://github.com/airblade/vim-gitgutter.git
 [submodule "bundle/nerdtree"]
 	path = bundle/nerdtree
 	url = git://github.com/scrooloose/nerdtree.git
 [submodule "bundle/nerdtree-git-plugin"]
 	path = bundle/nerdtree-git-plugin
 	url = git://github.com/Xuyuanp/nerdtree-git-plugin.git
-[submodule "bundle/vim-gitgutter"]
-	path = bundle/vim-gitgutter
-	url = git://github.com/airblade/vim-gitgutter.git
 [submodule "bundle/vim-airline"]
 	path = bundle/vim-airline
 	url = git://github.com/vim-airline/vim-airline
@@ -34,9 +34,9 @@
 [submodule "bundle/vim-instant-markdown"]
 	path = bundle/vim-instant-markdown
 	url = git://github.com/suan/vim-instant-markdown.git
-[submodule "bundle/vim-grammarous"]
-	path = bundle/vim-grammarous
-	url = git://github.com/rhysd/vim-grammarous.git
+[submodule "bundle/vim-Grammalecte"]
+	path = bundle/vim-Grammalecte
+	url = git://github.com/dpelle/vim-Grammalecte
 [submodule "bundle/vim-man"]
 	path = bundle/vim-man
 	url = git://github.com/vim-utils/vim-man.git
@@ -46,6 +46,6 @@
 [submodule "bundle/vim-session"]
 	path = bundle/vim-session
 	url = git://github.com/xolox/vim-session.git
-[submodule "bundle/vim-Grammalecte"]
-	path = bundle/vim-Grammalecte
-	url = git://github.com/dpelle/vim-Grammalecte
+[submodule "bundle/vim-markdown"]
+	path = bundle/vim-markdown
+	url = git://github.com/tpope/vim-markdown.git

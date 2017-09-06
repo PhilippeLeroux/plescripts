@@ -1,3 +1,19 @@
+* Pour mémoire
+
+	Créer une VM à partir du DVD R2, puis mis à jour en R3 entraîne des
+	dysfonctionnements Par exemple avec Oracle 12.1 le tunnel ssh ne fonctionne
+	plus et `runInstaller` demande d'exporter le `DISPLAY`.
+	Avec Oracle 12cR2 le link du Grid Infra échoue systématiquement, il y a pas
+	mal	d'autres soucis du genre.
+
+	Donc il est plus fiable de créer un VM à partir du DVD R3, puis de faire la
+	mise à jour.
+
+	Note : Avec la R3 les fichiers des bases sont souvent corrompues, pour le
+	moment il est préférable de faire gérer les disques par VBox.
+
+	Pour tester OL7 en R4, il faudra donc créer la VM avec le DVD R4.
+
 * Dépôts par défaut
 
 	Le dépôt R3 est activé sur tous les serveurs.

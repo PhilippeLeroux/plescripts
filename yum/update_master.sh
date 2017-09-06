@@ -40,6 +40,8 @@ LN
 confirm_or_exit "Continuer"
 
 exec_cmd start_vm $master_hostname
-exec_cmd "ssh root@${master_hostname} \"yum makecache; yum -y update\""
+exec_cmd "ssh -t root@${master_hostname} \"plescripts/yum/switch_repo_to.sh -local\""
+sleep 1
+exec_cmd "ssh -t root@${master_hostname} \"yum makecache; yum -y update\""
 LN
 exec_cmd stop_vm $master_hostname

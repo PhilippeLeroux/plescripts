@@ -9,15 +9,16 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
-add_usage "-var=name"		"Variable name to update."
-add_usage "-value=value"	"New value or remove."
+add_usage "-set=variable=value"
+add_usage "Ex to update variable VM_PATH with value ~/VBoxVMs :"
+add_usage "   $ ./update_local_cfg.sh -set=VM_PATH=~/VBoxVMs"
 typeset -r parameters_usage="$(print_usage)"
 reset_usage
 
-add_usage "ORACLE_RELEASE=${ORACLE_RELEASE:-$oracle_release}"	"*12.1.0.2*|12.2.0.1"
+ORACLE_RELEASE=${ORACLE_RELEASE:-$oracle_release}
+add_usage "ORACLE_RELEASE=${ORACLE_RELEASE}"	"*12.1.0.2*|12.2.0.1"
 
 add_usage new_line
-add_usage "ORCL_YUM_REPOSITORY_RELEASE=${ORCL_YUM_REPOSITORY_RELEASE:-$orcl_yum_repository_release}"	"latest|*R3*|R4 Oracle Linux 7 repository"
 add_usage "OL7_KERNEL_VERSION=${OL7_KERNEL_VERSION:-$ol7_kernel_version}"								"latest or kernel version, only for BDD servers"
 
 add_usage new_line
@@ -28,6 +29,8 @@ case "$ORACLE_RELEASE" in
 		add_usage new_line
 		add_usage "VM_MEMORY_MB_FOR_RAC_DB_121=${VM_MEMORY_MB_FOR_RAC_DB_121:-$vm_memory_mb_for_rac_db}"			"VM memory for RAC DB 12.1"
 		add_usage "VM_NR_CPUS_FOR_RAC_DB_121=${VM_NR_CPUS_FOR_RAC_DB_121:-$vm_nr_cpus_for_rac_db}"					"VM #cpu for RAC DB 12.1"
+		add_usage new_line
+		add_usage "ORCL_YUM_REPOSITORY_RELEASE121=${ORCL_YUM_REPOSITORY_RELEASE121:-$orcl_yum_repository_release}"	"DVD_R2|*DVD_R3*|latest|R3|R4 Oracle Linux 7 repository"
 		;;
 	12.2*)
 		add_usage "VM_MEMORY_MB_FOR_SINGLE_DB_122=${VM_MEMORY_MB_FOR_SINGLE_DB_122:-$vm_memory_mb_for_single_db}"	"VM memory for SINGLE DB 12.2"
@@ -35,6 +38,8 @@ case "$ORACLE_RELEASE" in
 		add_usage new_line
 		add_usage "VM_MEMORY_MB_FOR_RAC_DB_122=${VM_MEMORY_MB_FOR_RAC_DB_122:-$vm_memory_mb_for_rac_db}"			"VM memory for RAC DB 12.2"
 		add_usage "VM_NR_CPUS_FOR_RAC_DB_122=${VM_NR_CPUS_FOR_RAC_DB_122:-$vm_nr_cpus_for_rac_db_122}"				"VM #cpu for RAC DB 12.2"
+		add_usage new_line
+		add_usage "ORCL_YUM_REPOSITORY_RELEASE122=${ORCL_YUM_REPOSITORY_RELEASE122:-$orcl_yum_repository_release}"	"DVD_R2|*DVD_R3*|latest|R3|R4 Oracle Linux 7 repository"
 		;;
 esac
 
@@ -86,14 +91,25 @@ do
 			shift
 			;;
 
-		-var=*)
-			var=$(to_upper ${1##*=})
+		-set=*)
+			typeset full_arg=${1#*=}
 			shift
-			;;
 
-		-value=*)
-			value=${1##*=}
-			shift
+			IFS=\= read var value<<<"$full_arg"
+			var=$(to_upper $var)
+
+			info "Update variable $var with value $value"
+			LN
+
+			if [[ "x$var" == x || "x$value" == x ]]
+			then
+				error "Arg '$full_arg' invalid."
+				LN
+
+				info "$str_usage"
+				LN
+				exit 1
+			fi
 			;;
 
 		-h|-help|help)
@@ -111,13 +127,11 @@ do
 	esac
 done
 
-exit_if_param_undef var		"$str_usage"
-exit_if_param_undef value	"$str_usage"
-
 case $var in
 	ORACLE_RELEASE) ;;
 
-	ORCL_YUM_REPOSITORY_RELEASE) ;;
+	ORCL_YUM_REPOSITORY_RELEASE121) ;;
+	ORCL_YUM_REPOSITORY_RELEASE122) ;;
 	OL7_KERNEL_VERSION) ;;
 
 	VM_MEMORY_MB_FOR_SINGLE_DB_121) ;;

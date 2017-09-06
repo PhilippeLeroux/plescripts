@@ -1,6 +1,6 @@
 export HISTCONTROL=ignoreboth:erasedups
 
-## Reset to normal: 
+## Reset to normal:
 NORM="\033[0m"
 
 ## Colors:
@@ -71,40 +71,41 @@ function set_db
 # Copié de plelib.sh
 function fmt_seconds # $1 seconds
 {
-    typeset -ri seconds=$1
+	typeset -ri seconds=$1
 
-    typeset -i minutes=$seconds/60
+	typeset -i minutes=$seconds/60
 
-    if [ $minutes -eq 0 ]
-    then
-        printf "%ds\n" $seconds
-    elif [ $minutes -lt 60 ]
-    then
-        typeset -i modulo=$(( seconds % 60 ))
-        printf "%dmn%02ds\n" $minutes $modulo
-    else
-        typeset -i hours=$minutes/60
-        typeset -i rem_mn=$(( minutes - hours*60 ))
-        typeset -i rem_sec=$(( seconds - (hours*60*60 + rem_mn*60) ))
-        printf "%dh%02dmn%02ds\n" $hours $rem_mn $rem_sec
-    fi
+	if [ $minutes -eq 0 ]
+	then
+		printf "%ds\n" $seconds
+	elif [ $minutes -lt 60 ]
+	then
+		typeset -i modulo=$(( seconds % 60 ))
+		printf "%dmn%02ds\n" $minutes $modulo
+	else
+		typeset -i hours=$minutes/60
+		typeset -i rem_mn=$(( minutes - hours*60 ))
+		typeset -i rem_sec=$(( seconds - (hours*60*60 + rem_mn*60) ))
+		printf "%dh%02dmn%02ds\n" $hours $rem_mn $rem_sec
+	fi
 }
 
 function timer_start {
-  timer=${timer:-$SECONDS}
+	timer=${timer:-$SECONDS}
 }
 
 function timer_stop {
-  timer_show=$(($SECONDS - $timer))
-  unset timer
+	timer_show=$(fmt_seconds $(( SECONDS -  timer )))
+	unset timer
 }
 
 trap 'timer_start' DEBUG
 
-if [ "$PROMPT_COMMAND" == "" ]; then
-  PROMPT_COMMAND="timer_stop"
+if [ "$PROMPT_COMMAND" == "" ]
+then
+	PROMPT_COMMAND="timer_stop"
 else
-  PROMPT_COMMAND="$PROMPT_COMMAND; timer_stop"
+	PROMPT_COMMAND="$PROMPT_COMMAND; timer_stop"
 fi
 
 #	======================================================================
@@ -125,3 +126,6 @@ alias grid='with grid'
 alias oracle='with oracle'
 
 alias empty_swap='sudo swapoff -a; sudo swapon -a'
+
+export GVIM_COLORSCHEME=light
+export VIM_COLORSCHEME=light

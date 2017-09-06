@@ -9,10 +9,10 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
-	[-path=str] Chemin ou commencer la recherche, par défaut ~/plescripts
-	[-readme]   Remplacer uniquement dans les fichiers readme.txt & README.md
-	-str        Chaîne à remplacer.
-	-by         Chaîne de remplacement.
+	[-path=str]   Chemin ou commencer la recherche, par défaut ~/plescripts
+	[-readme]     Remplacer uniquement dans les fichiers readme.txt & README.md
+	-str=word     Chaîne à remplacer.
+	-by=word      Chaîne de remplacement.
 "
 
 typeset		str=undef

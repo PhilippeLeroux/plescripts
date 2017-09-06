@@ -8,7 +8,42 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
-#Doit être exécuté sur le serveur d'infrastructure ou le master.
+typeset	update_os=yes
+
+typeset -r str_usage=\
+"Usage : $ME
+	[-update_os=$update_os]	yes or no
+
+Doit être exécuté sur le serveur d'infrastructure ou le master.
+"
+
+while [ $# -ne 0 ]
+do
+	case $1 in
+		-emul)
+			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-update_os=*)
+			update_os=${1##*=}
+			shift
+			;;
+
+		-h|-help|help)
+			info "$str_usage"
+			LN
+			exit 1
+			;;
+
+		*)
+			error "Arg '$1' invalid."
+			LN
+			info "$str_usage"
+			exit 1
+			;;
+	esac
+done
 
 line_separator
 info "Setup english for OS logs"
@@ -29,22 +64,42 @@ exec_cmd "cat ~/plescripts/setup_first_vms/for_inputrc /etc/inputrc > new_inputr
 exec_cmd mv new_inputrc /etc/inputrc
 LN
 
-if test_if_rpm_update_available
+if [ $update_os == yes ]
 then
-	exec_cmd yum -y -q update
-fi
-LN
+	if rpm_update_available
+	then
+		line_separator
+		exec_cmd yum -y -q update
+		LN
+	else
+		LN
+	fi
 
-line_separator
-exec_cmd yum -y -q install						\
-						nfs-utils				\
-						iscsi-initiator-utils	\
-						deltarpm				\
-						wget					\
-						net-tools				\
-						vim-enhanced			\
-						unzip					\
-						tmux					\
-						nmap-ncat				\
-						git						\
-						~/plescripts/rpm/figlet-2.2.5-9.el6.x86_64.rpm
+	line_separator
+	exec_cmd yum -y -q install						\
+							nfs-utils				\
+							iscsi-initiator-utils	\
+							deltarpm				\
+							wget					\
+							net-tools				\
+							vim-enhanced			\
+							unzip					\
+							tmux					\
+							nmap-ncat				\
+							git						\
+							~/plescripts/rpm/figlet-2.2.5-9.el6.x86_64.rpm
+	LN
+else
+	line_separator
+	exec_cmd yum -y -q install ~/plescripts/rpm/figlet-2.2.5-9.el6.x86_64.rpm
+	LN
+fi
+
+if [ $bug_disable_nfsv4 == yes ]
+then
+	line_separator
+	info "Workaround : disable NFS v4"
+	exec_cmd "echo '# PLE' >> /etc/sysconfig/nfs"
+	exec_cmd "echo \"RPCNFSDARGS='--no-nfs-version 4'\" >> /etc/sysconfig/nfs"
+	LN
+fi

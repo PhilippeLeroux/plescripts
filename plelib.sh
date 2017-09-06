@@ -1563,10 +1563,10 @@ function get_initiator_for
 	printf "%s%s:%02d" $iscsi_initiator_prefix $db $num_node
 }
 
-#*> return 0 if rpm update available else return 1
-#*> $1 -show show all update
+#*> return 0 if rpm update available, else return 1
+#*> [$1 -show] show all update
 #*> check update on server $1 or $2 or local server if server name is missing.
-function test_if_rpm_update_available
+function rpm_update_available
 {
 	if [ "$1" == "-show" ]
 	then

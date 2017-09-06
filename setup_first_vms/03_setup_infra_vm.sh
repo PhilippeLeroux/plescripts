@@ -91,8 +91,7 @@ then
 	exec_cmd ~/plescripts/san/create_vg.sh		\
 							-device=auto		\
 							-vg=asm01			\
-							-add_partition=no	\
-							-io_scheduler=cfq
+							-add_partition=no
 	LN
 
 	line_separator

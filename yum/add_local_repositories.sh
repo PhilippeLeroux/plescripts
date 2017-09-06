@@ -57,6 +57,12 @@ fi
 
 typeset	-r	repo_file=/etc/yum.repos.d/public-yum-ol7.repo
 
+if [ ! -f ${repo_file}.original ]
+then
+	info "Backup de $repo_file"
+	exec_cmd "cp $repo_file ${repo_file}.original"
+fi
+
 typeset	-i	first_line=$(grep -n local_ol7_latest $repo_file| cut -d: -f1)
 if [ $first_line -ne 0 ]
 then	# supprimme les dépôts locaux :
@@ -85,26 +91,12 @@ then
 	LN
 fi
 
-info "Add repositories local_ol7_latest, local_ol7_UEKR3, local_ol7_UEKR4, DVD_R2 && DVD_R3"
+info "Add repositories local_ol7_latest, R3, R4 DVD_R2 && DVD_R3 && DVD_R4"
 cat <<EOC >>$repo_file
 
 [local_ol7_latest]
 name=Oracle Linux \$releasever Latest (\$basearch)
 baseurl=$url_is/ol7_latest/
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
-gpgcheck=1
-enabled=0
-
-[local_ol7_UEKR3]
-name=Latest Unbreakable Enterprise Kernel Release 3 for Oracle Linux \$releasever (\$basearch)
-baseurl=$url_is/ol7_UEKR3/
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
-gpgcheck=1
-enabled=0
-
-[local_ol7_UEKR4]
-name=Latest Unbreakable Enterprise Kernel Release 4 for Oracle Linux \$releasever (\$basearch)
-baseurl=$url_is/ol7_UEKR4/
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 gpgcheck=1
 enabled=0
@@ -123,7 +115,28 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 gpgcheck=1
 enabled=0
 
+[ol7_DVD_R4]
+name=DVD Unbreakable Enterprise Kernel Release 4 for Oracle Linux \$releasever (\$basearch)
+baseurl=$url_is/DVD_R4/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=0
+
+[local_ol7_UEKR3]
+name=Latest Unbreakable Enterprise Kernel Release 3 for Oracle Linux \$releasever (\$basearch)
+baseurl=$url_is/ol7_UEKR3/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=0
+
+[local_ol7_UEKR4]
+name=Latest Unbreakable Enterprise Kernel Release 4 for Oracle Linux \$releasever (\$basearch)
+baseurl=$url_is/ol7_UEKR4/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=0
 EOC
 LN
+
 info "Yum repository updated."
 LN

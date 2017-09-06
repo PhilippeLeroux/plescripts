@@ -10,11 +10,13 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 
 typeset	release=undef
+typeset enable_repo=yes
 
 typeset -r str_usage=\
 "Usage :
 $ME
-	-release=DVD_R2|DVD_R3
+	-release=DVD_R2|DVD_R3|DVD_R4
+	[-enable_repo=$enable_repo]	yes or no
 "
 
 while [ $# -ne 0 ]
@@ -27,6 +29,11 @@ do
 
 		-release=*)
 			release=${1##*=}
+			shift
+			;;
+
+		-enable_repo=*)
+			enable_repo=${1##*=}
 			shift
 			;;
 
@@ -47,7 +54,7 @@ done
 
 #ple_enable_log -params $PARAMS
 
-exit_if_param_invalid release "DVD_R2 DVD_R3" "$str_usage"
+exit_if_param_invalid release "DVD_R2 DVD_R3 DVD_R4" "$str_usage"
 
 #	Function dupliquée de sync_oracle_repository.sh
 function nfs_export_repo
@@ -114,29 +121,32 @@ exec_cmd umount /mnt/cdrom
 exec_cmd eject
 LN
 
-info "Enable repository"
-exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=infra
-LN
+if [ $enable_repo == yes ]
+then
+	info "Enable repository"
+	exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=infra
+	LN
+fi
 
 fake_exec_cmd cd $repo_path
 cd $repo_path
-exec_cmd -c yum -y -q install ./deltarpm-3.6-3.el7.x86_64.rpm
-exec_cmd -c yum -y -q install ./python-deltarpm-3.6-3.el7.x86_64.rpm
-case $release in
-	DVD_R2)
-		exec_cmd -c yum -y -q install ./createrepo-0.9.9-23.el7.noarch.rpm
-		;;
-	DVD_R3)
-		exec_cmd -c yum -y -q install ./createrepo-0.9.9-26.el7.noarch.rpm
-		;;
-esac
+if ! command_exists createrepo
+then
+	exec_cmd -c yum -y -q install ./deltarpm-3.6-3.el7.x86_64.rpm
+	exec_cmd -c yum -y -q install ./createrepo-0.9.9-26.el7.noarch.rpm
+	exec_cmd -c yum -y -q install ./python-deltarpm-3.6-3.el7.x86_64.rpm
+	L?
+fi
 exec_cmd createrepo --update $repo_path
 fake_exec_cmd cd -
 cd -
 LN
 
-exec_cmd ~/plescripts/yum/switch_repo_to.sh -local -release=$release
-LN
+if [ $enable_repo == yes ]
+then
+	exec_cmd ~/plescripts/yum/switch_repo_to.sh -local -release=$release
+	LN
+fi
 
 nfs_export_repo
 LN

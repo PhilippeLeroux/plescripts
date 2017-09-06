@@ -65,30 +65,18 @@ typeset		db_type=undef
 typeset		node_list=undef
 typeset		cdb=yes
 typeset		lang=french
-typeset		pdb=undef
 typeset		serverPoolName=undef
 typeset		policyManaged=no
 typeset		enable_flashback=yes
 typeset		backup=yes
 typeset		confirm="-confirm"
 typeset	-i	redoSize=64	# Unit Mb
-typeset		sampleSchema=no
-if [ $orcl_release == 12.1 ]
-then
-	typeset		wallet=yes
-elif test_if_cmd_exists crsctl
-then # Impossible de démarrer la base avec le wallet.
-	typeset		wallet=no
-else # Sur FS pas de problème.
-	typeset		wallet=yes
-fi
 
 #	DEBUG :
 typeset		create_database=yes
 
 add_usage "-db=name"								"Database name."
 add_usage "[-lang=$lang]"							"Language."
-add_usage "[-sampleSchema=$sampleSchema]"			"yes|no (pdb only)"
 add_usage "[-sysPassword=$sysPassword]"
 if [ $set_param_totalMemory == yes ]
 then
@@ -103,8 +91,6 @@ add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting (6)
 # 12.1 sur un RAC fixer une limite est important.
 add_usage "[-pga_aggregate_limit=$pga_aggregate_limit" "0 to disable this setting (7)"
 add_usage "[-cdb=$cdb]"								"yes|no (1)"
-add_usage "[-pdb=name]"								"pdb name (2)"
-add_usage "[-wallet=$wallet]"						"yes|no. yes : Wallet Manager for pdb connection."
 add_usage "[-redoSize=$redoSize]"					"Redo size Mb."
 add_usage "[-data=$data]"
 add_usage "[-fra=$fra]"
@@ -120,12 +106,6 @@ typeset -r str_usage=\
 $ME
 $(print_usage)
 
-\t1 : -cdb=yes and -pdb not defined : -pdb=pdb01
-
-\t2 : -pdb defined : -cdb set to yes.
-\t	-pdb=no : do not create a pdb, only cdb.
-\t	Add 2 services : pdb name postfixed by _oci & _java
-
 \t3 : db_type auto for single or RAC.
 \t	To create RAC One node used -db_type=RACONENODE
 \t	RAC One node service : ron_$(hostname -s)
@@ -139,7 +119,7 @@ $(print_usage)
 \t7 : RAC 12.2.0.1 minimum 2048M
 
 \tDebug flag :
-\t	-skip_db_create : skip create database, add -pdb=no to skip create pdb
+\t	-skip_db_create : skip create database.
 "
 
 while [ $# -ne 0 ]
@@ -171,23 +151,8 @@ do
 			shift
 			;;
 
-		-sampleSchema=*)
-			sampleSchema=${1##*=}
-			shift
-			;;
-
-		-wallet=*)
-			wallet=$(to_lower ${1##*=})
-			shift
-			;;
-
 		-redoSize=*)
 			redoSize=${1##*=}
-			shift
-			;;
-
-		-pdb=*)
-			pdb=${1##*=}
 			shift
 			;;
 
@@ -440,12 +405,6 @@ function create_database
 	LN
 
 	info "Create database $db"
-	if [ $pdb != undef ]
-	then
-		info "   - Create pdb            : $pdb"
-		info "   - Wallet Manager        : $wallet"
-		info "   - Create sample schemas : $sampleSchema"
-	fi
 	info "   - Backup database       : $backup"
 	LN
 
@@ -516,16 +475,6 @@ function fsdb_enable_autostart
 
 function adjust_parameters
 {
-	[[ $cdb == yes && $pdb == undef ]] && pdb=pdb01 || true
-	[ $pdb == no ] && pdb=undef || true
-
-	if [ $pdb != undef ]
-	then
-		numberOfPDBs=1
-	else
-		sampleSchema=no
-	fi
-
 	#	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
 	[[ $policyManaged == yes && $serverPoolName == undef ]] && serverPoolName=poolAllNodes || true
 	[ $serverPoolName != undef ] && policyManaged=yes || true
@@ -533,6 +482,12 @@ function adjust_parameters
 
 function next_instructions
 {
+	typeset -r instance=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|\+ASM" | cut -d_ -f3-4)
+	info "To create a pdb use script create_pdb.sh :"
+	info "$ export ORACLE_SID=$instance"
+	info "$ ./create_pdb.sh -db=$db -pdb=pdb01"
+	LN
+
 	if cfg_exists $db use_return_code >/dev/null 2>&1
 	then
 		cfg_load_node_info $db 1
@@ -579,8 +534,6 @@ then
 	exit_if_param_invalid	db_type "SINGLE RAC RACONENODE"	"$str_usage"
 fi
 exit_if_param_invalid	enable_flashback	"yes no"	"$str_usage"
-exit_if_param_invalid	sampleSchema		"yes no"	"$str_usage"
-exit_if_param_invalid	wallet				"yes no"	"$str_usage"
 
 adjust_parameters
 
@@ -672,16 +625,6 @@ then
 fi
 
 copy_glogin
-
-if [[ $cdb == yes && $pdb != undef ]]
-then
-	exec_cmd ~/plescripts/db/create_pdb.sh						\
-								-db=$db							\
-								-pdb=$pdb						\
-								-wallet=$wallet					\
-								-sampleSchema=$sampleSchema		\
-								-nolog
-fi
 
 if [ $crs_used == yes ]
 then

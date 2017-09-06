@@ -1,7 +1,8 @@
 set ts=4
 set sw=4
 set softtabstop=4	" aka sts ne fonctionne pas avec vi
-set listchars=tab:→\ ,eol:$,space:.,trail:✗,nbsp:⋅
+set listchars=tab:→\ ,eol:$,trail:✗,nbsp:⋅
+"set listchars=tab:→\ ,eol:$,space:.,trail:✗,nbsp:⋅
 "set cc=81 wrap
 "set nu
 set vb t_vb=
@@ -60,10 +61,14 @@ if g:first_load == 1
 	endif
 endif
 
-"	Pour vim-markdown
+"	Pour vim-instant-markdown
 let g:vim_markdown_folding_disabled = 1
 let g:vim_markdown_toc_autofit = 1
 set conceallevel=2
+
+"	Pour vim-markdown
+"	NOTE : ne plus utiliser vim-markdown avec une version de vim > 7.4
+autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 
 "	vim-session & vim-misc
 if plewiki_directory == 'yes'
