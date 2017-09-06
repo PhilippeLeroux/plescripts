@@ -751,6 +751,9 @@ then
 	LN
 fi
 
+script_stop $ME $db
+LN
+
 if [ $node -eq $max_nodes ]
 then	# C'est le dernier nœud
 	if [ $max_nodes -ne 1 ]
@@ -761,8 +764,6 @@ then	# C'est le dernier nœud
 
 	if [ $show_instructions == yes ]
 	then
-		script_stop $ME $db
-		LN
 
 		if [ $cfg_db_type == fs ]
 		then
@@ -782,8 +783,6 @@ then	# C'est le dernier nœud
 	fi
 elif [ $max_nodes -ne 1 ]
 then	# Ce n'est pas le dernier nœud et il y a plus de 1 nœud.
-	[ $show_instructions == yes ] || script_stop $ME $db && LN || true
-
 	info "Run script :"
 	info "$ME -db=$db -node=$(( node + 1 ))"
 	LN
