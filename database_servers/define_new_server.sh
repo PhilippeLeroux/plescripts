@@ -26,7 +26,6 @@ typeset		storage=ASM
 typeset		luns_hosted_by=$disks_hosted_by
 # OH : ORACLE_HOME
 typeset		OH_FS=$rac_orcl_fs
-[ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
 
 add_usage "-rel=12.1|12.2"			"Oracle release"
 add_usage "-db=name"				"Database name."
@@ -151,14 +150,19 @@ exit_if_param_invalid storage "ASM FS" "$str_usage"
 
 [[ $db_type == rac && $storage == FS ]] && error "RAC on FS not supported." && exit 1
 
-exit_if_param_invalid OH_FS "ocfs2 $rdbms_fs_type" "$str_usage"
-
-if [[ $max_nodes -eq 1 ]]
+if [ $OH_FS == default ]
 then
-	OH_FS=$rdbms_fs_type
-else # sinon RAC.
-	[ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
+	case "$rel" in
+		"12.1")
+			OH_FS=$rdbms_fs_type
+			;;
+		"12.2")
+			[ $db_type == rac ] && OH_FS=ocfs2 || OH_FS=$rdbms_fs_type
+			;;
+	esac
 fi
+
+exit_if_param_invalid OH_FS "ocfs2 $rdbms_fs_type" "$str_usage"
 
 function validate_config
 {
