@@ -295,6 +295,11 @@ then
 	add_dynamic_cmd_param "-db=$db -pdb=$pdb -service=$service -nolog"
 	exec_dynamic_cmd "sudo -iu grid"
 	LN
+else
+	line_separator
+	warning "Disconnect and connect oracle and execute :"
+	warning "$ mount /mnt/$pdb"
+	LN
 fi
 
 if [[ $dg_cfg_available == yes && $role == primary ]]
