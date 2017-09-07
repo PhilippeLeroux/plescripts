@@ -212,17 +212,22 @@ LN
 master_ssh "~/plescripts/setup_first_vms/01_prepare_master_vm.sh -update_os=$update_os"
 LN
 
+line_separator
+exec_cmd "$vm_scripts_path/stop_vm $master_hostname -dataguard=no"
+exec_cmd VBoxManage modifyvm $master_hostname --memory 1024
+LN
+
 if [ $update_os == yes ]
 then
-	exec_cmd "$vm_scripts_path/stop_vm $master_hostname -dataguard=no"
-	LN
-
 	info "Server $master_hostname ready."
 	LN
 
 	info "Create BDD server : https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers"
 	LN
 else
+	exec_cmd "$vm_scripts_path/start_vm $master_hostname -dataguard=no"
+	LN
+
 	info "Server $master_hostname ready."
 	LN
 
