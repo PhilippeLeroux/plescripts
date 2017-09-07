@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -38,7 +39,10 @@ exit_if_param_undef		prefixInstance 	"$str_usage"
 
 typeset	-ri	max_nodes=$(olsnodes | wc -l)
 
+typeset -r	orcl_version="$(read_orcl_version)"
+
 info "Update /etc/oratab on $(hostname -s)"
+info "Oracle release $orcl_version"
 info "Add all instances, useful for Policy Managed and RAC One Node"
 for (( inode=1; inode <= max_nodes; ++inode ))
 do
@@ -49,7 +53,7 @@ do
 	then
 		info "$INSTANCE present in /etc/oratab"
 	else
-		exec_cmd "echo \"${INSTANCE}:/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1:N	#added by bibi\" >> /etc/oratab"
+		exec_cmd "echo \"${INSTANCE}:/$ORCL_DISK/app/oracle/$orcl_version/dbhome_1:N	#added by bibi\" >> /etc/oratab"
 	fi
 done
 

@@ -28,6 +28,7 @@ else
 fi
 
 typeset	-r	orcl_release="$(read_orcl_release)"
+typeset -r	orcl_version=$(read_orcl_version)
 typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
@@ -494,6 +495,7 @@ function next_instructions
 		if [[ "$cfg_standby" != none	&& $(dataguard_config_available) == no
 										&& ! -d $cfg_path_prefix/$cfg_standby ]]
 		then
+			info "Create second server :"
 			info "From virtual-host $client_hostname execute :"
 			info "$ cd ~/plescripts/database_servers"
 			typeset params="-rel=$orcl_release"
@@ -581,7 +583,7 @@ fi
 
 load_oraenv_for $ORACLE_SID
 
-if [[ "${db_type:0:3}" == "RAC" && $oracle_release == "12.1.0.2" ]]
+if [[ "${db_type:0:3}" == "RAC" && $orcl_version == "12.1.0.2" ]]
 then
 	info "Bug 9040676 : MMON ACTION POLICY VIOLATION. 'BLOCK CLEANOUT OPTIM, UNDO SEGMENT SCAN' (ORA-12751)"
 	sqlplus_cmd "$(set_sql_cmd "alter system set \"_smu_debug_mode\"=134217728 scope=both sid='*';")"

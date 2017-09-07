@@ -24,6 +24,11 @@ do
 			shift
 			;;
 
+		-release)
+			release=${1##*=}
+			shift
+			;;
+
 		-uninstall_fuse)
 			uninstall_fuse=yes
 			shift
@@ -48,6 +53,11 @@ ple_enable_log -params $PARAMS
 
 must_be_user root
 
+typeset	-r	orcl_release=$(su - oracle -c	\
+							"$ORACLE_HOME/OPatch/opatch lsinventory	|\
+									grep 'Oracle Database 12c'		|\
+									awk '{ print \$4 }' | cut -d. -f1-4")
+
 typeset -ri count_dbfs_res=$(crsctl stat res -t | grep -E ".*\.dbfs$" | wc -l)
 if [ $count_dbfs_res -ne 0 ]
 then
@@ -66,8 +76,10 @@ then
 	LN
 
 	line_separator
-	typeset	-r	rel=$(cut -d. -f1-2<<<"$oracle_release")
-	typeset	-r	ver=$(cut -d. -f1<<<"$oracle_release")
+	#typeset	-r	rel=$(cut -d. -f1-2<<<"$orcl_release")
+	# 12.1 ou 12.2 même noms
+	typeset	-r	rel=12.1
+	typeset	-r	ver=$(cut -d. -f1<<<"$orcl_release")
 	execute_on_all_nodes rm -f /usr/local/lib/libclntsh.so.$rel
 	execute_on_all_nodes rm -f /usr/local/lib/libnnz$ver.so
 	execute_on_all_nodes rm -f /usr/local/lib/libclntshcore.so.$rel
