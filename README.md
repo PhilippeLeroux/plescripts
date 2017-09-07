@@ -69,32 +69,6 @@ Comment utiliser l'adresse de scan et gestion du tnsnames.ora décrit [ici](http
 
 --------------------------------------------------------------------------------
 
-##	Temps de références
-### Création d'un dataguard (Base single)
-
-script				|	id					|	temps
---------------------|:---------------------:|-------------:
-clone_master.sh		|	venus				|	   3mn17s
-install_grid.sh		|	venus				|	   7mn10s
-install_oracle.sh	|	venus				|	   3mn46s
-create_db.sh		|	venus				|	 19mn58s
-clone_master.sh		|	saturne				|	   3mn40s
-install_grid.sh		|	saturne				|	   7mn34s
-install_oracle.sh	|	saturne				|	   4mn14s
-create_dataguard.sh	|	VENUS with SATURNE	|	  11mn12s
-
-###	Création d'un RAC
-
-script				|	id					|	temps
---------------------|:---------------------:|-------------:
-clone_master.sh		|	daisy				|	4mn15s
-clone_master.sh		|	daisy				|	3mn37s
-install_grid.sh		|	daisy				|	31mn46s
-install_oracle.sh	|	daisy				|	13mn13s
-create_db.sh		|	daisy				|	42mn29s
-
---------------------------------------------------------------------------------
-
 ![Screenshot](https://github.com/PhilippeLeroux/plescripts/wiki/virtualbox_manager.png)
 
 --------------------------------------------------------------------------------
