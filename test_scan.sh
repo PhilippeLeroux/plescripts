@@ -12,16 +12,6 @@ typeset scan_name=$1
 [ x"$scan_name" == x ] && scan_name=$(olsnodes -c 2>/dev/null)
 [ x"$scan_name" == x ] && error "$ME <scan-adress>" && exit 1
 
-exec_cmd -ci "systemctl status nscd.service 2>/dev/null 1>&2"
-if [ $? -eq 0 ]
-then
-	LN
-	line_separator
-	warning "La cache DNS est actif, seul une IP de l'adresse de SCAN sera donc utilisée"
-	line_separator
-fi
-LN
-
 typeset -a	ip_list
 
 line_separator
@@ -74,8 +64,11 @@ LN
 info "$dup ping sur la même IP"
 LN
 
-[ $dup -eq 3 ] && warning "Cache DNS actif ?" && LN
-
+if [ $dup -eq 3 ]
+then
+	warning "Problème cache DNS (nscd) ?"
+	LN
+fi
 
 line_separator
 exec_cmd nslookup $scan_name

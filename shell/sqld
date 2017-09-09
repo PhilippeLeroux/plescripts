@@ -80,13 +80,19 @@ then
 	fi
 fi
 
-info "Stop nscd.service"
-exec_cmd sudo systemctl stop nscd.service
-LN 
+if [ $disable_dns_cache == yes ]
+then
+	info "Stop nscd.service"
+	exec_cmd sudo systemctl stop nscd.service
+	LN 
+fi
 
 exec_cmd -c "$script ${@:1}"
 LN
 
-info "Start nscd.service"
-exec_cmd sudo systemctl start nscd.service
-LN
+if [ $disable_dns_cache == yes ]
+then
+	info "Start nscd.service"
+	exec_cmd sudo systemctl start nscd.service
+	LN
+fi

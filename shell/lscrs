@@ -100,10 +100,18 @@ then
 	[ $server_name == undef ] && server_name=$(printf "srv%s01" ${db}) || true
 fi
 
-[ $max_nodes -gt 1 ] && exec_cmd sudo systemctl stop nscd.service || true
+if [[ $disable_dns_cache == yes && $max_nodes -gt 1 ]]
+then
+	exec_cmd sudo systemctl stop nscd.service
+fi
+
 wait_server $server_name
 ret=$?
-[ $max_nodes -gt 1 ] && exec_cmd sudo systemctl start nscd.service || true
+if [[ $disable_dns_cache == yes && $max_nodes -gt 1 ]]
+then
+	exec_cmd sudo systemctl start nscd.service
+fi
+
 [ $ret -ne 0 ] && exit 1 || true
 
 start_s=$SECONDS
