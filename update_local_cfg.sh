@@ -9,9 +9,9 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
-add_usage "-set=variable=value"
+add_usage "variable=value"
 add_usage "Ex to update variable VM_PATH with value ~/VBoxVMs :"
-add_usage "   $ ./update_local_cfg.sh -set=VM_PATH=~/VBoxVMs"
+add_usage "   $ ./update_local_cfg.sh VM_PATH=~/VBoxVMs"
 typeset -r parameters_usage="$(print_usage)"
 reset_usage
 
@@ -80,8 +80,53 @@ Internals :
 $internals
 "
 
+# $1 variable name
+# return 1 if valid, else return 0
+function variable_is_valid
+{
+	case $var in
+		ORACLE_RELEASE) return 0 ;;
+
+		ORCL_YUM_REPOSITORY_RELEASE121) return 0 ;;
+		ORCL_YUM_REPOSITORY_RELEASE122) return 0 ;;
+		OL7_KERNEL_VERSION) return 0 ;;
+
+		VM_MEMORY_MB_FOR_SINGLE_DB_121) return 0 ;;
+		VM_MEMORY_MB_FOR_RAC_DB_121) return 0 ;;
+		VM_NR_CPUS_FOR_SINGLE_DB_121) return 0 ;;
+		VM_NR_CPUS_FOR_RAC_DB_121) return 0 ;;
+
+		VM_MEMORY_MB_FOR_SINGLE_DB_122) return 0 ;;
+		VM_MEMORY_MB_FOR_RAC_DB_122) return 0 ;;
+		VM_NR_CPUS_FOR_SINGLE_DB_122) return 0 ;;
+		VM_NR_CPUS_FOR_RAC_DB_122) return 0 ;;
+
+		VM_PATH) return 0 ;;
+
+		INSTALL_GUESTADDITIONS) return 0 ;;
+
+		DISKS_HOSTED_BY) return 0 ;;
+		SAN_DISK) return 0 ;;
+		SAN_DISK_SIZE_G) return 0 ;;
+
+		TIMEKEEPING) return 0 ;;
+
+		IOSTAT_ON) return 0 ;;
+
+		*)
+			return 1 ;;
+	esac
+}
+
 typeset	var=undef
 typeset value=undef
+
+if [ $# -eq 0 ]
+then
+	info "$str_usage"
+	LN
+	exit 1
+fi
 
 while [ $# -ne 0 ]
 do
@@ -91,27 +136,6 @@ do
 			shift
 			;;
 
-		-set=*)
-			typeset full_arg=${1#*=}
-			shift
-
-			IFS=\= read var value<<<"$full_arg"
-			var=$(to_upper $var)
-
-			info "Update variable $var with value $value"
-			LN
-
-			if [[ "x$var" == x || "x$value" == x ]]
-			then
-				error "Arg '$full_arg' invalid."
-				LN
-
-				info "$str_usage"
-				LN
-				exit 1
-			fi
-			;;
-
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -119,50 +143,23 @@ do
 			;;
 
 		*)
-			error "Arg '$1' invalid."
-			LN
-			info "$str_usage"
-			exit 1
+			# Attend variable=value
+			IFS=\= read var value<<<"$1"
+			var=$(to_upper $var)
+			if ! variable_is_valid $var
+			then
+				error "Variable '$var' invalid."
+				LN
+				info "$str_usage"
+				LN
+				exit 1
+			fi
+			shift
+
 			;;
 	esac
 done
 
-case $var in
-	ORACLE_RELEASE) ;;
-
-	ORCL_YUM_REPOSITORY_RELEASE121) ;;
-	ORCL_YUM_REPOSITORY_RELEASE122) ;;
-	OL7_KERNEL_VERSION) ;;
-
-	VM_MEMORY_MB_FOR_SINGLE_DB_121) ;;
-	VM_MEMORY_MB_FOR_RAC_DB_121) ;;
-	VM_NR_CPUS_FOR_SINGLE_DB_121) ;;
-	VM_NR_CPUS_FOR_RAC_DB_121) ;;
-
-	VM_MEMORY_MB_FOR_SINGLE_DB_122) ;;
-	VM_MEMORY_MB_FOR_RAC_DB_122) ;;
-	VM_NR_CPUS_FOR_SINGLE_DB_122) ;;
-	VM_NR_CPUS_FOR_RAC_DB_122) ;;
-
-	VM_PATH) ;;
-
-	INSTALL_GUESTADDITIONS) ;;
-
-	DISKS_HOSTED_BY) ;;
-	SAN_DISK) ;;
-	SAN_DISK_SIZE_G) ;;
-
-	TIMEKEEPING) ;;
-
-	IOSTAT_ON) ;;
-
-	*)
-		error "Variable '$var' unknow"
-		LN
-		info "$str_usage"
-		LN
-		exit 1
-esac
 
 typeset -r local_cfg=~/plescripts/local.cfg
 

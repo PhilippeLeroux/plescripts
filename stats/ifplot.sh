@@ -23,6 +23,8 @@ typeset	range_mn=5
 typeset -r str_usage=\
 "Usage : $ME
 		[-ifname=iface]      iface name : eth0 | eth1 | eth2
+			iSCSI : $if_iscsi_name
+			RAC   : $if_rac_name
 		[-node=<#>]
 		[-range_mn=$range_mn]
 		[-no_loop]
@@ -106,7 +108,7 @@ do
 	esac
 done
 
-exit_if_param_undef ifname "-ifname obligatoire"
+exit_if_param_undef ifname "-ifname obligatoire" "$str_usage"
 
 # HH:MM:SS
 function time_to_secs
@@ -229,6 +231,14 @@ typeset plot_cmds=/tmp/${ifname}.plot.$$
 typeset -i line_to_skip=1
 
 typeset graph_title="$server : $ifname"
+case $ifname in
+	$if_iscsi_name)
+		graph_title="$graph_title (iSCSI)"
+		;;
+	$if_rac_name)
+		graph_title="$graph_title (RAC)"
+		;;
+esac
 
 typeset -r stats_info=${PLELOG_ROOT}/$date/stats/stats_info.txt
 if [ $loop == yes ]

@@ -20,6 +20,7 @@ typeset -r str_usage=\
 	[-stripesize=#]     stripe size Kb.
 	[-noatime]			add option noatime to mount point options.
 	[-netdev]           add _netdev to mount point options.
+	[-nobarrier]		add nobarrier option (xfs)
 "
 
 typeset		mount_point=undef
@@ -31,6 +32,7 @@ typeset		suffix_vglv=undef
 typeset		type_fs=undef
 typeset		noatime=no
 typeset		netdev=no
+typeset		nobarrier=no
 
 while [ $# -ne 0 ]
 do
@@ -87,6 +89,11 @@ do
 
 		-noatime)
 			noatime=yes
+			shift
+			;;
+
+		-nobarrier)
+			nobarrier=yes
 			shift
 			;;
 
@@ -160,6 +167,7 @@ do
 	partition_list+=( $partname )
 	add_partition_to $device
 	sleep 1
+	LN
 
 	exec_cmd pvcreate -y $partname
 	LN
@@ -182,11 +190,22 @@ else
 fi
 
 exec_cmd lvcreate -y $options -l 100%FREE -n $lv_name $vg_name
+sleep  1
+LN
+
 exec_cmd mkfs -t $type_fs /dev/$vg_name/$lv_name
+sleep 1
+LN
+
 exec_cmd mkdir -p $mount_point
-typeset mp_options=defaults
+LN
+
+typeset mp_options="defaults"
+[ $nobarrier == yes ] && mp_options="nobarrier,$mp_options" || true
 [ $netdev == yes ] && mp_options="_netdev,$mp_options" || true
 [ $noatime == yes ] && mp_options="noatime,$mp_options" || true
 exec_cmd "echo \"/dev/mapper/$vg_name-$lv_name $mount_point $type_fs $mp_options 0 0\" >> /etc/fstab"
+LN
+
 exec_cmd mount $mount_point
 LN

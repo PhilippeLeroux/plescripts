@@ -89,11 +89,11 @@ exit_if_param_undef vg_name			"$str_usage"
 set_working_vg $vg_name
 
 info "Create backstore"
-create_backstore_range $first_no $count lv$prefix
+create_backstore_range $first_no $count $prefix
 LN
 
 info "Create luns"
-create_lun_range $first_no $count $initiator_name lv$prefix
+create_lun_range $first_no $count $initiator_name $prefix
 LN
 
 [ $do_backup == yes ] && exec_cmd ~/plescripts/san/save_targetcli_config.sh -name="after_export_lv" || true

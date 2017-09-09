@@ -3,9 +3,18 @@
 
 [ -z plelib_release ] && error "~/plescripts/plelib.sh doit être incluse" && exit 1
 
-#
+#	============================================================================
+[ -f /root/pletarget.cfg ] && . /root/pletarget.cfg || true
+# Le fichier /root/pletarget.cfg permet de modifier la valeur par défaut de ces
+# paramètres :
+typeset -r	cache_dynamic_acls=${CACHE_DYNAMIC_ACLS:-0}
+typeset -r	demo_mode_write_protect=${DEMO_MODE_WRITE_PROTECT:-0}
+typeset -r	generate_node_acls=${GENERATE_NODE_ACLS:-0}
+typeset -r	default_cmdsn_depth=${DEFAULT_CMDSN_DEPTH:-128}
+typeset -r	backstore_type=${BACKSTORE_TYPE:-block}
+#	============================================================================
+
 typeset		working_vg=no_vg_define
-typeset	-r	backstore_type=block
 
 function set_targetcli_default_settings
 {
@@ -61,11 +70,18 @@ function create_iscsi_initiator
 	typeset -r l_userid=$3
 	typeset -r l_password=$4
 
+	info "$l_initiator_name tpg1 parameters :"
+	info "  -cache_dynamic_acls      $cache_dynamic_acls"
+	info "  -demo_mode_write_protect $demo_mode_write_protect"
+	info "  -generate_node_acls      $generate_node_acls"
+	info "  -default_cmdsn_depth     $default_cmdsn_depth"
+	LN
+
 	exec_cmd targetcli /iscsi/ create $l_initiator_name
-	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute cache_dynamic_acls=0
-	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute demo_mode_write_protect=0
-	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute generate_node_acls=0
-	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute default_cmdsn_depth=64
+	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute cache_dynamic_acls=$cache_dynamic_acls
+	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute demo_mode_write_protect=$demo_mode_write_protect
+	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute generate_node_acls=$generate_node_acls
+	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1 set attribute default_cmdsn_depth=$default_cmdsn_depth
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/portals/ create $l_portal
 
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/acls create $l_initiator_name
@@ -88,30 +104,36 @@ function delete_iscsi_initiator
 #	$2 LV prefix
 function get_lv_name
 {
-	printf "%s%02d" $2 $1
+	printf "lv%s%02d" $2 $1
 }
 
 #	$1 #LUN
 #	$2 LV prefix
+#
+#	retourne le nom du lv pour éviter ces messages au démarrage du serveur d'infra :
+#	Backstore name 'asm01_lvtestsan05' is too long for INQUIRY_MODEL, truncating to 16 bytes
+#	La longueur maximale du nom sera 12.
 function get_disk_name
 {
-	printf "%s_%s" $working_vg $(get_lv_name $1 $2)
+	get_lv_name $1 $2
 }
 
 #	$1 #LUN
 #	$2 LV prefix
 function create_backstore
 {
-	typeset -r lv_name=$(get_lv_name $1 $2)
-	typeset -r disk_name=$(get_disk_name $1 $2)
+	typeset -ri	lun_number=$1
+	typeset -r	lv_prefix=$2
+	typeset -r	lv_name=$(get_lv_name $lun_number $lv_prefix)
+	typeset -r	disk_name=$(get_disk_name $lun_number $lv_prefix)
 
-	test_first=$(printf "/backstores/block/%s_lv%s%02d" $vg_name $prefix $1)
+	typeset -r	test_first="/backstores/$backstore_type/$disk_name"
 	targetcli ls $test_first >/dev/null 2>&1
 	if [ $? -eq 0 ]
 	then
-		info "$test_first exist."
+		warning "$test_first exist."
 	else
-		exec_cmd -c targetcli /backstores/$backstore_type/ create name=${disk_name} dev=/dev/$working_vg/$lv_name
+		exec_cmd targetcli /backstores/$backstore_type/ create name=${disk_name} dev=/dev/$working_vg/$lv_name
 	fi
 }
 

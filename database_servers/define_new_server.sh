@@ -146,9 +146,9 @@ exit_if_param_invalid storage "ASM FS" "$str_usage"
 
 [[ $max_nodes -gt 1 && $db_type != rac ]] && db_type=rac || true
 
-[[ $storage == FS ]] && db_type=fs || true
+[[ $db_type == rac && $storage == FS ]] && error "RAC on FS not supported." && exit 1 || true
 
-[[ $db_type == rac && $storage == FS ]] && error "RAC on FS not supported." && exit 1
+[ $storage == FS ] && db_type=fs || true
 
 if [ $OH_FS == default ]
 then
@@ -371,7 +371,7 @@ then
 		12.2)	rel=12.2.0.1 ;;
 	esac
 	info "Update Oracle Release"
-	exec_cmd ~/plescripts/update_local_cfg.sh -set=oracle_release=$rel
+	exec_cmd ~/plescripts/update_local_cfg.sh oracle_release=$rel
 
 	info "Call with local config updated."
 	exec_cmd $ME $all_params

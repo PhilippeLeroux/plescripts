@@ -49,5 +49,5 @@ exec_cmd cp /etc/default/grub /etc/default/grub.$(date +%d)
 exec_cmd "sed -i 's/GRUB_CMDLINE_LINUX=\"\(.*\)\"/GRUB_CMDLINE_LINUX=\"\1 no-kvmclock no-kvmclock-vsyscall\"/' /etc/default/grub"
 LN
 
-exec_cmd "~/plescripts/grub2/grub2_mkconfig.sh"
+exec_cmd "~/plescripts/grub2/enable_oracle_kernel.sh"
 LN

@@ -97,8 +97,6 @@ vm.dirty_background_ratio = 3
 vm.dirty_ratio = 80
 vm.dirty_expire_centisecs = 500
 vm.dirty_writeback_centisecs = 100
-# Ce paramètre améliore considérablement les perfs (iSCSI)
-net.core.message_cost = 0
 EOS
 
 info "Create tuned profile : $small_pages_profile"

@@ -91,7 +91,9 @@ then
 	typeset -i lv_corrected=0
 	while read lv_name vg_name rem
 	do
-		typeset backstore_name=${vg_name}_${lv_name}
+		# Attention nom du backstore définie par get_disk_name de la lib
+		# targetclilib.sh
+		typeset backstore_name=${lv_name}
 		if ! backstore_exists $backstore_name
 		then
 			info "Backstore $backstore_name not exists."

@@ -306,28 +306,30 @@ function create_database_fs_on_new_disks
 
 	IFS=':' read name size_disk first last<<<"$(grep FSDATA $cfg_disks)"
 	info "Create FS for DATA"
-	ssh_server "plescripts/disk/create_fs.sh					\
+	ssh_server plescripts/disk/create_fs.sh						\
 							-disks=$(( last - first + 1 ))		\
 							-mount_point=/$ORCL_DATA_FS_DISK	\
 							-suffix_vglv=oradata				\
 							-type_fs=$rdbms_fs_type				\
 							-striped=yes						\
 							-stripesize=$stripesize_kb			\
-							-netdev"
+							-netdev								\
+							-nobarrier
 	ssh_server "chown oracle:oinstall /$ORCL_DATA_FS_DISK"
 	ssh_server "chmod 775 /$ORCL_DATA_FS_DISK"
 	LN
 
 	IFS=':' read name size_disk first last<<<"$(grep FSFRA $cfg_disks)"
 	info "Create FS for FRA"
-	ssh_server "plescripts/disk/create_fs.sh					\
+	ssh_server plescripts/disk/create_fs.sh						\
 							-disks=$(( last - first + 1 ))		\
 							-mount_point=/$ORCL_FRA_FS_DISK		\
 							-suffix_vglv=orafra					\
 							-type_fs=$rdbms_fs_type				\
 							-striped=yes						\
 							-stripesize=$stripesize_kb			\
-							-netdev"
+							-netdev								\
+							-nobarrier
 	ssh_server "chown oracle:oinstall /$ORCL_FRA_FS_DISK"
 	ssh_server "chmod 775 /$ORCL_FRA_FS_DISK"
 	LN
@@ -551,14 +553,14 @@ function disable_cgroup_memory
 
 	if [ "$ol7_kernel_version" == latest ]
 	then
-		ssh_server "~/plescripts/grub2/grub2_mkconfig.sh"
+		ssh_server "~/plescripts/grub2/enable_oracle_kernel.sh"
 		LN
 	else
 		ssh_server -c "~/plescripts/database_servers/install_kernel.sh	\
 												-version=$ol7_kernel_version"
 		if [ $? -ne 0 ]
 		then
-			ssh_server "~/plescripts/grub2/grub2_mkconfig.sh"
+			ssh_server "~/plescripts/grub2/enable_oracle_kernel.sh"
 			LN
 		else
 			LN

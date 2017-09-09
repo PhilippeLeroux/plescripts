@@ -113,7 +113,7 @@ then
 fi
 
 line_separator
-info "Create VG $vg on device $device"
+info "Add device $device on VG $vg"
 line_separator
 LN
 

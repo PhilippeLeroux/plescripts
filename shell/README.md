@@ -2,7 +2,7 @@
 
 	Permet de supprimer les caractères de controles dans les logs.
 
-	Est utilisé par vimL
+	Est utilisé par vim
 
 - make_ssh_user_equivalence_with.sh
 

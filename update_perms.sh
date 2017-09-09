@@ -26,12 +26,15 @@ exec_cmd -c "sudo find ~/plescripts/ -name \"*lib.sh\" | xargs chmod ug=rw,o=r"
 LN
 
 info "Répertoire shell"
-exec_cmd -c "sudo find ~/plescripts/shell -type f -and ! -name \"*.txt\" | xargs chmod ug+x,o-x"
+exec_cmd -c "sudo find ~/plescripts/shell -type f -and ! -name \"*.txt\" -and ! -name \"*.md\" | xargs chmod ug+x,o-x"
 LN
 
 info "Cas particulier de template_script.txt"
 exec_cmd "sudo chmod ug=rwx,o=r ~/plescripts/template_script.txt"
 LN
 
-info "Les docs"
-exec_cmd -c "sudo find ~/plescripts/docs -type f | xargs chmod -x"
+if [ -d ~/plescripts/docs ]
+then
+	info "Les docs"
+	exec_cmd -c "sudo find ~/plescripts/docs -type f | xargs chmod -x"
+fi

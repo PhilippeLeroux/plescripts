@@ -47,5 +47,5 @@ fi
 exec_cmd "sed -i 's/ no-kvmclock no-kvmclock-vsyscall//g' /etc/default/grub"
 LN
 
-exec_cmd "~/plescripts/grub2/grub2_mkconfig.sh"
+exec_cmd "~/plescripts/grub2/enable_oracle_kernel.sh"
 LN

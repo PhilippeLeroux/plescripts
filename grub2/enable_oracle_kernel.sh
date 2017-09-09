@@ -50,11 +50,6 @@ info "Generate grub config file"
 exec_cmd grub2-mkconfig -o /boot/grub2/grub.cfg
 LN
 
-info "Search kernel UEK"
-#	boot sur le noyau 3.10, alors que :
-#	$ grub2-editenv list
-#	saved_entry=Oracle Linux Server 7.3, with Unbreakable Enterprise Kernel 3.8.13-118.15.1.el7uek.x86_64
-
 #	Le premier kernel UEK est celui à utiliser.
 if [ "$version" == latest ]
 then
@@ -78,5 +73,5 @@ info "boot on $UEK"
 exec_cmd "grub2-set-default '$UEK'"
 LN
 
-info "Take effect after reboot."
+warning "Need reboot."
 LN

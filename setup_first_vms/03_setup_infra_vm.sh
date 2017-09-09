@@ -41,6 +41,10 @@ do
 	esac
 done
 
+# Sinon le serveur ne fonctionne pas correctement, beaucoup d'erreurs réseaux.
+exec_cmd "~/plescripts/grub2/enable_redhat_kernel.sh"
+LN
+
 line_separator
 #	Le serveur sert de gateway sur internet.
 #	https://www.centos.org/forums/viewtopic.php?t=53819
@@ -91,7 +95,8 @@ then
 	exec_cmd ~/plescripts/san/create_vg.sh		\
 							-device=auto		\
 							-vg=asm01			\
-							-add_partition=no
+							-add_partition=no	\
+							-io_scheduler=cfq
 	LN
 
 	line_separator

@@ -3,6 +3,7 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/san/lvlib.sh
+. ~/plescripts/san/targetclilib.sh
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -79,10 +80,7 @@ exit_if_param_undef first_no	"$str_usage"
 
 for i in $( seq 0 $(($count-1)) )
 do
-	backstore_name=$(printf "/backstores/block/ delete %s_lv%s%02d" $vg_name $prefix $(($first_no+$i)))
-
-	info "$backstore_name"
-	exec_cmd targetcli $backstore_name
+	delete_backstore $(( first_no + i )) $prefix
 	LN
 done
 

@@ -55,4 +55,4 @@ exec_cmd "yum -y -q install kernel-uek-${version}.el7uek"
 LN
 
 info "Enable kernel"
-exec_cmd "~/plescripts/grub2/grub2_mkconfig.sh -version=$version"
+exec_cmd "~/plescripts/grub2/enable_oracle_kernel.sh -version=$version"
