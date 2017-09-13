@@ -520,6 +520,15 @@ function workaround_bug_dbca_122
 		sqlplus_cmd "$(set_sql_cmd "alter system set shared_pool_size=$shared_pool_size scope=both sid='*';")"
 		LN
 	fi
+
+	if [[ $memoryTarget != 0 || $totalMemory != 0 ]]
+	then
+		[ $memoryTarget != 0 ] && val=$memoryTarget || val=$totalMemory
+		line_separator
+		info "Workaround bug dbca RAC 12.2.0.1"
+		sqlplus_cmd "$(set_sql_cmd "alter system set memory_max_target=$val scope=spfile sid='*';")"
+		LN
+	fi
 }
 
 #	============================================================================
