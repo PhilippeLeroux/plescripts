@@ -134,6 +134,17 @@ function resource_exists
 	fi
 }
 
+# return 0 if RAC 12cR2, else return 1
+function is_RAC_12cR2
+{
+	if [[ $gi_count_nodes -gt 1 && "$(grid_release)" == "12cR2" ]]
+	then
+		return 0
+	else
+		return 1
+	fi
+}
+
 function create_local_resource
 {
 	if resource_exists $resource_name
@@ -174,9 +185,22 @@ function create_local_resource
 		exec_cmd -c crsctl start res $resource_name
 		if [ $? -ne 0 ]
 		then # En 12.2 le premier call peut échouer.
+			LN
+			if is_RAC_12cR2
+			then
+				typeset wait_s=10
+			else
+				typeset wait_s=2
+			fi
+
+			timing $wait_s "Wait $resource_name started"
+			LN
+
 			exec_cmd crsctl start res $resource_name
+			LN
+		else
+			LN
 		fi
-		LN
 
 		info "Status"
 		exec_cmd crsctl stat res $resource_name -t

@@ -100,8 +100,8 @@ line_separator
 typeset	ORACLE_HOME=undef
 if is_cluster
 then
-	IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*line added by Agent"	\
-																/etc/oratab)"
+	# RAC 12cR2 n'ajoute plus la base dans /etc/oratab
+	ORACLE_HOME=$(srvctl config database -db $db -all|grep "Oracle home"|cut -d: -f2|xargs)
 else
 	IFS=':' read dbn ORACLE_HOME REM<<<"$(grep "^[A-Z].*" /etc/oratab)"
 fi

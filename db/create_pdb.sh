@@ -16,15 +16,7 @@ typeset	-r	orcl_release="$(read_orcl_release)"
 typeset db=undef
 typeset pdb=undef
 typeset from_pdb=default
-if [ $orcl_release == 12.1 ]
-then
-	typeset		wallet=yes
-elif test_if_cmd_exists crsctl
-then # Impossible de démarrer la base avec le wallet.
-	typeset		wallet=no
-else # Sur FS pas de problème.
-	typeset		wallet=yes
-fi
+typeset wallet=$(enable_wallet $orcl_release)
 typeset	sampleSchema=no
 typeset is_seed=no
 typeset admin_user=pdbadmin

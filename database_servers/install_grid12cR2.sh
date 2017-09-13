@@ -12,9 +12,10 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
-	-db=name
+	-db=name      Identifiant de la base
+	[-keep_tfa]   RAC ne pas supprimer tfa
 
-Debug flag :
+Debug flags :
 	-reponse_file_only
 	-skip_extract_grid
 	-skip_init_afd_disks   reponse file is created at this step.
@@ -36,6 +37,7 @@ Debug flag :
 "
 
 typeset db=undef
+typeset keep_tfa=no
 typeset	extract_grid_image=yes
 typeset	init_afd_disks=yes
 typeset	create_reponse_file=yes
@@ -60,6 +62,11 @@ do
 
 		-db=*)
 			db=${1##*=}
+			shift
+			;;
+
+		-keep_tfa)
+			keep_tfa=yes
 			shift
 			;;
 
@@ -414,7 +421,7 @@ function run_post_install_root_scripts
 			fi
 		fi
 
-		if [ $max_nodes -gt 1 ]
+		if [[ $keep_tfa == no && $max_nodes -gt 1 ]]
 		then
 			info "Uninstall TFA on node $node_name"
 			exec_cmd ssh "root@${node_name} '. .bash_profile; tfactl uninstall'"
@@ -589,6 +596,19 @@ function add_scan_to_local_known_hosts
 	LN
 }
 
+function setup_ohasd_service
+{
+	line_separator
+	typeset -i inode=0
+	for (( inode=0; inode < max_nodes; ++inode ))
+	do
+		typeset node_name=${node_names[inode]}
+		info "ohasd : iSCSI dependency on server $node_name"
+		exec_cmd "ssh -t root@${node_name} plescripts/database_servers/setup_ohasd_service.sh"
+		LN
+	done
+}
+
 script_start
 
 stats_tt start grid_installation
@@ -727,6 +747,8 @@ fi
 [ $create_dg == yes ] && create_all_dgs || true
 
 [ $max_nodes -gt 1 ] && add_scan_to_local_known_hosts || true
+
+setup_ohasd_service
 
 stats_tt stop grid_installation
 

@@ -71,7 +71,6 @@ then
 fi
 
 line_separator
-exec_cmd nslookup $scan_name
 exec_cmd host $scan_name
 LN
 

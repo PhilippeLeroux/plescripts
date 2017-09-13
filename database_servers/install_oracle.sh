@@ -456,6 +456,9 @@ fi
 exec_cmd "~/plescripts/database_servers/install_sample_schema.sh -db=$db"
 LN
 
+exec_cmd "~/plescripts/database_servers/create_oracle_log_directory.sh -db=$db"
+LN
+
 stats_tt stop oracle_installation
 
 if [ $install_oracle == yes ]

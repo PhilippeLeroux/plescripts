@@ -7,9 +7,13 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
+
 typeset -r str_usage=\
 "Usage : $ME
-Supprime les options no-kvmclock no-kvmclock-vsyscall
+
+Enable persistent storage of log messages.
+
+Previous boot : journalctl --boot=-1
 "
 
 while [ $# -ne 0 ]
@@ -35,17 +39,17 @@ do
 	esac
 done
 
-must_be_user root
+#ple_enable_log -params $PARAMS
 
-info "Modify kernel parameter, remove parameters no-kvmclock no-kvmclock-vsyscall"
-if ! grep -q "no-kvmclock no-kvmclock-vsyscall" /etc/default/grub
-then
-	error "Parameter not set."
-	exit 1
-fi
-
-exec_cmd "sed -i 's/ no-kvmclock no-kvmclock-vsyscall//g' /etc/default/grub"
+LN
+info "Enable persistent storage of log messages :"
 LN
 
-exec_cmd "~/plescripts/grub2/enable_oracle_kernel.sh"
+exec_cmd "mkdir /var/log/journal"
+LN
+
+exec_cmd "systemd-tmpfiles --create --prefix /var/log/journal"
+LN
+
+exec_cmd "systemctl restart systemd-journald"
 LN

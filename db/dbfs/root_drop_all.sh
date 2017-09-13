@@ -54,7 +54,7 @@ ple_enable_log -params $PARAMS
 must_be_user root
 
 typeset	-r	orcl_release=$(su - oracle -c	\
-							"$ORACLE_HOME/OPatch/opatch lsinventory	|\
+							"\$ORACLE_HOME/OPatch/opatch lsinventory	|\
 									grep 'Oracle Database 12c'		|\
 									awk '{ print \$4 }' | cut -d. -f1-4")
 

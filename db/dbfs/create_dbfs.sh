@@ -15,15 +15,7 @@ typeset pdb=undef
 typeset service=auto
 typeset account_name=dbfsadm
 typeset	account_password=dbfs
-if [ "$(read_orcl_release)" == "12.1" ]
-then
-	typeset		wallet=yes
-elif test_if_cmd_exists crsctl
-then # Impossible de démarrer la base avec le wallet.
-	typeset		wallet=no
-else # Sur FS pas de problème.
-	typeset		wallet=yes
-fi
+typeset wallet=$(enable_wallet $(read_orcl_release))
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -90,8 +82,6 @@ do
 	esac
 done
 
-ple_enable_log -params $PARAMS
-
 must_be_user oracle
 
 exit_if_param_undef db					"$str_usage"
@@ -100,6 +90,8 @@ exit_if_param_undef account_name		"$str_usage"
 exit_if_param_undef account_password	"$str_usage"
 
 exit_if_param_invalid wallet "yes no"	"$str_usage"
+
+ple_enable_log -params $PARAMS
 
 [ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
 
@@ -272,6 +264,7 @@ create_file_dbfs_config
 if [ $wallet == yes ]
 then
 	exec_cmd ~/plescripts/db/wallet/create_credential.sh	\
+									-nolog					\
 									-tnsalias=$service		\
 									-user=$account_name		\
 									-password=$account_password
@@ -283,6 +276,7 @@ fi
 [ $role == primary ] && load_data_tests || true
 
 line_separator
+confirm_or_exit -reply_list=CR "root password for $(hostname -s) will be asked. Press enter to continue"
 add_dynamic_cmd_param "\"plescripts/db/dbfs/configure_fuse_and_dbfs_mount_point.sh"
 add_dynamic_cmd_param "-db=$db -pdb=$pdb -nolog\""
 exec_dynamic_cmd "su - root -c"

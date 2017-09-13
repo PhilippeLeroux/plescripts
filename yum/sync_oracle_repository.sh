@@ -189,10 +189,18 @@ LN
 line_separator
 if rpm_update_available
 then
-	info "To update : yum update"
+	info "To update $(hostname -s ) :"
+	info "$ yum update"
+	info "$ ~/plescripts/grub2/enable_redhat_kernel.sh"
+	info "$ reboot"
 	LN
-	info " * yum/update_master.sh to upadte VM $master_hostname, execute from $client_hostname"
-	info " * yum/update_db_os.sh to update VM with bdd, execute from the bdd server."
+
+	info "To update $master_hostname, from $client_hostname execute :"
+	info "$ ~/plescripts/grub2/yum/update_master.sh"
+	LN
+
+	info "To update bdd server, execute from the bdd server :"
+	info " * ~/plescripts/grub2/yum/update_db_os.sh"
 	LN
 else
 	info "No update available."

@@ -8,8 +8,8 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset -r	ME=$0
+typeset -r	PARAMS="$*"
 
 typeset -r	all_params="$*"
 
@@ -146,7 +146,12 @@ exit_if_param_invalid storage "ASM FS" "$str_usage"
 
 [[ $max_nodes -gt 1 && $db_type != rac ]] && db_type=rac || true
 
-[[ $db_type == rac && $storage == FS ]] && error "RAC on FS not supported." && exit 1 || true
+if [[ $db_type == rac && $storage == FS ]]
+then
+	warning "-storage=$storage ignored for RAC"
+	LN
+	storage=ASM
+fi
 
 [ $storage == FS ] && db_type=fs || true
 
@@ -160,6 +165,13 @@ then
 			[ $db_type == rac ] && OH_FS=ocfs2 || OH_FS=$rdbms_fs_type
 			;;
 	esac
+fi
+
+if [[ $db_type == rac && $standby != none ]]
+then
+	warning "-standby=$standby ignored for RAC"
+	LN
+	standby=none
 fi
 
 exit_if_param_invalid OH_FS "ocfs2 $rdbms_fs_type" "$str_usage"

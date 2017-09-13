@@ -136,6 +136,25 @@ typeset -r PLELOG_PATH=$PLELOG_ROOT/$(date +"%Y-%m-%d")
 #	Lecture du nom du script appelant.
 typeset	-r PLESCRIPT_NAME=${0##*/}
 
+# Si le script est lancé par l'utilisateur oracle, la log, déclenchée par
+# ple_enable_log est copié dans ~/log
+function move_log_to_server
+{
+	[ x"$PLELIB_LOG_FILE" == x ] && return 0 || true
+
+	LN
+	line_separator
+	info "copy log to $HOME/logs"
+	LN
+
+	# Sauvegarde la log sur le serveur.
+	[ ! -d ~/logs ] && mkdir ~/logs || true
+
+	exec_cmd "cp \"$PLELIB_LOG_FILE\" $HOME/logs"
+	clean_log_file "$HOME/logs/${PLELIB_LOG_FILE/$PLELOG_PATH\/}"
+	LN
+}
+
 # $1 nom de la log sans le chemin (facultatif), par défaut nom du script appelant
 # ou/et -params $*
 # Exemple : ple_enable_log -params $*
@@ -178,6 +197,8 @@ function ple_enable_log
 		shift
 		info "Running : ${ME/$HOME/~} $*"
 	fi
+
+	[[ "$USER" == "oracle" && x"$PLELIB_LOG_FILE" != x ]] && trap move_log_to_server EXIT || true
 }
 
 #	============================================================================

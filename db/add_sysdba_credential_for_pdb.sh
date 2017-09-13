@@ -86,6 +86,7 @@ fi
 
 #	Pour les RACs create_credential.sh fait le nécessaire.
 exec_cmd ~/plescripts/db/wallet/create_credential.sh	\
+								-nolog					\
 								-tnsalias=$tnsalias		\
 								-user=sys				\
 								-password=$oracle_password

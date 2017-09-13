@@ -10,7 +10,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
-"Usage : $ME
+"Usage : $ME [-nolog]
 
 Chemin du wallet : $wallet_path
 
@@ -22,11 +22,18 @@ Note : le script create_credential.sh appel ce script si le 'wallet store'
 n'existe pas.
 "
 
+typeset log=yes
+
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-nolog)
+			log=no
 			shift
 			;;
 
@@ -49,6 +56,7 @@ must_be_user oracle
 
 function create_wallet_store
 {
+	line_separator
 	info "Create wallet store."
 	LN
 
@@ -64,6 +72,7 @@ function create_wallet_store
 
 function update_sqlnet_ora
 {
+	line_separator
 	info "Update sqlnet.ora"
 
 	if [ -f $TNS_ADMIN/sqlnet.ora ]
@@ -80,6 +89,7 @@ function update_sqlnet_ora
 
 function create_pki
 {
+	line_separator
 	info "Create Oracle pki"
 	LN
 	fake_exec_cmd "orapki wallet create -wallet $wallet_path -auto_login <<< $oracle_password"
@@ -91,6 +101,10 @@ function create_pki
 
 function RAC_copy_wallet_store
 {
+	line_separator
+	info "Wallet not on a cluster FS."
+	LN
+
 	info "Update wallet on node(s) : ${gi_node_list[*]}"
 	for node in ${gi_node_list[*]}
 	do
@@ -104,6 +118,8 @@ function RAC_copy_wallet_store
 		LN
 	done
 }
+
+[ $log == yes ] && ple_enable_log -params $PARAMS || true
 
 if [ -d $wallet_path ]
 then
@@ -122,3 +138,5 @@ if [ $gi_count_nodes -gt 1 ] && ! wallet_store_on_cfs
 then
 	RAC_copy_wallet_store
 fi
+
+[ $log == yes ] && move_log_to_server || true

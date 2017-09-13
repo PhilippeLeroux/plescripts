@@ -13,9 +13,11 @@ typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name       Identifiant de la base
-	-rsp_file_only Uniquement créer le fichier réponse, pas d'installation.
+	[-keep_tfa]    RAC ne pas supprimer tfa
 
+Debug flags :
 	Pour passer certaine phases de l'installation :
+		-rsp_file_only Uniquement créer le fichier réponse, pas d'installation.
 	   -skip_grid_install
 	   -skip_root_scripts
 	   -skip_configToolAllCommands
@@ -33,6 +35,7 @@ typeset -r str_usage=\
 "
 
 typeset	db=undef
+typeset keep_tfa=no
 typeset	rsp_file_only=no
 
 typeset	skip_grid_install=no
@@ -59,6 +62,11 @@ do
 
 		-db=*)
 			db=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-keep_tfa)
+			keep_tfa=yes
 			shift
 			;;
 
@@ -529,6 +537,19 @@ function add_scan_to_local_known_hosts
 	LN
 }
 
+function setup_ohasd_service
+{
+	line_separator
+	typeset -i inode=0
+	for (( inode=0; inode < max_nodes; ++inode ))
+	do
+		typeset node_name=${node_names[inode]}
+		info "ohasd : iSCSI dependency on server $node_name"
+		exec_cmd "ssh -t root@${node_name} plescripts/database_servers/setup_ohasd_service.sh"
+		LN
+	done
+}
+
 #	======================================================================
 #	MAIN
 #	======================================================================
@@ -614,7 +635,7 @@ then
 		if [ $do_hacks == yes ]
 		then
 			[ $force_MGMTDB == yes ] && runConfigToolAllCommands && LN || true
-			remove_tfa_on_all_nodes
+			[ $keep_tfa == no ] && remove_tfa_on_all_nodes || true
 			LN
 			stop_and_disable_unwanted_grid_ressources
 			LN
@@ -641,6 +662,8 @@ fi
 [ $skip_create_dg == no ] && create_all_dgs || true
 
 [ $max_nodes -gt 1 ] && add_scan_to_local_known_hosts || true
+
+setup_ohasd_service
 
 stats_tt stop grid_installation
 

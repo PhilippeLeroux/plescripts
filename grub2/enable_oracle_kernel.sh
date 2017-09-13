@@ -9,7 +9,9 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
-	[-version=version like -version=3.8.13-118.17.5, default latest
+	[-version=version] default latest
+
+	Print all version with list_kernel.sh
 
 	Generate grub config file.
 "
@@ -46,31 +48,29 @@ done
 
 #ple_enable_log -params $PARAMS
 
-info "Generate grub config file"
-exec_cmd grub2-mkconfig -o /boot/grub2/grub.cfg
-LN
-
-#	Le premier kernel UEK est celui à utiliser.
 if [ "$version" == latest ]
-then
+then # Le premier kernel UEK est celui à utiliser.
 	info "Enable latest kernel"
-	UEK=$(grep -E "^menuentry.*Unbreakable Enterprise Kernel.*" /boot/grub2/grub.cfg | cut -d\' -f2 | head -1)
+	UEK=$(grubby --info=ALL|grep -E "kernel.*uek.*"|head -1|cut -d= -f2)
 	LN
 else
+	[[ "$version" != *el7uek ]] && version="${version}.el7uek" || true
 	info "Enable kernel $version"
-	UEK=$(grep -E "^menuentry.*Unbreakable Enterprise Kernel.*${version}*" /boot/grub2/grub.cfg | cut -d\' -f2 | head -1)
+	UEK=$(grubby --info=ALL|grep -E "kernel.*${version}"|head -1|cut -d= -f2)
 	if [ x"$UEK" == x ]
 	then
-		error "Kernel '$version' not installed ?"
-		exec_cmd "yum list kernel-uek"
 		LN
-		exit 1
+		warning "Kernel '$version' not installed."
+		exec_cmd "yum -y -q install kernel-uek-${version}"
+		LN
+		UEK="/boot/vmlinuz-${version}"
+	else
+		LN
 	fi
-	LN
 fi
 
 info "boot on $UEK"
-exec_cmd "grub2-set-default '$UEK'"
+exec_cmd "grubby --set-default $UEK"
 LN
 
 warning "Need reboot."

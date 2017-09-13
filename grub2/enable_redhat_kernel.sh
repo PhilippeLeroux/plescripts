@@ -8,17 +8,24 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
-"Usage : $ME
+"Usage : $ME [-skip_test_infra]
 
 Pour les bases de données le kernel Oracle (UEK) est bien, mais pour le
 seveur d'infra $infra_hostname il est préférable d'utiliser le kernel RedHat.
 "
+
+typeset test_infra=yes
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-skip_test_infra)
+			test_infra=no
 			shift
 			;;
 
@@ -39,20 +46,16 @@ done
 
 #ple_enable_log -params $PARAMS
 
-must_be_executed_on_server $infra_hostname
+[ $test_infra == yes ] && must_be_executed_on_server $infra_hostname || true
 
 must_be_user root
 
-info "Generate grub config file"
-exec_cmd grub2-mkconfig -o /boot/grub2/grub.cfg
-LN
-
-kernel=$(grep -E "^menuentry.*with Linux.*" /boot/grub2/grub.cfg | cut -d\' -f2 | head -1)
+kernel=$(grubby --info=ALL|grep -E "^kernel"|grep -v "uek"|head -1|cut -d= -f2)
 info "Readhat kernel : $kernel"
 LN
 
 info "boot on $kernel"
-exec_cmd "grub2-set-default '$kernel'"
+exec_cmd "grubby --set-default $kernel"
 LN
 
 warning "Reboot $infra_hostname"

@@ -94,6 +94,9 @@ function execute_on_all_nodes_v2
 #	12.2.0.1
 function grid_version
 {
+	# root n'a pas la variable de définie.
+	[ x"$ORACLE_HOME" == x ] && return 0 || true
+
 	$ORACLE_HOME/OPatch/opatch lsinventory		|\
 		grep "Oracle Grid Infrastructure 12c"	|\
 		awk '{ print $5 }'						|\
@@ -115,5 +118,31 @@ function grid_release
 			;;
 		*)
 			echo "Unknow release"
+	esac
+}
+
+# $1 12.1 or 12.2
+# print to stdout yes or no
+# Wallet don't work with standalone 12.2 with ASM
+function enable_wallet
+{
+	case "$1" in
+		12.1)
+			echo yes
+			;;
+
+		12.2)
+			if test_if_cmd_exists crsctl
+			then
+				if [ $gi_count_nodes -gt 1 ]
+				then # Avec le RAC le wallet fonctionne.
+					echo yes
+				else # Impossible de démarrer la base avec le wallet.
+					echo no
+				fi
+			else # Sur FS pas de problème.
+				echo yes
+			fi
+			;;
 	esac
 }

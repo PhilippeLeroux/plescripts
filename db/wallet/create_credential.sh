@@ -10,7 +10,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
-"Usage : $ME -tnsalias=name -user=name -password=pass
+"Usage : $ME -tnsalias=name -user=name -password=pass [-nolog]
 
 Si le wallet store n'existe pas il est créé.
 
@@ -19,9 +19,10 @@ RAC : prend en charge un 'wallet store' non stocké sur un CFS.
 Dataguard : exécuter le script sur tous les nœuds.
 "
 
-typeset tnsalias=undef
-typeset user=undef
-typeset password=undef
+typeset	tnsalias=undef
+typeset	user=undef
+typeset	password=undef
+typeset	log=yes
 
 #	Dans le cas d'un RAC le script sera exécuté sur tous les
 #	nœuds sauf si le flag -local_only est utilisé.
@@ -55,6 +56,11 @@ do
 			shift
 			;;
 
+		-nolog)
+			log=no
+			shift
+			;;
+
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -74,9 +80,11 @@ exit_if_param_undef tnsalias	"$str_usage"
 exit_if_param_undef user		"$str_usage"
 exit_if_param_undef password	"$str_usage"
 
+[ $log == yes ] && ple_enable_log -params $PARAMS || true
+
 if [ ! -d $wallet_path ]
 then
-	exec_cmd ~/plescripts/db/wallet/create_wallet.sh
+	exec_cmd ~/plescripts/db/wallet/create_wallet.sh -nolog
 fi
 
 if ! tnsping $tnsalias >/dev/null 2>&1
@@ -100,6 +108,7 @@ then
 		execute_on_other_nodes -c	\
 			". .bash_profile;								\
 				~/plescripts/db/wallet/create_credential.sh	\
+									-nolog					\
 									-tnsalias=$tnsalias		\
 									-user=$user				\
 									-password=$password		\

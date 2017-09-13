@@ -577,7 +577,7 @@ line_separator
 ORACLE_SID=$(~/plescripts/db/get_active_instance.sh)
 if [ x"$ORACLE_SID" == x ]
 then
-	error "Cannot define ORACLE_SID ?"
+	error "$(hostname -s) : cannot define ORACLE_SID ?"
 	exit 1
 fi
 
@@ -614,6 +614,11 @@ LN
 
 if [ $enable_flashback == yes ]
 then
+	if [[ $db_type == RAC && $orcl_release == 12.2 ]]
+	then
+		exec_cmd ~/plescripts/db/wait_if_load_average_high.sh -max_load_avg=5
+	fi
+
 	line_separator
 	info "Enable flashback :"
 	function alter_database_flashback_on
@@ -654,6 +659,11 @@ LN
 
 if [ $backup == yes ]
 then
+	if [[ $db_type == RAC && $orcl_release == 12.2 ]]
+	then
+		exec_cmd ~/plescripts/db/wait_if_load_average_high.sh -max_load_avg=5
+	fi
+
 	info "Backup database"
 	exec_cmd "~/plescripts/db/image_copy_backup.sh"
 	LN
@@ -665,9 +675,3 @@ script_stop $ME $lower_db
 LN
 
 next_instructions
-
-# Sauvegarde la log sur le serveur.
-[ ! -d ~/logs ] && mkdir ~/logs || true
-
-exec_cmd "cp \"$PLELIB_LOG_FILE\" $HOME/logs"
-clean_log_file "$HOME/logs/${PLELIB_LOG_FILE/$PLELOG_PATH\/}"

@@ -120,12 +120,12 @@ line_separator
 exec_cmd "~/plescripts/db/wallet/delete_credential.sh -tnsalias=$service"
 LN
 
-execute_on_all_nodes "rm -f $dbfs_cfg_file"
+execute_on_all_nodes -c "rm -f $dbfs_cfg_file"
 LN
 
 if [ $crs_used == yes ]
 then
-	execute_on_all_nodes "sudo -iu grid rm /home/grid/mount-dbfs-$pdb"
+	execute_on_all_nodes -c "sudo -iu grid rm /home/grid/mount-dbfs-$pdb"
 	LN
 fi
 

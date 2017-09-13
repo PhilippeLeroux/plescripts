@@ -138,5 +138,7 @@ then
 	LN
 fi
 
+exec_cmd ~plescripts/journald/enable_persistent_storage_for_syslog.sh
+
 exec_cmd ~/plescripts/shell/set_plymouth_them
 LN

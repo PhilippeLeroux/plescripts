@@ -43,7 +43,7 @@ endif
 call pathogen#infect()
 call pathogen#helptags()
 
-if getcwd() == $HOME.'/plewiki'
+if match( getcwd(), $HOME.'/plewiki' ) == 0
 	let plewiki_directory='yes'
 else
 	let plewiki_directory='no'
@@ -67,7 +67,6 @@ let g:vim_markdown_toc_autofit = 1
 set conceallevel=2
 
 "	Pour vim-markdown
-"	NOTE : ne plus utiliser vim-markdown avec une version de vim > 7.4
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 
 "	vim-session & vim-misc
@@ -139,6 +138,11 @@ let g:syntastic_check_on_wq = 1
 
 autocmd BufRead *.template,*.doc.sh let g:syntastic_check_on_open = 0
 
+
+"	============================================================================
+"	Contournement bug colorisation syntaxique
+nnoremap <C-s> :syntax on<CR>
+
 "	============================================================================
 source $HOME/vimfunc/ApplyConfigOnFileType.vim
 autocmd! BufRead * call ApplyConfigOnFileType()
@@ -176,7 +180,7 @@ nnoremap <silent> <C-h> :call Goto_home()<CR>
 "	============================================================================
 let NERDTreeIgnore=['\.swp$', '\~$']
 
-if has( "gui_running" )
+if has( "gui_running" ) && plewiki_directory == 'no'
 	" NERDTree ouvert automatiquement
 	autocmd VimEnter * NERDTree %:p:h
 else
@@ -247,4 +251,3 @@ source $HOME/vimfunc/SearchFunction.vim
 nnoremap <leader>f :call SearchFunction()<CR>
 
 endif "!has("compatible")
-

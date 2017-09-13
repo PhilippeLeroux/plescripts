@@ -161,7 +161,17 @@ then
 	info "Remove database files from ASM"
 	exec_cmd -c "su - grid -c \"asmcmd rm -rf DATA/$db\""
 	exec_cmd -c "su - grid -c \"asmcmd rm -rf FRA/$db\""
+	rm_error=$?
 	LN
+
+	if [ $rm_error -ne 0 ]
+	then
+		info "RAC 12cR2 execute :"
+		info "$ crsctl stop cluster -all"
+		info "$ crsctl start cluster -all"
+		info "$ $ME"
+		LN
+	fi
 else
 	line_separator
 	info "Clean up directories"

@@ -467,6 +467,9 @@ function configure_server
 	line_separator
 	make_ssh_equi_with_san
 
+	line_separator
+	ssh_server "plescripts/journald/enable_persistent_storage_for_syslog.sh"
+
 	create_disks_for_oracle_and_grid_softwares
 
 	if [[ $update_os == yes ||
@@ -533,7 +536,7 @@ function rac_configure_ntp
 
 	if [ $kvmclock == disable ]
 	then
-		ssh_server "~/plescripts/grub2/disable_kvmclock.sh"
+		ssh_server "~/plescripts/grub2/setup_kernel_boot_options.sh -add=\"no-kvmclock no-kvmclock-vsyscall\""
 		LN
 	else
 		info "kvmclock not disabled."
@@ -547,25 +550,18 @@ function disable_cgroup_memory
 	info "Disable cgroup for memory"
 	LN
 
-	typeset sed_cmd='sed -i "s/GRUB_CMDLINE_LINUX=\"\(.*\)\"/GRUB_CMDLINE_LINUX=\"\1 cgroup_disable=memory\"/" /etc/default/grub'
-	ssh_server "$sed_cmd"
+	ssh_server "~/plescripts/grub2/setup_kernel_boot_options.sh -add=\"cgroup_disable=memory\""
+	LN
+}
+
+function enable_kernel
+{
+	line_separator
+	info "Enable kernel $ol7_kernel_version"
 	LN
 
-	if [ "$ol7_kernel_version" == latest ]
-	then
-		ssh_server "~/plescripts/grub2/enable_oracle_kernel.sh"
-		LN
-	else
-		ssh_server -c "~/plescripts/database_servers/install_kernel.sh	\
-												-version=$ol7_kernel_version"
-		if [ $? -ne 0 ]
-		then
-			ssh_server "~/plescripts/grub2/enable_oracle_kernel.sh"
-			LN
-		else
-			LN
-		fi
-	fi
+	ssh_server "~/plescripts/grub2/enable_oracle_kernel.sh -version=$ol7_kernel_version"
+	LN
 }
 
 function copy_color_file
@@ -736,6 +732,8 @@ create_stats_services
 [[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
 
 [ $cgroup_memory == disable ] && disable_cgroup_memory || true
+
+[ "$ol7_kernel_version" != latest ] && enable_kernel || true
 
 info "Reboot needed : new kernel config from oracle-rdbms-server-12cR1-preinstall"
 exec_cmd reboot_vm $server_name

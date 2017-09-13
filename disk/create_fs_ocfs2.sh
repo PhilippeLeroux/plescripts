@@ -97,7 +97,7 @@ LN
 #	BUG doc Oracle il faut créer le FS avant d'ajouter le device dans le cluster.
 if [ $action == create ]
 then
-	exec_cmd mkfs.ocfs2 -L "ocfs2_${mount_point##*/}" $device
+	exec_cmd mkfs.ocfs2 -L "ocfs2_${mount_point##*/}" --fs-feature-level=max-features $device
 	LN
 fi
 
