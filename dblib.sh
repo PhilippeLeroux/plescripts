@@ -28,7 +28,7 @@ function load_oraenv_for
 {
 	ORACLE_SID=$(to_upper $1)
 	info "Load oracle environment for $ORACLE_SID"
-	ORAENV_ASK=NO . oraenv
+	ORAENV_ASK=NO . oraenv -s
 	LN
 }
 

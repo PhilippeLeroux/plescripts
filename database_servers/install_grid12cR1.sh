@@ -17,7 +17,7 @@ typeset -r str_usage=\
 
 Debug flags :
 	Pour passer certaine phases de l'installation :
-		-rsp_file_only Uniquement créer le fichier réponse, pas d'installation.
+	   -rsp_file_only Uniquement créer le fichier réponse, pas d'installation.
 	   -skip_grid_install
 	   -skip_root_scripts
 	   -skip_configToolAllCommands
@@ -157,7 +157,8 @@ function ssh_node0
 	exec_cmd "ssh -t ${account}@${node_names[0]} \". .bash_profile; $@\""
 }
 
-function load_node_cfg # $1 inode
+# $1 inode
+function load_node_cfg
 {
 	typeset	-ri	inode=$1
 
@@ -204,7 +205,8 @@ function make_disk_list
 	echo $disk_list
 }
 
-function create_response_file	# $1 fichier décrivant les disques
+# $1 fichier décrivant les disques
+function create_response_file
 {
 	typeset -r disk_cfg_file="$1"
 
@@ -331,7 +333,8 @@ function start_grid_installation
 	check_oracle_size ${node_names[0]}
 }
 
-function run_post_install_root_scripts_on_node	# $1 node# $2 server_name
+# $1 node# $2 server_name
+function run_post_install_root_scripts_on_node
 {
 	typeset	-ri	nr_node=$1
 	typeset	-r	server_name=$2
@@ -433,7 +436,8 @@ function runConfigToolAllCommands
 					RESPONSE_FILE=/home/grid/grid_${db}.properties\""
 }
 
-function create_dg # $1 nom du DG
+# $1 nom du DG
+function create_dg
 {
 	typeset -r	DG=$1
 
@@ -674,6 +678,6 @@ LN
 script_stop $ME $db
 LN
 
-info "Oracle software can be installed."
+notify "Oracle software can be installed."
 info "./install_oracle.sh -db=$db"
 LN

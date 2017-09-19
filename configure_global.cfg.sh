@@ -324,9 +324,12 @@ then
 	LN
 fi
 
-exec_cmd "sed -i 's~disks_hosted_by=.*$~disks_hosted_by=\${DISKS_HOSTED_BY:-$disks_stored_on}~g' ~/plescripts/global.cfg"
-exec_cmd "sed -i 's~san_disk=.*$~san_disk=\${SAN_DISK_TYPE:-$san_disk_type}~g' ~/plescripts/global.cfg"
-LN
+if [ "$disks_hosted_by" != "$disks_stored_on" ]
+then
+	exec_cmd "echo \"DISKS_HOSTED_BY=$DISKS_HOSTED_BY\" >> ~/plescripts/local.cfg"
+	exec_cmd "echo \"SAN_DISK=$san_disk_type\" >> ~/plescripts/local.cfg"
+	LN
+fi
 
 if [ $OL7_LABEL_n != $OL7_LABEL ]
 then

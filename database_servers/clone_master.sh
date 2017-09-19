@@ -130,6 +130,41 @@ function ssh_server
 	exec_cmd $farg "ssh -t root@$server_name '$@'"
 }
 
+# Fabrique le nom du groupe ou sera placée la VM
+# Le script clone_vm.sh ajoutera le slash.
+function make_vmGroup
+{
+	case $cfg_db_type in
+		std|fs)
+			if [ $cfg_standby == none ]
+			then
+				vmGroup="Single $(initcap $db)"
+			else
+				if [ -d $cfg_path_prefix/$cfg_standby ]
+				then # Le premier serveur existe
+					vmGroup="DG $(initcap $cfg_standby) - $(initcap $db)"
+				else
+					vmGroup="DG $(initcap $db) - $(initcap $cfg_standby)"
+				fi
+			fi
+			;;
+
+		rac)
+			vmGroup="RAC $(initcap $db)"
+			# RAC + standby non pris en compte.
+			;;
+	esac
+
+	case "$cfg_orarel" in
+		12.1*)
+			vmGroup="$vmGroup 12cR1"
+			;;
+		12.2*)
+			vmGroup="$vmGroup 12cR2"
+			;;
+	esac
+}
+
 function register_server_2_dns
 {
 	info "Register server to DNS"
@@ -381,16 +416,8 @@ function create_disks_for_oracle_and_grid_softwares
 					-noatime
 	LN
 
-	if [[ $max_nodes -eq 1 || $cfg_oracle_home == $rdbms_fs_type ]]
+	if [[ $max_nodes -gt 1 && $cfg_oracle_home == ocfs2 ]]
 	then
-		info "Create mount point /$ORCL_DISK for Oracle"
-		ssh_server	plescripts/disk/create_fs.sh		\
-							-mount_point=/$ORCL_DISK	\
-							-suffix_vglv=orcl			\
-							-type_fs=$rdbms_fs_type		\
-							-noatime
-		LN
-	else
 		info "Install ocfs2"
 		ssh_server "yum -y -q install ocfs2-tools"
 		LN
@@ -405,6 +432,14 @@ function create_disks_for_oracle_and_grid_softwares
 							-mount_point=/$ORCL_DISK	\
 							-device=/dev/sdc			\
 							-action=$action
+		LN
+	else
+		info "Create mount point /$ORCL_DISK for Oracle"
+		ssh_server	plescripts/disk/create_fs.sh		\
+							-mount_point=/$ORCL_DISK	\
+							-suffix_vglv=orcl			\
+							-type_fs=$cfg_oracle_home	\
+							-noatime
 		LN
 	fi
 }
@@ -560,8 +595,14 @@ function enable_kernel
 	info "Enable kernel $ol7_kernel_version"
 	LN
 
-	ssh_server "~/plescripts/grub2/enable_oracle_kernel.sh -version=$ol7_kernel_version"
-	LN
+	if [ "$ol7_kernel_version" == redhat ]
+	then
+		ssh_server "~/plescripts/grub2/enable_redhat_kernel.sh -skip_test_infra"
+		LN
+	else
+		ssh_server "~/plescripts/grub2/enable_oracle_kernel.sh -version=$ol7_kernel_version"
+		LN
+	fi
 }
 
 function copy_color_file
@@ -668,6 +709,18 @@ function test_space_on_san
 	LN
 }
 
+function bug_rac122_workaround
+{
+	if [[ $cfg_db_type == rac || $cfg_orarel == 12.2.0.1 ]]
+	then
+		line_separator
+		info "Information dans l'en-tête du script...."
+		LN
+		ssh_server "cp plescripts/grub2/orclbug_switch_kernel.sh /root"
+		LN
+	fi
+}
+
 #	============================================================================
 #	MAIN
 #	============================================================================
@@ -677,6 +730,8 @@ function test_space_on_san
 cfg_load_node_info $db $node
 
 typeset -r server_name=$cfg_server_name
+
+[ x"$vmGroup" == x ] && make_vmGroup || true
 
 if [ $node -eq 1 ]
 then
@@ -702,6 +757,8 @@ install_vim_plugin
 copy_color_file
 
 add_oracle_install_directory_to_fstab
+
+bug_rac122_workaround
 
 if [ $node -eq 1 ]
 then
@@ -735,7 +792,6 @@ create_stats_services
 
 [ "$ol7_kernel_version" != latest ] && enable_kernel || true
 
-info "Reboot needed : new kernel config from oracle-rdbms-server-12cR1-preinstall"
 exec_cmd reboot_vm $server_name
 LN
 loop_wait_server $server_name
@@ -767,7 +823,7 @@ then	# C'est le dernier nœud
 
 		if [ $cfg_db_type == fs ]
 		then
-			info "Oracle RDBMS software can be installed."
+			notify "Oracle RDBMS software can be installed."
 			info "./install_oracle.sh -db=$db"
 		else
 			if [ "${oracle_release}" == "12.2.0.1" ]
@@ -776,13 +832,14 @@ then	# C'est le dernier nœud
 			else
 				script_name=install_grid12cR1.sh
 			fi
-			info "Grid infrastructure can be installed."
+			notify "Grid infrastructure can be installed."
 			info "./$script_name -db=$db"
 		fi
 		LN
 	fi
 elif [ $max_nodes -ne 1 ]
 then	# Ce n'est pas le dernier nœud et il y a plus de 1 nœud.
+	notify "Server cloned."
 	info "Run script :"
 	info "$ME -db=$db -node=$(( node + 1 ))"
 	LN

@@ -49,6 +49,7 @@ do
 
 		-device=*)
 			disks=0
+			device_list=()
 			while IFS=',' read dev
 			do
 				device_list+=( $dev )

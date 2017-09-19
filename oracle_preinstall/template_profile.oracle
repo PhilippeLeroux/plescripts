@@ -81,6 +81,7 @@ alias lspga="sp @\"$HOME/db/sql/lspga\""
 alias lsstby="$HOME/db/stby/show_dataguard_cfg.sh"
 alias lsfra="sp @\"$HOME/db/sql/lsfra\""
 alias lssrv="sp @\"$HOME/db/sql/lssrv\""
+alias lsasync="sp @\"$HOME/db/sql/lsasync\""
 # Ne fonctionne pas avec un RAC
 alias via='vi  $ORACLE_BASE/diag/rdbms/$(tr [:upper:] [:lower:]<<<$ORACLE_SID)/$ORACLE_SID/trace/alert_$ORACLE_SID.log'
 alias vib='vi  $ORACLE_BASE/diag/rdbms/$(tr [:upper:] [:lower:]<<<$ORACLE_SID)/$ORACLE_SID/trace/drc$ORACLE_SID.log'

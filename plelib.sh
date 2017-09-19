@@ -1643,4 +1643,22 @@ function rpm_update_available
 	esac
 }
 
+# print to stdout total os memory
+function get_os_memory_mb
+{
+	free -m|grep "Mem:"|awk '{ print $2 }'
+}
+
+# $1 message to notify (message are printed to stdout)
+# Work if notify-send exists
+function notify
+{
+	if command_exists notify-send
+	then
+		notify-send -u low "PLESCRIPTS" "$1"
+	fi
+
+	info "$1"
+}
+
 debug "${RED}DEBUG MODE ENABLE${NORM}"

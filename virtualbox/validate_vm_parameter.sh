@@ -103,6 +103,11 @@ then
 		((++errors))
 		info -f "[$KO]"
 	fi
+	if [ $memory -le $oracle_memory_mb_prereq ]
+	then
+		warning "    Warning Oracle prereq : $(fmt_number $oracle_memory_mb_prereq)Mb/VMs"
+		LN
+	fi
 fi
 
 if [ "$cpus" != undef ]
@@ -126,4 +131,5 @@ then
 	warning "VM settings can be ajusted with script ~/plescripts/update_local_cfg.sh"
 	LN
 	~/plescripts/update_local_cfg.sh -h
+	exit 1
 fi

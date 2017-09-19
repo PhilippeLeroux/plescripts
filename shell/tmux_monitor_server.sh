@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/vmlib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -58,11 +59,17 @@ function monitor_rac_2_nodes
 	typeset -r	session_name="Left $node1 / Right $node2"
 	exec_cmd -ci tmux kill-session -t \"$session_name\"
 
-	tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"				\; \
+	if vm_running $node1 || vm_running $node2 
+	then
+		tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"			\; \
 								split-window -h "ssh root@${node2} vmstat 2" \; \
 								split-window -v "ssh -t root@${node2} top" \; \
 								selectp -t 0 \; \
 								split-window -v "ssh -t root@${node1} top"
+	else
+		error "$node1 and $node2 not running."
+		LN
+	fi
 }
 
 function monitor_standalone_server
@@ -70,9 +77,15 @@ function monitor_standalone_server
 	typeset -r session_name="$node1"
 	exec_cmd -ci tmux kill-session -t \"$session_name\"
 
-	tmux new -s "$session_name"	ssh -t root@${node1} ". .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh"	\;\
+	if vm_running $node1
+	then
+		tmux new -s "$session_name"	ssh -t root@${node1} ". .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh"	\;\
 								split-window -h "ssh root@${node1} vmstat 2"			\;\
 								split-window -v "ssh -t root@${node1} top"
+	else
+		error "$node1 not running."
+		LN
+	fi
 }
 
 [ $node2 != undef ] && monitor_rac_2_nodes || monitor_standalone_server

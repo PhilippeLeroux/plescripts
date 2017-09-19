@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -47,6 +48,8 @@ then
 	typeset -r db_name=$(srvctl config database)
 	exec_cmd srvctl stop database -db $db_name
 	LN
+
+	wait_if_high_load_average
 
 	exec_cmd srvctl start database -db $db_name
 	LN

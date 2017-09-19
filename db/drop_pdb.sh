@@ -174,6 +174,8 @@ typeset	-r dataguard=$(dataguard_config_available)
 info "Dataguard : $dataguard"
 LN
 
+wait_if_high_load_average
+
 if [ $dataguard == yes ]
 then
 	if [ $role == primary ]
@@ -189,6 +191,8 @@ then
 	exit 1
 fi
 
+wait_if_high_load_average
+
 if [ $crs_used == yes ]
 then
 	stop_and_remove_dbfs
@@ -197,10 +201,14 @@ then
 	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb -skip_drop_user"
 fi
 
+wait_if_high_load_average
+
 line_separator
 info "Delete credential for sys"
 exec_cmd "wallet/delete_credential.sh -tnsalias=sys${pdb}"
 LN
+
+wait_if_high_load_average
 
 if [ $crs_used == yes ]
 then
@@ -208,6 +216,8 @@ then
 else
 	exec_cmd "./fsdb_drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
 fi
+
+wait_if_high_load_average
 
 line_separator
 if [[ $dataguard == no || $role == primary ]]

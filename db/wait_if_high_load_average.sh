@@ -11,7 +11,9 @@ typeset -r PARAMS="$*"
 typeset -i	max_load_avg=3
 
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : $ME
+	[-max_load_avg=$max_load_avg] minimum 1
+"
 
 while [ $# -ne 0 ]
 do
@@ -45,6 +47,13 @@ done
 
 exit_if_param_undef max_load_avg	"$str_usage"
 
+if [ $max_load_avg -lt 1 ]
+then
+	error "-max_load_avg=$max_load_avg to low, minimum 1"
+	LN
+	exit 1
+fi
+
 typeset -i load_avg=0
 while true
 do
@@ -57,7 +66,7 @@ do
 
 	[ $load_avg -lt $max_load_avg ] && break || true
 
-	timing 30
+	timing 60
 	LN
 done
 LN

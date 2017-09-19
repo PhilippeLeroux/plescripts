@@ -139,9 +139,9 @@ ple_enable_log -params $PARAMS
 
 exit_if_param_undef db	"$str_usage"
 
-#	$1 optionnal -c
+#	$1 optional -c
 #	$1 or $2 account name
-#	Execute on node 0 (node_names[0]) command "$@" (execpt first arg
+#	Execute on node 0 (node_names[0]) command "$@" (except first arg)
 function ssh_node0
 {
 	if [ "$1" == "-c" ]
@@ -167,7 +167,8 @@ function empty_swap
 	done
 }
 
-function load_node_cfg # $1 inode
+# $1 inode
+function load_node_cfg
 {
 	typeset	-ri	inode=$1
 
@@ -210,7 +211,8 @@ function make_disk_list
 	ssh root@${node_names[0]} "plescripts/disk/get_unused_disks.sh -count=$total_disks -skip_disks=$dg_first_nr"
 }
 
-function create_response_file	# $1 fichier décrivant les disques
+# $1 nom du fichier décrivant les disques
+function create_response_file
 {
 	typeset -r disk_cfg_file="$1"
 
@@ -281,7 +283,7 @@ function copy_response_file
 {
 	line_separator
 	info "Response file   : $rsp_file"
-	info "Copy files to ${node_names[0]}:/home/grid/"
+	info "Copy file to ${node_names[0]}:/home/grid/"
 	exec_cmd "scp $rsp_file grid@${node_names[0]}:/home/grid/"
 	LN
 }
@@ -318,11 +320,12 @@ function start_grid_installation
 	typeset -r vm_swappiness=$(ssh root@${node_names[0]} 'sysctl -n vm.swappiness')
 	exec_cmd "ssh root@${node_names[0]} 'sysctl -w vm.swappiness=90'"
 	LN
-	
+
 	line_separator
 	info "Start grid installation (${extract_grid_mn[idx_mn]})."
 	add_dynamic_cmd_param "LANG=C ./gridSetup.sh"
 	add_dynamic_cmd_param "      -waitforcompletion"
+	# Ne pas utiler $rsp_file
 	add_dynamic_cmd_param "      -responseFile /home/grid/grid_$db.rsp"
 	add_dynamic_cmd_param "      -silent\""
 	exec_dynamic_cmd -c "ssh -t grid@${node_names[0]} \"cd $ORACLE_HOME &&"
@@ -442,6 +445,7 @@ function executeConfigTools
 	info "Execute config tools (${configtools[idx_mn]})"
 	add_dynamic_cmd_param "$ORACLE_HOME/gridSetup.sh"
 	add_dynamic_cmd_param "-executeConfigTools"
+	# Ne pas utiler $rsp_file
 	add_dynamic_cmd_param "-responseFile /home/grid/grid_$db.rsp"
 	add_dynamic_cmd_param "-silent\""
 	exec_dynamic_cmd "ssh grid@${node_names[0]} \". .bash_profile &&"
@@ -550,12 +554,46 @@ function stop_and_disable_unwanted_grid_ressources
 	ssh_node0 root srvctl disable qosmserver
 }
 
+#http://www.usn-it.de/index.php/2017/06/20/oracle-rac-12-2-high-load-on-cpu-from-gdb-when-node-missing/
+function rac_disable_diagsnap
+{
+	if [ "$rac12cR2_diagsnap" == disable ]
+	then
+		# Normalement sur un seul nœud sa suffit.
+		line_separator
+		info "Disable diagsnap"
+		LN
+
+		for (( inode = 0; inode < max_nodes; ++inode ))
+		do
+			exec_cmd "ssh -t grid@${node_names[inode]} \". .bash_profile && oclumon manage -disable diagsnap\""
+			LN
+		done
+	fi
+}
+
+# Dans la log du CRS un message apparait disant d'exécuter d'installer un
+# driver compatible.
+function rac_install_acfs_driver
+{
+	line_separator
+	info "Install ACFS driver"
+	LN
+
+	for (( inode = 0; inode < max_nodes; ++inode ))
+	do
+		exec_cmd "ssh -t root@${node_names[inode]} \". .bash_profile && acfsroot install\""
+		LN
+	done
+}
+
 function post_installation
 {
 	if [ $max_nodes -gt 1 ]
 	then	#	RAC
 		if [ $do_hacks == yes ]
 		then
+			rac_disable_diagsnap
 			[ $force_MGMTDB == yes ] && executeConfigTools && LN || true
 			stop_and_disable_unwanted_grid_ressources
 			LN
@@ -569,6 +607,7 @@ function post_installation
 		else
 			executeConfigTools
 		fi
+		rac_install_acfs_driver
 	else	#	SINGLE
 		executeConfigTools
 		LN
@@ -619,9 +658,6 @@ typeset -r db_cfg_path=$cfg_path_prefix/$db
 
 #	Nom du "fichier réponse" pour l'installation du grid
 typeset -r rsp_file=${db_cfg_path}/grid_$db.rsp
-
-#	Nom du  "fichier propriété" utilisé pour ConfigTool
-typeset -r prop_file=${db_cfg_path}/grid_$db.properties
 
 typeset -a	node_names
 typeset -a	node_ips
@@ -703,10 +739,10 @@ if [ $init_afd_disks == yes ]
 then
 	if [ $create_reponse_file == yes ]
 	then
-		ssh_node0 -c grid "test -f grid_${db}.rsp"
+		ssh_node0 -c grid "test -f $rsp_file"
 		if [ $? -eq 0 ]
 		then
-			warning "Create reponse file skipped."
+			warning "Create response file skipped."
 			LN
 		else
 			create_response_file $db_cfg_path/disks
@@ -730,9 +766,7 @@ then
 		line_separator
 		for node in ${node_names[*]}
 		do
-			# La synchronisation est forcée, depuis les maj récentes l'appairage
-			# ne se fait plus trop de resynchronisations.
-			exec_cmd -c "ssh -t root@${node} '~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=4'"
+			exec_cmd -c "ssh -t root@${node} '~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=100'"
 			LN
 		done
 	fi
@@ -759,6 +793,6 @@ LN
 script_stop $ME $db
 LN
 
-info "Oracle software can be installed."
+notify "Oracle software can be installed."
 info "./install_oracle.sh -db=$db"
 LN

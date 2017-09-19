@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/dblib.sh
 EXEC_CMD_ACTION=EXEC
 
@@ -101,15 +102,21 @@ function enable_archivelog_with_GI
 	exec_cmd "srvctl stop database -db $db"
 	LN
 
+	wait_if_high_load_average
+
 	info "Start instance $ORACLE_SID"
 	# Attention si le GI est installé est que le wallet est utilisé, la commande
 	# va échouer.
 	sqlplus_cmd "$(set_sql_cmd "startup mount")"
 	LN
 
+	wait_if_high_load_average
+
 	info "Enable archivelog :"
 	sqlplus_cmd "$(sqlcmd_enable_archivelog_with_GI)"
 	LN
+
+	wait_if_high_load_average
 
 	info "Start database :"
 	exec_cmd "srvctl start database -db $db"

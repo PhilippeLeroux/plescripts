@@ -155,17 +155,7 @@ fi
 
 [ $storage == FS ] && db_type=fs || true
 
-if [ $OH_FS == default ]
-then
-	case "$rel" in
-		"12.1")
-			OH_FS=$rdbms_fs_type
-			;;
-		"12.2")
-			[ $db_type == rac ] && OH_FS=ocfs2 || OH_FS=$rdbms_fs_type
-			;;
-	esac
-fi
+[ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
 
 if [[ $db_type == rac && $standby != none ]]
 then
@@ -174,7 +164,7 @@ then
 	standby=none
 fi
 
-exit_if_param_invalid OH_FS "ocfs2 $rdbms_fs_type" "$str_usage"
+exit_if_param_invalid OH_FS "ocfs2 $rdbms_fs_type $rac_orcl_fs" "$str_usage"
 
 function validate_config
 {
@@ -351,29 +341,14 @@ function set_ip_node
 
 function next_instructions
 {
-	if [ "$standby" != none ]
+	if [ $max_nodes -eq 1 ]
 	then
-		if [ -d $cfg_path_prefix/$standby ]
-		then # Le premier serveur existe
-			typeset -r vmGroup="/DG $(initcap $standby) et $(initcap $db)"
-		else
-			typeset -r vmGroup="/DG $(initcap $db) et $(initcap $standby)"
-		fi
-		if [ $max_nodes -eq 1 ]
-		then
-			info "Execute : ./clone_master.sh -db=$db -vmGroup=\"$vmGroup\""
-		else
-			info "Execute : ./create_database_servers.sh -db=$db -vmGroup=\"$vmGroup\""
-		fi
+		info "Execute : ./clone_master.sh -db=$db"
+		LN
 	else
-		if [ $max_nodes -eq 1 ]
-		then
-			info "Execute : ./clone_master.sh -db=$db"
-		else
-			info "Execute : ./create_database_servers.sh -db=$db"
-		fi
+		info "Execute : ./create_database_servers.sh -db=$db"
+		LN
 	fi
-	LN
 }
 
 if [ "$rel" != "${oracle_release%.*.*}" ]
@@ -383,7 +358,7 @@ then
 		12.2)	rel=12.2.0.1 ;;
 	esac
 	info "Update Oracle Release"
-	exec_cmd ~/plescripts/update_local_cfg.sh oracle_release=$rel
+	exec_cmd ~/plescripts/update_local_cfg.sh ORACLE_RELEASE=$rel
 
 	info "Call with local config updated."
 	exec_cmd $ME $all_params
@@ -441,10 +416,10 @@ then
 	nodes=2
 	type=dataguard
 fi
-$vm_scripts_path/validate_vm_parameter.sh	-type=$type		\
-											-nodes=$nodes	\
-											-cpus=$cpus		\
-											-memory=$mem
+
+exec_cmd $vm_scripts_path/validate_vm_parameter.sh	-type=$type		\
+													-nodes=$nodes	\
+													-cpus=$cpus		\
+													-memory=$mem
 
 next_instructions
-

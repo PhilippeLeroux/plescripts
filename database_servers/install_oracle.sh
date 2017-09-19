@@ -17,14 +17,18 @@ typeset action=install
 typeset edition=EE
 
 typeset install_oracle=yes
+typeset relink=no
+typeset attachHome=no
 
 add_usage "-db=name"			"Database identifier"
-add_usage "-edition=$edition"	"RAC 12.2 :SE|EE else EE."
+add_usage "[-edition=$edition]"	"RAC 12.2 :SE|EE else EE."
 typeset -r u1=$(print_usage)
 reset_usage
 
-add_usage "-action=$action"			"install|config : config no installation"
-add_usage "-skip_install_oracle"	"Do not execute runInstaller"
+add_usage "[-action=$action]"		"install|config : config no installation"
+add_usage "[-skip_install_oracle]"	"Not execute runInstaller"
+add_usage "[-relink]"				"Skip runInstaller, relink only"
+add_usage "[-attachHome]"			"Skip runInstaller, attach home only"
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -61,6 +65,16 @@ do
 
 		-skip_install_oracle)
 			install_oracle=no
+			shift
+			;;
+
+		-relink)
+			relink=yes
+			shift
+			;;
+
+		-attachHome)
+			attachHome=yes
 			shift
 			;;
 
@@ -110,7 +124,8 @@ else
 	exit_if_param_invalid	edition "EE"		"$str_usage"
 fi
 
-function load_node_cfg # $1 inode
+# $1 inode
+function load_node_cfg
 {
 	typeset	-ri	inode=$1
 
@@ -261,10 +276,9 @@ function start_oracle_installation
 		line_separator
 		for node in ${node_names[*]}
 		do
-			# La synchronisation est forcée, depuis les maj récentes l'appairage
-			# ne se fait plus trop de resynchronisations.
+			# Il faut vraiment attendre.
 			exec_cmd -c "ssh -t root@${node}	\
-			   '~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=4'"
+				'~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=100'"
 			LN
 		done
 	fi
@@ -308,6 +322,24 @@ function start_oracle_installation
 		LN
 		restore_swappiness
 		error "Oracle installation failed."
+		LN
+
+		if grep -q "[FATAL] Unable to read the Oracle Home information" $PLELIB_LOG_FILE
+		then
+			info "Error : [FATAL] Unable to read the Oracle Home information at ..."
+			info "add option -attachHome"
+			info "$ME -db=$db -attachHome"
+			LN
+		else
+			os_memory_mb=$(ssh root@${node_names[0]} "free -m|grep \"Mem:\"|awk '{ print \$2 }'")
+			if [[ $cfg_orarel == 12.2.0.1 && $os_memory_mb -lt $oracle_memory_mb_prereq ]]
+			then
+				info "On link errors try :"
+				info "Rerun script with option -relink"
+				info "$ME -db=$db -relink"
+				LN
+			fi
+		fi
 		exit 1
 	fi
 	LN
@@ -340,22 +372,52 @@ function exec_post_install_root_scripts_on_node	# $1 node name
 	LN
 }
 
+function exec_relink
+{
+	line_separator
+	for node in ${node_names[*]}
+	do
+		info "Relink on server $node"
+		exec_cmd "ssh -t oracle@${node} '. .bash_profile && plescripts/database_servers/relink_orcl.sh'"
+		LN
+	done
+}
+
+function exec_attachHome
+{
+	line_separator
+	info "Attace home :"
+	LN
+
+	info "Read ORACLE_HOME from ${node_names[0]}"
+	typeset OH=$(ssh oracle@${node_names[0]} ". .bash_profile && echo \$ORACLE_HOME")
+	info "ORACLE_HOME : '$OH'"
+	LN
+
+	for (( inode=1; inode < max_nodes; ++inode ))
+	do
+		info "${node_names[inode]} attach home :"
+		exec_cmd "ssh -t oracle@${node_names[inode]} '. .bash_profile && $OH/oui/bin/attachHome.sh'"
+		LN
+	done
+}
+
 function next_instructions
 {
 	line_separator
 	if [ $primary_db == none ]
 	then
-		info "Database can be created :"
+		notify "Database can be created :"
 		LN
 		if [ $max_nodes -eq 1 ]
 		then
 			info "$ ssh oracle@${node_names[0]}"
-			info "oracle@${node_names[0]}:NOSID:oracle> cd db"
+			info "oracle@${node_names[0]}:NOSID:~> cd db"
 			info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db"
 			LN
 		else
 			info "$ ssh oracle@${node_names[0]}"
-			info "oracle@${node_names[0]}:NOSID:oracle> cd db"
+			info "oracle@${node_names[0]}:NOSID:~> cd db"
 			LN
 			info "oracle@${node_names[0]}:NOSID:db> ./create_db.sh -db=$db"
 			info "or"
@@ -371,6 +433,8 @@ function next_instructions
 		exec_dynamic_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh"
 		LN
 
+		notify "Server srv${primary_db}01 ready"
+		LN
 		info "Execute :"
 		info "$ ssh oracle@srv${primary_db}01"
 		info "$ cd ~/plescripts/db/stby/"
@@ -383,6 +447,13 @@ function next_instructions
 #	MAIN
 #	============================================================================
 script_start
+
+if [[ $relink == yes || $attachHome == yes ]]
+then
+	info "Flag -relink or/and -attachHome : add flag -skip_install"
+	install_oracle=no
+	LN
+fi
 
 line_separator
 for (( inode=1; inode <= max_nodes; ++inode ))
@@ -440,6 +511,10 @@ then
 	start_oracle_installation
 fi
 
+[ $relink == yes ] && exec_relink || true
+
+[ $attachHome == yes ] && exec_attachHome || true
+
 for node in ${node_names[*]}
 do
 	exec_post_install_root_scripts_on_node $node
@@ -454,9 +529,6 @@ then
 fi
 
 exec_cmd "~/plescripts/database_servers/install_sample_schema.sh -db=$db"
-LN
-
-exec_cmd "~/plescripts/database_servers/create_oracle_log_directory.sh -db=$db"
 LN
 
 stats_tt stop oracle_installation

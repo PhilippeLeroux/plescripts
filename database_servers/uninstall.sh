@@ -171,7 +171,7 @@ function delete_all_db
 		exec_cmd ~/plescripts/db/remove_all_files_for_db.sh -db=$OSID
 	done<<<"$(cat /etc/oratab | grep -E "^[A-Z].*")"
 	LN
-	
+
 	if [  -f /etc/systemd/system/multi-user.target.wants/oracledb.service ]
 	then
 		exec_cmd "systemctl disable oracledb"
@@ -258,7 +258,7 @@ function deinstall_grid_12cR1
 
 	execute_on_all_nodes "rm -fr /$GRID_DISK/app/grid/log"
 	LN
-	
+
 	execute_on_all_nodes "rm -fr $GRID_HOME/*"
 	LN
 

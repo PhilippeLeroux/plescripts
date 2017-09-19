@@ -58,5 +58,5 @@ info "boot on $kernel"
 exec_cmd "grubby --set-default $kernel"
 LN
 
-warning "Reboot $infra_hostname"
+warning "Reboot $(hostname -s)"
 LN

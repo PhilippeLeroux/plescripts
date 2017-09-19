@@ -109,7 +109,8 @@ function grid_version
 #	12cR2
 function grid_release
 {
-	case "$(grid_version)" in
+	typeset gv=$(grid_version)
+	case "$gv" in
 		12.1.*)
 			echo 12cR1
 			;;
@@ -117,7 +118,7 @@ function grid_release
 			echo 12cR2
 			;;
 		*)
-			echo "Unknow release"
+			echo "Unknow release : '$gv'"
 	esac
 }
 
@@ -145,4 +146,33 @@ function enable_wallet
 			fi
 			;;
 	esac
+}
+
+
+# [$1] max load avg default value 3.
+# Si la mémoire de l'OS est inférieur aux pré requis alors il peut y avoir un
+# très fort Load Average (causé par le process gdb), donc dans ce cas la
+# fonction attend qu'il soit descendu.
+# Le problème survient surtout dans les 10 à 15mn après le démarrage de la base,
+# mais il peut se produire n'importe quand.
+#
+# Bug : http://www.usn-it.de/index.php/2017/06/20/oracle-rac-12-2-high-load-on-cpu-from-gdb-when-node-missing/
+# J'ai désactivé diagsnap, mais au cas ou je conserve la fonction.
+# Si la variable TEST_HIGH_LAVG vaut enable alort le test est fait.
+# Soit la définir dans local.cfg ou dans le profile des comptes grid et/ou oracle.
+function wait_if_high_load_average
+{
+	[ "$TEST_HIGH_LAVG" != enable ] && return || true
+
+	if		[[ "$USER" == "grid"	&& "$(grid_release)" == "12cR2" ]]	\
+		||	[[ "$USER" == "oracle"	&& "$(read_orcl_release)" == "12.2" ]]
+	then
+		[ $# -eq 0 ] && typeset -i max_load_avg=3 || typeset -i max_load_avg=$1
+
+		if [ $(get_os_memory_mb) -lt $oracle_memory_mb_prereq ]
+		then
+			line_separator
+			exec_cmd ~/plescripts/db/wait_if_high_load_average.sh -max_load_avg=$max_load_avg
+		fi
+	fi
 }

@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/gilib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -54,6 +55,8 @@ then
 	typeset -r disk_space_before="$(df -h /u0*)"
 fi
 
+wait_if_high_load_average
+
 line_separator
 sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/show_corrupted_blocks.sql")"
 LN
@@ -61,13 +64,19 @@ LN
 exec_cmd "rman target sys/$oracle_password @recover_corruption_list.rman"
 LN
 
+wait_if_high_load_average
+
 line_separator
 exec_cmd "rman target sys/$oracle_password @image_copy.rman"
 LN
 
+wait_if_high_load_average
+
 line_separator
 exec_cmd "rman target sys/$oracle_password @backup_archive_log.rman"
 LN
+
+wait_if_high_load_average 5
 
 line_separator
 exec_cmd "rman target sys/$oracle_password @crosscheck.rman"
@@ -88,4 +97,4 @@ then
 	LN
 fi
 
-script_stop ${ME##/*}
+script_stop ${ME##*/}

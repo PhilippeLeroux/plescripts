@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/virtualbox/vboxlib.sh
 . ~/plescripts/usagelib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -114,13 +115,6 @@ function load_vm_list
 	[ ${#vm_list[@]} -eq 0 ] && exit 1 || true
 }
 
-# $1 vm name
-# return 0 if running, else 1
-function vm_running
-{
-	grep -q "$1"<<<"$(VBoxManage list runningvms)"
-}
-
 typeset -a vm_list			# Nom de toutes les VMs.
 typeset -i nr_vm_started=0	# Nombre de VM démarré.
 typeset	-a vm_started_list	# Nom des VMs démarrées.
@@ -134,9 +128,17 @@ load_vm_list
 for vm in ${vm_list[*]}
 do
 
+	if vm_running $vm
+	then
+		info "$vm is running."
+		LN
+		continue
+	fi
+
 	exec_cmd -c "VBoxManage startvm $vm --type headless"
 	if [ $? -eq 0 ]
 	then
+		sleep 2	# RAC 12.2 le premier nœud par tjrs en live.
 		((++nr_vm_started))
 		vm_started_list+=( $vm )
 		if [[ $dataguard == yes && ${#vm_list[@]} -eq 1 ]]
@@ -170,6 +172,7 @@ then
 			exec_cmd -c "VBoxManage startvm $vm_name --type headless"
 			if [ $? -eq 0 ]
 			then
+				sleep 2
 				vm_started_list+=( $vm_name )
 				((++nr_vm_started))
 			fi

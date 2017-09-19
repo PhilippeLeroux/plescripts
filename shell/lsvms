@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/vmlib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -38,11 +39,6 @@ do
 done
 
 #ple_enable_log -params $PARAMS
-
-function vm_running
-{
-	grep -q "$1"<<<"$(VBoxManage list runningvms)"
-}
 
 info "Infra :"
 info -n "    master $master_hostname : "

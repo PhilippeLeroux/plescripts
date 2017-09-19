@@ -79,7 +79,7 @@ then
 fi
 
 line_separator
-info "Kill process on $device"
+info "$(hostname -s) : Kill process on $device"
 while read command pid user rem
 do
 	[[ x"$command" == x || "$command" == COMMAND ]] && continue || true
@@ -91,14 +91,16 @@ done<<<"$(lsof $device)"
 LN
 
 line_separator
+info "$(hostname -s) : umount $device"
 exec_cmd umount $device
+LN
 
 [ $kill_only == yes ] && exit 0 || true
 
 line_separator
 for srv in $gi_node_list
 do
-	exec_cmd "ssh -t root@$srv 'plescripts/db/ocfs2_fsck.sh -db=$db -kill_only'"
+	exec_cmd "ssh -t root@$srv 'plescripts/disk/ocfs2_fsck.sh -db=$db -kill_only'"
 	LN
 done
 
@@ -107,15 +109,13 @@ exec_cmd fsck -f -y $device
 LN
 
 line_separator
+info "$(hostname -s) : mount $device"
 exec_cmd mount $device
 LN
 
 for srv in $gi_node_list
 do
+	info "$srv : mount $device"
 	exec_cmd ssh -t root@$srv mount $device
 	LN
 done
-
-line_separator
-exec_cmd srvctl start database -db $(to_upper $db)
-LN

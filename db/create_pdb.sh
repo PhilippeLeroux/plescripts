@@ -374,9 +374,13 @@ then
 fi
 LN
 
+wait_if_high_load_average
+
 line_separator
 [ $from_pdb == default ] && clone_pdb_pdbseed || clone_from_pdb $from_pdb
 LN
+
+wait_if_high_load_average
 
 for stby in ${physical_list[*]}
 do
@@ -390,6 +394,8 @@ then
 	sqlplus_cmd "$(sqlcmd_remove_services_from_cloned_pdb)"
 	LN
 fi
+
+wait_if_high_load_average
 
 info "Open RW $db[$pdb] and save state."
 # Pour ouvrir un PDB RO il faut d'abord l'ouvrir en RW, sinon l'ouverture échoue.
@@ -407,6 +413,8 @@ then
 		set_sql_cmd "alter session set container=$_pdb;"
 		set_sql_cmd "alter tablespace temp add tempfile;"
 	}
+
+	wait_if_high_load_average
 
 	line_separator
 	info "12c : temporary tablespace not created on standby."
@@ -426,6 +434,8 @@ then
 fi
 
 print_pdbs_status
+
+wait_if_high_load_average
 
 [ $is_seed == no ] && create_pdb_services || true
 

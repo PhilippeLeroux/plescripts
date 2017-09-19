@@ -68,18 +68,6 @@ then
 	LN
 fi
 
-if [[ $vm_memory_mb_for_rac_db -lt $oracle_memory_prereq || $force_swappiness_to -eq 0 ]]
-then # Mieux vaut swapper un max...
-	if [ $force_swappiness_to -eq 0 ]
-	then
-		typeset -ri vm_swappiness=90
-	else
-		typeset -ri vm_swappiness=$force_swappiness_to
-	fi
-else # Prérequi Oracle, on a assez de mémoire.
-	typeset -ri vm_swappiness=1
-fi
-
 cat <<EOS>$oracle_profile_conf
 #
 # tuned configuration
@@ -90,9 +78,14 @@ include=virtual-guest
 
 [sysctl]
 #	Redhat advises
-#swappiness=0 fait souvent planter l'instance du master.
-#Valeur recommandée 1, si la RAM est correcte.
-vm.swappiness = $vm_swappiness
+#vm.swappiness=0 fait souvent planter l'instance du master.
+#vm.swappiness=1 il faut beaucoup de mémoire
+EOS
+if [[ $db_type == rac && $rac_force_swappiness_to -ne 0 ]]
+then
+	echo "vm.swappiness = $rac_force_swappiness_to" >> $oracle_profile_conf
+fi
+cat <<EOS>>$oracle_profile_conf
 vm.dirty_background_ratio = 3
 vm.dirty_ratio = 80
 vm.dirty_expire_centisecs = 500

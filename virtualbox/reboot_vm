@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/virtualbox/vboxlib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -79,13 +80,6 @@ function load_running_vms
 	done<<<"$(VBoxManage list runningvms)"
 
 	[ ${#running_db_server_list[@]} -eq 0 ] && return 1 || return 0
-}
-
-# $1 vm name
-# return 0 if running, else 1
-function vm_running
-{
-	grep -q "$1"<<<"$(VBoxManage list runningvms)"
 }
 
 if ! vm_running $server

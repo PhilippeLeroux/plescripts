@@ -18,7 +18,7 @@ typeset -r str_usage=\
 
 typeset		db=undef
 typeset	-i	vm_memory_mb=-1
-typeset		vmGroup
+typeset		vmGroup=undef
 
 while [ $# -ne 0 ]
 do
@@ -68,19 +68,9 @@ typeset -ri max_nodes=$(cfg_max_nodes $db)
 #	ici le n° du nœud n'est pas important et il y a toujours un nœud 1.
 cfg_load_node_info $db 1
 
-if [ x"$vmGroup" == x ]
+if [[ "$vmGroup" != undef && ${vmGroup:0:1} != '/' ]]
 then
-	case $cfg_db_type in
-		std|fs)
-			typeset	-r	group_name="/Standalone $(initcap $db)"
-			;;
-
-		rac)
-			typeset	-r	group_name="/RAC $(initcap $db)"
-			;;
-	esac
-else
-	typeset	-r	group_name="$vmGroup"
+	vmGroup="/$vmGroup"
 fi
 
 if [ $max_nodes -eq 1 ]
@@ -114,9 +104,12 @@ do
 		--description \"$(~/plescripts/virtualbox/get_vm_description -db=$db)\""
 	LN
 
-	info "Move $vm_name to group $group_name"
-	exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$group_name\"
-	LN
+	if [ "$vmGroup" != undef ]
+	then
+		info "Move $vm_name to group $vmGroup"
+		exec_cmd VBoxManage modifyvm "$vm_name" --groups \"$vmGroup\"
+		LN
+	fi
 
 	if [ $cfg_db_type != fs ]
 	then
@@ -150,9 +143,6 @@ do
 		LN
 	fi
 
-	# Présent ici car dans setup_first_vms/vbox_scripts/01_create_master_vm.sh
-	# le Guru apparaît toujours.
-	# Même ici ne marche pas à tout les coups.
 	exec_cmd VBoxManage setextradata "$vm_name" GUI/GuruMeditationHandler PowerOff
 	LN
 done
@@ -173,4 +163,4 @@ fi
 
 [ $cfg_luns_hosted_by == san ] && exit 0 || true
 
-exec_cmd "~/plescripts/virtualbox/create_oracle_disks.sh -db=$db"
+exec_cmd "$vm_scripts_path/create_oracle_disks.sh -db=$db"

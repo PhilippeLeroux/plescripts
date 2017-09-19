@@ -33,7 +33,7 @@ typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
 typeset	-i	memoryTarget=0
-if [[ $gi_count_nodes -eq 1 && $orcl_release == 12.2 ]]
+if [[ $orcl_release == 12.2 ]]
 then
 	typeset -r set_param_totalMemory=no
 else
@@ -344,7 +344,7 @@ function make_dbca_args
 			warning "memoryTarget (${memoryTarget}M) > shm_for_db ($shm_for_db)"
 		fi
 
-		initParams="$initParams,memory_target=${memoryTarget}m"
+		initParams="$initParams,memory_max_target=${memoryTarget}m"
 	fi
 
 	case $lang in
@@ -481,6 +481,86 @@ function adjust_parameters
 	[ $serverPoolName != undef ] && policyManaged=yes || true
 }
 
+function create_links
+{
+	exec_cmd "~/plescripts/db/create_links.sh -db=$db"
+	LN
+
+	if [ $gi_count_nodes -gt 1 ]
+	then
+		for node in $gi_node_list
+		do
+			exec_cmd "ssh $node '. .bash_profile && plescripts/db/create_links.sh -db=$db'"
+			LN
+		done
+	fi
+}
+
+# dbca me gonfle !
+function workaround_bug_dbca_122
+{
+	if [[ "$shared_pool_size" != "0" ]]
+	then
+		line_separator
+		info "Workaround bug dbca 12.2.0.1"
+		sqlplus_cmd "$(set_sql_cmd "alter system set shared_pool_size=$shared_pool_size scope=both sid='*';")"
+		LN
+	fi
+}
+
+function workaround_bug_9040676
+{
+	if [[ "${db_type:0:3}" == "RAC" && $orcl_version == "12.1.0.2" ]]
+	then
+		line_separator
+		info "Bug 9040676 : MMON ACTION POLICY VIOLATION. 'BLOCK CLEANOUT OPTIM, UNDO SEGMENT SCAN' (ORA-12751)"
+		sqlplus_cmd "$(set_sql_cmd "alter system set \"_smu_debug_mode\"=134217728 scope=both sid='*';")"
+		LN
+	fi
+}
+
+function adjust_FRA_size
+{
+	line_separator
+	info "Adjust FRA size"
+	if [ $crs_used == yes ]
+	then
+		sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
+		LN
+	else
+		typeset -i disk_size=$(df --block-size=$((1024*1024)) /$ORCL_FRA_FS_DISK | tail -1 | awk '{ print $2 }')
+		typeset -i fra_size=$(compute -i "$disk_size * 0.9")
+		sqlplus_cmd "$(set_sql_cmd "alter system set db_recovery_file_dest_size=${fra_size}M scope=both sid='*';")"
+		LN
+	fi
+}
+
+function check_tuned_profile
+{
+	if [ "$(tuned-adm active | awk '{ print $4 }')" == "ple-hporacle" ]
+	then
+		error "Tuned profile active is ple-hporacle (Huge page configuration)"
+		error "With user root, activate profile ple-oracle : "
+		error "$ su - root -c \"tuned-adm profile ple-oracle\""
+		LN
+		exit 1
+	fi
+}
+
+function enable_flashback
+{
+	line_separator
+	info "Enable flashback :"
+	function alter_database_flashback_on
+	{
+		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "alter database flashback on;"
+	}
+	sqlplus_cmd "$(alter_database_flashback_on)"
+	[ $? -ne 0 ] && exit 1 || true
+	LN
+}
+
 function next_instructions
 {
 	typeset -r instance=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|\+ASM" | cut -d_ -f3-4)
@@ -510,27 +590,6 @@ function next_instructions
 	fi
 }
 
-# dbca me gonfle !
-function workaround_bug_dbca_122
-{
-	if [[ "$shared_pool_size" != "0" ]]
-	then
-		line_separator
-		info "Workaround bug dbca 12.2.0.1"
-		sqlplus_cmd "$(set_sql_cmd "alter system set shared_pool_size=$shared_pool_size scope=both sid='*';")"
-		LN
-	fi
-
-	if [[ $memoryTarget != 0 || $totalMemory != 0 ]]
-	then
-		[ $memoryTarget != 0 ] && val=$memoryTarget || val=$totalMemory
-		line_separator
-		info "Workaround bug dbca RAC 12.2.0.1"
-		sqlplus_cmd "$(set_sql_cmd "alter system set memory_max_target=$val scope=spfile sid='*';")"
-		LN
-	fi
-}
-
 #	============================================================================
 #	MAIN
 #	============================================================================
@@ -548,14 +607,7 @@ exit_if_param_invalid	enable_flashback	"yes no"	"$str_usage"
 
 adjust_parameters
 
-if [ "$(tuned-adm active | awk '{ print $4 }')" == "ple-hporacle" ]
-then
-	error "Tuned profile active is ple-hporacle (Huge page configuration)"
-	error "With user root, activate profile ple-oracle : "
-	error "$ su - root -c \"tuned-adm profile ple-oracle\""
-	LN
-	exit 1
-fi
+check_tuned_profile
 
 stats_tt start create_$lower_db
 
@@ -582,6 +634,8 @@ fi
 
 [ "${db_type:0:3}" == "RAC" ] && update_rac_oratab || true
 
+create_links
+
 line_separator
 ORACLE_SID=$(~/plescripts/db/get_active_instance.sh)
 if [ x"$ORACLE_SID" == x ]
@@ -592,28 +646,17 @@ fi
 
 load_oraenv_for $ORACLE_SID
 
-if [[ "${db_type:0:3}" == "RAC" && $orcl_version == "12.1.0.2" ]]
-then
-	info "Bug 9040676 : MMON ACTION POLICY VIOLATION. 'BLOCK CLEANOUT OPTIM, UNDO SEGMENT SCAN' (ORA-12751)"
-	sqlplus_cmd "$(set_sql_cmd "alter system set \"_smu_debug_mode\"=134217728 scope=both sid='*';")"
-fi
+workaround_bug_9040676
+
+wait_if_high_load_average 5
 
 [ $crs_used == no ] && fsdb_enable_autostart || true
 
 [ $orcl_release == 12.2 ] && workaround_bug_dbca_122 || true
 
-line_separator
-info "Adjust FRA size"
-if [ $crs_used == yes ]
-then
-	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
-	LN
-else
-	typeset -i disk_size=$(df --block-size=$((1024*1024)) /$ORCL_FRA_FS_DISK | tail -1 | awk '{ print $2 }')
-	typeset -i fra_size=$(compute -i "$disk_size * 0.9")
-	sqlplus_cmd "$(set_sql_cmd "alter system set db_recovery_file_dest_size=${fra_size}M scope=both sid='*';")"
-	LN
-fi
+wait_if_high_load_average 5
+
+adjust_FRA_size
 
 line_separator
 info "Enable archivelog :"
@@ -623,21 +666,9 @@ LN
 
 if [ $enable_flashback == yes ]
 then
-	if [[ $db_type == RAC && $orcl_release == 12.2 ]]
-	then
-		exec_cmd ~/plescripts/db/wait_if_load_average_high.sh -max_load_avg=5
-	fi
+	wait_if_high_load_average 4
 
-	line_separator
-	info "Enable flashback :"
-	function alter_database_flashback_on
-	{
-		set_sql_cmd "whenever sqlerror exit 1;"
-		set_sql_cmd "alter database flashback on;"
-	}
-	sqlplus_cmd "$(alter_database_flashback_on)"
-	[ $? -ne 0 ] && exit 1 || true
-	LN
+	enable_flashback
 fi
 
 copy_glogin
@@ -668,11 +699,7 @@ LN
 
 if [ $backup == yes ]
 then
-	if [[ $db_type == RAC && $orcl_release == 12.2 ]]
-	then
-		exec_cmd ~/plescripts/db/wait_if_load_average_high.sh -max_load_avg=5
-	fi
-
+	line_separator
 	info "Backup database"
 	exec_cmd "~/plescripts/db/image_copy_backup.sh"
 	LN
