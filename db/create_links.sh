@@ -50,7 +50,7 @@ exit_if_param_undef db	"$str_usage"
 
 typeset -r	admin_dir=$ORACLE_BASE/admin/$db
 
-exit_if_directory_not_exists $admin_dir
+exit_if_dir_not_exists $admin_dir
 
 if [ ! -L $HOME/$db ]
 then
