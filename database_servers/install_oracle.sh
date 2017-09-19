@@ -324,7 +324,7 @@ function start_oracle_installation
 		error "Oracle installation failed."
 		LN
 
-		if grep -q "[FATAL] Unable to read the Oracle Home information" $PLELIB_LOG_FILE
+		if grep -qE "^\[FATAL\] Unable to read the Oracle Home information at" $PLELIB_LOG_FILE
 		then
 			info "Error : [FATAL] Unable to read the Oracle Home information at ..."
 			info "add option -attachHome"
