@@ -44,3 +44,9 @@ LN
 
 exec_cmd "systemctl status oracle-ohasd.service"
 LN
+
+exec_cmd "tuned-adm active"
+LN
+
+exec_cmd "sysctl vm.swappiness"
+LN
