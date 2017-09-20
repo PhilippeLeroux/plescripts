@@ -325,7 +325,7 @@ function create_wallet
 		done
 	fi
 
-	if [ $orcl_release == 12.2 ] && test_if_cmd_exists crsctl
+	if [[ $orcl_release == 12.2 && $gi_count_nodes -eq 1 ]] && test_if_cmd_exists crsctl
 	then
 		warning "Database cannot start with wallet enable."
 		LN
