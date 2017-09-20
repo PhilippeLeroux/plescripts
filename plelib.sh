@@ -1649,13 +1649,24 @@ function get_os_memory_mb
 	free -m|grep "Mem:"|awk '{ print $2 }'
 }
 
-# $1 message to notify (message are printed to stdout)
-# Work if notify-send exists
+#*> [$1] -t# '#' is time out in ms, default 5s (5000ms)
+#*> $1 or $2 message to notify (message is also displayed to stdout)
+#*> Work if notify-send exists
 function notify
 {
+	if [ "${1:0:2}" == "-t" ]
+	then
+		typeset -i notify_timeout=${1:2} #skip -t
+		# Si -t n'est pas suivit d'un nombre alors notify_timeout vaut 0
+		[ $notify_timeout -eq 0 ] && notify_timeout=100 || true
+		shift
+	else
+		typeset -i notify_timeout=5000
+	fi
+
 	if command_exists notify-send
 	then
-		notify-send -u low "PLESCRIPTS" "$1"
+		notify-send -t $notify_timeout -u low "PLESCRIPTS" "$1"
 	fi
 
 	info "$1"
