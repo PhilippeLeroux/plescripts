@@ -80,17 +80,17 @@ include=virtual-guest
 #	Redhat advises
 #vm.swappiness=0 fait souvent planter l'instance du master.
 #vm.swappiness=1 il faut beaucoup de mémoire
-EOS
-if [[ $db_type == rac && $rac_force_swappiness_to -ne 0 ]]
-then
-	echo "vm.swappiness = $rac_force_swappiness_to" >> $oracle_profile_conf
-fi
-cat <<EOS>>$oracle_profile_conf
 vm.dirty_background_ratio = 3
 vm.dirty_ratio = 80
 vm.dirty_expire_centisecs = 500
 vm.dirty_writeback_centisecs = 100
 EOS
+
+if [[ $db_type == rac && $rac_force_swappiness_to -ne 0 ]]
+then
+	echo "PLE advices" >> $oracle_profile_conf
+	echo "vm.swappiness = $rac_force_swappiness_to" >> $oracle_profile_conf
+fi
 
 info "Create tuned profile : $small_pages_profile"
 exec_cmd "cat $oracle_profile_conf"
