@@ -171,6 +171,21 @@ function validate_gateway
 	LN
 }
 
+function validate_nic
+{
+	line_separator
+	info -n "Validate NIC $if_net_bridgeadapter "
+
+	if [ "$if_net_bridgeadapter" == "undef" ]
+	then
+		info -f "[$KO]"
+		((++count_errors))
+	else
+		info -f "[$OK]"
+	fi
+	LN
+}
+
 function validate_resolv_conf
 {
 	line_separator
@@ -311,6 +326,8 @@ validate_NFS_exports
 [ $test_iso_ol7 == yes ] && ISO_OLinux7_exists || true
 
 validate_gateway
+
+validate_nic
 
 validate_resolv_conf
 
