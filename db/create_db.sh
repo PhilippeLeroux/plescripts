@@ -32,7 +32,7 @@ typeset -r	orcl_version=$(read_orcl_version)
 typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
-typeset	-i	memoryTarget=0
+typeset	-i	memoryMaxTarget=0
 if [[ $orcl_release == 12.2 ]]
 then
 	typeset -r set_param_totalMemory=no
@@ -43,7 +43,7 @@ if [ $set_param_totalMemory == yes ]
 then
 	totalMemory=$(to_mb $shm_for_db)
 else # Bug Oracle sur une base single totalMemory est ignoré.
-	memoryTarget=$(to_mb $shm_for_db)
+	memoryMaxTarget=$(to_mb $shm_for_db)
 fi
 case "$orcl_release" in
 	12.1)
@@ -76,31 +76,31 @@ typeset	-i	redoSize=64	# Unit Mb
 #	DEBUG :
 typeset		create_database=yes
 
-add_usage "-db=name"								"Database name."
-add_usage "[-lang=$lang]"							"Language."
+add_usage "-db=name"									"Database name."
+add_usage "[-lang=$lang]"								"Language."
 add_usage "[-sysPassword=$sysPassword]"
 if [ $set_param_totalMemory == yes ]
 then
 	add_usage "[-totalMemory=$totalMemory]"				"Unit Mb, 0 to disable."
 else	# utiliser memory_target avec le crs fait planter la création de la base.
 		# Avec le crs 800m est lu 80m
-	add_usage "[-memoryTarget=$memoryTarget]"			"Unit Mb, 0 to disable."
+	add_usage "[-memoryMaxTarget=$memoryMaxTarget]"		"Unit Mb, 0 to disable."
 fi
 # 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
 # minimum de 256M sinon la création échoue, sur un FS mettre 0 est OK
-add_usage "[-shared_pool_size=$shared_pool_size]"	"0 to disable this setting (6)"
+add_usage "[-shared_pool_size=$shared_pool_size]"		"0 to disable this setting (6)"
 # 12.1 sur un RAC fixer une limite est important.
-add_usage "[-pga_aggregate_limit=$pga_aggregate_limit" "0 to disable this setting (7)"
-add_usage "[-cdb=$cdb]"								"yes|no (1)"
-add_usage "[-redoSize=$redoSize]"					"Redo size Mb."
+add_usage "[-pga_aggregate_limit=$pga_aggregate_limit"	"0 to disable this setting (7)"
+add_usage "[-cdb=$cdb]"									"yes|no (1)"
+add_usage "[-redoSize=$redoSize]"						"Redo size Mb."
 add_usage "[-data=$data]"
 add_usage "[-fra=$fra]"
 add_usage "[-templateName=$templateName]"
-add_usage "[-db_type=SINGLE|RAC|RACONENODE]"		"(3)"
-add_usage "[-policyManaged]"						"Database Policy Managed (4)"
-add_usage "[-serverPoolName=name]"					"pool name. (5)"
-add_usage "[-enable_flashback=$enable_flashback]"	"yes|no"
-add_usage "[-no_backup]"							"No backup."
+add_usage "[-db_type=SINGLE|RAC|RACONENODE]"			"(3)"
+add_usage "[-policyManaged]"							"Database Policy Managed (4)"
+add_usage "[-serverPoolName=name]"						"pool name. (5)"
+add_usage "[-enable_flashback=$enable_flashback]"		"yes|no"
+add_usage "[-no_backup]"								"No backup."
 
 typeset -r str_usage=\
 "Usage :
@@ -141,8 +141,8 @@ do
 			shift
 			;;
 
-		-memoryTarget=*)
-			memoryTarget=${1##*=}
+		-memoryMaxTarget=*)
+			memoryMaxTarget=${1##*=}
 			shift
 			;;
 
@@ -337,14 +337,14 @@ function make_dbca_args
 		initParams="$initParams,pga_aggregate_limit=$pga_aggregate_limit"
 	fi
 
-	if [ $memoryTarget -ne 0 ]
+	if [ $memoryMaxTarget -ne 0 ]
 	then # Ne doit être définie que pour une base single : bug Oracle.
-		if [[ "$shm_for_db" != "0" && $memoryTarget -gt $(to_mb $shm_for_db) ]]
+		if [[ "$shm_for_db" != "0" && $memoryMaxTarget -gt $(to_mb $shm_for_db) ]]
 		then
-			warning "memoryTarget (${memoryTarget}M) > shm_for_db ($shm_for_db)"
+			warning "memoryMaxTarget (${memoryMaxTarget}M) > shm_for_db ($shm_for_db)"
 		fi
 
-		initParams="$initParams,memory_max_target=${memoryTarget}m"
+		initParams="$initParams,memory_max_target=${memoryMaxTarget}m"
 	fi
 
 	case $lang in

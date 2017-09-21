@@ -40,7 +40,7 @@ LN
 confirm_or_exit "Continuer"
 
 exec_cmd start_vm $master_hostname
-exec_cmd "ssh -t root@${master_hostname} \"plescripts/yum/switch_repo_to.sh -local\""
+exec_cmd "ssh -t root@${master_hostname} \"plescripts/yum/switch_repo_to.sh -local -release=$orcl_yum_repository_release\""
 sleep 1
 exec_cmd "ssh -t root@${master_hostname} \"yum makecache; yum -y update\""
 LN

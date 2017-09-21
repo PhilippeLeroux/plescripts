@@ -70,12 +70,14 @@ node2=$cfg_server_name
 typeset -r session_name="$node1/$node2"
 exec_cmd -ci tmux kill-session -t \"$session_name\"
 
-if vm_running $node1 || vm_running $node2 
+if vm_running $node1 || vm_running $node2
 then
+	notify -t2000 "$ME running"
+
 	info "$session_name"
 	tmux new -s "$session_name"	"ssh -t root@${node1} '. .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh'"	\; \
 				split-window -h "ssh -t root@${node2} '. .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh'"
 else
-	error "$node1 and $node2 not running."
+	notify "Error : $node1 and $node2 not running."
 	LN
 fi

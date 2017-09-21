@@ -59,15 +59,16 @@ function monitor_rac_2_nodes
 	typeset -r	session_name="Left $node1 / Right $node2"
 	exec_cmd -ci tmux kill-session -t \"$session_name\"
 
-	if vm_running $node1 || vm_running $node2 
+	if vm_running $node1 || vm_running $node2
 	then
+		notify -t2000 "$ME running"
 		tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"			\; \
 								split-window -h "ssh root@${node2} vmstat 2" \; \
 								split-window -v "ssh -t root@${node2} top" \; \
 								selectp -t 0 \; \
 								split-window -v "ssh -t root@${node1} top"
 	else
-		error "$node1 and $node2 not running."
+		notify "Error : $node1 and $node2 not running."
 		LN
 	fi
 }
@@ -79,11 +80,12 @@ function monitor_standalone_server
 
 	if vm_running $node1
 	then
+		notify -t2000 "$ME running"
 		tmux new -s "$session_name"	ssh -t root@${node1} ". .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh"	\;\
 								split-window -h "ssh root@${node1} vmstat 2"			\;\
 								split-window -v "ssh -t root@${node1} top"
 	else
-		error "$node1 not running."
+		notify "Error : $node1 not running."
 		LN
 	fi
 }

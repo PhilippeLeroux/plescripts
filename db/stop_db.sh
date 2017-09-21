@@ -36,7 +36,20 @@ done
 
 #ple_enable_log -params $PARAMS
 
+# Test même si le crs est utilisé, pour rester homogène dans les scripts et
+# éviter des régressions sur les bases sur FS lors de modifications des scripts.
 exit_if_ORACLE_SID_not_defined
 
-sqlplus_cmd "$(set_sql_cmd "shutdown immediate")"
-LN
+if command_exists crsctl
+then
+	while read dbname 
+	do
+		[ x"$dbname" == x ] && continue || true
+
+		exec_cmd "srvctl stop database -db $dbname"
+		LN
+	done<<<"$(srvctl config database)"
+else
+	sqlplus_cmd "$(set_sql_cmd "shutdown immediate")"
+	LN
+fi

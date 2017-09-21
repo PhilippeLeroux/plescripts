@@ -85,7 +85,7 @@ function negatif
 # Init variables : cur_memory_target, os_free_memory, shm_total, shm_available
 function load_memory_info
 {
-	cur_memory_target=$(to_bytes $(orcl_parameter_value memory_target))
+	cur_memory_target=$(to_bytes $(orcl_parameter_value memory_max_target))
 	os_free_memory=$(free -b|grep -E "^Mem:"|awk '{ print $4 }')
 
 	read f1 shm_total shm_used shm_available rem<<<$(df -m /dev/shm|grep "shm$")
@@ -100,7 +100,7 @@ function read_asm_memory_target
 	typeset OSID=$ORACLE_SID
 	typeset ASM_SID=$(ps -ef|grep [p]mon_+ASM|cut -d_ -f3)
 	load_oraenv_for $ASM_SID
-	asm_memory_target=$(orcl_parameter_value memory_target)
+	asm_memory_target=$(orcl_parameter_value memory_max_target)
 	asm_memory_target=$(to_bytes $asm_memory_target)
 	load_oraenv_for $OSID
 }
@@ -135,10 +135,10 @@ else
 	fi
 fi
 
-info	"OS free memory : $(fmt_bytesU_2_better $os_free_memory)"
-info	"shm total      : $(fmt_bytesU_2_better $shm_total)"
-info	"shm available  : $(fmt_bytesU_2_better $shm_available)"
-info -n	"memory_target  : $(fmt_bytesU_2_better $cur_memory_target)"
+info	"OS free memory    : $(fmt_bytesU_2_better $os_free_memory)"
+info	"shm total         : $(fmt_bytesU_2_better $shm_total)"
+info	"shm available     : $(fmt_bytesU_2_better $shm_available)"
+info -n	"memory_max_target : $(fmt_bytesU_2_better $cur_memory_target)"
 info -f	", maximum : $(fmt_bytesU_2_better $max_memory_target) ($(fmt_number $(to_mb ${max_memory_target}b))Mb)"
 LN
 
@@ -147,7 +147,7 @@ then
 	exit 0
 fi
 
-info -n "set memory_target to $(fmt_bytesU_2_better $val) : "
+info -n "set memory_max_target to $(fmt_bytesU_2_better $val) : "
 typeset -ri	diff=$(( val - cur_memory_target ))
 if [ $diff -gt 0 ]
 then
@@ -166,7 +166,7 @@ LN
 
 if [[ $set_max == yes && $val -lt $cur_memory_target ]]
 then
-	error "memory_target $(fmt_bytesU_2_better $val) < current memory_target $(fmt_bytesU_2_better $cur_memory_target)"
+	error "memory_max_target $(fmt_bytesU_2_better $val) < current memory_target $(fmt_bytesU_2_better $cur_memory_target)"
 	LN
 	exit 1
 fi
@@ -189,21 +189,21 @@ fi
 typeset -r backup_pfile='/tmp/p.txt'
 
 # $1 size
-function sql_set_memory_target
+function sql_set_memory_max_target
 {
 	set_sql_cmd "create pfile='$backup_pfile' from spfile;"
-	set_sql_cmd "alter system set memory_target=$1 scope=spfile sid='*';"
+	set_sql_cmd "alter system set memory_max_target=$1 scope=spfile sid='*';"
 }
 
 line_separator
-sqlplus_cmd "$(sql_set_memory_target $val)"
+sqlplus_cmd "$(sql_set_memory_max_target $val)"
 exec_cmd "~/plescripts/db/bounce_db.sh"
 LN
 
 line_separator
 load_memory_info
-info "OS free memory : $(fmt_bytesU_2_better $os_free_memory)"
-info "shm total      : $(fmt_bytesU_2_better $shm_total)"
-info "shm available  : $(fmt_bytesU_2_better $shm_available)"
-info "memory_target  : $(fmt_bytesU_2_better $cur_memory_target)"
+info "OS free memory    : $(fmt_bytesU_2_better $os_free_memory)"
+info "shm total         : $(fmt_bytesU_2_better $shm_total)"
+info "shm available     : $(fmt_bytesU_2_better $shm_available)"
+info "memory_max_target : $(fmt_bytesU_2_better $cur_memory_target)"
 LN

@@ -36,17 +36,17 @@ done
 
 #ple_enable_log -params $PARAMS
 
-exec_cmd "systemctl --failed"
+exec_cmd -c "systemctl --failed"
 LN
 
-exec_cmd "systemctl status ohasd.service"
+exec_cmd -c "systemctl status ohasd.service"
 LN
 
-exec_cmd "systemctl status oracle-ohasd.service"
+exec_cmd -c "systemctl status oracle-ohasd.service"
 LN
 
-exec_cmd "tuned-adm active"
+exec_cmd -c "tuned-adm active"
 LN
 
-exec_cmd "sysctl vm.swappiness"
+exec_cmd -c "sysctl vm.swappiness"
 LN

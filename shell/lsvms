@@ -41,7 +41,7 @@ done
 #ple_enable_log -params $PARAMS
 
 info "Infra :"
-info -n "    master $master_hostname : "
+info -n "Master $master_hostname : "
 if vm_running $master_hostname
 then
 	info -f "${UNDERLINE}running${NORM}."
@@ -49,7 +49,7 @@ else
 	info -f "not running."
 fi
 
-info -n "    Infra  $infra_hostname : "
+info -n "Infra  $infra_hostname : "
 if vm_running $infra_hostname
 then
 	info -f "${UNDERLINE}running${NORM}."
@@ -69,11 +69,11 @@ do
 	cfg_load_node_info $dbid 1
 	if [ $max_nodes -eq 2 ]
 	then
-		info -n "    $dbid : Oracle RAC $cfg_orarel, servers $cfg_server_name"
+		info -n "$dbid : Oracle RAC $cfg_orarel, servers $cfg_server_name"
 		cfg_load_node_info $dbid 2
 		info -n -f ",$cfg_server_name"
 	else
-		info -n "    $dbid : Oracle $cfg_orarel, server $cfg_server_name"
+		info -n "$dbid : Oracle $cfg_orarel, server $cfg_server_name"
 	fi
 	info -n -f ", storage $cfg_luns_hosted_by"
 	case $cfg_db_type in

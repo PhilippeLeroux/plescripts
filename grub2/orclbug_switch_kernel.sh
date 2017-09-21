@@ -21,18 +21,23 @@
 #	- reboot
 # Ca devrait le faire.
 
+function run
+{
+	echo "$*"
+	eval "$*"
+}
+
 function reboot_server
 {
 	echo "reboot server $(hostname -s)"
 	echo
 	sleep 5
-	reboot
+	run reboot
 }
 
 KERNEL=$(grubby --default-kernel|sed "s/^.*linuz-\(.*el7\(uek\)\{0,1\}\).*/\1/g")
 
-typeset -r remove_kernel_uek=/root/remove_kernel_uek.sh
-typeset -r install_kernel_uek=/root/install_kernel_uek.sh
+typeset -r reinstall_kernel_uek=/root/reinstall_kernel_uek.sh
 
 if grep -q el7uek<<<"$KERNEL"
 then
@@ -47,55 +52,52 @@ then
 	echo
 
 	echo "Disable service : oracle-ohasd.service"
-	systemctl disable oracle-ohasd.service
+	run systemctl disable oracle-ohasd.service
 	echo
 
-	# Création du script pour supprimer le noyau
-	echo "yum -y remove kernel-uek-$KERNEL" > $remove_kernel_uek
-	echo "sleep 5" >> $remove_kernel_uek
-	chmod u+x $remove_kernel_uek
-	echo "Script $remove_kernel_uek created."
+	echo "Stop service : oracle-ohasd.service (background)"
+	# En background, car ca peut être long.
+	systemctl stop oracle-ohasd.service &
 	echo
 
-	# Création du script pour installer le noyau
-	echo "yum -y install kernel-uek-$KERNEL" > $install_kernel_uek
-	echo "sleep 5" >> $install_kernel_uek
-	chmod u+x $install_kernel_uek
-	echo "Script $install_kernel_uek created."
+	# Création du script pour ré installer le noyau
+
+	echo "echo \"yum -y remove kernel-uek-$KERNEL\""	> $reinstall_kernel_uek
+	echo "yum -y remove kernel-uek-$KERNEL"				>> $reinstall_kernel_uek
+	echo "sleep 5"										>> $reinstall_kernel_uek
+	echo "echo"											>> $reinstall_kernel_uek
+	echo "echo \"yum -y install kernel-uek-$KERNEL\""	>> $reinstall_kernel_uek
+	echo "yum -y install kernel-uek-$KERNEL"			>> $reinstall_kernel_uek
+	echo "sleep 5"										>> $reinstall_kernel_uek
+
+	run chmod u+x $reinstall_kernel_uek
+
+	echo "Script $reinstall_kernel_uek created."
+	echo
 
 	# Active le noyau Redhat
-	echo "grubby --set-default $redhat_k"
-	grubby --set-default $redhat_k
+	run grubby --set-default $redhat_k
 	echo
 
 	reboot_server
-else
-	if [ -f $remove_kernel_uek ]
-	then # 1er reboot : supprime le noyau UEK
-		echo "Execute $remove_kernel_uek y/n ?"
-		read keyboard
-		if [ "$keyboard" == y ]
-		then
-			$remove_kernel_uek
-			rm $remove_kernel_uek
-			reboot_server
-			exit 0
-		fi
-	elif [ -f $install_kernel_uek ]
-	then # 2ieme reboot : ré installe le noyau UEK
-		echo "Execute $install_kernel_uek y/n ?"
-		read keyboard
-		if [ "$keyboard" == y ]
-		then
-			$install_kernel_uek
-			rm $install_kernel_uek
-			echo "After reboot execute : systemctl enable oracle-ohasd.service"
-			reboot_server
-			exit 0
-		fi
-	fi
+elif [ -f $reinstall_kernel_uek ]
+then # 2ieme reboot : ré installe le noyau UEK
+	echo "Execute $reinstall_kernel_uek y/n ?"
+	read keyboard
+	if [ "$keyboard" == y ]
+	then
+		run $reinstall_kernel_uek
+		run rm $reinstall_kernel_uek
+		echo
 
-	# Normalement le code ci dessous n'a plus à être exécuté.
+		echo "Enable service : oracle-ohasd.service"
+		run systemctl enable oracle-ohasd.service
+		echo
+
+		reboot_server
+		exit 0
+	fi
+else # Normalement le code ci dessous n'a plus à être exécuté.
 	orcl_k=$(grubby --info=ALL|grep -E "kernel.*uek.*"|head -1|cut -d= -f2)
 
 	echo "Redhat kernel $KERNEL enable :"
@@ -111,8 +113,7 @@ else
 	echo "$ systemctl start oracle-ohasd.service"
 	echo
 
-	echo "grubby --set-default $orcl_k"
-	grubby --set-default $orcl_k
+	run grubby --set-default $orcl_k
 	echo
 
 	reboot_server

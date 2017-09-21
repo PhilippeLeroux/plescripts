@@ -142,9 +142,9 @@ function make_vmGroup
 			else
 				if [ -d $cfg_path_prefix/$cfg_standby ]
 				then # Le premier serveur existe
-					vmGroup="DG $(initcap $cfg_standby) - $(initcap $db)"
+					vmGroup="DG $(initcap $cfg_standby)-$(initcap $db)"
 				else
-					vmGroup="DG $(initcap $db) - $(initcap $cfg_standby)"
+					vmGroup="DG $(initcap $db)-$(initcap $cfg_standby)"
 				fi
 			fi
 			;;
