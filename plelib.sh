@@ -1035,7 +1035,7 @@ function exit_if_dir_not_exists
 #*<	Test if a variable exists, format ^var\s{0,}=\s{0,}value
 #*<	1	variable name
 #*<	2	file name
-function exist_var
+function exists_var
 {
 	grep -qE "^${1}\s{0,}=\s{0,}" "$2"
 }
@@ -1079,7 +1079,7 @@ function update_value
 	typeset -r var_value="$2"
 	typeset -r file="$3"
 
-	if exist_var "$var_name" "$file"
+	if exists_var "$var_name" "$file"
 	then
 		change_value "$var_name" "$var_value" "$file"
 	else
@@ -1099,7 +1099,7 @@ function remove_value
 
 	typeset -r var_name=$(escape_slash "$1")
 	typeset -r file="$2"
-	if exist_var "$var_name" "$file"
+	if exists_var "$var_name" "$file"
 	then
 		exec_cmd "sed -i '/^${var_name}\s*=.*$/d' $file"
 	else

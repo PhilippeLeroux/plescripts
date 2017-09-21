@@ -9,7 +9,7 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
-add_usage "variable=value"
+add_usage "[-nocheck] variable=value"
 add_usage "Ex to update variable VM_PATH with value ~/VBoxVMs :"
 add_usage "   $ ./update_local_cfg.sh VM_PATH=~/VBoxVMs"
 typeset -r parameters_usage="$(print_usage)"
@@ -128,11 +128,18 @@ then
 	exit 1
 fi
 
+typeset check_variable=yes
+
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-nocheck)
+			check_variable=no
 			shift
 			;;
 
@@ -146,7 +153,7 @@ do
 			# Attend variable=value
 			IFS=\= read var value<<<"$1"
 			var=$(to_upper $var)
-			if ! variable_is_valid $var
+			if [ $check_variable == yes ] && ! variable_is_valid $var
 			then
 				error "Variable '$var' invalid."
 				LN

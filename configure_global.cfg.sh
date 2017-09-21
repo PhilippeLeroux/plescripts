@@ -172,7 +172,7 @@ function yum_repository
 		7.4)
 			typeset do_update=yes
 			ask_for_variable do_update "Update Oracle Linux $OL7_LABEL_n release ? yes no"
-			do_update=$(to_upper $do_update)
+			do_update=$(to_lower $do_update)
 			LN
 
 			if [ $do_update == yes ]
@@ -278,6 +278,20 @@ function network_interface
 	LN
 }
 
+# update file $HOME/plescripts/local.cfg if $1 != $2
+# $1 orignal value
+# $2 new value
+# $3 parameter name to write to local cfg
+function add_to_local_cfg
+{
+	if [ "$1" != "$2" ]
+	then
+		info "local.cfg : update $3 = $2"
+		update_value "$3" "$2" $HOME/plescripts/local.cfg
+		LN
+	fi
+}
+
 typeset -i count_errors=0
 
 VMs_folder
@@ -302,49 +316,36 @@ then
 fi
 
 line_separator
-exec_cmd "sed -i 's/gateway=.*$/gateway=$gateway_new_ip/g' ~/plescripts/global.cfg"
-LN
+add_to_local_cfg "$gateway" "$gateway_new_ip" GATEWAY
 
-exec_cmd "sed -i 's/hostvm=.*$/hostvm=$hostvm_type/g' ~/plescripts/global.cfg"
-LN
+add_to_local_cfg "$hostvm" "$hostvm_type" HOSTVM
 
-exec_cmd "sed -i 's/client_hostname=.*/client_hostname=$(hostname -s)/g' ~/plescripts/global.cfg"
-LN
+add_to_local_cfg "$client_hostname" "$(hostname -s)" CLIENT_HOSTNAME
 
-exec_cmd "sed -i 's/common_user_name=.*/common_user_name=$USER/g' ~/plescripts/global.cfg"
-exec_cmd "sed -i 's/common_uid=.*/common_uid=$UID/g' ~/plescripts/global.cfg"
-LN
+add_to_local_cfg "$common_user_name" "$USER" COMMON_USER_NAME
 
-exec_cmd "sed -i 's/if_net_bridgeadapter=.*/if_net_bridgeadapter=$if_net_bridgeadapter_n/g' ~/plescripts/global.cfg"
-LN
+add_to_local_cfg "$common_uid" "$UID" COMMON_UID
 
-if [ "$vm_path" != "$vm_p" ]
-then
-	exec_cmd "echo \"VM_PATH=$vm_p\" >> ~/plescripts/local.cfg"
-	LN
-fi
+add_to_local_cfg "$if_net_bridgeadapter" "$if_net_bridgeadapter_n" IF_NET_BRIDGEADAPTER
+
+add_to_local_cfg "xxxx" "\"$vm_p\"" VM_PATH
 
 if [ "$disks_hosted_by" != "$disks_stored_on" ]
 then
-	exec_cmd "echo \"DISKS_HOSTED_BY=$DISKS_HOSTED_BY\" >> ~/plescripts/local.cfg"
-	exec_cmd "echo \"SAN_DISK=$san_disk_type\" >> ~/plescripts/local.cfg"
+	update_value "DISKS_HOSTED_BY" "$DISKS_HOSTED_BY" ~/plescripts/local.cfg
+	update_value "SAN_DISK" "$san_disk_type" ~/plescripts/local.cfg
 	LN
 fi
 
-if [ $OL7_LABEL_n != $OL7_LABEL ]
-then
-	info "Configure Oracle Linux 7 release"
-	exec_cmd "echo \"OL7_LABEL=$OL7_LABEL_n\" >> $HOME/plescripts/local.cfg"
-	LN
-fi
+add_to_local_cfg "$OL7_LABEL" "$OL7_LABEL_n" OL7_LABEL
 
 info "Configure repository OL7"
 if	[[ $OL7_LABEL_n == 7.4 && $ol7_repository_release != R4 ]] ||	\
 	[[ $OL7_LABEL_n == 7.3 && $ol7_repository_release != R3 ]] ||	\
 	[[ $OL7_LABEL_n == 7.2  ]]
 then
-	exec_cmd "echo \"INFRA_YUM_REPOSITORY_RELEASE=$ol7_repository_release\" >> ~/plescripts/local.cfg"
-	exec_cmd "echo \"ORCL_YUM_REPOSITORY_RELEASE=$ol7_repository_release\" >> ~/plescripts/local.cfg"
+	update_value "INFRA_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
+	update_value "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
 	LN
 fi
 

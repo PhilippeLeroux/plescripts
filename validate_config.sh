@@ -318,8 +318,12 @@ test_tools
 
 test_if_configure_global_cfg_executed
 
-line_separator
-exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
+if [ "$common_user_name" != "no_user_defined" ]
+then
+	line_separator
+	exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
+	LN
+fi
 
 line_separator
 if [ $count_errors -ne 0 ]
