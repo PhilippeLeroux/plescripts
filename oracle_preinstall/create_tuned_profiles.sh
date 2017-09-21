@@ -88,7 +88,7 @@ EOS
 
 if [[ $db_type == rac && $rac_force_swappiness_to -ne 0 ]]
 then
-	echo "PLE advices" >> $oracle_profile_conf
+	echo "# PLE advices" >> $oracle_profile_conf
 	echo "vm.swappiness = $rac_force_swappiness_to" >> $oracle_profile_conf
 fi
 
