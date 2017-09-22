@@ -4,6 +4,7 @@
 . ~/plescripts/plelib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/dblib.sh
+. ~/plescripts/db/wallet/walletlib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -124,11 +125,17 @@ then
 	fi
 fi
 
-line_separator
-info "Drop wallet."
-exec_cmd ~/plescripts/db/wallet/delete_all_credentials.sh
-exec_cmd ~/plescripts/db/wallet/drop_wallet.sh
-LN
+if [ -d $wallet_path ]
+then
+	line_separator
+	info "Drop wallet."
+	exec_cmd ~/plescripts/db/wallet/delete_all_credentials.sh
+	exec_cmd ~/plescripts/db/wallet/drop_wallet.sh
+	LN
+
+	# RAC 12.2 obligatoire sinon problème de connections.
+	exec_cmd ~/plescripts/db/bounce_db.sh
+fi
 
 if [ $crs_used == yes ]
 then

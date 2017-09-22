@@ -12,7 +12,7 @@ typeset -r str_usage=\
 "Usage : $ME
 
 Supprime toutes les connexions, doit être exécuté sur tous les noeuds d'un
-cluster dataguard on d'un cluster RAC dont ORACLE_HOME n'est pas sur un CFS."
+cluster dataguard."
 
 while [ $# -ne 0 ]
 do
