@@ -16,7 +16,7 @@ typeset	-r	orcl_release="$(read_orcl_release)"
 typeset db=undef
 typeset pdb=undef
 typeset from_pdb=default
-typeset wallet=$(enable_wallet $orcl_release)
+typeset wallet=${WALLET:-$(enable_wallet $orcl_release)}
 typeset	sampleSchema=no
 typeset is_seed=no
 typeset admin_user=pdbadmin
@@ -30,6 +30,7 @@ add_usage "[-sampleSchema=$sampleSchema]"	"yes|no"
 add_usage "[-is_seed]"			"Create seed pdb."
 add_usage "[-from_pdb=name]"	"Clone from pdb 'name'"
 add_usage "[-wallet=$wallet]"	"yes|no yes : Use Wallet Manager for pdb connection."
+add_usage "  Variable WALLET define the default value, ex export WALLET=no"
 add_usage "[-admin_user=$admin_user]"
 add_usage "[-admin_pass=$admin_pass]"
 add_usage "[-nolog]"

@@ -124,6 +124,8 @@ oracle_rm_4="su - oracle -c \"rm -rf \\\$ORACLE_BASE/admin/$db\""
 oracle_rm_5="su - oracle -c \"rm -rf \\\$TNS_ADMIN/tnsnames.ora\""
 oracle_rm_6="su - oracle -c \"rm -rf \\\$TNS_ADMIN/listener.ora\""
 oracle_rm_7="su - oracle -c \"rm -rf \\\$TNS_ADMIN/sqlnet.ora\""
+oracle_rm_8="su - oracle -c \"rm -rf log\""
+oracle_rm_9="su - oracle -c \"rm -rf $db\""
 
 clean_oratab_cmd1="sed  \"/${db:0:8}[_|0-9]\{0,1\}.*/d\" /etc/oratab > /tmp/oratab"
 clean_oratab_cmd2="cat /tmp/oratab > /etc/oratab && rm /tmp/oratab"
@@ -141,6 +143,10 @@ LN
 execute_on_all_nodes "$oracle_rm_6"
 LN
 execute_on_all_nodes "$oracle_rm_7"
+LN
+execute_on_all_nodes "$oracle_rm_8"
+LN
+execute_on_all_nodes "$oracle_rm_9"
 LN
 
 exec_cmd -c "$clean_oratab_cmd1"

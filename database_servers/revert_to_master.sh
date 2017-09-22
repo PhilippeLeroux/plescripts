@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
@@ -50,7 +49,7 @@ do
 	esac
 done
 
-[ $USER != root ] && error "Only root !" && info "$str_usage" && exit 1
+must_be_user root
 
 typeset -i nr_files=0
 if [ $force == no ]
@@ -122,7 +121,7 @@ exec_cmd "systemctl restart NetworkManager"
 LN
 
 line_separator
-info "Run ./cleanup_infra.sh -db=<ID> -keep_vm -keep_cfg_files from the virtual-host server before to start a new installation."
+info "Run ./cleanup_infra.sh -db=<ID> -keep_vms -keep_cfg_files from $client_hostname"
 LN
 
 if [ $EXEC_CMD_ACTION == NOP ]

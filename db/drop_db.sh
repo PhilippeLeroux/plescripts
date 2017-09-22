@@ -168,6 +168,8 @@ typeset -r rm_4="rm -rf $ORACLE_HOME/dbs/*${db}*"
 typeset -r rm_5="rm -rf $TNS_ADMIN/listener.ora"
 typeset -r rm_6="rm -rf $TNS_ADMIN/tnsnames.ora"
 typeset -r rm_7="rm -rf $TNS_ADMIN/sqlnet.ora"
+typeset -r rm_8="rm -rf $HOME/log"
+typeset -r rm_9="rm -rf $HOME/$db"
 
 line_separator
 info "Purge des répertoires :"
@@ -192,6 +194,12 @@ execute_on_other_nodes "$rm_6"
 LN
 exec_cmd "$rm_7"
 execute_on_other_nodes "$rm_7"
+LN
+exec_cmd "$rm_8"
+execute_on_other_nodes "$rm_8"
+LN
+exec_cmd "$rm_9"
+execute_on_other_nodes "$rm_9"
 LN
 
 

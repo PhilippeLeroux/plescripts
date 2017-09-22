@@ -21,7 +21,7 @@ typeset relink=no
 typeset attachHome=no
 
 add_usage "-db=name"			"Database identifier"
-add_usage "[-edition=$edition]"	"RAC 12.2 :SE|EE else EE."
+add_usage "[-edition=$edition]"	"RAC 12.2 only : SE|EE"
 typeset -r u1=$(print_usage)
 reset_usage
 
@@ -117,13 +117,6 @@ typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
 typeset		primary_db=none
 
-if [ "$oracle_release" == "12.2.0.1" ]
-then
-	exit_if_param_invalid	edition "EE SE2"	"$str_usage"
-else
-	exit_if_param_invalid	edition "EE"		"$str_usage"
-fi
-
 # $1 inode
 function load_node_cfg
 {
@@ -162,8 +155,8 @@ function create_response_file_12cR1
 {
 	line_separator
 	info "Create response file for Oracle software."
-	exit_if_file_not_exists template_oracle_${oracle_release%.*.*}.rsp
-	exec_cmd cp -f template_oracle_${oracle_release%.*.*}.rsp $rsp_file
+	exit_if_file_not_exists template_oracle_${cfg_orarel%.*.*}.rsp
+	exec_cmd cp -f template_oracle_${cfg_orarel%.*.*}.rsp $rsp_file
 	LN
 
 	if [ $cfg_db_type == fs ]
@@ -173,7 +166,7 @@ function create_response_file_12cR1
 		typeset	-r	O_BASE=/$ORCL_DISK/app/oracle
 	fi
 
-	typeset	-r	O_HOME=$O_BASE/$oracle_release/dbhome_1
+	typeset	-r	O_HOME=$O_BASE/$cfg_orarel/dbhome_1
 
 	update_value oracle.install.option				INSTALL_DB_SWONLY	$rsp_file
 	update_value ORACLE_HOSTNAME					${node_names[0]}	$rsp_file
@@ -206,8 +199,8 @@ function create_response_file_12cR2
 {
 	line_separator
 	info "Create response file for Oracle software."
-	exit_if_file_not_exists template_oracle_${oracle_release%.*.*}.rsp
-	exec_cmd cp -f template_oracle_${oracle_release%.*.*}.rsp $rsp_file
+	exit_if_file_not_exists template_oracle_${cfg_orarel%.*.*}.rsp
+	exec_cmd cp -f template_oracle_${cfg_orarel%.*.*}.rsp $rsp_file
 	LN
 
 	if [ $cfg_db_type == fs ]
@@ -217,7 +210,7 @@ function create_response_file_12cR2
 		typeset	-r	O_BASE=/$ORCL_DISK/app/oracle
 	fi
 
-	typeset	-r	O_HOME=$O_BASE/$oracle_release/dbhome_1
+	typeset	-r	O_HOME=$O_BASE/$cfg_orarel/dbhome_1
 
 	update_value oracle.install.option					INSTALL_DB_SWONLY	$rsp_file
 	update_value UNIX_GROUP_NAME						oinstall			$rsp_file
@@ -269,6 +262,52 @@ function check_oracle_size
 	exec_cmd "ssh oracle@$server '. .bash_profile && plescripts/database_servers/check_bin_oracle_size.sh'"
 }
 
+function exec_relink
+{
+	line_separator
+	for node in ${node_names[*]}
+	do
+		info "Relink on server $node"
+		exec_cmd "ssh -t oracle@${node} '. .bash_profile && plescripts/database_servers/relink_orcl.sh'"
+		LN
+	done
+}
+
+function exec_attachHome
+{
+	line_separator
+	info "Attace home :"
+	LN
+
+	info "Read ORACLE_HOME from ${node_names[0]}"
+	typeset OH=$(ssh oracle@${node_names[0]} ". .bash_profile && echo \$ORACLE_HOME")
+	info "ORACLE_HOME : '$OH'"
+	LN
+
+	for (( inode=1; inode < max_nodes; ++inode ))
+	do
+		info "${node_names[inode]} attach home :"
+		exec_cmd "ssh -t oracle@${node_names[inode]} '. .bash_profile && $OH/oui/bin/attachHome.sh'"
+		LN
+	done
+}
+
+function check_ntp_error
+{
+	typeset -r log_line=$(grep -E "ACTION: Identify the list of failed prerequisite checks from the log:" $PLELIB_LOG_FILE)
+
+	[ x"$log_line" == x ] && return 0 || true
+
+	#'   ACTION: Identify the list of failed prerequisite checks from the log: /u01/app/oraInventory/logs/installActions2017-09-22_11-40-49AM.log. Then either from the log file or from installation manual find the appropriate configuration to meet the prerequisites and fix it manually.'
+	typeset -r orcl_log=$(sed "s/.*log: \(\/.*log\)\. .*/\1/"<<<"$log_line")
+
+	if ssh oracle@${node_names[0]} "grep -qE \"PRVG-13602\" $orcl_log"
+	then
+		error "NTP error : reboot VMs ${node_names[*]} and rerun script."
+		LN
+	fi
+}
+
 function start_oracle_installation
 {
 	if [ $max_nodes -ne 1 ]
@@ -317,47 +356,54 @@ function start_oracle_installation
 	add_dynamic_cmd_param "      -waitforcompletion"
 	add_dynamic_cmd_param "      -responseFile /home/oracle/oracle_$db.rsp\""
 	exec_dynamic_cmd -c "ssh oracle@${node_names[0]}"
-	if [ $? -gt 250 ]
+	ret=$?
+	LN
+	if [ $ret -gt 250 ]
 	then
-		LN
-		restore_swappiness
-		error "Oracle installation failed."
-		LN
-
 		if grep -qE "^\[FATAL\] Unable to read the Oracle Home information at" $PLELIB_LOG_FILE
-		then
-			info "Error : [FATAL] Unable to read the Oracle Home information at ..."
-			info "add option -attachHome"
-			info "$ME -db=$db -attachHome"
+		then # L'erreur ne ce produit qu'avec le RAC 12.2
+			warning "Error : [FATAL] Unable to read the Oracle Home information at ..."
+			warning "Apply workaround"
+			LN
+			exec_attachHome
+
+			info "Workaround applied."
 			LN
 		else
-			os_memory_mb=$(ssh root@${node_names[0]} "free -m|grep \"Mem:\"|awk '{ print \$2 }'")
-			if [[ $cfg_orarel == 12.2.0.1 && $os_memory_mb -lt $oracle_memory_mb_prereq ]]
+			restore_swappiness
+			error "Oracle installation failed."
+			LN
+
+			if ! check_ntp_error
 			then
-				info "On link errors try :"
-				info "Rerun script with option -relink"
-				info "$ME -db=$db -relink"
-				LN
+				os_memory_mb=$(ssh root@${node_names[0]} "free -m|grep \"Mem:\"|awk '{ print \$2 }'")
+				if [[ $cfg_orarel == 12.2.0.1 && $os_memory_mb -lt $oracle_memory_mb_prereq ]]
+				then
+					info "On link errors try :"
+					info "Rerun script with option -relink"
+					info "$ME -db=$db -relink"
+					LN
+				fi
 			fi
+			exit 1
 		fi
-		exit 1
 	fi
-	LN
 
 	restore_swappiness
 
 	check_oracle_size ${node_names[0]}
 }
 
-function exec_post_install_root_scripts_on_node	# $1 node name
+# $1 node name
+function exec_post_install_root_scripts_on_node
 {
 	typeset  -r node_name=$1
 
 	if [ $cfg_db_type == fs ]
 	then
-		typeset -r script_root_sh="/$ORCL_SW_FS_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
+		typeset -r script_root_sh="/$ORCL_SW_FS_DISK/app/oracle/$cfg_orarel/dbhome_1/root.sh"
 	else
-		typeset -r script_root_sh="/$ORCL_DISK/app/oracle/$oracle_release/dbhome_1/root.sh"
+		typeset -r script_root_sh="/$ORCL_DISK/app/oracle/$cfg_orarel/dbhome_1/root.sh"
 	fi
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
@@ -370,36 +416,6 @@ function exec_post_install_root_scripts_on_node	# $1 node name
 	exec_cmd -novar "ssh -t -t root@${node_name} 'cp $script_root_sh $backup_script_root_sh' </dev/null"
 	exec_cmd -novar "ssh -t -t root@${node_name} \"chown oracle:oinstall $backup_script_root_sh\" </dev/null"
 	LN
-}
-
-function exec_relink
-{
-	line_separator
-	for node in ${node_names[*]}
-	do
-		info "Relink on server $node"
-		exec_cmd "ssh -t oracle@${node} '. .bash_profile && plescripts/database_servers/relink_orcl.sh'"
-		LN
-	done
-}
-
-function exec_attachHome
-{
-	line_separator
-	info "Attace home :"
-	LN
-
-	info "Read ORACLE_HOME from ${node_names[0]}"
-	typeset OH=$(ssh oracle@${node_names[0]} ". .bash_profile && echo \$ORACLE_HOME")
-	info "ORACLE_HOME : '$OH'"
-	LN
-
-	for (( inode=1; inode < max_nodes; ++inode ))
-	do
-		info "${node_names[inode]} attach home :"
-		exec_cmd "ssh -t oracle@${node_names[inode]} '. .bash_profile && $OH/oui/bin/attachHome.sh'"
-		LN
-	done
 }
 
 function next_instructions
@@ -461,6 +477,13 @@ do
 	load_node_cfg $inode
 done
 
+if [ "$cfg_orarel" == "12.2.0.1" ]
+then
+	exit_if_param_invalid	edition "EE SE2"	"$str_usage"
+else
+	exit_if_param_invalid	edition "EE"		"$str_usage"
+fi
+
 info "Total nodes #${max_nodes}"
 if [ $max_nodes -gt 1 ]
 then
@@ -484,7 +507,7 @@ LN
 
 if [ $install_oracle == yes ]
 then
-	case $oracle_release in
+	case $cfg_orarel in
 		12.1.0.2)
 			create_response_file_12cR1
 			;;
@@ -494,7 +517,7 @@ then
 			;;
 
 		*)
-			error "Oracle $oracle_release not supported."
+			error "Oracle $cfg_orarel not supported."
 			exit 1
 	esac
 

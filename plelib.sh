@@ -143,15 +143,18 @@ function move_log_to_server
 	[ x"$PLELIB_LOG_FILE" == x ] && return 0 || true
 
 	LN
+
+	typeset -r local_log_path=$HOME/log
+
 	line_separator
-	info "copy log to $HOME/logs"
+	info "copy log to $local_log_path"
 	LN
 
 	# Sauvegarde la log sur le serveur.
-	[ ! -d ~/logs ] && mkdir ~/logs || true
+	[ ! -d $local_log_path ] && mkdir $local_log_path || true
 
-	exec_cmd "cp \"$PLELIB_LOG_FILE\" $HOME/logs"
-	clean_log_file "$HOME/logs/${PLELIB_LOG_FILE/$PLELOG_PATH\/}"
+	exec_cmd "cp \"$PLELIB_LOG_FILE\" $local_log_path"
+	clean_log_file "$local_log_path/${PLELIB_LOG_FILE/$PLELOG_PATH\/}"
 	LN
 }
 
