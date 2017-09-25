@@ -30,7 +30,6 @@ add_usage "[-sampleSchema=$sampleSchema]"	"yes|no"
 add_usage "[-is_seed]"			"Create seed pdb."
 add_usage "[-from_pdb=name]"	"Clone from pdb 'name'"
 add_usage "[-wallet=$wallet]"	"yes|no yes : Use Wallet Manager for pdb connection."
-add_usage "  Variable WALLET define the default value, ex export WALLET=no"
 add_usage "[-admin_user=$admin_user]"
 add_usage "[-admin_pass=$admin_pass]"
 add_usage "[-nolog]"
@@ -39,6 +38,8 @@ typeset -r str_usage=\
 "Usage :
 $ME
 $(print_usage)
+
+Variable WALLET override the default value, ex export WALLET=no
 "
 
 while [ $# -ne 0 ]
