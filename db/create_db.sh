@@ -41,9 +41,21 @@ else
 fi
 if [ $set_param_totalMemory == yes ]
 then
-	totalMemory=$(to_mb $shm_for_db)
-else # Bug Oracle sur une base single totalMemory est ignoré.
-	memoryMaxTarget=$(to_mb $shm_for_db)
+	if [ $crs_used == yes ]
+	then
+		totalMemory=$(to_mb $shm_for_db)
+	else
+		typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
+		totalMemory=$(compute -i "$shm_max_mb - ($shm_max_mb*10)/100")
+	fi
+else # Bug Oracle 12.2 totalMemory est ignoré.
+	if [ $crs_used == yes ]
+	then
+		memoryMaxTarget=$(to_mb $shm_for_db)
+	else
+		typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
+		memoryMaxTarget=$(compute -i "$shm_max_mb - ($shm_max_mb*10)/100")
+	fi
 fi
 case "$orcl_release" in
 	12.1)
@@ -318,9 +330,10 @@ function make_dbca_args
 	if [ $totalMemory -ne 0 ]
 	then
 		add_dynamic_cmd_param "-totalMemory $totalMemory"
-		if [[ "$shm_for_db" != "0" && $totalMemory -gt $(to_mb $shm_for_db) ]]
+		if [[ $crs_used == yes && "$shm_for_db" != "0" && $totalMemory -gt $(to_mb $shm_for_db) ]]
 		then
 			warning "totalMemoy (${totalMemory}M) > shm_for_db ($shm_for_db)"
+			LN
 		fi
 	fi
 
@@ -339,9 +352,10 @@ function make_dbca_args
 
 	if [ $memoryMaxTarget -ne 0 ]
 	then # Ne doit être définie que pour une base single : bug Oracle.
-		if [[ "$shm_for_db" != "0" && $memoryMaxTarget -gt $(to_mb $shm_for_db) ]]
+		if [[ $crs_used == yes && "$shm_for_db" != "0" && $memoryMaxTarget -gt $(to_mb $shm_for_db) ]]
 		then
 			warning "memoryMaxTarget (${memoryMaxTarget}M) > shm_for_db ($shm_for_db)"
+			LN
 		fi
 
 		initParams="$initParams,memory_max_target=${memoryMaxTarget}m"
