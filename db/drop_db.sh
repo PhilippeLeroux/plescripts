@@ -87,6 +87,8 @@ function remove_database_from_broker
 	LN
 }
 
+script_start
+
 typeset -r dataguard=$(dataguard_config_available)
 
 if [ $dataguard == yes ]
@@ -109,7 +111,7 @@ then
 	do
 		[ x"$res_name" == x ] && continue || true
 
-		[ $dbfs == no ] && dbfs=yes || true
+		dbfs=yes
 
 		pdbName=$(cut -d. -f2<<<$res_name)
 		info "Drop dbfs for pdb $pdbName"
@@ -125,6 +127,11 @@ then
 	fi
 fi
 
+# RAC 12.2 obligatoire sinon problème de connections.
+# Il faut stopper la base avant de supprimer le Wallet, sinon l'arrêt dure 15 mn.
+exec_cmd ~/plescripts/db/stop_db.sh
+LN
+
 if [ -d $wallet_path ]
 then
 	line_separator
@@ -132,10 +139,11 @@ then
 	exec_cmd ~/plescripts/db/wallet/delete_all_credentials.sh
 	exec_cmd ~/plescripts/db/wallet/drop_wallet.sh
 	LN
-
-	# RAC 12.2 obligatoire sinon problème de connections.
-	exec_cmd ~/plescripts/db/bounce_db.sh
 fi
+
+# dbca ne fonctionne que si la base est ouverte.
+exec_cmd ~/plescripts/db/start_db.sh
+LN
 
 if [ $crs_used == yes ]
 then
@@ -248,3 +256,5 @@ fi
 
 info "${GREEN}Done.${NORM}"
 LN
+
+script_stop $ME $db
