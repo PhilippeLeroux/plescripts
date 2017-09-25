@@ -67,8 +67,8 @@ info "Modify kernel parameter, $action parameters \"$params\""
 LN
 
 line_separator
-info "Backup /etc/default/grub"
-exec_cmd cp /etc/default/grub /etc/default/grub.$(date +%d%m%y%H%M)
+info "Backup /etc/grub2.cfg"
+exec_cmd cp /etc/grub2.cfg /etc/grub2.cfg.$(date +%y%m%d_%H%M)
 LN
 
 line_separator
@@ -77,9 +77,15 @@ case $action in
 		exec_cmd "grubby --update-kernel=ALL --remove-args=\"$params\""
 		LN
 		;;
-
 	add)
 		exec_cmd "grubby --update-kernel=ALL --args=\"$params\""
 		LN
+		;;
+	*)
+		error "Action '$action' invalid."
+		LN
+		info "$str_usage"
+		LN
+		exit 1
 		;;
 esac
