@@ -21,7 +21,7 @@ typeset relink=no
 typeset attachHome=no
 
 add_usage "-db=name"			"Database identifier"
-add_usage "[-edition=$edition]"	"RAC 12.2 only : SE|EE"
+add_usage "[-edition=$edition]"	"12.2 only : SE2|EE"
 typeset -r u1=$(print_usage)
 reset_usage
 
