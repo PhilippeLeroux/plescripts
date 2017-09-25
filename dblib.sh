@@ -404,3 +404,13 @@ function is_rac_one_node
 {
 	srvctl status database -db $1|grep -q "Online relocation: INACTIVE"
 }
+
+
+#*> return 0 for Enterprise Edition
+#*> return 1 for Standard Edition
+function is_oracle_enterprise_edition
+{
+	sqlplus -s sys/$oracle_password as sysdba									\
+		<<<"select banner from v\$version where banner like '%Edition Release%';"	\
+		|grep -q "Enterprise"
+}

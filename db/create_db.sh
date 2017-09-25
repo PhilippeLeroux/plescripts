@@ -664,11 +664,15 @@ info "Instance : $ORACLE_SID"
 exec_cmd "~/plescripts/db/enable_archive_log.sh -db=$db"
 LN
 
-if [ $enable_flashback == yes ]
+if [ $enable_flashback == yes ] && is_oracle_enterprise_edition
 then
 	wait_if_high_load_average 4
 
 	enable_flashback
+elif [ $enable_flashback == yes ]
+then
+	info "Flashback not supported with Oracle Standard Edition."
+	LN
 fi
 
 copy_glogin
@@ -678,8 +682,6 @@ then
 	line_separator
 	info "Database config :"
 	exec_cmd "srvctl config database -db $lower_db"
-	LN
-	exec_cmd "srvctl status service -db $lower_db"
 	LN
 
 	line_separator

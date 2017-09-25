@@ -55,14 +55,17 @@ then
 	typeset -r disk_space_before="$(df -h /u0*)"
 fi
 
-wait_if_high_load_average
+if is_oracle_enterprise_edition
+then
+	wait_if_high_load_average
 
-line_separator
-sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/show_corrupted_blocks.sql")"
-LN
+	line_separator
+	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/show_corrupted_blocks.sql")"
+	LN
 
-exec_cmd "rman target sys/$oracle_password @recover_corruption_list.rman"
-LN
+	exec_cmd "rman target sys/$oracle_password @recover_corruption_list.rman"
+	LN
+fi
 
 wait_if_high_load_average
 

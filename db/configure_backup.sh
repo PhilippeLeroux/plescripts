@@ -48,11 +48,17 @@ exit_if_ORACLE_SID_not_defined
 exec_cmd "cd ~/plescripts/db"
 LN
 
-# Si le block change tracking est déjà activé le script n'est pas
-# interrompu.
-exec_cmd -c "rman target sys/$oracle_password	\
-				@rman/enable_block_change_tracking.sql"
-LN
+if is_oracle_enterprise_edition
+then
+	# Si le block change tracking est déjà activé le script n'est pas
+	# interrompu.
+	exec_cmd -c "rman target sys/$oracle_password	\
+					@rman/enable_block_change_tracking.sql"
+	LN
+else
+	info "Block change tracking not supported with Oracle Standard Edition."
+	LN
+fi
 
 typeset -r DATA="$(orcl_parameter_value "db_create_file_dest")"
 
