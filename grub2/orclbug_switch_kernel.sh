@@ -64,10 +64,12 @@ then
 
 	echo "echo \"yum -y remove kernel-uek-$KERNEL\""	> $reinstall_kernel_uek
 	echo "yum -y remove kernel-uek-$KERNEL"				>> $reinstall_kernel_uek
+	echo "[ \$? -ne 0 ] && exit 1 || true"				>> $reinstall_kernel_uek
 	echo "sleep 5"										>> $reinstall_kernel_uek
 	echo "echo"											>> $reinstall_kernel_uek
 	echo "echo \"yum -y install kernel-uek-$KERNEL\""	>> $reinstall_kernel_uek
 	echo "yum -y install kernel-uek-$KERNEL"			>> $reinstall_kernel_uek
+	echo "[ \$? -ne 0 ] && exit 1 || true"				>> $reinstall_kernel_uek
 	echo "sleep 5"										>> $reinstall_kernel_uek
 
 	run chmod u+x $reinstall_kernel_uek
@@ -87,6 +89,14 @@ then # 2ieme reboot : ré installe le noyau UEK
 	if [ "$keyboard" == y ]
 	then
 		run $reinstall_kernel_uek
+		if [ $? -ne 0 ]
+		then
+			echo "Failed !"
+			echo
+			echo "Redémarrer le PC !"
+			echo
+			exit 1
+		fi
 		run rm $reinstall_kernel_uek
 		echo
 
