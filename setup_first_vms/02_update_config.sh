@@ -46,9 +46,19 @@ do
 done
 
 line_separator
-info "Setup english for OS logs"
+info "Setup English for OS logs"
 exec_cmd localectl set-locale LANG=en_US.UTF-8
 LN
+
+if [ $console_blanking == disable ]
+then
+	line_separator
+	# Désactive la mise en veille de la console, permet de visualiser si une VM est
+	# démarrée ou non.
+	info "Disable console blanking"
+	exec_cmd ~/plescripts/grub2/setup_kernel_boot_options.sh -add="consoleblank=0"
+	LN
+fi
 
 line_separator
 info "Create user $common_user_name"

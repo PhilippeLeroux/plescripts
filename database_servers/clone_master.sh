@@ -348,8 +348,8 @@ function create_database_fs_on_new_disks
 							-type_fs=$rdbms_fs_type				\
 							-striped=yes						\
 							-stripesize=$stripesize_kb			\
-							-netdev								\
-							-nobarrier
+							-netdev
+
 	ssh_server "chown oracle:oinstall /$ORCL_DATA_FS_DISK"
 	ssh_server "chmod 775 /$ORCL_DATA_FS_DISK"
 	LN
@@ -363,8 +363,8 @@ function create_database_fs_on_new_disks
 							-type_fs=$rdbms_fs_type				\
 							-striped=yes						\
 							-stripesize=$stripesize_kb			\
-							-netdev								\
-							-nobarrier
+							-netdev
+
 	ssh_server "chown oracle:oinstall /$ORCL_FRA_FS_DISK"
 	ssh_server "chmod 775 /$ORCL_FRA_FS_DISK"
 	LN
@@ -583,8 +583,6 @@ function disable_cgroup_memory
 {
 	line_separator
 	info "Disable cgroup for memory"
-	LN
-
 	ssh_server "~/plescripts/grub2/setup_kernel_boot_options.sh -add=\"cgroup_disable=memory\""
 	LN
 }
@@ -603,6 +601,17 @@ function enable_kernel
 		ssh_server "~/plescripts/grub2/enable_oracle_kernel.sh -version=$ol7_kernel_version"
 		LN
 	fi
+}
+
+# Cette action est faite sur le master, elle n'est plus activée probablement
+# après l'application du rpm des précos Oracle.
+# Donc réactivation de l'option.
+function disable_console_blanking
+{
+	line_separator
+	info "Disable console blanking"
+	ssh_server '~/plescripts/grub2/setup_kernel_boot_options.sh -add="consoleblank=0"'
+	LN
 }
 
 function copy_color_file
@@ -744,6 +753,16 @@ configure_server
 
 configure_oracle_accounts
 
+#	----------------------------------------------------------------------------
+# Toujours modifier les paramètres kernel après les préco Oracle qui ne tiennent
+# pas compte des nouveaux paramètres et les désactives.
+[ $cgroup_memory == disable ] && disable_cgroup_memory || true
+
+[ "$ol7_kernel_version" != latest ] && enable_kernel || true
+
+[ $console_blanking == disable ] && disable_console_blanking || true
+#	----------------------------------------------------------------------------
+
 #	Équivalence entre le virtual-host et le serveur de bdd
 #	Permet depuis le virtual-host de se connecter sans mot de passe avec les
 #	comptes root, grid et oracle.
@@ -788,10 +807,6 @@ create_stats_services
 #	Pour utiliser chrony définir la variable RAC_NTP=chrony
 [[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
 
-[ $cgroup_memory == disable ] && disable_cgroup_memory || true
-
-[ "$ol7_kernel_version" != latest ] && enable_kernel || true
-
 exec_cmd reboot_vm $server_name
 LN
 loop_wait_server $server_name
@@ -820,7 +835,6 @@ then	# C'est le dernier nœud
 
 	if [ $show_instructions == yes ]
 	then
-
 		if [ $cfg_db_type == fs ]
 		then
 			notify "Oracle RDBMS software can be installed."
@@ -837,7 +851,7 @@ then	# C'est le dernier nœud
 		fi
 		LN
 	fi
-elif [ $max_nodes -ne 1 ]
+elif [[ $max_nodes -ne 1 && $show_instructions == yes ]]
 then	# Ce n'est pas le dernier nœud et il y a plus de 1 nœud.
 	notify "Server cloned."
 	info "Run script :"
