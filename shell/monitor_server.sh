@@ -22,16 +22,42 @@ typeset -r xterm_static_options="-fa 'Monospace' -fs 14 +sb -rv"
 
 db=$1
 
+[ -t 0 ] && exec_from=terminal || exec_from=gui
+
 if [ $# -eq 0 ]
 then
 	[ -f /tmp/id_db ] && ID_DB=$(cat /tmp/id_db)
-	[ -z $ID_DB ] && error "Erreur id_db attendu." && exit 1
+	if [ -z $ID_DB ]
+	then
+		if [ $exec_from == terminal ]
+		then
+			error "Erreur id_db attendu."
+			LN
+		else
+			notify "Error ID_DB undef."
+			LN
+		fi
+		exit 1
+	fi
+
 	db=$ID_DB
 
+	[ $exec_from == gui ] && notify "Wait server : $db" || true
 	wait_server
+	[[ $? -ne 0 && $exec_from == gui ]] && notify "Wait server $db failed." || true
 fi
 
-cfg_exists $db
+if [ $exec_from == terminal ]
+then
+	cfg_exists $db
+else
+	cfg_exists $db use_return_code
+	if [ $? -ne 0 ]
+	then
+		notify "ID '$db' not exists."
+		exit 1
+	fi
+fi
 
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 

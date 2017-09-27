@@ -61,7 +61,6 @@ function monitor_rac_2_nodes
 
 	if vm_running $node1 || vm_running $node2
 	then
-		notify -t2000 "$ME running"
 		tmux new -s "$session_name"	"ssh root@${node1} vmstat 2"			\; \
 								split-window -h "ssh root@${node2} vmstat 2" \; \
 								split-window -v "ssh -t root@${node2} top" \; \
@@ -80,7 +79,6 @@ function monitor_standalone_server
 
 	if vm_running $node1
 	then
-		notify -t2000 "$ME running"
 		tmux new -s "$session_name"	ssh -t root@${node1} ". .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh"	\;\
 								split-window -h "ssh root@${node1} vmstat 2"			\;\
 								split-window -v "ssh -t root@${node1} top"

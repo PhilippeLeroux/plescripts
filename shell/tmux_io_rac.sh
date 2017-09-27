@@ -56,10 +56,22 @@ do
 	esac
 done
 
+[ -t 0 ] && exec_from=terminal || exec_from=gui
+
 [[ $db == undef && -f /tmp/id_db ]] && db=$(cat /tmp/id_db) || true
 exit_if_param_undef db	"$str_usage"
 
-cfg_exists $db
+if [ $exec_from == terminal ]
+then
+	cfg_exists $db
+else
+	cfg_exists $db use_return_code
+	if [ $? -ne 0 ]
+	then
+		notify "ID '$db' not exists."
+		exit 1
+	fi
+fi
 
 cfg_load_node_info $db 1
 node1=$cfg_server_name
@@ -72,8 +84,6 @@ exec_cmd -ci tmux kill-session -t \"$session_name\"
 
 if vm_running $node1 || vm_running $node2
 then
-	notify -t2000 "$ME running"
-
 	info "$session_name"
 	tmux new -s "$session_name"	"ssh -t root@${node1} '. .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh'"	\; \
 				split-window -h "ssh -t root@${node2} '. .bash_profile; ~/plescripts/disk/iostat_on_bdd_disks.sh'"
