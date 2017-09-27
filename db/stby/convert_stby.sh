@@ -175,7 +175,10 @@ function drop_all_services
 
 function create_services_for_single_db
 {
-typeset -r query=\
+# Requête permettant de lire tous les PDBs existant sur la base $primary
+# Les bases en RO sont considérées comme des SEED.
+# Attention code dupliqué dans create_dataguard.sh & update_tns_alias_for_dataguard.sh
+typeset -r sql_read_pdbs_rw=\
 "select
 	c.name
 from
@@ -184,7 +187,8 @@ from
 		on  c.inst_id = i.inst_id
 	where
 		i.instance_name = '$db'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT', 'PDB_SAMPLES' );
+	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' )
+	and c.open_mode = 'READ WRITE';
 "
 
 	while read pdb
@@ -194,7 +198,7 @@ from
 		line_separator
 		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh -db=$db -pdb=$pdb"
 		LN
-	done<<<"$(sqlplus_exec_query "$query")"
+	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
 }
 
 exit_if_database_not_exists $db

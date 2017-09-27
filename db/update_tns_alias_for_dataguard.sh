@@ -102,7 +102,10 @@ function add_or_update_tns_alias_for_pdb
 
 function add_or_update_tns_alias_for_all_pdbs
 {
-typeset -r query=\
+# Requête permettant de lire tous les PDBs existant sur la base $primary
+# Les bases en RO sont considérées comme des SEED.
+# Attention code dupliqué dans create_dataguard.sh & convert_stby.sh
+typeset -r sql_read_pdbs_rw=\
 "select
 	c.name
 from
@@ -111,7 +114,8 @@ from
 		on  c.inst_id = i.inst_id
 	where
 		i.instance_name = '$db'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT', 'PDB_SAMPLES' );
+	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' )
+	and c.open_mode = 'READ WRITE';
 "
 
 	info "Database $db read all PDBs."
@@ -121,7 +125,7 @@ from
 
 		add_or_update_tns_alias_for_pdb $pdb
 
-	done<<<"$(sqlplus_exec_query "$query")"
+	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
 }
 
 typeset	-r	tnsnames_file=$TNS_ADMIN/tnsnames.ora

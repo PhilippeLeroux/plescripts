@@ -134,7 +134,9 @@ exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
 
 # Requête permettant de lire tous les PDBs existant sur la base $primary
-typeset -r sql_read_pdbs=\
+# Les bases en RO sont considérées comme des SEED.
+# Attention code dupliqué dans convert_stby.sh & update_tns_alias_for_dataguard.sh
+typeset -r sql_read_pdbs_rw=\
 "select
 	c.name
 from
@@ -143,7 +145,8 @@ from
 		on  c.inst_id = i.inst_id
 	where
 		i.instance_name = '$primary'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT', 'PDB_SAMPLES' );
+	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' )
+	and c.open_mode = 'READ WRITE';
 "
 
 # $1 account
@@ -738,7 +741,7 @@ function create_dataguard_services_no_crs
 			LN
 		fi
 
-	done<<<"$(sqlplus_exec_query "$sql_read_pdbs")"
+	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
 }
 
 #	Création des services :
@@ -751,18 +754,6 @@ function create_dataguard_services_no_crs
 #	****************************************************************************
 function create_dataguard_services
 {
-typeset -r query=\
-"select
-	c.name
-from
-	gv\$containers c
-	inner join gv\$instance i
-		on  c.inst_id = i.inst_id
-	where
-		i.instance_name = '$primary'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT', 'PDB_SAMPLES' );
-"
-
 	line_separator
 	while read pdb
 	do
@@ -822,7 +813,7 @@ from
 			LN
 		fi
 
-	done<<<"$(sqlplus_exec_query "$query")"
+	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
 }
 
 #	Instruction pour activer le flashback sur la base standby.
@@ -998,6 +989,15 @@ function stby_enable_block_change_traking
 	LN
 }
 
+function stby_create_oracle_home_links
+{
+	info "Create links for user oracle."
+	LN
+
+	exec_cmd "ssh $standby_host '. .bash_profile && plescripts/db/create_links.sh -db=$standby'"
+	LN
+}
+
 function stby_backup
 {
 	#	Nécessaire sinon le backup échoue.
@@ -1043,7 +1043,7 @@ function dbfs_instructions
 
 		info "$ ./create_dbfs.sh -db=$(to_lower $standby) -pdb=$(to_lower $pdb)"
 		LN
-	done<<<"$(sqlplus_exec_query "$sql_read_pdbs")"
+	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
 }
 
 typeset	-r	primary_host=$(hostname -s)
@@ -1073,6 +1073,8 @@ check_prereq
 [ $_setup_primary == yes ] && setup_primary || true
 
 [ $_duplicate == yes ] && duplicate || true
+
+stby_create_oracle_home_links
 
 [ $_register_stby_to_GI == yes ] && register_stby_to_GI || true
 
