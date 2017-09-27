@@ -144,14 +144,14 @@ function move_log_to_server
 
 	LN
 
-	typeset -r local_log_path=$HOME/log
+	typeset -r local_log_path=$HOME/log/$(date +"%Y-%m-%d")
 
 	line_separator
 	info "copy log to $local_log_path"
 	LN
 
 	# Sauvegarde la log sur le serveur.
-	[ ! -d $local_log_path ] && mkdir $local_log_path || true
+	[ ! -d $local_log_path ] && mkdir -p $local_log_path || true
 
 	exec_cmd "cp \"$PLELIB_LOG_FILE\" $local_log_path"
 	clean_log_file "$local_log_path/${PLELIB_LOG_FILE/$PLELOG_PATH\/}"
