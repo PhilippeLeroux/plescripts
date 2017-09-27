@@ -72,7 +72,25 @@ then
 	LN
 fi
 
-info "Enabled & start chrony"
+info "Enable & start chrony"
 exec_cmd "systemctl enable chronyd"
-exec_cmd "systemctl start chronyd"
+# Si le service est déjà démarré la nouvelle configuration n'est pas prise en
+# compte, donc restart
+exec_cmd "systemctl restart chronyd"
 LN
+
+if [[ $role == infra && "$time_server" != internet ]]
+then
+	timing 2 "Wait sync to $time_server"
+	info -n "Sync with $time_server "
+	if ! chronyc sources|grep -q $time_server
+	then
+		info -f "[$KO]"
+		LN
+		exit 1
+	else
+		info -f "[$OK]"
+		LN
+		exit 0
+	fi
+fi

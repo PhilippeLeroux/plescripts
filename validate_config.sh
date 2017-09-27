@@ -171,6 +171,23 @@ function validate_gateway
 	LN
 }
 
+function validate_master_time_server
+{
+	[ "$master_time_server" == internet ] && return || true
+
+	line_separator
+	info -n "Time synchronization server : ping of $master_time_server "
+
+	if ping -c 1 $master_time_server >/dev/null 2>&1
+	then
+		info -f "[$OK]"
+	else
+		info -f "[$KO]"
+		((++count_errors))
+	fi
+	LN
+}
+
 function validate_nic
 {
 	line_separator
@@ -328,6 +345,8 @@ validate_NFS_exports
 validate_gateway
 
 validate_nic
+
+validate_master_time_server
 
 validate_resolv_conf
 

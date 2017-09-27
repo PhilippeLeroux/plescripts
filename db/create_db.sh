@@ -60,11 +60,9 @@ fi
 case "$orcl_release" in
 	12.1)
 		typeset	shared_pool_size="344M"	# Strict minimum 256M
-		typeset	pga_aggregate_limit="1256M"
 		;;
 	12.2)
 		typeset	shared_pool_size="344M"
-		typeset	pga_aggregate_limit="2048M"
 		;;
 	*)
 		error "Oracle Database '$orcl_release' invalid."
@@ -101,8 +99,6 @@ fi
 # 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
 # minimum de 256M sinon la création échoue, sur un FS mettre 0 est OK
 add_usage "[-shared_pool_size=$shared_pool_size]"		"0 to disable this setting (6)"
-# 12.1 sur un RAC fixer une limite est important.
-add_usage "[-pga_aggregate_limit=$pga_aggregate_limit"	"0 to disable this setting (7)"
 add_usage "[-cdb=$cdb]"									"yes|no (1)"
 add_usage "[-redoSize=$redoSize]"						"Redo size Mb."
 add_usage "[-data=$data]"
@@ -176,11 +172,6 @@ do
 
 		-shared_pool_size=*)
 			shared_pool_size=${1##*=}
-			shift
-			;;
-
-		-pga_aggregate_limit=*)
-			pga_aggregate_limit=${1##*=}
 			shift
 			;;
 
@@ -340,15 +331,12 @@ function make_dbca_args
 	typeset initParams="-initParams threaded_execution=true"
 
 	if [ $crs_used == no ]
-	then # sur FS il faut activer les asynch I/O
+	then # sur FS il faut activer les asynch I/O & co.
 		initParams="$initParams,filesystemio_options=setall"
 	fi
 
-	if [[ "${db_type:0:3}" == RAC && $pga_aggregate_limit != "0" ]]
-	then
-		# set pga_aggregate_limit for test not prod.
-		initParams="$initParams,pga_aggregate_limit=$pga_aggregate_limit"
-	fi
+	# Je sécurise le truc.
+	initParams="$initParams,db_block_checksum=full"
 
 	if [ $memoryMaxTarget -ne 0 ]
 	then # Ne doit être définie que pour une base single : bug Oracle.

@@ -278,6 +278,24 @@ function network_interface
 	LN
 }
 
+function sync_time_source
+{
+	info "Sync time source for server $infra_hostname"
+	master_time_server_n=$(hostname -s)
+	ask_for_variable master_time_server_n "Default the virtual-host $master_time_server_n, enter internet for internet."
+	LN
+
+	case "$master_time_server_n" in
+		$(hostname -s)|internet)
+			;; # OK
+		*)
+			error "Source '$master_time_server_n' invalid, change to $(hostname -s)"
+			LN
+			master_time_server_n=$(hostname -s)
+			;;
+	esac
+}
+
 # update file $HOME/plescripts/local.cfg if $1 != $2
 # $1 orignal value
 # $2 new value
@@ -308,6 +326,8 @@ LUNs_storage
 
 network_interface
 
+sync_time_source
+
 if [ ! -d $HOME/plescripts/tmp ]
 then
 	info "Create temporary directory."
@@ -329,6 +349,8 @@ add_to_local_cfg "$common_uid" "$UID" COMMON_UID
 add_to_local_cfg "$if_net_bridgeadapter" "$if_net_bridgeadapter_n" IF_NET_BRIDGEADAPTER
 
 add_to_local_cfg "xxxx" "\"$vm_p\"" VM_PATH
+
+add_to_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVER
 
 if [ "$disks_hosted_by" != "$disks_stored_on" ]
 then

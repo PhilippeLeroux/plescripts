@@ -76,7 +76,7 @@ then
 			;;
 
 		"$master_hostname") # Serveur Master.
-			typeset	release=$master_yum_repository_release
+			typeset	release=$orcl_yum_repository_release
 			;;
 	esac
 fi

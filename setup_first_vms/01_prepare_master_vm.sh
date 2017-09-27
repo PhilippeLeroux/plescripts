@@ -91,7 +91,7 @@ then
 	info "Add local repositories"
 	exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=master
 	exec_cmd ~/plescripts/yum/switch_repo_to.sh	\
-						-local -release=$master_yum_repository_release
+						-local -release=$orcl_yum_repository_release
 	LN
 else
 	warning "Local repositories not added."

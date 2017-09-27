@@ -42,7 +42,9 @@ do
 done
 
 # Sinon le serveur ne fonctionne pas correctement, beaucoup d'erreurs réseaux.
-exec_cmd "~/plescripts/grub2/enable_redhat_kernel.sh"
+# A ce niveau le serveur n'a pas encore son nom définitif, donc il faut
+# ajouter le flag : -skip_test_infra
+exec_cmd "~/plescripts/grub2/enable_redhat_kernel.sh -skip_test_infra"
 LN
 
 line_separator
@@ -138,7 +140,7 @@ then
 	LN
 fi
 
-exec_cmd ~plescripts/journald/enable_persistent_storage_for_syslog.sh
+exec_cmd ~/plescripts/journald/enable_persistent_storage_for_syslog.sh
 
 exec_cmd ~/plescripts/shell/set_plymouth_them
 LN
