@@ -127,23 +127,25 @@ then
 	fi
 fi
 
-# RAC 12.2 obligatoire sinon problème de connections.
-# Il faut stopper la base avant de supprimer le Wallet, sinon l'arrêt dure 15 mn.
-exec_cmd ~/plescripts/db/stop_db.sh
-LN
-
 if [ -d $wallet_path ]
 then
 	line_separator
 	info "Drop wallet."
+	LN
+
+	# RAC 12.2 obligatoire sinon problème de connections.
+	# Il faut stopper la base avant de supprimer le Wallet, sinon l'arrêt dure 15 mn.
+	exec_cmd ~/plescripts/db/stop_db.sh
+	LN
+
 	exec_cmd ~/plescripts/db/wallet/delete_all_credentials.sh
 	exec_cmd ~/plescripts/db/wallet/drop_wallet.sh
 	LN
-fi
 
-# dbca ne fonctionne que si la base est ouverte.
-exec_cmd ~/plescripts/db/start_db.sh
-LN
+	# dbca ne fonctionne que si la base est ouverte.
+	exec_cmd ~/plescripts/db/start_db.sh
+	LN
+fi
 
 if [ $crs_used == yes ]
 then
