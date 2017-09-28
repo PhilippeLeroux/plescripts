@@ -107,6 +107,7 @@ function sync_repo
 	if [ ! -d $infra_olinux_repository_path/$repo_name ]
 	then
 		exec_cmd mkdir -p $infra_olinux_repository_path/$repo_name
+		LN
 	fi
 	exec_cmd -c reposync	--newest-only									\
 							--download_path=$infra_olinux_repository_path	\
@@ -164,6 +165,10 @@ then #	$use_tar contient le backup d'un dépôt OL7.
 	exec_cmd "gzip -dc \"$use_tar\" | tar -C \"$root_dir\" -xf -"
 	LN
 else
+	info "Open internet"
+	exec_cmd ip link set $if_net_name up
+	LN
+
 	[ $sync_repo_latest == yes ] && sync_repo ol7_latest || true
 
 	case $release in
@@ -175,6 +180,10 @@ else
 			sync_repo ol7_UEKR4
 			;;
 	esac
+
+	info "Close internet"
+	exec_cmd ip link set $if_net_name down
+	LN
 fi
 
 nfs_export_repo
@@ -190,17 +199,15 @@ line_separator
 if rpm_update_available
 then
 	info "To update $(hostname -s ) :"
-	info "$ yum update"
-	info "$ ~/plescripts/grub2/enable_redhat_kernel.sh"
-	info "$ reboot"
+	info "$ ~/plescripts/yum/update_infra_server.sh"
 	LN
 
 	info "To update $master_hostname, from $client_hostname execute :"
-	info "$ ~/plescripts/grub2/yum/update_master.sh"
+	info "$ ~/plescripts/yum/update_master.sh"
 	LN
 
 	info "To update bdd server, execute from the bdd server :"
-	info " * ~/plescripts/grub2/yum/update_db_os.sh"
+	info " * ~/plescripts/yum/update_db_os.sh"
 	LN
 else
 	info "No update available."
