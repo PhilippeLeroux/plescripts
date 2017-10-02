@@ -138,6 +138,10 @@ fi
 info	"OS free memory    : $(fmt_bytesU_2_better $os_free_memory)"
 info	"shm total         : $(fmt_bytesU_2_better $shm_total)"
 info	"shm available     : $(fmt_bytesU_2_better $shm_available)"
+if [ x"$asm_memory_target" != x ]
+then
+	info	"asm_memory_target : $(fmt_bytesU_2_better $asm_memory_target)"
+fi
 info -n	"memory_max_target : $(fmt_bytesU_2_better $cur_memory_target)"
 info -f	", maximum : $(fmt_bytesU_2_better $max_memory_target) ($(fmt_number $(to_mb ${max_memory_target}b))Mb)"
 LN
