@@ -254,14 +254,6 @@ function mount_install_directory
 	LN
 }
 
-# $1 server
-function check_oracle_size
-{
-	typeset -r server=$1
-
-	exec_cmd "ssh oracle@$server '. .bash_profile && plescripts/database_servers/check_bin_oracle_size.sh'"
-}
-
 function exec_relink
 {
 	line_separator
@@ -271,6 +263,19 @@ function exec_relink
 		exec_cmd "ssh -t oracle@${node} '. .bash_profile && plescripts/database_servers/relink_orcl.sh'"
 		LN
 	done
+}
+
+# $1 server
+function check_oracle_size
+{
+	if grep -qE "Error in invoking target 'irman ioracle'" $PLELIB_LOG_FILE
+	then # Test non testé.
+		warning "Link error apply workaround."
+		exec_relink
+	fi
+
+	typeset -r server=$1
+	exec_cmd "ssh oracle@$server '. .bash_profile && plescripts/database_servers/check_bin_oracle_size.sh'"
 }
 
 function exec_attachHome

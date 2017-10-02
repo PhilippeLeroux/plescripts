@@ -809,6 +809,7 @@ create_stats_services
 
 exec_cmd reboot_vm $server_name
 LN
+
 loop_wait_server $server_name
 LN
 

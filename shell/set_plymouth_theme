@@ -8,13 +8,26 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
-"Usage : $ME ...."
+"Usage : $ME
+	-theme=name
+
+Execute plymouth-set-default-theme --list, to print names
+
+Note : ce script ne semble pas fonctionner :(
+"
+
+typeset	theme=undef
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-theme=*)
+			theme=${1##*=}
 			shift
 			;;
 
@@ -33,7 +46,9 @@ do
 	esac
 done
 
-if [ $plymouth_theme != default ]
-then
-	exec_cmd plymouth-set-default-theme $plymouth_theme --rebuild-initrd
-fi
+must_be_user root
+
+exit_if_param_undef theme "$str_usage"
+
+exec_cmd plymouth-set-default-theme $theme --rebuild-initrd
+LN
