@@ -6,13 +6,14 @@ dans les conditions proches de ce que l'on peut trouver en entreprise.
 
 Le serveur central se nomme K2 et a en charge :
 - la gestion du DNS via bind.
-- la gestion du SAN via target (optionnel, le stockage peut être fait à 100% sur
-VirtualBox), les disques sont exportés sur le réseau via le protocole iSCSI.
-- la GATEWAY qui centralise l'accès à internet des serveurs, par défaut aucun
+- la gestion du SAN via targetcli (optionnel, le stockage peut être fait à 100% sur
+Virtual Box), les disques sont exportés sur le réseau via le protocole iSCSI.
+- la gateway qui centralise l'accès à internet des serveurs, par défaut aucun
 serveur de base de données ne peut accéder à internet. Le firewall et SELinux sont
 activés sur ce serveur.
 - la gestion du dépôt logiciel Oracle, pour la mise à jour des serveurs de base de données.
-- de synchroniser l'horloge des serveurs de base de données.
+- de synchroniser l'horloge des serveurs de base de données, si le PC exécutant
+Virtual Box n'a pas de serveur NTP.
 
 Type de serveurs de base de données pouvant être créé :
 - Base de données sur un serveur standalone (sur ASM ou filesystem).
@@ -23,7 +24,7 @@ Versions logiciels :
 - VirtualBox version minimum 5.1
 - Oracle Linux 7.4 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
 - Oracle 12cR1 base SINGLE et RAC.
-- Oracle 12cR2 base SINGLE EE et RAC EE ou SE2.
+- Oracle 12cR2 base SINGLE et RAC EE ou SE2.
 
 La création des serveurs de base de données est 100% automatisée, il n'y a pas
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
