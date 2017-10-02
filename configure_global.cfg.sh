@@ -280,9 +280,10 @@ function network_interface
 
 function sync_time_source
 {
-	info "Sync time source for server $infra_hostname"
 	master_time_server_n=$(hostname -s)
-	ask_for_variable master_time_server_n "Default the virtual-host $master_time_server_n, enter internet for internet."
+	info "Sync time source for VMs."
+	info "if $master_time_server_n do not have a ntp server, choose internet."
+	ask_for_variable master_time_server_n "Default $master_time_server_n, enter internet for internet."
 	LN
 
 	case "$master_time_server_n" in
