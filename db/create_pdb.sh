@@ -110,8 +110,6 @@ do
 	esac
 done
 
-[ $log == yes ] && ple_enable_log -params $PARAMS || true
-
 must_be_user oracle
 
 exit_if_param_undef db	"$str_usage"
@@ -133,26 +131,28 @@ exit_if_database_not_exists $db
 
 exit_if_ORACLE_SID_not_defined
 
+[ $log == yes ] && ple_enable_log -params $PARAMS || true
+
 function sql_lspdbs
 {
 typeset query=\
 "select
-    i.instance_name
-,   case when c.name = upper( '$pdb' ) then '*'||c.name||'*' else c.name end name
-,   c.open_mode
+	i.instance_name
+,	case when c.name = upper( '$pdb' ) then '*'||c.name||'*' else c.name end name
+,	c.open_mode
 ,	round( c.total_size / 1024 / 1024, 0 ) \"Size (Mb)\"
 ,	c.recovery_status
 ,	nvl(pss.state,'NOT SAVED') \"State\"
 from
-    gv\$containers c
-    inner join gv\$instance i
-        on  c.inst_id = i.inst_id
+	gv\$containers c
+	inner join gv\$instance i
+		on  c.inst_id = i.inst_id
 	left join dba_pdb_saved_states pss
 		on	c.con_uid = pss.con_uid
 		and	c.guid = pss.guid
 order by
-    c.name
-,   i.instance_name;"
+	c.name
+,	i.instance_name;"
 
 	echo "set lines 150"
 	echo "col instance_name	for	a10		head \"Instance\""
@@ -342,6 +342,41 @@ function open_pdb_and_save_state
 	set_sql_cmd "alter pluggable database $pdb_name save state;"
 }
 
+function stby_create_temporary_file
+{
+	function add_temp_tbs_to
+	{
+		typeset _pdb=$1
+		set_sql_cmd "alter pluggable database $_pdb open read only instances=all;"
+		set_sql_cmd "whenever sqlerror exit 1;"
+		set_sql_cmd "alter session set container=$_pdb;"
+		set_sql_cmd "alter tablespace temp add tempfile;"
+	}
+
+	wait_if_high_load_average
+
+	line_separator
+	info "12c : temporary tablespace not created on standby."
+	# - Parfois la syncho Dataguard n'est pas terminée et dans ce cas l'ouverture
+	#   du PDB échoura.
+	# - Parfois le PDB n'est pas visible sur la standby, il un stop & go pour
+	#   que le PDB devienne visible : bug ?
+	timing 20 "Waiting sync"
+	for stby_name in ${physical_list[*]}
+	do
+		typeset conn_string="sys/$oracle_password@$stby_name as sysdba"
+		sqlplus_cmd_with $conn_string "$(add_temp_tbs_to $pdb)"
+		ret=$?
+		LN
+		if [ $ret -ne 0 ]
+		then
+			error "Standby error : slow synchronization ?"
+			LN
+			exit 1
+		fi
+	done
+}
+
 [ $is_seed == yes ] && wallet=no || true
 
 typeset	-r dataguard=$(dataguard_config_available)
@@ -407,25 +442,7 @@ LN
 
 if [[ $dataguard == yes && ${#physical_list[*]} -ne 0 ]]
 then
-	function add_temp_tbs_to
-	{
-		typeset _pdb=$1
-		set_sql_cmd "alter pluggable database $_pdb open read only instances=all;"
-		set_sql_cmd "whenever sqlerror exit 0;"
-		set_sql_cmd "alter session set container=$_pdb;"
-		set_sql_cmd "alter tablespace temp add tempfile;"
-	}
-
-	wait_if_high_load_average
-
-	line_separator
-	info "12c : temporary tablespace not created on standby."
-	for stby_name in ${physical_list[*]}
-	do
-		typeset conn_string="sys/$oracle_password@$stby_name as sysdba"
-		sqlplus_cmd_with $conn_string "$(add_temp_tbs_to $pdb)"
-		LN
-	done
+	stby_create_temporary_file
 fi
 
 if [ $is_seed == yes ]
