@@ -14,7 +14,7 @@ typeset -r str_usage=\
 $ME
 	-db=name
 	-pdb=name
-	[-physical]  Physical Standby
+	[-physical]  Physical Standby : close all PDBs and remove all services & co 
 	[-force]     don't stop on error
 	[-nolog]
 "
@@ -99,22 +99,16 @@ function exit_if_db_not_physical_standby_database
 	fi
 }
 
-function drop_pdb_on_physical_standby_database
+function close_pdb_on_physical_standby_database
 {
 	line_separator
-	info "Drop pdb $pdb on physical standby database."
+	info "Close pdb $pdb on physical standby database."
 	LN
 
 	typeset -a physical_list
 	typeset -a stby_server_list
 
-	#	Load physical standby names.
-	typeset name
-	while read name
-	do
-		physical_list+=( $(to_upper $name) )
-	done<<<"$(dgmgrl sys/$oracle_password 'show configuration'	|\
-					grep "Physical standby" | awk '{ print $1 }')"
+	load_stby_database
 
 	if [ ${#physical_list[@]} -eq 0 ]
 	then
@@ -122,14 +116,6 @@ function drop_pdb_on_physical_standby_database
 		LN
 		return 0
 	fi
-
-	#	Load physical standby servers.
-	typeset stby_name
-	for stby_name in ${physical_list[*]}
-	do
-		stby_server_list+=($(tnsping $stby_name | tail -2 | head -1 |\
-			sed "s/.*(\s\{0,\}HOST\s\{0,\}=\s\{0,\}\(.*\)\s\{0,\})\s\{0,\}(\s\{0,\}PORT.*/\1/"))
-	done
 
 	for i in $( seq 0 $(( ${#physical_list[@]} - 1 )) )
 	do
@@ -140,7 +126,6 @@ function drop_pdb_on_physical_standby_database
 											-pdb=${pdb}						\
 											-nolog							\
 											-physical\"</dev/null"
-
 	done
 }
 
@@ -181,7 +166,7 @@ then
 	if [ $role == primary ]
 	then	# Physical standby must be deleted first
 		exit_if_db_not_primary_database
-		drop_pdb_on_physical_standby_database
+		close_pdb_on_physical_standby_database
 	else
 		exit_if_db_not_physical_standby_database
 	fi
@@ -222,6 +207,7 @@ wait_if_high_load_average
 line_separator
 if [[ $dataguard == no || $role == primary ]]
 then
+	line_separator
 	function sql_drop_pdb
 	{
 		set_sql_cmd "alter pluggable database $pdb close immediate instances=all;"
@@ -229,8 +215,9 @@ then
 	}
 
 	sqlplus_cmd "$(sql_drop_pdb)"
+	LN
 else # physical standby
 	sqlplus_cmd	\
-		"$(set_sql_cmd "alter pluggable database $pdb close immediate;")"
+		"$(set_sql_cmd "alter pluggable database $pdb close immediate instances=all;")"
+	LN
 fi
-LN
