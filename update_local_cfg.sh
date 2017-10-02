@@ -10,8 +10,9 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 
 add_usage "[-nocheck] variable=value"
+add_usage new_line
 add_usage "Ex to update variable VM_PATH with value ~/VBoxVMs :"
-add_usage "   $ ./update_local_cfg.sh VM_PATH=~/VBoxVMs"
+add_usage "$ ./update_local_cfg.sh VM_PATH=~/VBoxVMs"
 typeset -r parameters_usage="$(print_usage)"
 reset_usage
 
@@ -37,7 +38,7 @@ case "$ORACLE_RELEASE" in
 		add_usage "VM_NR_CPUS_FOR_SINGLE_DB_122=${VM_NR_CPUS_FOR_SINGLE_DB_122:-$vm_nr_cpus_for_single_db}"			"VM #cpu for SINGLE DB 12.2"
 		add_usage new_line
 		add_usage "VM_MEMORY_MB_FOR_RAC_DB_122=${VM_MEMORY_MB_FOR_RAC_DB_122:-$vm_memory_mb_for_rac_db}"			"VM memory for RAC DB 12.2"
-		add_usage "VM_NR_CPUS_FOR_RAC_DB_122=${VM_NR_CPUS_FOR_RAC_DB_122:-$vm_nr_cpus_for_rac_db_122}"				"VM #cpu for RAC DB 12.2"
+		add_usage "VM_NR_CPUS_FOR_RAC_DB_122=${VM_NR_CPUS_FOR_RAC_DB_122:-$vm_nr_cpus_for_rac_db}"				"VM #cpu for RAC DB 12.2"
 		add_usage new_line
 		add_usage "ORCL_YUM_REPOSITORY_RELEASE122=${ORCL_YUM_REPOSITORY_RELEASE122:-$orcl_yum_repository_release}"	"DVD_R2|*DVD_R3*|latest|R3|R4 Oracle Linux 7 repository"
 		;;
