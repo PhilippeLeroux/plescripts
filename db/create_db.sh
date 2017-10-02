@@ -13,13 +13,6 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
-#	12c ajustement :
-#	ORA-04031: unable to allocate 1015832 bytes of shared memory ("shared pool","unknown object","PDB Dynamic He","Alloc/Free SWRF Metric CHBs")
-#	Error while executing "/u01/app/oracle/12.1.0.2/dbhome_1/rdbms/admin/dbmssml.sql".   Refer to "/u01/app/oracle/cfgtoollogs/dbca/NEPTUNE/dbmssml0.log" for more details.   Error in Process: /u01/app/oracle/12.1.0.2/dbhome_1/perl/bin/perl
-#	DBCA_PROGRESS : DBCA Operation failed.
-#	Pour éviter ce message d'erreur utiliser le paramètre -shared_pool_size=256M
-#	Cf select name, round( bytes/1024/1024, 2) "Size Mb" from v$sgainfo order by 2 desc;
-
 if command_exists crsctl
 then
 	typeset	-r	crs_used=yes
@@ -81,7 +74,8 @@ typeset		policyManaged=no
 typeset		enable_flashback=yes
 typeset		backup=yes
 typeset		confirm="-confirm"
-typeset	-i	redoSize=64	# Unit Mb
+typeset	-i	redoSize=$db_redosize_mb
+typeset	-i	fast_start_mttr_target=$db_fast_start_mttr_target
 
 #	DEBUG :
 typeset		create_database=yes
@@ -98,14 +92,15 @@ else	# utiliser memory_target avec le crs fait planter la création de la base.
 fi
 # 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
 # minimum de 256M sinon la création échoue, sur un FS mettre 0 est OK
-add_usage "[-shared_pool_size=$shared_pool_size]"		"0 to disable this setting (6)"
-add_usage "[-cdb=$cdb]"									"yes|no (1)"
+add_usage "[-shared_pool_size=$shared_pool_size]"		"0 to disable. (6)"
+add_usage "[-cdb=$cdb]"									"yes|no"
 add_usage "[-redoSize=$redoSize]"						"Redo size Mb."
+add_usage "[-fast_start_mttr_target=$fast_start_mttr_target]" "0 to disable."
 add_usage "[-data=$data]"
 add_usage "[-fra=$fra]"
 add_usage "[-templateName=$templateName]"
 add_usage "[-db_type=SINGLE|RAC|RACONENODE]"			"(3)"
-add_usage "[-policyManaged]"							"Database Policy Managed (4)"
+add_usage "[-policyManaged]"							"Database Policy Managed. (4)"
 add_usage "[-serverPoolName=name]"						"pool name. (5)"
 add_usage "[-enable_flashback=$enable_flashback]"		"yes|no"
 add_usage "[-no_backup]"								"No backup."
@@ -124,8 +119,6 @@ $(print_usage)
 \t5 : Enable flag -policyManaged
 
 \t6 : 12.2.0.1 minimum 335M
-
-\t7 : RAC 12.2.0.1 minimum 2048M
 
 \tDebug flag :
 \t	-skip_db_create : skip create database.
@@ -162,6 +155,11 @@ do
 
 		-redoSize=*)
 			redoSize=${1##*=}
+			shift
+			;;
+
+		-fast_start_mttr_target=*)
+			fast_start_mttr_target=${1##*=}
 			shift
 			;;
 
@@ -337,6 +335,11 @@ function make_dbca_args
 
 	# Je sécurise le truc.
 	initParams="$initParams,db_block_checksum=full"
+
+	if [ $fast_start_mttr_target -ne 0 ]
+	then
+		initParams="$initParams,fast_start_mttr_target=$fast_start_mttr_target"
+	fi
 
 	if [ $memoryMaxTarget -ne 0 ]
 	then # Ne doit être définie que pour une base single : bug Oracle.
