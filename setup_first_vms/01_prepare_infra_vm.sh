@@ -59,8 +59,6 @@ exec_cmd nmcli connection add								\
 					type					ethernet
 LN
 
-[ $master_time_server == internet ] && autoconnect=yes || autoconnect=no
-
 # ipv4.ignore-auto-dns yes correspond à PEERDNS=NO : ne pas placer l'IP dans /etc/resolv.conf
 # ipv4.method auto correspond à BOOTPROTP=dhcp
 exec_cmd nmcli connection modify			$if_net_name	\
@@ -71,7 +69,7 @@ exec_cmd nmcli connection modify			$if_net_name	\
 					ipv4.dhcp-hostname		$infra_hostname	\
 					connection.zone			public			\
 					ethernet.mac-address	$if_hwaddr		\
-					connection.autoconnect	$autoconnect
+					connection.autoconnect	yes
 LN
 update_value UUID	$(uuidgen $if_net_name)	$if_net_file
 LN

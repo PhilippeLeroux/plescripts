@@ -71,7 +71,13 @@ then
 fi
 
 line_separator
-exec_cmd host $scan_name
+exec_cmd -c host $scan_name
+if [ $? -ne 0 ]
+then
+	info "La commande host ne fonctionne pas quand"
+	info "le DNS n'est pas en mode récursion."
+fi
 LN
 
 info "On RAC node : cluvfy comp scan"
+LN

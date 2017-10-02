@@ -49,7 +49,17 @@ exit_if_param_invalid role "master infra" "$str_usage"
 typeset -r chrony_conf=/etc/chrony.conf
 exit_if_file_not_exists $chrony_conf
 
-[ $role == master ] && time_server=$infra_hostname || time_server=$master_time_server
+if [ $role == master ]
+then
+	if [ $master_time_server == internet ]
+	then
+		time_server=$infra_hostname
+	else
+		time_server=$master_time_server
+	fi
+else
+	time_server=$master_time_server
+fi
 
 typeset	backup=todo
 

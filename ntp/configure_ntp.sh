@@ -37,7 +37,12 @@ do
 	esac
 done
 
-typeset -r time_server=$infra_hostname
+if [ $master_time_server == internet ]
+then
+	typeset -r time_server=$infra_hostname
+else
+	typeset -r time_server=$master_time_server
+fi
 
 typeset -r ntp_conf=/etc/ntp.conf
 
@@ -56,12 +61,12 @@ function configure_and_start_ntpdate
 {
 	typeset -r ntpdate_conf=/etc/ntp/step-tickers
 
-	exec_cmd "echo '$infra_hostname' > $ntpdate_conf"
+	exec_cmd "echo '$time_server' > $ntpdate_conf"
 	LN
 
-	info "Sync $(hostname -s) with $infra_hostname"
-	exec_cmd "ntpdate $infra_hostname"
-	exec_cmd "ntpdate $infra_hostname"
+	info "Sync $(hostname -s) with $time_server"
+	exec_cmd "ntpdate $time_server"
+	exec_cmd "ntpdate $time_server"
 	LN
 
 	exec_cmd "systemctl enable ntpdate"

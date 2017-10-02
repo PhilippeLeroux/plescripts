@@ -165,10 +165,6 @@ then #	$use_tar contient le backup d'un dépôt OL7.
 	exec_cmd "gzip -dc \"$use_tar\" | tar -C \"$root_dir\" -xf -"
 	LN
 else
-	info "Open internet"
-	exec_cmd ip link set $if_net_name up
-	LN
-
 	[ $sync_repo_latest == yes ] && sync_repo ol7_latest || true
 
 	case $release in
@@ -180,10 +176,6 @@ else
 			sync_repo ol7_UEKR4
 			;;
 	esac
-
-	info "Close internet"
-	exec_cmd ip link set $if_net_name down
-	LN
 fi
 
 nfs_export_repo
