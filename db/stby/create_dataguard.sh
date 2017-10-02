@@ -1096,6 +1096,12 @@ fi
 
 [ $_configure_dataguard == yes ] && configure_dataguard || true
 
+line_separator
+info "Copy glogin.sql"
+exec_cmd -c "scp	$ORACLE_HOME/sqlplus/admin/glogin.sql	\
+					$standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
+LN
+
 if [ "$(read_flashback_value)" == YES ]
 then
 	line_separator
@@ -1105,11 +1111,6 @@ fi
 
 stby_enable_block_change_traking
 stby_backup
-
-info "Copy glogin.sql"
-exec_cmd -c "scp	$ORACLE_HOME/sqlplus/admin/glogin.sql	\
-					$standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
-LN
 
 timing 20 "Waiting database synchronisation"
 LN
