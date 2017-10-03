@@ -24,10 +24,10 @@ Debug flags :
 	   -skip_create_dg
 
 	Par défaut des hacks sont fait pour diminuer la consommation mémoire :
-		* Réduction de la mémoire ASM
-		* Arrêt de certains services.
-		* Suppression de tfa
-		* La base MGMTDB n'est pas crées.
+	    * Réduction de la mémoire ASM
+	    * Arrêt de certains services.
+	    * Suppression de tfa
+	    * La base MGMTDB n'est pas crées.
 	Le flag -no_hacks permet de ne pas mettre en œuvre ces hacks.
 	Le flag -force_MGMTDB force l'installation de la base en conservant les autres hacks.
 
@@ -620,8 +620,8 @@ then
 		do
 			# La synchronisation est forcée, depuis les maj récentes l'appairage
 			# ne se fait plus trop de resynchronisations.
-			exec_cmd -c "ssh -t root@${node}	\
-			   '~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=4'"
+			exec_cmd "ssh -t root@${node}	\
+			   '~/plescripts/ntp/test_synchro_ntp.sh -max_loops=4'"
 			LN
 		done
 	fi

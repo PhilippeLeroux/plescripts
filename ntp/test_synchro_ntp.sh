@@ -47,6 +47,13 @@ done
 typeset -r	hn=$(hostname -s)
 typeset	-i	wait_time=10
 
+LN
+line_separator
+info "If synchronization take a long time use Ctrl+C to stop it."
+info "From $client_hostname execute : ~/plescripts/virtualbox/restart_vboxdrv.sh"
+line_separator
+LN
+
 for (( iloop=0; iloop <= max_loops; ++iloop ))
 do
 	[ $iloop -ne 0 ] && timing $wait_time "Waiting ntp sync" || true

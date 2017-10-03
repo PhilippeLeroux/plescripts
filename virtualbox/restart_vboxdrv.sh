@@ -75,13 +75,34 @@ then
 fi
 
 line_separator
+exec_cmd "sudo systemctl stop vboxes"
 exec_cmd "sudo systemctl stop vboxdrv"
 LN
 
-timing 60
+# Certains process VBox ne sont pas stoppés, je les stop...
+for sig in 15 9
+do
+	timing 5
+	LN
+
+	while read pid term tt process
+	do
+		[ x"$pid" == x ] && continue || true
+
+		info "stop process $process pid = $pid"
+		exec_cmd -c "sudo kill -$sig $pid"
+		LN
+	done<<<"$(ps -e|grep [V]Box)"
+done
+
+exec_cmd -c "ps -ef|grep [V]Box"
+LN
+
+confirm_or_exit "Continue"
 LN
 
 exec_cmd "sudo systemctl start vboxdrv"
+exec_cmd "sudo systemctl start vboxes"
 LN
 
 timing 2

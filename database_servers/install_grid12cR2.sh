@@ -766,7 +766,7 @@ then
 		line_separator
 		for node in ${node_names[*]}
 		do
-			exec_cmd -c "ssh -t root@${node} '~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=100'"
+			exec_cmd "ssh -t root@${node} '~/plescripts/ntp/test_synchro_ntp.sh -max_loops=100'"
 			LN
 		done
 	fi

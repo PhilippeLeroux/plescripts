@@ -320,11 +320,8 @@ function start_oracle_installation
 		line_separator
 		for node in ${node_names[*]}
 		do
-			info "if sync is too long :"
-			info "    Ctrl+C and reboot $client_hostname..."
-			LN
-			exec_cmd -c "ssh -t root@${node}	\
-				'~/plescripts/database_servers/test_synchro_ntp.sh -max_loops=100'"
+			exec_cmd "ssh -t root@${node}	\
+				'~/plescripts/ntp/test_synchro_ntp.sh -max_loops=100'"
 			LN
 		done
 	fi
