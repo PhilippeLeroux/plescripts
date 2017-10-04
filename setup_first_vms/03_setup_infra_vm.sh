@@ -93,11 +93,11 @@ then
 	LN
 
 	line_separator
-	info "Create VG asm01 on first unused disk :"
-	exec_cmd ~/plescripts/san/create_vg.sh		\
-							-device=auto		\
-							-vg=asm01			\
-							-add_partition=no	\
+	info "Create VG $infra_vg_name_for_db_luns on first unused disk :"
+	exec_cmd ~/plescripts/san/create_vg.sh					\
+							-device=auto					\
+							-vg=$infra_vg_name_for_db_luns	\
+							-add_partition=no				\
 							-io_scheduler=cfq
 	LN
 

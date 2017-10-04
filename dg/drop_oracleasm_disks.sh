@@ -7,6 +7,12 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
+
+typeset		db=undef
+typeset	-i	nr_disk=-1
+typeset -i	count=1
+typeset	-r	vg_name=$infra_vg_name_for_db_luns
+
 typeset -r str_usage=\
 "Usage : $ME
 Supprime des disques d'oracleasm et du SAN.
@@ -14,13 +20,8 @@ Supprime des disques d'oracleasm et du SAN.
 	-db=name         : Identifiant de la base
 	-nr_disk=#       : N° du premier disque.
 	[-count=1]       : Nombre de disque à supprimer, par défaut 1.
-	[-vg_name=asm01] : Nom du VG contenant les LUNs sur $infra_hostname, par défaut asm01.
+	[-vg_name=$vg_name] : Nom du VG contenant les LUNs sur ${infra_hostname}.
 "
-
-typeset		db=undef
-typeset	-i	nr_disk=-1
-typeset -i	count=1
-typeset	-r	vg_name=asm01
 
 while [ $# -ne 0 ]
 do

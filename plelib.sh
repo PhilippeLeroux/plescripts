@@ -903,11 +903,12 @@ function exec_cmd
 
 typeset -a	ple_dyn_param_cmd
 typeset -i	ple_dyn_param_max_len=0
-#	7	correspond à la largeur de l'horodatage devant les commandes exécutées, exemple : '10h44 >'
+#	7	correspond à la largeur de l'horodatage devant les commandes exécutées,
+#		exemple : '10h44 >'
 #	4	les paramètres seront 'tabulés' de 4 espaces par rapport à la commande.
 typeset -ri	ple_param_margin=$((4+7))
 
-#*>	[-nvsr]	No Var Shell replacement
+#*>	[-nvsr]	No Var Shell Replacement
 #*> $@ parameter to add.
 function add_dynamic_cmd_param
 {

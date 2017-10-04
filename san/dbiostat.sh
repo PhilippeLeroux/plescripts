@@ -37,7 +37,7 @@ done
 
 exit_if_param_undef db	"$str_usage"
 
-typeset vg_asm=asm01
+typeset vg_asm=$infra_vg_name_for_db_luns
 
 typeset links_asm_path=/dev/$vg_asm
 

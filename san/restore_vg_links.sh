@@ -7,22 +7,23 @@ EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
+
+typeset vg_name=undef
+typeset	all=no
+
 typeset -r str_usage=\
 "Usage : $ME
 	-vg_name=name Nom du VG.
-	[-all]        Force la restauration de tout les liens du VG.
+	[-all]        Force la restauration de tous les liens du VG.
 
 Restaure les liens manquants, tous si -all est précisé.
 
-La restauration se base sur le fichier san/asm01.link et le dernier fichier de
-sauvegarde de target dans le répertoire san/targetcli_backup.
+La restauration se base sur le fichier san/\${vg_name}.link et le dernier fichier
+de sauvegarde de target dans le répertoire san/targetcli_backup.
 Ces fichiers sont créés par le script ayant en charge la création des LUNs et LVs.
 
 Si une LUN/LV a été créé manuellement, le script ne fonctionnera pas.
 "
-
-typeset vg_name=undef
-typeset	all=no
 
 while [ $# -ne 0 ]
 do
@@ -90,15 +91,15 @@ function status_link #prefix link
 function get_dm_device_for_lv
 {
 	typeset lv_name=$1
-	read perm ilink user group f1 f2 \
-		 month time link_name arrow \
-		source<<<"$( cat ~/plescripts/san/${vg_name}.link | grep $lv_name )"
+	read	perm ilink user group f1 f2 \
+			month time link_name arrow \
+			source<<<"$( cat ~/plescripts/san/${vg_name}.link | grep $lv_name )"
 	echo "/dev/${source##*/}"
 }
 
 function make_file_list_links
 {
-	lvs | grep -E "*asm01 .*\-a\-.*$" >$links_2_repair
+	lvs | grep -E "*${vg_name} .*\-a\-.*$" >$links_2_repair
 }
 
 #	Vérifie si les fichies nécessaires à la restaurations existes.

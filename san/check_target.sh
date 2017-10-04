@@ -9,12 +9,12 @@ typeset -r PARAMS="$*"
 
 function count_lv_errors
 {
-	lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$" | wc -l
+	lvs 2>/dev/null| grep -E "*${infra_vg_name_for_db_luns} .*\-a\-.*$" | wc -l
 }
 
 function show_lv_errors
 {
-	exec_cmd "lvs 2>/dev/null| grep -E \"*asm01 .*\-a\-.*$\""
+	exec_cmd "lvs 2>/dev/null| grep -E \"*${infra_vg_name_for_db_luns} .*\-a\-.*$\""
 }
 
 function cmd_restore_vg_link
@@ -59,8 +59,8 @@ function backstore_exists
 	targetcli ls backstores/block/$1 >/dev/null 2>&1
 }
 
-# Si le vg asm01 n'existe pas c'est que le serveur d'infra ne sert pas de SAN.
-vgs asm01 >/dev/null 2>&1
+# Si le vg n'existe pas c'est que le serveur d'infra ne sert pas de SAN.
+vgs $infra_vg_name_for_db_luns >/dev/null 2>&1
 [ $? -ne 0 ] && exit 0 || true
 
 ple_enable_log san_status.log -params $PARAMS
@@ -106,7 +106,7 @@ then
 			[ $? -eq 0 ] && ((++lv_corrected)) || true
 			LN
 		fi
-	done<<<"$(lvs 2>/dev/null| grep -E "*asm01 .*\-a\-.*$")"
+	done<<<"$(lvs 2>/dev/null| grep -E "*${infra_vg_name_for_db_luns} .*\-a\-.*$")"
 
 	info "LV corrected $lv_corrected"
 	if [ $lv_corrected -eq $lv_errors ]

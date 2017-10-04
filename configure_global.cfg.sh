@@ -222,21 +222,21 @@ function LUNs_storage
 
 	if [ "$common_user_name" != "$USER" ]
 	then # global.cfg n'a jamais été configuré.
-		san_disk_type=vdi
+		san_disk_n=vdi
 	elif [ -b $san_disk ]
 	then
-		san_disk_type=$san_disk
+		san_disk_n=$san_disk
 	else
-		san_disk_type=vdi
+		san_disk_n=vdi
 	fi
-	ask_for_variable san_disk_type	\
+	ask_for_variable san_disk_n	\
 		"Use virtual disk (enter vdi) or physical disk (enter full device name) : "
 	LN
 
-	if [ "$san_disk_type" != "vdi" ]
+	if [ "$san_disk_n" != "vdi" ]
 	then
-		info -n "Device $san_disk_type exists : "
-		if [ ! -b "$san_disk_type" ]
+		info -n "Device $san_disk_n exists : "
+		if [ ! -b "$san_disk_n" ]
 		then
 			((++count_errors))
 			info -f "[$KO]"
@@ -244,12 +244,12 @@ function LUNs_storage
 		else
 			info -f "[$OK]"
 			LN
-			warning "All data on $san_disk_type will be lost !"
+			warning "All data on $san_disk_n will be lost !"
 			confirm_or_exit "Continue"
 			LN
 
-			typeset -r device_group=$(ls -l "$san_disk" | cut -d\  -f4)
-			info "$san_disk in group : $device_group"
+			typeset -r device_group=$(ls -l "$san_disk_n" | cut -d\  -f4)
+			info "$san_disk_n in group : $device_group"
 			info -n "$USER member of group : $device_group "
 			if id | grep -q $device_group
 			then
@@ -356,7 +356,7 @@ add_to_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVE
 if [ "$disks_hosted_by" != "$disks_stored_on" ]
 then
 	update_value "DISKS_HOSTED_BY" "$DISKS_HOSTED_BY" ~/plescripts/local.cfg
-	update_value "SAN_DISK" "$san_disk_type" ~/plescripts/local.cfg
+	update_value "SAN_DISK" "$san_disk_n" ~/plescripts/local.cfg
 	LN
 fi
 

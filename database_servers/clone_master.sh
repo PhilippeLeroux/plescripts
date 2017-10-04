@@ -15,7 +15,7 @@ typeset		db=undef
 typeset -i	node=-1
 typeset		vmGroup
 typeset		update_os=no
-typeset		vg_name=asm01
+typeset		vg_name=$infra_vg_name_for_db_luns
 typeset		show_instructions=yes
 
 typeset		start_server_only=no

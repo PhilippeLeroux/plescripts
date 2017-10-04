@@ -9,12 +9,12 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
-typeset -r vg_name=asm01
+typeset -r vg_name=$infra_vg_name_for_db_luns
 
 typeset -r str_usage=\
 "Usage : 
 $ME
-	-vg_name=$vg_name
+	[-vg_name=$vg_name]
 
 Drop $vg_name and disable target.
 "
