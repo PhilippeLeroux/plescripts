@@ -621,7 +621,7 @@ then
 			# La synchronisation est forcée, depuis les maj récentes l'appairage
 			# ne se fait plus trop de resynchronisations.
 			exec_cmd "ssh -t root@${node}	\
-			   '~/plescripts/ntp/test_synchro_ntp.sh -max_loops=4'"
+			   '~/plescripts/ntp/test_synchro_ntp.sh -max_loops=100'"
 			LN
 		done
 	fi
