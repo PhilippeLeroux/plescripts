@@ -104,7 +104,4 @@ exec_cmd ~/plescripts/ntp/configure_chrony.sh -role=master
 
 exec_cmd ~/plescripts/gadgets/customize_logon.sh -name=$master_hostname
 
-line_separator
-#	N'a pas d'effet si le kernel est mis à jour.
-exec_cmd ~/plescripts/shell/set_plymouth_them
 LN

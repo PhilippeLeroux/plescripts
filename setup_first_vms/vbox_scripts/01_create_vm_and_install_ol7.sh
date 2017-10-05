@@ -123,6 +123,9 @@ line_separator
 #		5.1.8 : lors du clonage l'attribut 'taille fixe' est perdu
 #	Régression ??
 #	Je supprime le paramètre -fixed_size et passe la taille du disque de 16 à 24
+#
+#	Le fichier kickstart effectue un partitionnement manuel, si la taille du
+#	disque est modifiée if faut adapter master-ks.cfg
 info "Create and attach OS disk :"
 exec_cmd "$vm_scripts_path/add_disk.sh						\
 				-vm_name=$master_hostname					\

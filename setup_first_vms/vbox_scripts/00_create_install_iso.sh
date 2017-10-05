@@ -251,7 +251,7 @@ then # Au moins un paramètre a été détecté, il faut confirmer.
 	info "Locale    = $locale"
 	info "Time zone = $timezone"
 	LN
-	confirm_or_exit "Loaded settings from your configuration are correct :"
+	confirm_or_exit "Configuration correct :"
 fi
 
 line_separator
