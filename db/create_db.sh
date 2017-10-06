@@ -708,7 +708,7 @@ if [ $backup == yes ]
 then
 	line_separator
 	info "Backup database"
-	exec_cmd "~/plescripts/db/image_copy_backup.sh"
+	exec_cmd -c "~/plescripts/db/image_copy_backup.sh"
 	LN
 fi
 

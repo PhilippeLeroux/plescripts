@@ -13,7 +13,7 @@ typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name       Identifiant de la base
-	[-keep_tfa]    RAC ne pas supprimer tfa
+	[-keep_tfa]    RAC ne pas désactiver tfa
 
 Debug flags :
 	Pour passer certaine phases de l'installation :
@@ -29,7 +29,6 @@ Debug flags :
 	    * Suppression de tfa
 	    * La base MGMTDB n'est pas crées.
 	Le flag -no_hacks permet de ne pas mettre en œuvre ces hacks.
-	Le flag -force_MGMTDB force l'installation de la base en conservant les autres hacks.
 
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
 "
@@ -43,7 +42,6 @@ typeset	skip_root_scripts=no
 typeset	skip_configToolAllCommands=no
 typeset	skip_create_dg=no
 typeset	do_hacks=yes
-typeset force_MGMTDB=no
 
 typeset oracle_home_for_test=no
 
@@ -105,11 +103,6 @@ do
 			shift
 			;;
 
-		-force_MGMTDB)
-			force_MGMTDB=yes
-			shift
-			;;
-
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -155,6 +148,37 @@ function ssh_node0
 	typeset -r account=$1
 	shift
 	exec_cmd "ssh -t ${account}@${node_names[0]} \". .bash_profile; $@\""
+}
+
+# Premier paramète -c facultatif
+# $1 server name
+function test_ntp_synchro_on_server
+{
+	if [ "$1" == "-c" ]
+	then
+		typeset p="-c"
+		shift
+	else
+		typeset p=""
+	fi
+	exec_cmd $p "ssh -t root@$1 '~/plescripts/ntp/test_synchro_ntp.sh'"
+}
+
+function test_ntp_synchro_all_servers
+{
+	line_separator
+	for node in ${node_names[*]}
+	do
+		test_ntp_synchro_on_server -c $node
+		ret=$?
+		LN
+		if [ $ret -ne 0 ]
+		then
+			warning "After VBox reboot execute :"
+			info "./$ME -skip_extract_grid -skip_init_afd_disks"
+			LN
+		fi
+	done
 }
 
 # $1 inode
@@ -377,6 +401,9 @@ function run_post_install_root_scripts
 	do
 		typeset node_name=${node_names[inode]}
 
+		test_ntp_synchro_on_server $node_name
+		LN
+
 		run_post_install_root_scripts_on_node $((inode+1)) $node_name
 		typeset -i ret=$?
 		LN
@@ -396,6 +423,9 @@ function run_post_install_root_scripts
 
 			LN
 			warning "Workaround :"
+			LN
+
+			test_ntp_synchro_on_server $node_name
 			LN
 
 			run_post_install_root_scripts_on_node 0 ${node_names[0]}
@@ -425,15 +455,33 @@ function run_post_install_root_scripts
 	done
 }
 
-# Création de la base : -MGMTDB pour un RAC, je ne sais pas ce qu'il fait d'autre.
-# Est ce qu'il ne serait pas mieux d'exécuter le script puis détruire la base ?
+# Création de la base : -MGMTDB pour un RAC.
 function runConfigToolAllCommands
 {
 	line_separator
 	info "Run ConfigTool"
+	LN
+	test_ntp_synchro_on_server ${node_names[0]}
+	LN
 	exec_cmd "ssh -t grid@${node_names[0]}								\
 				\"LANG=C $ORACLE_HOME/cfgtoollogs/configToolAllCommands	\
 					RESPONSE_FILE=/home/grid/grid_${db}.properties\""
+
+	if [[ $max_nodes -gt 1 && $mgmtdb_create == yes && "$do_hacks" == yes && "$mgmtdb_autostart" == disable ]]
+	then
+		line_separator
+		info "Disable and stop database mgmtdb."
+		ssh_node0 grid srvctl disable mgmtlsnr
+		LN
+		ssh_node0 grid srvctl stop mgmtlsnr
+		LN
+		ssh_node0 grid srvctl disable mgmtdb
+		LN
+		ssh_node0 grid srvctl stop mgmtdb
+		LN
+		warning "Advice : database mgmtdb, decrease sga_target to $mgmtdb_sga_target"
+		LN
+	fi
 }
 
 # $1 nom du DG
@@ -513,14 +561,13 @@ function set_ASM_memory_target_low_and_restart_ASM
 	fi
 }
 
-function remove_tfa_on_all_nodes
+function disable_tfa
 {
 	line_separator
-	disclaimer
-	for (( i=0; i < max_nodes; ++i ))
+	info "Stop and disable TFA on nodes ${node_names[*]}"
+	for node_name in ${node_names[*]}
 	do
-		exec_cmd -c ssh -t root@${node_names[i]} \
-				". /root/.bash_profile \; tfactl uninstall"
+		exec_cmd "ssh -t root@$node_name \". .bash_profile; tfactl stop && tfactl disable\""
 		LN
 	done
 }
@@ -613,18 +660,7 @@ then
 	mount_install_directory
 	LN
 
-	if [ $max_nodes -ne 1 ]
-	then
-		line_separator
-		for node in ${node_names[*]}
-		do
-			# La synchronisation est forcée, depuis les maj récentes l'appairage
-			# ne se fait plus trop de resynchronisations.
-			exec_cmd "ssh -t root@${node}	\
-			   '~/plescripts/ntp/test_synchro_ntp.sh -max_loops=100'"
-			LN
-		done
-	fi
+	[ $max_nodes -gt 1 ] && test_ntp_synchro_all_servers || true
 
 	start_grid_installation
 	LN
@@ -632,20 +668,21 @@ fi
 
 [ $skip_root_scripts == no ] && run_post_install_root_scripts || true
 
+[[ $keep_tfa == no && $max_nodes -gt 1 ]] && disable_tfa || true
+
 if [ $skip_configToolAllCommands == no ]
 then
 	if [ $max_nodes -gt 1 ]
 	then	#	RAC
 		if [ $do_hacks == yes ]
 		then
-			[ $force_MGMTDB == yes ] && runConfigToolAllCommands && LN || true
-			[ $keep_tfa == no ] && remove_tfa_on_all_nodes || true
+			[ "$mgmtdb_create" == yes ] && runConfigToolAllCommands && LN || true
 			LN
 			stop_and_disable_unwanted_grid_ressources
 			LN
 			set_ASM_memory_target_low_and_restart_ASM
 			LN
-			[ $force_MGMTDB == no ] && info "La base -MGMTDB n'est pas créée." && LN || true
+			[ "$mgmtdb_create" == no ] && info "La base -MGMTDB n'est pas créée." && LN || true
 		else
 			runConfigToolAllCommands
 		fi

@@ -22,6 +22,7 @@ Debug flags :
 	-skip_reponse_file     work only with -skip_init_afd_disks
 	-skip_install_grid
 	-skip_post_install     configTools and hacks.
+		-skip_configTools  skip configTools, apply hacks.
 	-skip_create_dg
 
 	Par défaut des hacks sont fait pour diminuer la consommation mémoire :
@@ -30,8 +31,6 @@ Debug flags :
 		* Suppression de tfa
 		* La base MGMTDB n'est pas crées.
 	Le flag -no_hacks permet de ne pas mettre en œuvre ces hacks.
-	Le flag -force_MGMTDB force l'installation de la base en conservant les autres hacks.
-	Note l'installation de GIMR (MGMTDB) échoue systématiquement.
 
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
 "
@@ -43,11 +42,11 @@ typeset	init_afd_disks=yes
 typeset	create_reponse_file=yes
 typeset	install_grid=yes
 typeset	post_install=yes
+typeset configTools_install=yes
 typeset create_dg=yes
 typeset	reponse_file_only=no
 typeset	oracle_home_for_test=no
 typeset	do_hacks=yes
-typeset force_MGMTDB=no
 
 # L'option n'existe pas encore.
 typeset oracle_home_for_test=no
@@ -105,6 +104,11 @@ do
 			shift
 			;;
 
+		-skip_configTools)
+			configTools_install=no
+			shift
+			;;
+
 		-skip_create_dg)
 			create_dg=no
 			shift
@@ -112,11 +116,6 @@ do
 
 		-no_hacks)
 			do_hacks=no
-			shift
-			;;
-
-		-force_MGMTDB)
-			force_MGMTDB=yes
 			shift
 			;;
 
@@ -164,6 +163,37 @@ function empty_swap
 	do
 		exec_cmd "ssh root@${node} 'swapoff -a && swapon -a'"
 		LN
+	done
+}
+
+# Premier paramète -c facultatif
+# $1 server name
+function test_ntp_synchro_on_server
+{
+	if [ "$1" == "-c" ]
+	then
+		typeset p="-c"
+		shift
+	else
+		typeset p=""
+	fi
+	exec_cmd $p "ssh -t root@$1 '~/plescripts/ntp/test_synchro_ntp.sh'"
+}
+
+function test_ntp_synchro_all_servers
+{
+	line_separator
+	for node in ${node_names[*]}
+	do
+		test_ntp_synchro_on_server $node
+		ret=$?
+		LN
+		if [ $ret -ne 0 ]
+		then
+			warning "After VBox reboot execute :"
+			info "./$ME -skip_extract_grid -skip_init_afd_disks"
+			LN
+		fi
 	done
 }
 
@@ -322,7 +352,7 @@ function start_grid_installation
 	LN
 
 	line_separator
-	info "Start grid installation (${extract_grid_mn[idx_mn]})."
+	info "Start grid installation (${grid_installion_mn[idx_times]})."
 	add_dynamic_cmd_param "LANG=C ./gridSetup.sh"
 	add_dynamic_cmd_param "      -waitforcompletion"
 	# Ne pas utiler $rsp_file
@@ -352,7 +382,8 @@ function start_grid_installation
 	check_oracle_size ${node_names[0]}
 }
 
-function run_post_install_root_scripts_on_node	# $1 node# $2 server_name
+# $1 node# $2 server_name
+function run_post_install_root_scripts_on_node
 {
 	typeset	-ri	nr_node=$1
 	typeset	-r	server_name=$2
@@ -361,9 +392,9 @@ function run_post_install_root_scripts_on_node	# $1 node# $2 server_name
 	info -n "Run post install scripts on node #${nr_node} $server_name"
 	if [ $nr_node -eq 1 ]
 	then
-		info -f " ${post_install_root_script_node1_mn[idx_mn]}"
+		info -f " ${post_install_root_script_node1_mn[idx_times]}"
 	else
-		info -f " ${post_install_root_script_other_node_mn[idx_mn]}"
+		info -f " ${post_install_root_script_other_node_mn[idx_times]}"
 	fi
 	LN
 
@@ -384,6 +415,9 @@ function run_post_install_root_scripts
 	for (( inode=0; inode < max_nodes; ++inode ))
 	do
 		typeset node_name=${node_names[inode]}
+
+		test_ntp_synchro_on_server $node_name
+		LN
 
 		run_post_install_root_scripts_on_node $((inode+1)) $node_name
 		typeset -i ret=$?
@@ -427,7 +461,7 @@ function run_post_install_root_scripts
 		if [[ $keep_tfa == no && $max_nodes -gt 1 ]]
 		then
 			info "Uninstall TFA on node $node_name"
-			exec_cmd ssh "root@${node_name} '. .bash_profile; tfactl uninstall'"
+			exec_cmd "ssh -t root@$node_name \". .bash_profile; tfactl stop && tfactl disable\""
 			LN
 		fi
 
@@ -442,7 +476,9 @@ function run_post_install_root_scripts
 function executeConfigTools
 {
 	line_separator
-	info "Execute config tools (${configtools[idx_mn]})"
+	test_ntp_synchro_on_server ${node_names[0]}
+	LN
+	info "Execute config tools (${configtools[idx_times]})"
 	add_dynamic_cmd_param "$ORACLE_HOME/gridSetup.sh"
 	add_dynamic_cmd_param "-executeConfigTools"
 	# Ne pas utiler $rsp_file
@@ -452,7 +488,8 @@ function executeConfigTools
 	LN
 }
 
-function create_dg # $1 nom du DG
+# $1 nom du DG
+function create_dg
 {
 	typeset -r	DG=$1
 
@@ -587,30 +624,54 @@ function rac_install_acfs_driver
 	done
 }
 
+# Ne fait rien si configTools_install == no
+function rac_executeConfigTools
+{
+	[ $configTools_install == no ] && return 0 || true
+
+	executeConfigTools
+
+	if [[ "$do_hacks" == yes && "$mgmtdb_autostart" == disable ]]
+	then
+		line_separator
+		info "Disable and stop database mgmtdb."
+		ssh_node0 grid srvctl disable mgmtlsnr
+		LN
+		ssh_node0 grid srvctl stop mgmtlsnr
+		LN
+		ssh_node0 grid srvctl disable mgmtdb
+		LN
+		# -force pour stopper ora.chad
+		ssh_node0 grid srvctl stop mgmtdb -force
+		LN
+		warning "Advice : database mgmtdb, decrease sga_target to $mgmtdb_sga_target"
+		LN
+	fi
+}
+
 function post_installation
 {
 	if [ $max_nodes -gt 1 ]
 	then	#	RAC
 		if [ $do_hacks == yes ]
 		then
-			rac_disable_diagsnap
-			[ $force_MGMTDB == yes ] && executeConfigTools && LN || true
 			stop_and_disable_unwanted_grid_ressources
 			LN
 			set_ASM_memory_target_low_and_restart_ASM
 			LN
-			if [ $force_MGMTDB == no ]
+			if [ "$mgmtdb_create" == yes ]
 			then
+				rac_executeConfigTools
+			else
 				info "La base -MGMTDB n'est pas créée."
 				LN
 			fi
 		else
-			executeConfigTools
+			rac_executeConfigTools
 		fi
 		rac_install_acfs_driver
 	else	#	SINGLE
-		executeConfigTools
-		LN
+		[ $configTools_install == yes ] && executeConfigTools || true
 
 		if [ $do_hacks == yes ]
 		then
@@ -673,15 +734,15 @@ do
 	load_node_cfg $inode
 done
 
-typeset -ra extract_grid_mn=( "~2mn", "~2mn" )
-typeset -ra grid_installion_mn=( "~3mn", "~12mn" )
-typeset -ra post_install_root_script_node1_mn=( "~3mn", "~22mn" )
-typeset -ra post_install_root_script_other_node_mn=( "~3mn", "~10mn" )
-typeset -ra configtools=( "~3mn", "~50mn" )
+typeset -ra extract_grid_mn=( "~2mn" "~2mn" )
+typeset -ra grid_installion_mn=( "~3mn" "~12mn" )
+typeset -ra post_install_root_script_node1_mn=( "~3mn" "~35mn" )
+typeset -ra post_install_root_script_other_node_mn=( "~3mn" "~15mn" )
+typeset -ra configtools=( "~3mn" "~50mn" )
 
 if [ $max_nodes -gt 1 ]
 then
-	typeset -ri	idx_mn=1
+	typeset -ri	idx_times=1
 	exit_if_file_not_exists $db_cfg_path/scanvips
 	typeset -r scan_name=$(cat $db_cfg_path/scanvips | cut -d: -f1)
 
@@ -689,7 +750,7 @@ then
 	info "==> clusterNodes  = $clusterNodes"
 	LN
 else
-	typeset -ri	idx_mn=0
+	typeset -ri	idx_times=0
 fi
 
 if [ $oracle_home_for_test == no ]
@@ -723,7 +784,7 @@ mount_install_directory
 if [ $extract_grid_image == yes ]
 then
 	line_separator
-	info "Extract Grid Infra image (${extract_grid_mn[idx_mn]})"
+	info "Extract Grid Infra image (${extract_grid_mn[idx_times]})"
 	ssh_node0 -c grid "test -f $ORACLE_HOME/gridSetup.sh"
 	if [ $? -eq 0 ]
 	then
@@ -761,19 +822,13 @@ fi
 
 if [ $install_grid == yes ]
 then
-	if [ $max_nodes -ne 1 ]
-	then
-		line_separator
-		for node in ${node_names[*]}
-		do
-			exec_cmd "ssh -t root@${node} '~/plescripts/ntp/test_synchro_ntp.sh -max_loops=100'"
-			LN
-		done
-	fi
+	[ $max_nodes -gt 1 ] && test_ntp_synchro_all_servers || true
 
 	start_grid_installation
 
 	run_post_install_root_scripts
+
+	rac_disable_diagsnap
 fi
 
 [ $post_install == yes ] && post_installation || true

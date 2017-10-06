@@ -2,11 +2,12 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/global.cfg
+[ $rac_forcesyncntp_max_offset_ms -eq 0 ] && exit 0 || true
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
-typeset -ri	max_offset_ms=1
+typeset -ri	max_offset_ms=$rac_forcesyncntp_max_offset_ms
 
 #	print abs( $1 ) to stdout
 function abs
@@ -55,7 +56,15 @@ typeset -i offset_ms=10#$(ntpq_read_offset_ms)
 [ ! -t 1 ] && exec >> /tmp/force_sync_ntp.$(date +%d) 2>&1 || true
 
 TT=$(date +%Hh%M)
+echo "uptime : $(uptime)"
 echo "$TT : $offset_ms ms < $max_offset_ms ms : $status"
+
+if [ "$rac_forcesyncntp_log_only" == "yes" ]
+then
+	echo "rac_forcesyncntp_log_only == yes : do nothing."
+	echo
+	exit 0
+fi
 
 typeset -r lockfile=/var/lock/force_sync_ntp.lock
 [[ -f $lockfile ]] && exit 0 || true

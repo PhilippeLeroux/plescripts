@@ -320,8 +320,7 @@ function start_oracle_installation
 		line_separator
 		for node in ${node_names[*]}
 		do
-			exec_cmd "ssh -t root@${node}	\
-				'~/plescripts/ntp/test_synchro_ntp.sh -max_loops=100'"
+			exec_cmd "ssh -t root@${node} '~/plescripts/ntp/test_synchro_ntp.sh'"
 			LN
 		done
 	fi
