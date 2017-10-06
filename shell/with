@@ -36,4 +36,11 @@ info "$type node."
 typeset -r server_name=$(printf "srv%s%02d" $db $node)
 
 wait_server ${server_name}
-[ $? -eq 0 ] && exec_cmd -ci ssh -Y $account@${server_name} || true
+if [ $? -eq 0 ]
+then
+	set_terminal_title "$account@${server_name}"
+	exec_cmd -ci ssh -Y $account@${server_name}
+	set_terminal_title default
+else
+	exit 1
+fi

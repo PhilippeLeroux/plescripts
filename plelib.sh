@@ -12,6 +12,17 @@ umask 0002
 typeset -ri	plelib_release=4
 typeset -r	plelib_banner=$(printf "plelib V%02d" $plelib_release)
 
+# $1 title or default
+function set_terminal_title
+{
+	if [ "$1" == "default" ]
+	then
+		echo -ne "\033]30;$term_default_title\007"
+	else
+		echo -ne "\033]30;$1\007"
+	fi
+}
+
 #*< Active les effets visuels couleurs et autres.
 function enable_markers
 {

@@ -76,6 +76,8 @@ typeset -r	server1=$cfg_server_name
 
 typeset 	inst1=$(ssh oracle@$server1 plescripts/db/get_active_instance.sh)
 
+set_terminal_title "ORCL LOGS"
+
 if [ $max_nodes -eq 2 ]
 then	#	RAC 2 nœuds.
 	cfg_load_node_info $db 2
@@ -179,3 +181,5 @@ else	#	Mono Instance.
 	alert1=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $(to_lower $inst1) $inst1 $inst1)
 	ssh oracle@${server1} ". .profile; tail -1000f $alert1"
 fi
+
+set_terminal_title default

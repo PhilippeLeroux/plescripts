@@ -56,6 +56,8 @@ typeset -r	max_nodes=$(cfg_max_nodes $db)
 cfg_load_node_info $db 1
 typeset -r	node1=$cfg_server_name
 
+set_terminal_title "GRID LOGS"
+
 if [ $max_nodes -eq 2 ]
 then	#	RAC 2 nœuds
 	cfg_load_node_info $db 2
@@ -83,3 +85,5 @@ else	#	Mono instance
 	split-window -v				\
 	"ssh -t root@${node1} '. .bash_profile; tail -1000f \$GRID_BASE/diag/asm/+asm/+ASM/trace/alert_+ASM.log'"
 fi
+
+set_terminal_title default
