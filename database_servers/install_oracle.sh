@@ -117,6 +117,17 @@ typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
 typeset		primary_db=none
 
+function empty_swap
+{
+	line_separator
+	info "Empty swap on nodes ${node_names[*]}"
+	for node in ${node_names[*]}
+	do
+		exec_cmd "ssh root@${node} 'swapoff -a && swapon -a'"
+		LN
+	done
+}
+
 # $1 inode
 function load_node_cfg
 {
@@ -558,6 +569,8 @@ exec_cmd "~/plescripts/database_servers/install_sample_schema.sh -db=$db"
 LN
 
 stats_tt stop oracle_installation
+
+empty_swap
 
 if [ $install_oracle == yes ]
 then

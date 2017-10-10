@@ -86,6 +86,5 @@ do
 	done
 	exec_cmd chown grid:asmadmin $device
 	exec_cmd $ORACLE_HOME/bin/asmcmd afd_label $oracle_label $device --init
-	exec_cmd $ORACLE_HOME/bin/asmcmd afd_lslbl $device
 	LN
 done<<<"$(get_unused_disks_without_partitions)"

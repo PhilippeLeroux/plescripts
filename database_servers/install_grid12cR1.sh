@@ -283,6 +283,7 @@ function create_property_file
 	(	echo "oracle.assistants.asm|S_ASMPASSWORD=$oracle_password"
 		echo "oracle.assistants.asm|S_ASMMONITORPASSWORD=$oracle_password"
 	)	>  $prop_file
+	LN
 }
 
 function copy_response_and_properties_files
@@ -292,6 +293,7 @@ function copy_response_and_properties_files
 	info "Properties file : $prop_file"
 	info "Copy files to ${node_names[0]}:/home/grid/"
 	exec_cmd "scp $rsp_file $prop_file grid@${node_names[0]}:/home/grid/"
+	LN
 }
 
 function mount_install_directory
@@ -299,6 +301,7 @@ function mount_install_directory
 	line_separator
 	info "Mount install directory :"
 	exec_cmd -c "ssh root@${node_names[0]} mount /mnt/oracle_install"
+	LN
 }
 
 # $1 server
@@ -334,6 +337,7 @@ function start_grid_installation
 	add_dynamic_cmd_param "      -waitforcompletion"
 	add_dynamic_cmd_param "      -responseFile /home/grid/grid_$db.rsp\""
 	exec_dynamic_cmd -c "ssh -t grid@${node_names[0]}"
+
 	if [[ $? -gt 250 || $? -eq 127 ]]
 	then
 		restore_swappiness
@@ -355,6 +359,7 @@ function start_grid_installation
 	restore_swappiness
 
 	check_oracle_size ${node_names[0]}
+	LN
 }
 
 # $1 node# $2 server_name
@@ -446,12 +451,6 @@ function run_post_install_root_scripts
 				exit 1
 			fi
 		fi
-
-		if [[ $max_nodes -gt 1 && $inode -eq 0 ]]
-		then
-			timing 10
-			LN
-		fi
 	done
 }
 
@@ -461,25 +460,29 @@ function runConfigToolAllCommands
 	line_separator
 	info "Run ConfigTool"
 	LN
-	test_ntp_synchro_on_server ${node_names[0]}
-	LN
-	exec_cmd "ssh -t grid@${node_names[0]}								\
+
+	test_ntp_synchro_all_servers
+
+	exec_cmd -c "ssh -t grid@${node_names[0]}							\
 				\"LANG=C $ORACLE_HOME/cfgtoollogs/configToolAllCommands	\
 					RESPONSE_FILE=/home/grid/grid_${db}.properties\""
+	LN
 
 	if [[ $max_nodes -gt 1 && $mgmtdb_create == yes && "$do_hacks" == yes && "$mgmtdb_autostart" == disable ]]
 	then
 		line_separator
 		info "Disable and stop database mgmtdb."
-		ssh_node0 grid srvctl disable mgmtlsnr
+		for node in ${node_names[*]}
+		do # Il faut absolument désactiver sur tous les nœuds.
+			ssh_node0 root srvctl disable mgmtlsnr -node $node
+			LN
+			ssh_node0 root srvctl disable mgmtdb -node $node
+			LN
+		done
+
+		ssh_node0 grid srvctl stop mgmtdb -force
 		LN
-		ssh_node0 grid srvctl stop mgmtlsnr
-		LN
-		ssh_node0 grid srvctl disable mgmtdb
-		LN
-		ssh_node0 grid srvctl stop mgmtdb
-		LN
-		warning "Advice : database mgmtdb, decrease sga_target to $mgmtdb_sga_target"
+		ssh_node0 grid srvctl stop mgmtlsnr -force
 		LN
 	fi
 }
@@ -525,6 +528,7 @@ function stop_and_disable_unwanted_grid_ressources
 	ssh_node0 root srvctl disable cvu
 	ssh_node0 root srvctl stop oc4j
 	ssh_node0 root srvctl disable oc4j
+	LN
 }
 
 function set_ASM_memory_target_low_and_restart_ASM
@@ -546,6 +550,7 @@ function set_ASM_memory_target_low_and_restart_ASM
 			LN
 
 			ssh_node0 root crsctl start cluster -all
+			LN
 		else	#	SINGLE
 			ssh_node0 root srvctl stop asm -f
 			LN
@@ -554,10 +559,11 @@ function set_ASM_memory_target_low_and_restart_ASM
 			LN
 
 			ssh_node0 root srvctl start asm
+			LN
 		fi
-		LN
 	else
 		info "do nothing : hack_asm_memory=0"
+		LN
 	fi
 }
 
@@ -601,6 +607,38 @@ function setup_ohasd_service
 	done
 }
 
+function post_installation
+{
+	if [ $skip_configToolAllCommands == no ]
+	then
+		if [ $max_nodes -gt 1 ]
+		then	#	RAC
+			if [ $do_hacks == yes ]
+			then
+				[ "$mgmtdb_create" == yes ] && runConfigToolAllCommands || true
+
+				stop_and_disable_unwanted_grid_ressources
+
+				set_ASM_memory_target_low_and_restart_ASM
+
+				[ "$mgmtdb_create" == no ] && info "La base -MGMTDB n'est pas créée." && LN || true
+			else
+				runConfigToolAllCommands
+			fi
+		else	#	SINGLE
+			runConfigToolAllCommands
+
+			if [ $do_hacks == yes ]
+			then
+				set_ASM_memory_target_low_and_restart_ASM
+				#Pour être certain qu'ASM est démarré.
+				timing 30 "Wait grid"
+				LN
+			fi
+		fi
+	fi
+}
+
 #	======================================================================
 #	MAIN
 #	======================================================================
@@ -641,9 +679,8 @@ LN
 if [ $skip_grid_install == no ]
 then
 	create_response_file $db_cfg_path/disks
-	LN
+
 	create_property_file
-	LN
 fi
 
 [ $rsp_file_only == yes ] && exit 0	# Ne fait pas l'installation.
@@ -656,49 +693,19 @@ stats_tt start grid_installation
 if [ $skip_grid_install == no ]
 then
 	copy_response_and_properties_files
-	LN
+
 	mount_install_directory
-	LN
 
 	[ $max_nodes -gt 1 ] && test_ntp_synchro_all_servers || true
 
 	start_grid_installation
-	LN
 fi
 
 [ $skip_root_scripts == no ] && run_post_install_root_scripts || true
 
 [[ $keep_tfa == no && $max_nodes -gt 1 ]] && disable_tfa || true
 
-if [ $skip_configToolAllCommands == no ]
-then
-	if [ $max_nodes -gt 1 ]
-	then	#	RAC
-		if [ $do_hacks == yes ]
-		then
-			[ "$mgmtdb_create" == yes ] && runConfigToolAllCommands && LN || true
-			LN
-			stop_and_disable_unwanted_grid_ressources
-			LN
-			set_ASM_memory_target_low_and_restart_ASM
-			LN
-			[ "$mgmtdb_create" == no ] && info "La base -MGMTDB n'est pas créée." && LN || true
-		else
-			runConfigToolAllCommands
-		fi
-	else	#	SINGLE
-		runConfigToolAllCommands
-		LN
-
-		if [ $do_hacks == yes ]
-		then
-			set_ASM_memory_target_low_and_restart_ASM
-			#Pour être certain qu'ASM est démarré.
-			timing 30 "Wait grid"
-			LN
-		fi
-	fi
-fi
+post_installation
 
 [ $skip_create_dg == no ] && create_all_dgs || true
 

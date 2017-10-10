@@ -74,25 +74,48 @@ then
 	LN
 fi
 
+typeset	-i	nr_process_killed=0
+
+line_separator
+info "Arrêt de Oracle VirtualBox manager"
+for sig in 1 15 9
+do
+	while read user pid ppid c stime tt time cmd
+	do
+		[ x"$pid" == x ] && continue || true
+
+		((++nr_process_killed))
+		info "stop process $cmd pid = $pid"
+		exec_cmd -c "sudo kill -$sig $pid"
+		LN
+	done<<<"$(ps -ef|grep -E "/usr/lib/.*[V]irtual.*")"
+
+	[ $nr_process_killed -ne 0 ] && timing 2 || true
+	LN
+done
+
 line_separator
 exec_cmd "sudo systemctl stop vboxes"
 exec_cmd "sudo systemctl stop vboxdrv"
 LN
 
-# Certains process VBox ne sont pas stoppés, je les stop...
+line_separator
+info "Vérifie que plus aucun process n'est actif."
+nr_process_killed=0
 for sig in 15 9
 do
-	timing 5
-	LN
-
 	while read pid term tt process
 	do
 		[ x"$pid" == x ] && continue || true
 
+		((++nr_process_killed))
 		info "stop process $process pid = $pid"
 		exec_cmd -c "sudo kill -$sig $pid"
 		LN
 	done<<<"$(ps -e|grep [V]Box)"
+
+	[ $nr_process_killed -ne 0 ] && timing 5 || true
+	LN
 done
 
 exec_cmd -c "ps -ef|grep [V]Box"

@@ -225,7 +225,8 @@ function load_node_cfg
 
 # $1 disks file conf
 # $2 dg name
-function make_disk_list
+# print to stdout all disks free
+function get_free_disks
 {
 	typeset -r disk_cfg_file="$1"
 
@@ -270,7 +271,7 @@ function create_response_file
 		update_value oracle.install.crs.config.networkInterfaceList empty			$rsp_file
 		update_value oracle.install.crs.config.storageOption		empty			$rsp_file
 		update_value oracle.install.asm.storageOption				ASM				$rsp_file
-		typeset disk_list=$(make_disk_list $disk_cfg_file DATA)
+		typeset disk_list=$(get_free_disks $disk_cfg_file DATA)
 		update_value oracle.install.asm.diskGroup.disks				"$disk_list"	$rsp_file
 		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
 		update_value oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
@@ -290,7 +291,7 @@ function create_response_file
 		typeset nil=$if_pub_name:${pub_network}:1,$if_rac_name:${rac_network}:5,$if_iscsi_name:${iscsi_network}:3
 		update_value oracle.install.crs.config.networkInterfaceList $nil				$rsp_file
 		update_value oracle.install.crs.config.storageOption	empty					$rsp_file
-		typeset disk_list=$(make_disk_list $disk_cfg_file CRS)
+		typeset disk_list=$(get_free_disks $disk_cfg_file CRS)
 		update_value oracle.install.asm.diskGroup.disks			"$disk_list"			$rsp_file
 		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
 		update_value oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
@@ -300,7 +301,7 @@ function create_response_file
 		update_value oracle.install.asm.configureGIMRDataDG		true					$rsp_file
 		update_value oracle.install.asm.gimrDG.name				GIMR					$rsp_file
 		update_value oracle.install.asm.gimrDG.redundancy		EXTERNAL				$rsp_file
-		typeset disk_list=$(make_disk_list $disk_cfg_file GIMR)
+		typeset disk_list=$(get_free_disks $disk_cfg_file GIMR)
 		update_value oracle.install.asm.gimrDG.disks			$disk_list				$rsp_file
 		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
 		update_value oracle.install.asm.gimrDG.disksWithFailureGroupNames "${disk_list}," $rsp_file
@@ -464,17 +465,14 @@ function run_post_install_root_scripts
 			exec_cmd "ssh -t root@$node_name \". .bash_profile; tfactl stop && tfactl disable\""
 			LN
 		fi
-
-		if [[ $max_nodes -gt 1 && $inode -eq 0 ]]
-		then
-			timing 10
-			LN
-		fi
 	done
 }
 
+# [$1] -c
 function executeConfigTools
 {
+	[ "$1" == "-c" ] && typeset param="-c" || typeset param
+
 	line_separator
 	test_ntp_synchro_on_server ${node_names[0]}
 	LN
@@ -484,7 +482,7 @@ function executeConfigTools
 	# Ne pas utiler $rsp_file
 	add_dynamic_cmd_param "-responseFile /home/grid/grid_$db.rsp"
 	add_dynamic_cmd_param "-silent\""
-	exec_dynamic_cmd "ssh grid@${node_names[0]} \". .bash_profile &&"
+	exec_dynamic_cmd $param "ssh grid@${node_names[0]} \". .bash_profile &&"
 	LN
 }
 
@@ -578,6 +576,7 @@ function set_ASM_memory_target_low_and_restart_ASM
 		[ $max_nodes -gt 1 ] && restart_rac_cluster || restart_standalone_crs
 	else
 		info "do nothing : hack_asm_memory=0"
+		LN
 	fi
 }
 
@@ -589,6 +588,7 @@ function stop_and_disable_unwanted_grid_ressources
 	ssh_node0 root srvctl disable cvu
 	ssh_node0 root srvctl stop qosmserver
 	ssh_node0 root srvctl disable qosmserver
+	LN
 }
 
 #http://www.usn-it.de/index.php/2017/06/20/oracle-rac-12-2-high-load-on-cpu-from-gdb-when-node-missing/
@@ -629,23 +629,28 @@ function rac_executeConfigTools
 {
 	[ $configTools_install == no ] && return 0 || true
 
-	executeConfigTools
+	executeConfigTools -c
+	[ $? -ne 0 ] && executeConfigTools -c || true
 
 	if [[ "$do_hacks" == yes && "$mgmtdb_autostart" == disable ]]
 	then
 		line_separator
 		info "Disable and stop database mgmtdb."
-		ssh_node0 grid srvctl disable mgmtlsnr
-		LN
-		ssh_node0 grid srvctl stop mgmtlsnr
-		LN
-		ssh_node0 grid srvctl disable mgmtdb
-		LN
-		# -force pour stopper ora.chad
+		for node in ${node_names[*]}
+		do # Il faut absolument désactiver sur tous les nœuds.
+			ssh_node0 root srvctl disable mgmtlsnr -node $node
+			LN
+			ssh_node0 root srvctl disable mgmtdb -node $node
+			LN
+		done
+
 		ssh_node0 grid srvctl stop mgmtdb -force
 		LN
-		warning "Advice : database mgmtdb, decrease sga_target to $mgmtdb_sga_target"
+		ssh_node0 grid srvctl stop mgmtlsnr -force
 		LN
+
+		# L'installation d'Oracle Database Server se fera mieux.
+		empty_swap
 	fi
 }
 
@@ -653,12 +658,14 @@ function post_installation
 {
 	if [ $max_nodes -gt 1 ]
 	then	#	RAC
+		test_ntp_synchro_all_servers
+
 		if [ $do_hacks == yes ]
 		then
 			stop_and_disable_unwanted_grid_ressources
-			LN
+
 			set_ASM_memory_target_low_and_restart_ASM
-			LN
+
 			if [ "$mgmtdb_create" == yes ]
 			then
 				rac_executeConfigTools
@@ -673,10 +680,7 @@ function post_installation
 	else	#	SINGLE
 		[ $configTools_install == yes ] && executeConfigTools || true
 
-		if [ $do_hacks == yes ]
-		then
-			set_ASM_memory_target_low_and_restart_ASM
-		fi
+		[ $do_hacks == yes ] && set_ASM_memory_target_low_and_restart_ASM || true
 	fi
 }
 
@@ -738,7 +742,7 @@ typeset -ra extract_grid_mn=( "~2mn" "~2mn" )
 typeset -ra grid_installion_mn=( "~3mn" "~12mn" )
 typeset -ra post_install_root_script_node1_mn=( "~3mn" "~35mn" )
 typeset -ra post_install_root_script_other_node_mn=( "~3mn" "~15mn" )
-typeset -ra configtools=( "~3mn" "~50mn" )
+typeset -ra configtools=( "~3mn" "~1h15mn" )
 
 if [ $max_nodes -gt 1 ]
 then
@@ -800,7 +804,8 @@ if [ $init_afd_disks == yes ]
 then
 	if [ $create_reponse_file == yes ]
 	then
-		ssh_node0 -c grid "test -f $rsp_file"
+		# Ne pas utiler $rsp_file
+		ssh_node0 -c grid "test -f grid_$db.rsp"
 		if [ $? -eq 0 ]
 		then
 			warning "Create response file skipped."

@@ -69,7 +69,7 @@ do
 	LN
 done
 
-script_stop $ME
+script_stop $ME $db
 LN
 
 if [ "${oracle_release}" == "12.2.0.1" ]

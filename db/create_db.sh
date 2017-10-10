@@ -411,7 +411,7 @@ function create_database
 	LN
 
 	info "Create database $db"
-	info "   - Backup database       : $backup"
+	info "   Backup database : $backup"
 	LN
 
 	exec_dynamic_cmd $confirm dbca
@@ -560,6 +560,7 @@ function enable_flashback
 	{
 		set_sql_cmd "whenever sqlerror exit 1;"
 		set_sql_cmd "alter database flashback on;"
+		set_sql_cmd "alter system switch logfile;"
 	}
 	sqlplus_cmd "$(alter_database_flashback_on)"
 	[ $? -ne 0 ] && exit 1 || true

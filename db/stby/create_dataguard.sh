@@ -693,22 +693,6 @@ function configure_dataguard
 #	****************************************************************************
 function create_dataguard_services_no_crs
 {
-	# $1 pdb name
-	# $2 service name
-	function stop_service
-	{
-		set_sql_cmd "alter session set container=$1;"
-		set_sql_cmd "exec dbms_service.stop_service( '$2' );"
-	}
-
-	# $1 pdb name
-	# $2 service name
-	function start_service
-	{
-		set_sql_cmd "alter session set container=$1;"
-		set_sql_cmd "exec dbms_service.start_service( '$2' );"
-	}
-
 	typeset oci_stby_service
 	typeset java_stby_service
 

@@ -20,7 +20,7 @@ ORACLE_RELEASE=${ORACLE_RELEASE:-$oracle_release}
 add_usage "ORACLE_RELEASE=${ORACLE_RELEASE}"	"*12.1.0.2*|12.2.0.1"
 
 add_usage new_line
-add_usage "OL7_KERNEL_VERSION=${OL7_KERNEL_VERSION:-$ol7_kernel_version}"								"latest or kernel version, only for BDD servers"
+add_usage "OL7_KERNEL_VERSION=${OL7_KERNEL_VERSION:-$ol7_kernel_version}"	"latest|redhat or kernel version, only for BDD servers"
 
 add_usage new_line
 case "$ORACLE_RELEASE" in
@@ -31,16 +31,20 @@ case "$ORACLE_RELEASE" in
 		add_usage "VM_MEMORY_MB_FOR_RAC_DB_121=${VM_MEMORY_MB_FOR_RAC_DB_121:-$vm_memory_mb_for_rac_db}"			"VM memory for RAC DB 12.1"
 		add_usage "VM_NR_CPUS_FOR_RAC_DB_121=${VM_NR_CPUS_FOR_RAC_DB_121:-$vm_nr_cpus_for_rac_db}"					"VM #cpu for RAC DB 12.1"
 		add_usage new_line
-		add_usage "ORCL_YUM_REPOSITORY_RELEASE121=${ORCL_YUM_REPOSITORY_RELEASE121:-$orcl_yum_repository_release}"	"DVD_R2|*DVD_R3*|latest|R3|R4 Oracle Linux 7 repository"
+		add_usage "ORCL_YUM_REPOSITORY_RELEASE121=${ORCL_YUM_REPOSITORY_RELEASE121:-$orcl_yum_repository_release}"	"DVD_R2|DVD_R3|latest|R3|R4 Oracle Linux 7 repository"
+		add_usage new_line
+		add_usage "MGMTDB_AUTOSTART121=${MGMTDB_AUTOSTART121:-$mgmtdb_autostart}"									"*disable*|enable database mgmtdb"
 		;;
 	12.2*)
 		add_usage "VM_MEMORY_MB_FOR_SINGLE_DB_122=${VM_MEMORY_MB_FOR_SINGLE_DB_122:-$vm_memory_mb_for_single_db}"	"VM memory for SINGLE DB 12.2"
 		add_usage "VM_NR_CPUS_FOR_SINGLE_DB_122=${VM_NR_CPUS_FOR_SINGLE_DB_122:-$vm_nr_cpus_for_single_db}"			"VM #cpu for SINGLE DB 12.2"
 		add_usage new_line
 		add_usage "VM_MEMORY_MB_FOR_RAC_DB_122=${VM_MEMORY_MB_FOR_RAC_DB_122:-$vm_memory_mb_for_rac_db}"			"VM memory for RAC DB 12.2"
-		add_usage "VM_NR_CPUS_FOR_RAC_DB_122=${VM_NR_CPUS_FOR_RAC_DB_122:-$vm_nr_cpus_for_rac_db}"				"VM #cpu for RAC DB 12.2"
+		add_usage "VM_NR_CPUS_FOR_RAC_DB_122=${VM_NR_CPUS_FOR_RAC_DB_122:-$vm_nr_cpus_for_rac_db}"					"VM #cpu for RAC DB 12.2"
 		add_usage new_line
-		add_usage "ORCL_YUM_REPOSITORY_RELEASE122=${ORCL_YUM_REPOSITORY_RELEASE122:-$orcl_yum_repository_release}"	"DVD_R2|*DVD_R3*|latest|R3|R4 Oracle Linux 7 repository"
+		add_usage "ORCL_YUM_REPOSITORY_RELEASE122=${ORCL_YUM_REPOSITORY_RELEASE122:-$orcl_yum_repository_release}"	"DVD_R2|DVD_R3|latest|R3|R4 Oracle Linux 7 repository"
+		add_usage new_line
+		add_usage "MGMTDB_AUTOSTART122=${MGMTDB_AUTOSTART122:-$mgmtdb_autostart}"									"*disable*|enable database mgmtdb"
 		;;
 esac
 
@@ -54,13 +58,13 @@ typeset -r miscs_params="$(print_usage)"
 reset_usage
 
 add_usage "DISKS_HOSTED_BY=${DISKS_HOSTED_BY:-$disks_hosted_by}"	"vbox|*san*"
-add_usage "SAN_DISK=${SAN_DISK:-$san_disk}"		"device path for SAN disk|*vdi*"
-add_usage "SAN_DISK_SIZE_G=${SAN_DISK_SIZE_G:-$san_disk_size_g}" "Size SAN disk if SAN_DISK=vdi"
+add_usage "SAN_DISK=${SAN_DISK:-$san_disk}"							"device path for SAN disk|*vdi*"
+add_usage "SAN_DISK_SIZE_G=${SAN_DISK_SIZE_G:-$san_disk_size_g}"	"Size SAN disk if SAN_DISK=vdi"
 typeset -r installation="$(print_usage)"
 reset_usage
 
-add_usage "INSTALL_GUESTADDITIONS=${INSTALL_GUESTADDITIONS:-$install_guestadditions}" "yes|*no*"
-add_usage "TIMEKEEPING=${TIMEKEEPING:-$timekeeping}" "*ntp_with_kvmclock*|ntp_without_kvmclock"
+add_usage "INSTALL_GUESTADDITIONS=${INSTALL_GUESTADDITIONS:-$install_guestadditions}"	"yes|*no*"
+add_usage "TIMEKEEPING=${TIMEKEEPING:-$timekeeping}"									"*ntp_with_kvmclock*|ntp_without_kvmclock"
 typeset -r internals="$(print_usage)"
 
 typeset -r str_usage=\
