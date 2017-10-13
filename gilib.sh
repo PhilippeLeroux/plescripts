@@ -31,6 +31,7 @@ typeset	-ri	gi_count_nodes=$(( $(wc -w<<<"$gi_node_list") + 1 ))
 
 #	Exécute la commande "$@" sur tous les autres nœuds du cluster
 #	if $1 == -c script not interupted on error.
+#	Le profile n'est pas sourcé.
 function execute_on_other_nodes
 {
 	[ $gi_count_nodes -eq 1 ] && return 0 || true
@@ -94,7 +95,8 @@ function execute_on_all_nodes_v2
 #	12.2.0.1
 function grid_version
 {
-	# root n'a pas la variable de définie.
+	# Certains scripts root incluent la lib et la variable n'est pas définie.
+	# Les scripts root n'utilisent pas cette fonction.
 	[ x"$ORACLE_HOME" == x ] && return 0 || true
 
 	$ORACLE_HOME/OPatch/opatch lsinventory		|\
