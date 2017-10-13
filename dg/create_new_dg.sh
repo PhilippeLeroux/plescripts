@@ -84,15 +84,15 @@ exit_if_param_undef disks	"$str_usage"
 typeset -a size_list
 typeset -a disk_list
 
-case "$(grid_release)" in
-	"12cR1")
+case "$gridversion" in
+	12.1*)
 		while read size disk_name rem
 		do
 			size_list+=( $(( size / 1024 )) )
 			disk_list+=( $disk_name )
 		done<<<"$(kfod nohdr=true op=disks)"
 		;;
-	"12cR2")
+	*)	# A partir de la 12.2 AFD.
 		while read size disk_name rem
 		do
 			size_list+=( $(( size / 1024 )) )
@@ -105,10 +105,22 @@ if [ $disks -gt ${#disk_list[@]} ]
 then
 	error "Request #$disks disks"
 	error "Available #${#disk_list[@]} disks"
+	LN
+	info "With root :"
+	info "$ cd ~/plescripts/disk"
+	case "$gridversion" in
+		12.1*)
+			info "$ ./create_oracleasm_disks_on_new_disks.sh -db=<db id>"
+			;;
+		*)	# A partir de la 12.2 AFD.
+			info "$ ./create_afd_disks_on_new_disks.sh -db=<db id>"
+			;;
+	esac
+	LN
 	exit 1
 fi
 
-function make_sql_cmd
+function make_sql_create_diskgroup
 {
 	typeset other_disks # other_disks mémorise tous les disques sauf le premier.
 	for (( i=1; i < disks; ++i ))
@@ -127,14 +139,14 @@ attribute
 EOS
 }
 
-cmd=$(printf "$(make_sql_cmd)\n")
+sql_create_diskgroup=$(printf "$(make_sql_create_diskgroup)\n")
 
 fake_exec_cmd sqlplus -s / as sysasm
-printf "$cmd\n"
+printf "$sql_create_diskgroup\n"
 
 if [ $EXEC_CMD_ACTION == EXEC ]
 then
-	printf "set echo off\nset timin on\n$cmd\n" | sqlplus -s / as sysasm
+	printf "set echo off\nset timin on\n$sql_create_diskgroup\n" | sqlplus -s / as sysasm
 fi
 LN
 

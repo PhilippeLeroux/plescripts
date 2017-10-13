@@ -46,7 +46,8 @@ do
 	esac
 done
 
-find /dev -regex "/dev/sd." | sort |\
+typeset	-i	nr_unused_disks=0
+
 while read disk idisk
 do
 	type="$(disk_type $disk)"
@@ -56,6 +57,7 @@ do
 		if [ $afdonly == no ]
 		then
 			info "disk $disk $(fmt_bytesU_2_better $size_b) ${BLINK}${UNDERLINE}Unused${NORM}."
+			((++nr_unused_disks))
 		fi
 	else
 		typeset -i nb_part=$(count_partition_for $disk)
@@ -97,4 +99,7 @@ do
 		fi
 	fi
 	LN
-done
+done<<<"$(find /dev -regex "/dev/sd.*[^0-9]" | sort)"
+
+info "$nr_unused_disks unused disk(s)."
+LN

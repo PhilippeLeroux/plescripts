@@ -37,7 +37,7 @@ function disk_type
 
 #*> Met à zéro l'en-tête du disque $1
 #*> Si la taille $2 n'est pas précisée seront mis à zéro les
-#*> 1024*1024*1024 premiers bytes.
+#*> 1024*1024*100 premiers bytes.
 function clear_device
 {
 	typeset -r	device=$1
@@ -137,5 +137,5 @@ function get_unused_disks_without_partitions
 	while read device
 	do
 		[ "$(disk_type $device)" == unused ] && echo $device
-	done<<<"$(find /dev -regex "/dev/sd.")" | sort
+	done<<<"$(find /dev -regex "/dev/sd.*[^0-9]")" | sort
 }

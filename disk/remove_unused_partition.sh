@@ -3,18 +3,17 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/disklib.sh
-. ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
+
+La partition est supprimée puis le disque est vidé.
 "
 
-[ $USER != root ] && error "Only root can execute this script" && exit 1
-
-typeset	drop_partition=yes
+must_be_user root
 
 while [ $# -ne 0 ]
 do
@@ -42,11 +41,11 @@ done
 while read partition
 do
 	type="$(disk_type $partition)"
-	[ $type != unused ] && continue
+	[ $type != unused ] && continue || true
 
 	typeset	disk=${partition:0:${#partition}-1}
 	info "partition $partition unused :"
 	delete_partition $disk
 	clear_device $disk
 	LN
-done<<<"$(find /dev -regex "/dev/sd.1" | sort)"
+done<<<"$(find /dev -regex "/dev/sd.*1" | sort)"
