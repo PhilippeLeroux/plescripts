@@ -3,7 +3,6 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/disklib.sh
-. ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -13,7 +12,10 @@ typeset -r str_usage=\
 
 A utiliser quand le grid n'est pas installer.
 
-Si le grid est installer, il faut le stopper sinon AFD empêchera toutes actions."
+Si le grid est installer, il faut le stopper sinon AFD empêchera toutes actions.
+
+Quand le grid est installé il faut faire un asmcmd afd_unlabel XXXXXXXX
+"
 
 while [ $# -ne 0 ]
 do
@@ -41,10 +43,6 @@ done
 #ple_enable_log -params $PARAMS
 
 must_be_user root
-
-typeset		list_disks
-typeset	-i	nr_disk=0
-typeset -i	nr_disk_skipped=0
 
 export ORACLE_HOME=$GRID_HOME
 export ORACLE_BASE=/tmp
