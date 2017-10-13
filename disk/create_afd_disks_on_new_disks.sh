@@ -3,6 +3,7 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/disklib.sh
+. ~/plescripts/gilib.sh
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -42,8 +43,16 @@ done
 
 exit_if_param_undef	db	"$str_usage"
 
-must_be_user grid
+must_be_user root
 
+# Si les disques viennet d'être ajouté je les scans.
+info "Scan new disks."
+exec_cmd iscsiadm -m node --rescan
+LN
+execute_on_other_nodes '. .bash_profile; iscsiadm -m node --rescan'
+LN
+
+line_separator
 nr_disk=$(asmcmd afd_lsdsk | grep "^S" | sort | tail -1 | awk '{ print $1 }' | sed "s/.*\(..\)$/\1/")
 if [ x"$nr_disk" == x ]
 then
@@ -66,6 +75,10 @@ do
 	exec_cmd asmcmd afd_label $oracle_label $device
 	LN
 done<<<"$(get_unused_disks_without_partitions)"
+
+info "Refresh other nodes"
+execute_on_other_nodes '. .bash_profile; asmcmd afd_refresh'
+LN
 
 info "Oracle disks :"
 exec_cmd ~/plescripts/disk/check_disks_type.sh -afdonly

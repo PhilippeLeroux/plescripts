@@ -3,7 +3,7 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/disklib.sh
-. ~/plescripts/global.cfg
+. ~/plescripts/gilib.sh
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
@@ -44,6 +44,14 @@ done
 
 exit_if_param_undef	db	"$str_usage"
 
+# Si les disques viennet d'être ajouté je les scans.
+info "Scan new disks."
+exec_cmd iscsiadm -m node --rescan
+LN
+execute_on_other_nodes '. .bash_profile; iscsiadm -m node --rescan'
+LN
+
+line_separator
 nr_disk=$(oracleasm listdisks | sort | tail -1 | sed "s/.*\(..\)$/\1/")
 if [ x"$nr_disk" == x ]
 then
@@ -64,14 +72,17 @@ do
 	LN
 done<<<"$(get_unused_disks_without_partitions)"
 
+info "Refresh other nodes"
+execute_on_other_nodes '. .bash_profile; oracleasm scandisks'
+LN
+
 info "Oracle disks :"
 exec_cmd oracleasm listdisks
 LN
 
 #	Le script est utilisé lors de la création des serveurs avant que le grid
 #	ne soit installé, donc test l'existence de kfod.
-test_if_cmd_exists kfod
-if [ $? -eq 0 ]
+if command_exists kfod
 then
 	info "Disks candidats :"
 	exec_cmd su - grid -c kfod
