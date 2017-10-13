@@ -224,7 +224,7 @@ function remove_oracleasm_disks
 {
 	line_separator
 	info "Remove disks :"
-	exec_cmd "~/plescripts/disk/clear_oracle_disk_headers.sh -doit"
+	exec_cmd "~/plescripts/disk/clear_oracleasm_disk_headers.sh -doit"
 	exec_cmd -c "~/plescripts/disk/logout_sessions.sh"
 	exec_cmd "systemctl disable oracleasm.service"
 	LN
