@@ -180,9 +180,11 @@ nnoremap <silent> <C-h> :call Goto_home()<CR>
 "	============================================================================
 let NERDTreeIgnore=['\.swp$', '\~$']
 
-if has( "gui_running" ) && plewiki_directory == 'no'
-	" NERDTree ouvert automatiquement
-	autocmd VimEnter * NERDTree %:p:h
+if has( "gui_running" )
+	if plewiki_directory == 'no'
+		" NERDTree ouvert automatiquement
+		autocmd VimEnter * NERDTree %:p:h
+	endif
 else
 	" NERDTree ouvert si aucun fichier n'est passé en paramètre.
 	autocmd StdinReadPre * let s:std_in=1
