@@ -26,8 +26,8 @@ Debug flags :
 	Par défaut des hacks sont fait pour diminuer la consommation mémoire :
 	    * Réduction de la mémoire ASM
 	    * Arrêt de certains services.
-	    * Suppression de tfa
-	    * La base MGMTDB n'est pas crées.
+		* Désactivation de tfa.
+	    * La base mgmtdb et son listener sont désactivés.
 	Le flag -no_hacks permet de ne pas mettre en œuvre ces hacks.
 
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
@@ -406,7 +406,7 @@ function run_post_install_root_scripts
 	do
 		typeset node_name=${node_names[inode]}
 
-		test_ntp_synchro_on_server $node_name
+		[ $max_nodes -gt 1 ] && test_ntp_synchro_on_server $node_name || true
 		LN
 
 		run_post_install_root_scripts_on_node $((inode+1)) $node_name
@@ -430,7 +430,7 @@ function run_post_install_root_scripts
 			warning "Workaround :"
 			LN
 
-			test_ntp_synchro_on_server $node_name
+			[ $max_nodes -gt 1 ] && test_ntp_synchro_on_server $node_name || true
 			LN
 
 			run_post_install_root_scripts_on_node 0 ${node_names[0]}
@@ -461,7 +461,7 @@ function runConfigToolAllCommands
 	info "Run ConfigTool"
 	LN
 
-	test_ntp_synchro_all_servers
+	[ $max_nodes -gt 1 ] && test_ntp_synchro_all_servers || true
 
 	exec_cmd -c "ssh -t grid@${node_names[0]}							\
 				\"LANG=C $ORACLE_HOME/cfgtoollogs/configToolAllCommands	\
@@ -514,10 +514,9 @@ function create_all_dgs
 
 function disclaimer
 {
-	info "****************************************************"
-	info "* Not supported by Oracle Corporation              *"
-	info "* For personal use only, on a desktop environment. *"
-	info "****************************************************"
+	info "*****************************"
+	info "* Workstation configuration *"
+	info "*****************************"
 }
 
 function stop_and_disable_unwanted_grid_ressources
@@ -533,7 +532,7 @@ function stop_and_disable_unwanted_grid_ressources
 
 function set_ASM_memory_target_low_and_restart_ASM
 {
-	if [ $hack_asm_memory != "0" ]
+	if [ "$asm_allow_small_memory_target" == "yes" ]
 	then
 		line_separator
 		disclaimer
@@ -562,7 +561,7 @@ function set_ASM_memory_target_low_and_restart_ASM
 			LN
 		fi
 	else
-		info "do nothing : hack_asm_memory=0"
+		info "do nothing : asm_allow_small_memory_target = $asm_allow_small_memory_target"
 		LN
 	fi
 }

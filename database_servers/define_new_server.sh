@@ -31,13 +31,15 @@ add_usage "-rel=12.1|12.2"			"Oracle release"
 add_usage "-db=name"				"Database name."
 add_usage "[-standby=id]"			"ID for standby server."
 add_usage "[-max_nodes=1]"			"RAC #nodes"
+add_usage "[-storage=$storage]"		"ASM|FS"
 add_usage "[-OH_FS=$OH_FS]"			"RAC : ORACLE_HOME FS : ocfs2|$rdbms_fs_type."
+add_usage new_line
+add_usage "Debug :"
 add_usage "[-luns_hosted_by=$luns_hosted_by]"	"san|vbox"
 add_usage "[-size_dg_gb=$size_dg_gb]"			"DG size"
 add_usage "[-size_lun_gb=$size_lun_gb]"			"LUNs size"
 add_usage "[-min_lun=$min_lun]"					"LUN per DG"
 add_usage "[-no_dns_test]"			"ne pas tester si les IPs sont utilisées."
-add_usage "[-storage=$storage]"		"ASM|FS"
 add_usage "[-ip_node=node]"			"nœud IP, sinon prend la première IP disponible."
 
 typeset -r str_usage="Usage : $ME\n$(print_usage)"
@@ -283,9 +285,10 @@ function normalyse_disks
 
 	if [ $db_type == rac ]
 	then
-		echo "CRS:6:1:3" > $cfg_path/disks
+		info "rac_crs_lun_size_gb = $rac_crs_lun_size_gb"
+		echo "CRS:$rac_crs_lun_size_gb:1:3" > $cfg_path/disks
 		i_lun=4
-		if [ "$oracle_release" == "12.2.0.1" ]
+		if [[ "$oracle_release" == "12.2"* ]]
 		then
 			typeset -ri	gimr_nr_luns=$(update_nr_luns 40)
 			typeset -ri	gimr_last_i_lun=$(( i_lun + gimr_nr_luns - 1 ))

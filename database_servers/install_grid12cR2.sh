@@ -12,8 +12,8 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
-	-db=name      Identifiant de la base
-	[-keep_tfa]   RAC ne pas supprimer tfa
+	-db=name      Identifiant de la base.
+	[-keep_tfa]   RAC ne pas désactiver tfa.
 
 Debug flags :
 	-reponse_file_only
@@ -28,8 +28,8 @@ Debug flags :
 	Par défaut des hacks sont fait pour diminuer la consommation mémoire :
 		* Réduction de la mémoire ASM
 		* Arrêt de certains services.
-		* Suppression de tfa
-		* La base MGMTDB n'est pas crées.
+		* Désactivation de tfa.
+		* La base mgmtdb et sont listener sont désactivés.
 	Le flag -no_hacks permet de ne pas mettre en œuvre ces hacks.
 
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
@@ -410,6 +410,66 @@ function run_post_install_root_scripts_on_node
 	return $ret
 }
 
+#	$1 node name
+function rac_disable_diagsnap
+{ #http://www.usn-it.de/index.php/2017/06/20/oracle-rac-12-2-high-load-on-cpu-from-gdb-when-node-missing/
+	line_separator
+	info "Disable diagsnap on $1"
+	LN
+
+	exec_cmd "ssh -t grid@$1 \". .bash_profile && oclumon manage -disable diagsnap\""
+	LN
+}
+
+#	$1 node name
+function rac_disable_tfa
+{
+	line_separator
+	info "Stop and disable TFA on node $1"
+	exec_cmd "ssh -t root@$1 \". .bash_profile; tfactl stop && tfactl disable\""
+	LN
+}
+
+#	$1 num node who has failed.
+#	$2 node name.
+function workaround_post_install_root_scripts
+{
+	typeset	-ri	node_nr=$1
+	typeset	-r	node_n=$2
+
+	# L'erreur se produit quand la synchronisation du temps est mauvaise.
+	# Les erreurs de synchronisation varient bcps entre les diverses
+	# versions de mon OS et de VirtualBox.
+	#
+	# Pour valider que le problème vient bien de la synchro du temps, voir
+	# le fichier /tmp/force_sync_ntp.DD, si il y a bcp de resynchronisation
+	# c'est que le temps sur le serveur fait des sauts.
+
+	error "root scripts on server $node_n failed."
+	[ $node_nr -eq 0 ] && exit 1 || true
+
+	LN
+	warning "Workaround :"
+	LN
+
+	run_post_install_root_scripts_on_node 1 ${node_names[0]}
+	LN
+
+	timing 10
+	LN
+
+	run_post_install_root_scripts_on_node $((node_nr+1)) $node_n
+	typeset -i ret=$?
+	LN
+
+	if [ $ret -ne 0 ]
+	then
+		error "Workaround failed."
+		LN
+		exit 1
+	fi
+}
+
 function run_post_install_root_scripts
 {
 	typeset -i inode
@@ -417,7 +477,7 @@ function run_post_install_root_scripts
 	do
 		typeset node_name=${node_names[inode]}
 
-		test_ntp_synchro_on_server $node_name
+		[ $max_nodes -gt 1 ] && test_ntp_synchro_on_server $node_name || true
 		LN
 
 		run_post_install_root_scripts_on_node $((inode+1)) $node_name
@@ -426,44 +486,20 @@ function run_post_install_root_scripts
 
 		if [ $ret -ne 0 ]
 		then
-			# L'erreur se produit quand la synchronisation du temps est mauvaise.
-			# Les erreurs de synchronisation varient bcps entre les diverses
-			# versions de mon OS et de VirtualBox.
-			#
-			# Pour valider que le problème vient bien de la synchro du temps, voir
-			# le fichier /tmp/force_sync_ntp.DD, si il y a bcp de resynchronisation
-			# c'est que le temps sur le serveur fait des sauts.
-
-			error "root scripts on server $node_name failed."
-			[ $inode -eq 0 ] && exit 1 || true
-
-			LN
-			warning "Workaround :"
-			LN
-
-			run_post_install_root_scripts_on_node 1 ${node_names[0]}
-			LN
-
-			timing 10
-			LN
-
-			run_post_install_root_scripts_on_node $((inode+1)) $node_name
-			typeset -i ret=$?
-			LN
-
-			if [ $ret -ne 0 ]
-			then
-				error "Workaround failed."
-				LN
-				exit 1
-			fi
+			workaround_post_install_root_scripts $((inode+1)) $node_name
 		fi
 
-		if [[ $keep_tfa == no && $max_nodes -gt 1 ]]
+		if [ $max_nodes -gt 1 ]
 		then
-			info "Uninstall TFA on node $node_name"
-			exec_cmd "ssh -t root@$node_name \". .bash_profile; tfactl stop && tfactl disable\""
-			LN
+			if [ "$rac12cR2_diagsnap" == disable ]
+			then
+				rac_disable_diagsnap $node_name
+			fi
+
+			if [ $keep_tfa == no ]
+			then
+				rac_disable_tfa $node_name
+			fi
 		fi
 	done
 }
@@ -474,14 +510,14 @@ function executeConfigTools
 	[ "$1" == "-c" ] && typeset param="-c" || typeset param
 
 	line_separator
-	test_ntp_synchro_on_server ${node_names[0]}
+	[ $max_nodes -gt 1 ] && test_ntp_synchro_on_server ${node_names[0]} || true
 	LN
 	info "Execute config tools (${configtools[idx_times]})"
 	add_dynamic_cmd_param "$ORACLE_HOME/gridSetup.sh"
-	add_dynamic_cmd_param "-executeConfigTools"
+	add_dynamic_cmd_param "    -executeConfigTools"
 	# Ne pas utiler $rsp_file
-	add_dynamic_cmd_param "-responseFile /home/grid/grid_$db.rsp"
-	add_dynamic_cmd_param "-silent\""
+	add_dynamic_cmd_param "    -responseFile /home/grid/grid_$db.rsp"
+	add_dynamic_cmd_param "    -silent\""
 	exec_dynamic_cmd $param "ssh grid@${node_names[0]} \". .bash_profile &&"
 	LN
 }
@@ -513,10 +549,9 @@ function create_all_dgs
 
 function disclaimer
 {
-	info "****************************************************"
-	info "* Not supported by Oracle Corporation              *"
-	info "* For personal use only, on a desktop environment. *"
-	info "****************************************************"
+	info "*****************************"
+	info "* Workstation configuration *"
+	info "*****************************"
 }
 
 function restart_rac_cluster
@@ -543,7 +578,7 @@ function restart_rac_cluster
 	LN
 
 	#Pour être certain qu'ASM est démarré.
-	timing 180 "Waiting cluster"
+	timing 240 "Waiting cluster"
 	LN
 }
 
@@ -559,13 +594,13 @@ function restart_standalone_crs
 	LN
 
 	#Pour être certain qu'ASM est démarré.
-	timing 30 "Waiting cluster"
+	timing 30 "Waiting Oracle has"
 	LN
 }
 
 function set_ASM_memory_target_low_and_restart_ASM
 {
-	if [ $hack_asm_memory != "0" ]
+	if [ "$asm_allow_small_memory_target" == "yes" ]
 	then
 		line_separator
 		disclaimer
@@ -575,7 +610,7 @@ function set_ASM_memory_target_low_and_restart_ASM
 
 		[ $max_nodes -gt 1 ] && restart_rac_cluster || restart_standalone_crs
 	else
-		info "do nothing : hack_asm_memory=0"
+		info "do nothing : asm_allow_small_memory_target == $asm_allow_small_memory_target"
 		LN
 	fi
 }
@@ -589,24 +624,6 @@ function stop_and_disable_unwanted_grid_ressources
 	ssh_node0 root srvctl stop qosmserver
 	ssh_node0 root srvctl disable qosmserver
 	LN
-}
-
-#http://www.usn-it.de/index.php/2017/06/20/oracle-rac-12-2-high-load-on-cpu-from-gdb-when-node-missing/
-function rac_disable_diagsnap
-{
-	if [ "$rac12cR2_diagsnap" == disable ]
-	then
-		# Normalement sur un seul nœud sa suffit.
-		line_separator
-		info "Disable diagsnap"
-		LN
-
-		for (( inode = 0; inode < max_nodes; ++inode ))
-		do
-			exec_cmd "ssh -t grid@${node_names[inode]} \". .bash_profile && oclumon manage -disable diagsnap\""
-			LN
-		done
-	fi
 }
 
 # Dans la log du CRS un message apparait disant d'exécuter d'installer un
@@ -664,6 +681,8 @@ function post_installation
 		then
 			stop_and_disable_unwanted_grid_ressources
 
+			# Si la base mgmtdb est créée avant le swap atteind 3Gb et le temps
+			# de création de la base explose.
 			set_ASM_memory_target_low_and_restart_ASM
 
 			if [ "$mgmtdb_create" == yes ]
@@ -750,8 +769,8 @@ then
 	exit_if_file_not_exists $db_cfg_path/scanvips
 	typeset -r scan_name=$(cat $db_cfg_path/scanvips | cut -d: -f1)
 
-	info "==> scan name     = $scan_name"
-	info "==> clusterNodes  = $clusterNodes"
+	info "==> scan name    : $scan_name"
+	info "==> clusterNodes : $clusterNodes"
 	LN
 else
 	typeset -ri	idx_times=0
@@ -832,8 +851,6 @@ then
 	start_grid_installation
 
 	run_post_install_root_scripts
-
-	rac_disable_diagsnap
 fi
 
 [ $post_install == yes ] && post_installation || true
