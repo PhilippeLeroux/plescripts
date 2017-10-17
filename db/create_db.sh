@@ -20,8 +20,8 @@ else
 	typeset	-r	crs_used=no
 fi
 
-typeset	-r	orcl_release="$(read_orcl_release)"
 typeset -r	orcl_version=$(read_orcl_version)
+typeset	-r	orcl_release="$(cut -d. -f1-2<<<"$orcl_version")"
 typeset		db=undef
 typeset		sysPassword=$oracle_password
 typeset	-i	totalMemory=0
