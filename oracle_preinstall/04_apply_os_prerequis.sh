@@ -137,12 +137,23 @@ function setup_ssh_config
 	exec_cmd "sed -i 's/.*LoginGraceTime.*/LoginGraceTime 0/' /etc/ssh/sshd_config"
 }
 
+function nsswitch_settings
+{
+	# Sur mes serveurs nscd n'est pas installé, mais j'applique le pré requis
+	# pour m'en rappeler.
+	exec_cmd "sed -i \"s/^hosts:.*/hosts:      dns files myhostname/\" /etc/nsswitch.conf"
+}
+
 if [ $db_type == single_fs ]
 then
 	typeset -ri shm_size=$(to_bytes $shm_for_db)
 else
 	typeset -ri shm_size=$(( $(to_bytes $shm_for_db) + $(to_bytes $hack_asm_memory) ))
 fi
+
+line_separator
+nsswitch_settings
+LN
 
 line_separator
 memory_setting
