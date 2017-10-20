@@ -177,18 +177,20 @@ function test_ntp_synchro_on_server
 	else
 		typeset p=""
 	fi
+	line_separator
+	info "Test ntp synchronization on serveur $1"
 	exec_cmd $p "ssh -t root@$1 '~/plescripts/ntp/test_synchro_ntp.sh'"
+	ret=$1
+	LN
+	return $ret
 }
 
 function test_ntp_synchro_all_servers
 {
-	line_separator
 	for node in ${node_names[*]}
 	do
-		test_ntp_synchro_on_server $node
-		ret=$?
-		LN
-		if [ $ret -ne 0 ]
+		test_ntp_synchro_on_server -c $node
+		if [ $? -ne 0 ]
 		then
 			warning "After VBox reboot execute :"
 			info "./$ME -skip_extract_grid -skip_init_afd_disks"
@@ -296,15 +298,16 @@ function create_response_file
 		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
 		update_value oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
 		update_value oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"		$rsp_file
-		update_value oracle.install.asm.gimrDG.AUSize			4						$rsp_file
 
-		update_value oracle.install.asm.configureGIMRDataDG		true					$rsp_file
-		update_value oracle.install.asm.gimrDG.name				GIMR					$rsp_file
-		update_value oracle.install.asm.gimrDG.redundancy		EXTERNAL				$rsp_file
-		typeset disk_list=$(get_free_disks $disk_cfg_file GIMR)
-		update_value oracle.install.asm.gimrDG.disks			$disk_list				$rsp_file
-		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
-		update_value oracle.install.asm.gimrDG.disksWithFailureGroupNames "${disk_list}," $rsp_file
+		# Les données du CRS et de GIMR ne sont plus séparées.
+		update_value oracle.install.asm.configureGIMRDataDG		false					$rsp_file
+		#update_value oracle.install.asm.gimrDG.AUSize			4						$rsp_file
+		#update_value oracle.install.asm.gimrDG.name				GIMR					$rsp_file
+		#update_value oracle.install.asm.gimrDG.redundancy		EXTERNAL				$rsp_file
+		#typeset disk_list=$(get_free_disks $disk_cfg_file GIMR)
+		#update_value oracle.install.asm.gimrDG.disks			$disk_list				$rsp_file
+		#disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
+		#update_value oracle.install.asm.gimrDG.disksWithFailureGroupNames "${disk_list}," $rsp_file
 		update_value oracle.install.asm.configureAFD			true					$rsp_file
 	fi
 	LN
@@ -332,6 +335,8 @@ function check_oracle_size
 {
 	typeset -r server=$1
 
+	line_separator
+	info "Check oracle size."
 	exec_cmd "ssh grid@$server '. .bash_profile && plescripts/database_servers/check_bin_oracle_size.sh'"
 }
 

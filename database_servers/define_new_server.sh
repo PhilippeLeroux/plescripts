@@ -285,16 +285,19 @@ function normalyse_disks
 
 	if [ $db_type == rac ]
 	then
-		info "rac_crs_lun_size_gb = $rac_crs_lun_size_gb"
-		echo "CRS:$rac_crs_lun_size_gb:1:3" > $cfg_path/disks
-		i_lun=4
-		if [[ "$oracle_release" == "12.2"* ]]
-		then
-			typeset -ri	gimr_nr_luns=$(update_nr_luns 40)
-			typeset -ri	gimr_last_i_lun=$(( i_lun + gimr_nr_luns - 1 ))
-			echo "GIMR:$size_lun_gb:$i_lun:$gimr_last_i_lun" >> $cfg_path/disks
-			i_lun=$((gimr_last_i_lun+1))
-		fi
+		case "$oracle_release" in
+			12.1*)
+				echo "CRS:$rac_crs_lun_size_gb:1:3" > $cfg_path/disks
+				i_lun=4
+				;;
+			12.2*)
+				# Un seul DG pour le CRS et GIMR
+				typeset -ri	gimr_nr_luns=$(update_nr_luns 40)
+				typeset -ri	gimr_last_i_lun=$(( i_lun + gimr_nr_luns - 1 ))
+				echo "CRS:$rac_crs_lun_size_gb:$i_lun:$gimr_last_i_lun" >> $cfg_path/disks
+				i_lun=$((gimr_last_i_lun+1))
+				;;
+		esac
 	fi
 
 	adjust_DATA_FRA_size
