@@ -9,9 +9,10 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
-"Usage : $ME [-db=id]	(or use ID_DB)
+"Usage :
+${ME##*/} [-db=id]	(or use ID_DB)
 
-Must be executed from the host server : show oracle logs"
+Must be executed from $client_hostname : show oracle logs"
 
 typeset db=undef
 
@@ -77,6 +78,7 @@ typeset -r	server1=$cfg_server_name
 typeset 	inst1=$(ssh oracle@$server1 plescripts/db/get_active_instance.sh)
 
 set_terminal_title "ORCL LOGS"
+trap 'set_terminal_title default' EXIT
 
 if [ $max_nodes -eq 2 ]
 then	#	RAC 2 nœuds.
@@ -114,16 +116,16 @@ then	#	RAC 2 nœuds.
 	LN
 
 	typeset -r	session_name="ORCL Top $server1 / Bottom $server2"
-	exec_cmd -ci tmux kill-session -t \"$session_name\"
+	exec_cmd -c tmux kill-session -t \"$session_name\"
 
 	alert1=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst1 $inst1)
 	alert2=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst2 $inst2)
 
-	tmux new -s "$session_name"										\
+	tmux new -s "$session_name"	\
 		"ssh oracle@${server1} '. .profile; tail -1000f $alert1'"	\;\
-		split-window -v												\
+	split-window -v				\
 		"ssh oracle@${server2} '. .profile; tail -1000f $alert2'"	\;\
-		selectp -t 0
+	selectp -t 0
 
 else	#	Mono Instance.
 	if [ x"$inst1" == x ]
@@ -145,7 +147,7 @@ else	#	Mono Instance.
 			fi
 
 			typeset -r	session_name="Left $db / Right $db_stby"
-			exec_cmd -ci tmux kill-session -t \"$session_name\"
+			exec_cmd -c tmux kill-session -t \"$session_name\"
 
 			alert1=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $db $inst1 $inst1)
 			drc1=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/drc%s.log" $db $inst1 $inst1)
@@ -161,14 +163,13 @@ else	#	Mono Instance.
 			info "$drc2"
 			LN
 
-			tmux new -s "$session_name"										\
+			tmux new -s "$session_name"		\
 				"ssh oracle@${server1} '. .profile; tail -1000f $alert1'"	\;\
-				split-window -h												\
+			split-window -h					\
 				"ssh oracle@${server2} '. .profile; tail -1000f $alert2'"	\;\
-				split-window -v												\
+			split-window -v					\
 				"ssh oracle@${server2} '. .profile; tail -1000f $drc2'"		\;\
-				selectp -t 0												\;\
-				split-window -v												\
+			selectp -t 0 \; split-window -v	\
 				"ssh oracle@${server1} '. .profile; tail -1000f $drc1'"
 			exit 0
 		else
@@ -177,9 +178,7 @@ else	#	Mono Instance.
 	fi
 
 	typeset -r	session_name="ORCL $server1"
-	exec_cmd -ci tmux kill-session -t \"$session_name\"
+	exec_cmd -c tmux kill-session -t \"$session_name\"
 	alert1=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $(to_lower $inst1) $inst1 $inst1)
 	ssh oracle@${server1} ". .profile; tail -1000f $alert1"
 fi
-
-set_terminal_title default

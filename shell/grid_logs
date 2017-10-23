@@ -11,7 +11,7 @@ typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME [-db=id]	(or use ID_DB)
 
-Must be executed from the host server : show grid logs"
+Must be executed from $client_hostname : show grid logs"
 
 typeset db=undef
 
@@ -57,6 +57,7 @@ cfg_load_node_info $db 1
 typeset -r	node1=$cfg_server_name
 
 set_terminal_title "GRID LOGS"
+trap 'set_terminal_title default' EXIT
 
 if [ $max_nodes -eq 2 ]
 then	#	RAC 2 nœuds
@@ -64,26 +65,23 @@ then	#	RAC 2 nœuds
 	typeset -r	node2=$cfg_server_name
 
 	typeset -r	session_name="GI Left $node1 / Right $node2"
-	exec_cmd -ci tmux kill-session -t \"$session_name\"
+	exec_cmd -c tmux kill-session -t \"$session_name\"
 
 	tmux new -s "$session_name"		\
 		"ssh root@${node1} '. .bash_profile; tail -1000f \$GRID_BASE/diag/crs/$node1/crs/trace/alert.log'"	\;\
-		split-window -h				\
+	split-window -h					\
 		"ssh root@${node2} '. .bash_profile; tail -1000f \$GRID_BASE/diag/crs/$node2/crs/trace/alert.log'"	\;\
-		split-window -v				\
-		"ssh -t root@${node2} '. .bash_profile; tail -1000f \$GRID_BASE/diag/asm/+asm/+ASM2/trace/alert_+ASM2.log'"	\;\
-		selectp -t 0 																								\;\
-		split-window -v				\
-		"ssh -t root@${node1} '. .bash_profile; tail -1000f \$GRID_BASE/diag/asm/+asm/+ASM1/trace/alert_+ASM1.log'"
+	split-window -v					\
+		"ssh root@${node2} '. .bash_profile; tail -1000f \$GRID_BASE/diag/asm/+asm/+ASM2/trace/alert_+ASM2.log'"	\;\
+	selectp -t 0 \; split-window -v	\
+		"ssh root@${node1} '. .bash_profile; tail -1000f \$GRID_BASE/diag/asm/+asm/+ASM1/trace/alert_+ASM1.log'"
 
 else	#	Mono instance
 	typeset -r	session_name="GI $node1"
-	exec_cmd -ci tmux kill-session -t \"$session_name\"
+	exec_cmd -c tmux kill-session -t \"$session_name\"
 
 	tmux new -s "$session_name"	\
-	"ssh root@${node1} '. .bash_profile; tail -1000f \$GRID_BASE/diag/crs/$node1/crs/trace/alert.log'"	\;\
+		"ssh root@${node1} '. .bash_profile; tail -1000f \$GRID_BASE/diag/crs/$node1/crs/trace/alert.log'"	\;\
 	split-window -v				\
-	"ssh -t root@${node1} '. .bash_profile; tail -1000f \$GRID_BASE/diag/asm/+asm/+ASM/trace/alert_+ASM.log'"
+		"ssh root@${node1} '. .bash_profile; tail -1000f \$GRID_BASE/diag/asm/+asm/+ASM/trace/alert_+ASM.log'"
 fi
-
-set_terminal_title default
