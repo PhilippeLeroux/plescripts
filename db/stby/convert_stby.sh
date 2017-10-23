@@ -132,6 +132,7 @@ function convert_physical_to_primary
 	{
 		set_sql_cmd "recover managed standby database finish;"
 		set_sql_cmd "alter database commit to switchover to primary with session shutdown;"
+		set_sql_cmd "whenever sqlerror exit 1;"
 		set_sql_cmd "alter database open;"
 	}
 	if [ $crs_used == yes ]
@@ -149,7 +150,9 @@ function convert_physical_to_primary
 		LN
 	fi
 	sqlplus_cmd "$(sql_convert_to_primary)"
+	ret=$?
 	LN
+	[ $ret -ne 0 ] && exit 1 || true
 }
 
 function remove_SRLs
