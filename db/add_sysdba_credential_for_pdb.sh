@@ -75,7 +75,7 @@ if [ $gi_count_nodes -gt 1 ]
 then # Pour les RACs, l'alias TNS connecte sur le nœud locale.
 	for node in ${gi_node_list[*]}
 	do
-		exec_cmd "ssh ${node} '. .bash_profile;						\
+		exec_cmd "ssh -t ${node} '. .bash_profile;					\
 								~/plescripts/db/add_tns_alias.sh	\
 										-tnsalias=$tnsalias			\
 										-service=$service			\

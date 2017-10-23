@@ -84,6 +84,7 @@ debug "alias_found = $alias_found"
 if [ $alias_found == no ]
 then
 	info "Alias $tnsalias not found."
+	LN
 	exit 0
 fi
 
@@ -97,7 +98,9 @@ then
 	info "Replace multiple empty lines with a single empty line."
 	# Note : je pige rien :(
 	exec_cmd "sed -i '/^$/N;/^\n$/D' $TNS_ADMIN/tnsnames.ora"
+	LN
 else
 	error "Alias found, failed to check lines"
+	LN
 	exit 1
 fi

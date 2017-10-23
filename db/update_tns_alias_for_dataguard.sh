@@ -13,7 +13,7 @@ typeset -r str_usage=\
 $ME
 	-pdb=name  PDB name or all to create alias on all pdbs
 	[-db=name] Only if -pdb=all
-	-dataguard_list=\"server1 server2\" except local server.
+	-dataguard_list=\"server1 server2\" except primary server.
 
 Add or update allias for dataguard :
 	$(mk_oci_service [pdb_name])
@@ -21,7 +21,7 @@ Add or update allias for dataguard :
 	$(mk_java_service [pdb_name])
 	$(mk_java_stby_service [pdb_name])
 
-tnsname.ora is copied on all servers.
+tnsname.ora is updated on all servers.
 "
 
 typeset db=undef
@@ -88,6 +88,16 @@ function add_or_update_tns_alias
 								-host_name=$hostn				\
 								-dataguard_list=\"$dataguard_list\""
 	LN
+
+	for server_name in $dataguard_list
+	do
+		exec_cmd ssh $server_name ". .bash_profile &&					\
+									~/plescripts/db/add_tns_alias.sh	\
+										-service=$alias					\
+										-host_name=$hostn				\
+										-dataguard_list=\"$dataguard_list\""
+		LN
+	done
 }
 
 # $1 pdb
@@ -105,6 +115,8 @@ function add_or_update_tns_alias_for_all_pdbs
 # Requête permettant de lire tous les PDBs existant sur la base $primary
 # Les bases en RO sont considérées comme des SEED.
 # Attention code dupliqué dans create_dataguard.sh & convert_stby.sh
+# Remarque : ne fonctionnerait pas sur un RAC en dataguard, il ne faut pas
+# passer le nom de la base mais de l'instance.
 typeset -r sql_read_pdbs_rw=\
 "select
 	c.name
@@ -145,11 +157,3 @@ then
 else
 	add_or_update_tns_alias_for_pdb $pdb
 fi
-
-line_separator
-for server_name in $dataguard_list
-do
-	info "Copy \$TNS_ADMIN/tnsnames.ora to $server_name"
-	scp $tnsnames_file ${server_name}:$tnsnames_file
-	LN
-done

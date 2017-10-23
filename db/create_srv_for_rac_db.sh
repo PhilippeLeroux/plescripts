@@ -176,10 +176,11 @@ LN
 exec_cmd srvctl start service -service $oci_service -db $db
 LN
 
-exec_cmd "~/plescripts/db/add_tns_alias.sh			\
-				-service=$oci_service				\
-				-host_name=$scan_name				\
-				-copy_server_list=\"${gi_node_list}\""
+line_separator
+info "Update tnsnames.ora on servers $gi_current_node ${gi_node_list[*]}"
+execute_on_all_nodes_v2 "~/plescripts/db/add_tns_alias.sh	\
+								-service=$oci_service		\
+								-host_name=$scan_name"
 LN
 
 line_separator

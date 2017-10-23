@@ -13,12 +13,10 @@ typeset -r str_usage=\
 	-host_name=name  Nom de l'hôte.
 	[-tnsalias=name] Nom de l'alias TNS, par défaut c'est le nom du service.
 	[-dataguard_list=server list] Nom des autres serveurs du dataguard.
-	[-copy_server_list=] Copie avec scp le tnsnames sur la liste des servers.
 "
 
 typeset service=undef
 typeset host_name=undef
-typeset copy_server_list
 typeset tnsalias=undef
 typeset dataguard_list=undef
 
@@ -43,11 +41,6 @@ do
 
 		-tnsalias=*)
 			tnsalias=${1##*=}
-			shift
-			;;
-
-		-copy_server_list=*)
-			copy_server_list="${1##*=}"
 			shift
 			;;
 
@@ -86,7 +79,6 @@ fi
 
 info "Delete TNS alias $tnsalias if exists."
 exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias"
-LN
 
 info "Append new alias : $tnsalias"
 if [ "$dataguard_list" == undef ]
@@ -102,11 +94,5 @@ else
 				-server_list=\"$host_name $dataguard_list\" >> $tnsnames_file"
 fi
 
-for server_name in $copy_server_list
-do
-	info "Copy \$TNS_ADMIN/tnsnames.ora to $server_name"
-	scp $tnsnames_file ${server_name}:$tnsnames_file
-	LN
-done
-
 info "\$TNS_ADMIN/tnsnames.ora updated."
+LN

@@ -125,13 +125,13 @@ do
 	esac
 done
 
-ple_enable_log -params $PARAMS
-
 exit_if_ORACLE_SID_not_defined
 typeset -r primary=$ORACLE_SID
 
 exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
+
+ple_enable_log -params $PARAMS
 
 # Requête permettant de lire tous les PDBs existant sur la base $primary
 # Les bases en RO sont considérées comme des SEED.
@@ -168,7 +168,7 @@ function ssh_stby
 	typeset -r ssh_account="$1"
 	shift
 
-	exec_cmd $farg "ssh -t -t $ssh_account@${standby_host} \". .bash_profile; $@\"</dev/null"
+	exec_cmd $farg "ssh -t $ssh_account@${standby_host} \". .bash_profile; $@\"</dev/null"
 }
 
 #	Exécute la commande "$@" avec sqlplus sur la standby
@@ -373,23 +373,38 @@ function add_stby_redolog
 }
 
 #	Configure les fichiers tnsnames sur le serveur primaire et secondaire.
-#	1	Sur le serveur primaire si le fichier existe, il est supprimé.
-#	2	Sur le serveur secondaire le fichier est écrasé par celui du primaire.
-#
-#	Ajoute les alias pour les connexions sur les CDBs, pas les PDBs.
+#	Ajoute les alias pour les connexions sur les CDBs, pas les PDBs sur les
+#	serveurs primaire et physique.
 function setup_tnsnames
 {
 	line_separator
+	info "Add alias for primary and physical CDB on $(hostname -s)"
+	LN
+
 	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-				-service=$primary				\
-				-host_name=$primary_host"
+					-service=$primary			\
+					-host_name=$primary_host"
+	LN
+
+	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
+					-service=$standby			\
+					-host_name=$standby_host"
 	LN
 
 	line_separator
-	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-				-service=$standby				\
-				-host_name=$standby_host		\
-				-copy_server_list=$standby_host"
+	info "Add alias for primary and physical CDB on $standby_host"
+	LN
+
+	exec_cmd "ssh $standby_host \". .bash_profile &&					\
+									~/plescripts/db/add_tns_alias.sh	\
+											-service=$primary			\
+											-host_name=$primary_host\""
+	LN
+
+	exec_cmd "ssh $standby_host \". .bash_profile &&					\
+									~/plescripts/db/add_tns_alias.sh	\
+											-service=$standby			\
+											-host_name=$standby_host\""
 	LN
 }
 
