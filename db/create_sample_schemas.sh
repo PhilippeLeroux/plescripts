@@ -12,11 +12,13 @@ typeset -r PARAMS="$*"
 typeset db=undef
 typeset pdb=undef
 typeset service=auto
+typeset	tablespace_name=demos
 
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
+	[-tablespace_name=$tablespace_name]
 	[-service=$service] if no service used localhost:1521
 "
 
@@ -35,6 +37,11 @@ do
 
 		-pdb=*)
 			pdb=${1##*=}
+			shift
+			;;
+
+		-tablespace_name=*)
+			tablespace_name=${1##*=}
 			shift
 			;;
 
@@ -113,13 +120,22 @@ then
 	LN
 fi
 
+line_separator
+info "Create tablespace $tablespace_name"
+sqlplus_cmd_with sys/$oracle_password@"$service" as sysdba	\
+					"$(set_sql_cmd "create tablespace $tablespace_name;")"
+LN
+
+line_separator
 exec_cmd "perl -p -i.bak -e 's#__SUB__CWD__#'$(pwd)'#g' *.sql */*.sql */*.dat"
 LN
 
+line_separator
 info "Execute mksample :"
-sqlplus_cmd "$(set_sql_cmd @mksample $oracle_password $oracle_password hr oe pm ix sh bi users temp $sample_dir/logs/ $service)"
+sqlplus_cmd "$(set_sql_cmd @mksample $oracle_password $oracle_password hr oe pm ix sh bi $tablespace_name temp $sample_dir/logs/ $service)"
 LN
 
+line_separator
 info "Unlock sample schemas."
 exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh	\
 											-db=$db			\
