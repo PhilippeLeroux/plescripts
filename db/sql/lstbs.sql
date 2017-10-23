@@ -1,14 +1,24 @@
 -- vim: ts=4:sw=4
+
+--	Affiche les PDBs et leurs tablespaces associées.
+
+set pages 80
+
+col	name	head "PDB name"	for a9
+
+break on name skip 2
+
 select
-	tablespace_name				"Name"
-,	initial_extent				"Init ext"
-,	allocation_type				"Alloc"
-,	extent_management			"Ext mngmt"
-,	segment_space_management	"Space mngmt"
-,	bigfile						"Big File"
-,	logging						"Logging"
-,	force_logging				"Force"
-,	shared						"Shared"
+	c.name
+,	file_id
+,	cdf.tablespace_name
+,	round( cdf.bytes / 1024 / 1024 ) Mb
+,	cdf.status
+,	cdf.file_name
 from
-	cdb_tablespaces
+	cdb_data_files cdf
+	inner join v$containers c
+		on cdf.con_id = c.con_id
 ;
+
+col name	clear
