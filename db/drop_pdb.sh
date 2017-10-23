@@ -140,12 +140,18 @@ function stop_and_remove_dbfs
 	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb -skip_drop_user"
 }
 
-[ $log == yes ] && ple_enable_log -params $PARAMS || true
-
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
 exit_if_param_invalid role "primary physical"	"$str_usage"
+
+if ! service_exists $db $pdb
+then
+	warning "Service not exists for pdb $pdb."
+	confirm_or_exit "Continue"
+fi
+
+[ $log == yes ] && ple_enable_log -params $PARAMS || true
 
 test_if_cmd_exists olsnodes
 [ $? -eq 0 ] && crs_used=yes || crs_used=no
@@ -204,19 +210,19 @@ fi
 
 wait_if_high_load_average
 
-line_separator
 if [[ $dataguard == no || $role == primary ]]
 then
-	line_separator
 	function sql_drop_pdb
 	{
 		set_sql_cmd "alter pluggable database $pdb close immediate instances=all;"
 		set_sql_cmd "drop pluggable database $pdb including datafiles;"
 	}
 
+	line_separator
 	sqlplus_cmd "$(sql_drop_pdb)"
 	LN
 else # physical standby
+	line_separator
 	sqlplus_cmd	\
 		"$(set_sql_cmd "alter pluggable database $pdb close immediate instances=all;")"
 	LN
