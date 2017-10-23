@@ -49,3 +49,6 @@
 [submodule "bundle/vim-markdown"]
 	path = bundle/vim-markdown
 	url = git://github.com/tpope/vim-markdown.git
+[submodule "bundle/vim-grammarous"]
+	path = bundle/vim-grammarous
+	url = git://github.com/rhysd/vim-grammarous.git

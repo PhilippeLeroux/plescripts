@@ -153,11 +153,12 @@ nnoremap <F2> :call FrDictionnaire()<CR>
 nnoremap <F4> :call USDictionnaire()<CR>
 
 "	============================================================================
-"	source $HOME/vimfunc/FrGrammaire.vim
-"	nnoremap <C-g> :call FrGrammaire()<CR>
 if v:version > 704
 	source $HOME/vimfunc/FrGrammalecte.vim
 	nnoremap <C-g> :call FrGrammalecte()<CR>
+else
+	source $HOME/vimfunc/FrGrammaire.vim
+	nnoremap <C-g> :call FrGrammaire()<CR>
 endif
 
 "	============================================================================
