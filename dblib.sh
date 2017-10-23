@@ -213,6 +213,7 @@ function sqlplus_exec_query
 	sqlplus_exec_query_with	"sys/$oracle_password as sysdba" "$1"
 }
 
+# $1 database parameter
 function orcl_parameter_value
 {
 typeset opv_query=\
@@ -325,15 +326,6 @@ function exit_if_service_not_running
 		LN
 		exit 1
 	fi
-}
-
-#*> $1 pdb name
-#*>
-#*> return db name
-function extract_db_name_from
-{
-	typeset	-r pdb_name_l="$1"
-	to_lower $(sed "s/\([a-z]*\)[0-9]*/\1/" <<<$pdb_name_l)
 }
 
 #*>	$1 pdb name

@@ -5,18 +5,23 @@
 . ~/plescripts/gilib.sh
 . ~/plescripts/memory/memorylib.sh
 . ~/plescripts/global.cfg
-EXEC_CMD_ACTION=EXEC
+EXEC_CMD_ACTION=NOP
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
-"Usage : $ME [-emul]"
+"Usage : $ME [-doit]"
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-doit)
+			EXEC_CMD_ACTION=EXEC
 			shift
 			;;
 
@@ -35,7 +40,7 @@ do
 	esac
 done
 
-ple_enable_log -params $PARAMS
+[ $EXEC_CMD_ACTION == EXEC ] && ple_enable_log -params $PARAMS || true
 
 must_be_user root
 
@@ -49,6 +54,59 @@ function create_orcl_pfile
 	sqlplus -s sys/$oracle_password as sysdba
 	create pfile='$1' from spfile;
 	EOS
+	LN
+}
+
+function read_sga_pga_value
+{
+	# Quand memory_target est spécifié il faut lire le pfile,
+	# s'il n'y a que memory_max_target il faut lire les
+	# paramètre en base.
+	# (note je ne me souviens plus vraiment pourquoi je suis
+	# passé par le pfile pour lire les paramètres...
+	orcl_sga_max_size_str=$(grep "__sga_target" $pfile | tail -1 | cut -d= -f2)
+	if [ x"$orcl_sga_max_size_str" == x ]
+	then
+		while read param value
+		do
+			case "$param" in
+				pga_aggregate_target)
+					orcl_pga_max_size_str=$(to_bytes $value)
+					;;
+
+				sga_max_size)
+					orcl_sga_max_size_str=$(to_bytes $value)
+					;;
+
+				*)
+					error "param = '$param' unknow..."
+					LN
+					exit 1
+			esac
+		done<<<"$(su - oracle -c "~/plescripts/tmp/read_sga_pga.sh")"
+
+		if [ x"$orcl_sga_max_size_str" == x ]
+		then
+			error "Cannot read parameter __sga_target"
+			LN
+			exit 1
+		fi
+	fi
+	orcl_sga_max_size_mb=$(to_mb "${orcl_sga_max_size_str}b")
+
+	if [ x"$orcl_pga_max_size_str" == x ]
+	then
+		orcl_pga_max_size_str=$(grep "__pga_aggregate_target" $pfile | tail -1 | cut -d= -f2)
+	fi
+	if [ x"$orcl_pga_max_size_str" == x ]
+	then
+		error "Cannot read parameter __pga_aggregate_target"
+		LN
+		exit 1
+	fi
+	orcl_pga_max_size_mb=$(to_mb "${orcl_pga_max_size_str}b")
+
+	info "$ORACLE_SID : sga = ${orcl_sga_max_size_mb}Mb pga=${orcl_pga_max_size_mb}Mb"
 	LN
 }
 
@@ -98,26 +156,7 @@ ORACLE_SID=$(su - oracle -c "echo \$ORACLE_SID")
 typeset -r pfile=/tmp/orcl_pfile.txt
 create_orcl_pfile $pfile
 
-orcl_sga_max_size_str=$(grep "__sga_target" $pfile | tail -1 | cut -d= -f2)
-if [ x"$orcl_sga_max_size_str" == x ]
-then
-	error "Cannot read parameter __sga_target"
-	LN
-	exit 1
-fi
-orcl_sga_max_size_mb=$(to_mb "${orcl_sga_max_size_str}b")
-
-orcl_pga_max_size_str=$(grep "__pga_aggregate_target" $pfile | tail -1 | cut -d= -f2)
-if [ x"$orcl_pga_max_size_str" == x ]
-then
-	error "Cannot read parameter __pga_aggregate_target"
-	LN
-	exit 1
-fi
-orcl_pga_max_size_mb=$(to_mb "${orcl_pga_max_size_str}b")
-
-info "$ORACLE_SID : sga = ${orcl_sga_max_size_mb}Mb pga=${orcl_pga_max_size_mb}Mb"
-LN
+read_sga_pga_value
 
 total_hpages=$(count_hugepages_for_sga_of "${orcl_sga_max_size_mb}M")
 info "Huge pages for $ORACLE_SID : $(fmt_number $total_hpages)"
@@ -151,10 +190,7 @@ then
 else
 	info "Stop database"
 
-	if [ $EXEC_CMD_ACTION == EXEC ]
-	then
-		exec_cmd "su - oracle -c \"~/plescripts/db/stop_db.sh\""
-	fi
+	exec_cmd "su - oracle -c \"~/plescripts/db/stop_db.sh\""
 	LN
 fi
 
@@ -187,12 +223,16 @@ then
 else
 	info "Start database"
 
-	if [ $EXEC_CMD_ACTION == EXEC ]
-	then
-		exec_cmd "su - oracle -c \"~/plescripts/db/start_db.sh -oracle_sid=$ORACLE_SID\""
-	fi
+	exec_cmd "su - oracle -c \"~/plescripts/db/start_db.sh -oracle_sid=$ORACLE_SID\""
 	LN
 fi
 
 exec_cmd -f "su - oracle -c \"plescripts/memory/show_pages.sh\""
 LN
+
+if [ "$EXEC_CMD_ACTION" == NOP ]
+then
+	info "To apply :"
+	info "./${ME##*/} -doit"
+	LN
+fi
