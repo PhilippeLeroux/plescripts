@@ -145,7 +145,7 @@ exit_if_param_undef pdb	"$str_usage"
 
 exit_if_param_invalid role "primary physical"	"$str_usage"
 
-if ! service_exists $db $pdb
+if ! service_exists $db $(mk_oci_service $pdb)
 then
 	warning "Service not exists for pdb $pdb."
 	confirm_or_exit "Continue"
