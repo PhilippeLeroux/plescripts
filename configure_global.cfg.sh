@@ -301,7 +301,7 @@ function sync_time_source
 # $1 orignal value
 # $2 new value
 # $3 parameter name to write to local cfg
-function add_to_local_cfg
+function update_local_cfg
 {
 	if [ "$1" != "$2" ]
 	then
@@ -337,21 +337,22 @@ then
 fi
 
 line_separator
-add_to_local_cfg "$gateway" "$gateway_new_ip" GATEWAY
+update_local_cfg "$gateway" "$gateway_new_ip" GATEWAY
 
-add_to_local_cfg "$hostvm" "$hostvm_type" HOSTVM
+update_local_cfg "$hostvm" "$hostvm_type" HOSTVM
 
-add_to_local_cfg "$client_hostname" "$(hostname -s)" CLIENT_HOSTNAME
+update_local_cfg "$client_hostname" "$(hostname -s)" CLIENT_HOSTNAME
 
-add_to_local_cfg "$common_user_name" "$USER" COMMON_USER_NAME
+update_local_cfg "$common_user_name" "$USER" COMMON_USER_NAME
 
-add_to_local_cfg "$common_uid" "$UID" COMMON_UID
+update_local_cfg "$common_uid" "$UID" COMMON_UID
 
-add_to_local_cfg "$if_net_bridgeadapter" "$if_net_bridgeadapter_n" IF_NET_BRIDGEADAPTER
+update_local_cfg "$if_net_bridgeadapter" "$if_net_bridgeadapter_n" IF_NET_BRIDGEADAPTER
 
-add_to_local_cfg "xxxx" "\"$vm_p\"" VM_PATH
+# Le premier paramètre permet de forcer la mise à jour de la variable.
+update_local_cfg "forcer_maj" "\"$vm_p\"" VM_PATH
 
-add_to_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVER
+update_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVER
 
 if [ "$disks_hosted_by" != "$disks_stored_on" ]
 then
@@ -360,7 +361,7 @@ then
 	LN
 fi
 
-add_to_local_cfg "$OL7_LABEL" "$OL7_LABEL_n" OL7_LABEL
+update_local_cfg "$OL7_LABEL" "$OL7_LABEL_n" OL7_LABEL
 
 info "Configure repository OL7"
 if	[[ $OL7_LABEL_n == 7.4 && $ol7_repository_release != R4 ]] ||	\
