@@ -24,6 +24,14 @@ typeset -r	orcl_version=$(read_orcl_version)
 typeset	-r	orcl_release="$(cut -d. -f1-2<<<"$orcl_version")"
 typeset		db=undef
 typeset		sysPassword=$oracle_password
+
+if [ $crs_used == yes ]
+then
+	typeset	automaticMemoryManagement=false
+else
+	typeset	automaticMemoryManagement=true
+fi
+
 typeset	-i	totalMemory=0
 typeset	-i	memoryMaxTarget=0
 if [[ $orcl_release == 12.2 ]]
@@ -50,6 +58,7 @@ else # Bug Oracle 12.2 totalMemory est ignoré.
 		memoryMaxTarget=$(compute -i "$shm_max_mb - ($shm_max_mb*10)/100")
 	fi
 fi
+
 case "$orcl_release" in
 	12.1)
 		typeset	shared_pool_size="344M"	# Strict minimum 256M
@@ -62,8 +71,16 @@ case "$orcl_release" in
 		LN
 		exit 1
 esac
-typeset		data=DATA
-typeset		fra=FRA
+
+if [ $crs_used == no ]
+then
+	typeset	data=$ORCL_FS_DATA
+	typeset	fra=$ORCL_FS_FRA
+else
+	typeset	data=DATA
+	typeset	fra=FRA
+fi
+
 typeset		templateName=General_Purpose.dbc
 typeset		db_type=undef
 typeset		node_list=undef
@@ -83,16 +100,17 @@ typeset		create_database=yes
 add_usage "-db=name"									"Database name."
 add_usage "[-lang=$lang]"								"Language."
 add_usage "[-sysPassword=$sysPassword]"
+add_usage "[-automaticMemoryManagement $automaticMemoryManagement]" "false|true (1)"
 if [ $set_param_totalMemory == yes ]
 then
-	add_usage "[-totalMemory=$totalMemory]"				"Unit Mb, 0 to disable."
+	add_usage "[-totalMemory=$totalMemory]"				"Unit Mb, 0 to disable. (2)"
 else	# utiliser memory_target avec le crs fait planter la création de la base.
 		# Avec le crs 800m est lu 80m
-	add_usage "[-memoryMaxTarget=$memoryMaxTarget]"		"Unit Mb, 0 to disable."
+	add_usage "[-memoryMaxTarget=$memoryMaxTarget]"		"Unit Mb, 0 to disable. (2)"
 fi
 # 12.1 Quand le grid est utilisé il faut obligatoirement présicer une valeur
 # minimum de 256M sinon la création échoue, sur un FS mettre 0 est OK
-add_usage "[-shared_pool_size=$shared_pool_size]"		"0 to disable. (6)"
+add_usage "[-shared_pool_size=$shared_pool_size]"		"0 to disable. (2) (6)"
 add_usage "[-cdb=$cdb]"									"yes|no"
 add_usage "[-redoSize=$redoSize]"						"Redo size Mb."
 add_usage "[-fast_start_mttr_target=$fast_start_mttr_target]" "0 to disable."
@@ -110,9 +128,13 @@ typeset -r str_usage=\
 $ME
 $(print_usage)
 
+\t1 : with CRS default value is false, else true.
+
+\t2 : disabled with -automaticMemoryManagement true.
+
 \t3 : db_type auto for single or RAC.
-\t	To create RAC One node used -db_type=RACONENODE
-\t	RAC One node service : ron_$(hostname -s)
+\t    To create RAC One node used -db_type=RACONENODE
+\t    RAC One node service : ron_$(hostname -s)
 
 \t4 : Default pool name : poolAllNodes
 
@@ -316,7 +338,10 @@ function make_dbca_args
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
 	add_dynamic_cmd_param "-redoLogFileSize $redoSize"
 
-	if [ $totalMemory -ne 0 ]
+	if [ "$automaticMemoryManagement" == true ]
+	then
+		add_dynamic_cmd_param "-automaticMemoryManagement true"
+	elif [ $totalMemory -ne 0 ]
 	then
 		add_dynamic_cmd_param "-totalMemory $totalMemory"
 		if [[ $crs_used == yes && "$shm_for_db" != "0" && $totalMemory -gt $(to_mb $shm_for_db) ]]
@@ -341,7 +366,7 @@ function make_dbca_args
 		initParams="$initParams,fast_start_mttr_target=$fast_start_mttr_target"
 	fi
 
-	if [ $memoryMaxTarget -ne 0 ]
+	if [[ "$automaticMemoryManagement" == false && $memoryMaxTarget -ne 0 ]]
 	then # Ne doit être définie que pour une base single : bug Oracle.
 		if [[ $crs_used == yes && "$shm_for_db" != "0" && $memoryMaxTarget -gt $(to_mb $shm_for_db) ]]
 		then
@@ -358,7 +383,7 @@ function make_dbca_args
 			;;
 	esac
 
-	if [[ "$shared_pool_size" != "0" ]]
+	if [[ "$automaticMemoryManagement" == false && "$shared_pool_size" != "0" ]]
 	then
 		initParams="$initParams,shared_pool_size=$shared_pool_size"
 	fi
@@ -599,10 +624,6 @@ function next_instructions
 #	============================================================================
 #	MAIN
 #	============================================================================
-ple_enable_log -params $PARAMS
-
-script_start
-
 exit_if_param_undef		db				"$str_usage"
 exit_if_param_invalid	cdb "yes no"	"$str_usage"
 if [ $db_type != undef ]
@@ -610,6 +631,10 @@ then
 	exit_if_param_invalid	db_type "SINGLE RAC RACONENODE"	"$str_usage"
 fi
 exit_if_param_invalid	enable_flashback	"yes no"	"$str_usage"
+
+script_start
+
+ple_enable_log -params $PARAMS
 
 adjust_parameters
 
@@ -620,12 +645,6 @@ stats_tt start create_$lower_db
 typeset prefixInstance=${db:0:8}
 
 load_node_list_and_update_dbtype
-
-if [[ $crs_used == no && "$data" == DATA && "$fra" == FRA ]]
-then
-	data=$ORCL_FS_DATA
-	fra=$ORCL_FS_FRA
-fi
 
 remove_glogin
 
