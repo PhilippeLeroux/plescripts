@@ -162,6 +162,9 @@ function test_ntp_synchro_on_server
 		typeset p=""
 	fi
 	exec_cmd $p "ssh -t root@$1 '~/plescripts/ntp/test_synchro_ntp.sh'"
+	ret=$?
+	LN
+	return $ret
 }
 
 function test_ntp_synchro_all_servers
@@ -170,12 +173,10 @@ function test_ntp_synchro_all_servers
 	for node in ${node_names[*]}
 	do
 		test_ntp_synchro_on_server -c $node
-		ret=$?
-		LN
-		if [ $ret -ne 0 ]
+		if [ $? -ne 0 ]
 		then
 			warning "After VBox reboot execute :"
-			info "./$ME -skip_extract_grid -skip_init_afd_disks"
+			info "$ME -skip_extract_grid -skip_init_afd_disks"
 			LN
 		fi
 	done
@@ -433,7 +434,7 @@ function run_post_install_root_scripts
 			[ $max_nodes -gt 1 ] && test_ntp_synchro_on_server $node_name || true
 			LN
 
-			run_post_install_root_scripts_on_node 0 ${node_names[0]}
+			run_post_install_root_scripts_on_node 1 ${node_names[0]}
 			LN
 
 			timing 10

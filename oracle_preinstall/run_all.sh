@@ -79,6 +79,11 @@ then
 		LN
 	else
 		install_cvuqdisk cvuqdisk-1.0.10-1.rpm
+		if [ "$ol7_kernel_version" == "redhat" ]
+		then
+			exec_cmd "./03_install_oracleasm.sh"
+		fi
+		LN
 	fi
 fi
 

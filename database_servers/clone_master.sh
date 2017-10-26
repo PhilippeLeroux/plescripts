@@ -785,7 +785,7 @@ then
 
 	if [ $cfg_db_type != fs ]
 	then
-		if [ "${oracle_release%.*.*}" == "12.1" ]
+		if [[ "${oracle_release%.*.*}" == "12.1" || "$ol7_kernel_version" == "redhat" ]]
 		then # A partir de la 12.2 se fait lors de l'installation du grid (AFD).
 			create_oracleasm_disks_on_new_disks
 		fi
@@ -795,7 +795,7 @@ then
 else
 	[ $cfg_luns_hosted_by == san ] && export_SAN_LUNs || true
 
-	if [ "${oracle_release%.*.*}" == "12.1" ]
+	if [[ "${oracle_release%.*.*}" == "12.1" || "$ol7_kernel_version" == "redhat" ]]
 	then
 		ssh_server "oracleasm scandisks"
 	fi

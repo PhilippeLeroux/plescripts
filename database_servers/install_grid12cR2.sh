@@ -180,7 +180,7 @@ function test_ntp_synchro_on_server
 	line_separator
 	info "Test ntp synchronization on serveur $1"
 	exec_cmd $p "ssh -t root@$1 '~/plescripts/ntp/test_synchro_ntp.sh'"
-	ret=$1
+	ret=$?
 	LN
 	return $ret
 }
@@ -193,7 +193,7 @@ function test_ntp_synchro_all_servers
 		if [ $? -ne 0 ]
 		then
 			warning "After VBox reboot execute :"
-			info "./$ME -skip_extract_grid -skip_init_afd_disks"
+			info "$ME -skip_extract_grid -skip_init_afd_disks"
 			LN
 		fi
 	done
@@ -308,7 +308,8 @@ function create_response_file
 		#update_value oracle.install.asm.gimrDG.disks			$disk_list				$rsp_file
 		#disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
 		#update_value oracle.install.asm.gimrDG.disksWithFailureGroupNames "${disk_list}," $rsp_file
-		update_value oracle.install.asm.configureAFD			true					$rsp_file
+		[ $configureAFD == yes ] && cAFD=true || cAFD=false
+		update_value oracle.install.asm.configureAFD			$cAFD					$rsp_file
 	fi
 	LN
 }
@@ -388,7 +389,8 @@ function start_grid_installation
 	check_oracle_size ${node_names[0]}
 }
 
-# $1 node# $2 server_name
+# $1 node number
+# $2 server_name
 function run_post_install_root_scripts_on_node
 {
 	typeset	-ri	nr_node=$1
@@ -451,7 +453,7 @@ function workaround_post_install_root_scripts
 	# c'est que le temps sur le serveur fait des sauts.
 
 	error "root scripts on server $node_n failed."
-	[ $node_nr -eq 0 ] && exit 1 || true
+	[ $node_nr -eq 1 ] && exit 1 || true
 
 	LN
 	warning "Workaround :"
@@ -463,7 +465,7 @@ function workaround_post_install_root_scripts
 	timing 10
 	LN
 
-	run_post_install_root_scripts_on_node $((node_nr+1)) $node_n
+	run_post_install_root_scripts_on_node $node_nr $node_n
 	typeset -i ret=$?
 	LN
 
@@ -524,7 +526,9 @@ function executeConfigTools
 	add_dynamic_cmd_param "    -responseFile /home/grid/grid_$db.rsp"
 	add_dynamic_cmd_param "    -silent\""
 	exec_dynamic_cmd $param "ssh grid@${node_names[0]} \". .bash_profile &&"
+	ret=$?
 	LN
+	return $ret
 }
 
 # $1 nom du DG
@@ -641,7 +645,8 @@ function rac_install_acfs_driver
 
 	for (( inode = 0; inode < max_nodes; ++inode ))
 	do
-		exec_cmd "ssh -t root@${node_names[inode]} \". .bash_profile && acfsroot install\""
+		# Peut échouer si le kernel est trop ancien.
+		exec_cmd -c "ssh -t root@${node_names[inode]} \". .bash_profile && acfsroot install\""
 		LN
 	done
 }
@@ -651,9 +656,10 @@ function rac_executeConfigTools
 {
 	[ $configTools_install == no ] && return 0 || true
 
-	executeConfigTools -c
-	[ $? -ne 0 ] && executeConfigTools -c || true
+	test_ntp_synchro_all_servers
 
+	executeConfigTools -c
+	typeset ret=$?
 	if [[ "$do_hacks" == yes && "$mgmtdb_autostart" == disable ]]
 	then
 		line_separator
@@ -662,18 +668,23 @@ function rac_executeConfigTools
 		do # Il faut absolument désactiver sur tous les nœuds.
 			ssh_node0 root srvctl disable mgmtlsnr -node $node
 			LN
-			ssh_node0 root srvctl disable mgmtdb -node $node
-			LN
+			if [ $ret -eq 0 ]
+			then
+				ssh_node0 root srvctl disable mgmtdb -node $node
+				LN
+			fi
 		done
 
-		ssh_node0 grid srvctl stop mgmtdb -force
-		LN
+		if [ $ret -eq 0 ]
+		then
+			ssh_node0 grid srvctl stop mgmtdb -force
+			LN
+		fi
 		ssh_node0 grid srvctl stop mgmtlsnr -force
 		LN
-
-		# L'installation d'Oracle Database Server se fera mieux.
-		empty_swap
 	fi
+	# L'installation d'Oracle Database Server se fera mieux.
+	empty_swap
 }
 
 function post_installation
@@ -762,6 +773,8 @@ do
 	load_node_cfg $inode
 done
 
+[ "$ol7_kernel_version" == "redhat" ] && configureAFD=no || true
+
 typeset -ra extract_grid_mn=( "~2mn" "~2mn" )
 typeset -ra grid_installion_mn=( "~3mn" "~12mn" )
 typeset -ra post_install_root_script_node1_mn=( "~3mn" "~35mn" )
@@ -840,13 +853,13 @@ then
 		fi
 	fi
 
-	line_separator
-	info "Init AFD disks"
-	ssh_node0 root "~/plescripts/disk/root_init_afd_disks.sh -db=$db"
-	LN
-elif [ $create_reponse_file == no ]
-then
-	warning "Flag -skip_reponse_file invalid without -skip_init_afd_disks"
+	if [ $configureAFD == yes ]
+	then
+		line_separator
+		info "Init AFD disks"
+		ssh_node0 root "~/plescripts/disk/root_init_afd_disks.sh -db=$db"
+		LN
+	fi
 fi
 
 if [ $install_grid == yes ]
