@@ -1,4 +1,6 @@
-export HISTCONTROL=ignoreboth:erasedups
+HISTCONTROL=ignoreboth:erasedups
+HISTSIZE=10000
+HISTFILESIZE=10000
 
 ## Reset to normal:
 NORM="\033[0m"
