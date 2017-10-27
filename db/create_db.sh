@@ -100,7 +100,7 @@ typeset		create_database=yes
 add_usage "-db=name"									"Database name."
 add_usage "[-lang=$lang]"								"Language."
 add_usage "[-sysPassword=$sysPassword]"
-add_usage "[-automaticMemoryManagement $automaticMemoryManagement]" "false|true (1)"
+add_usage "[-automaticMemoryManagement=$automaticMemoryManagement]" "false|true (1)"
 if [ $set_param_totalMemory == yes ]
 then
 	add_usage "[-totalMemory=$totalMemory]"				"Unit Mb, 0 to disable. (2)"
@@ -130,7 +130,7 @@ $(print_usage)
 
 \t1 : with CRS default value is false, else true.
 
-\t2 : disabled with -automaticMemoryManagement true.
+\t2 : disabled with -automaticMemoryManagement=true.
 
 \t3 : db_type auto for single or RAC.
 \t    To create RAC One node used -db_type=RACONENODE
@@ -156,6 +156,11 @@ do
 
 		-y)
 			confirm=""
+			shift
+			;;
+
+		-automaticMemoryManagement=*)
+			automaticMemoryManagement=${1##*=}
 			shift
 			;;
 

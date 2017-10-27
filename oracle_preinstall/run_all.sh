@@ -73,18 +73,17 @@ function install_cvuqdisk
 if [ $db_type != single_fs ]
 then
 	if [ "${oracle_release%.*.*}" == "12.1" ]
-	then # A partie de la 12.2 plus besoin d'oracleasm.
+	then
 		install_cvuqdisk cvuqdisk-1.0.9-1.rpm
-		exec_cmd "./03_install_oracleasm.sh"
-		LN
 	else
 		install_cvuqdisk cvuqdisk-1.0.10-1.rpm
-		if [ "$ol7_kernel_version" == "redhat" ]
-		then
-			exec_cmd "./03_install_oracleasm.sh"
-		fi
-		LN
 	fi
+
+	if [ "$device_persistence" == "oracleasm" ]
+	then
+		exec_cmd "./03_install_oracleasm.sh"
+	fi
+	LN
 fi
 
 exec_cmd "./04_apply_os_prerequis.sh -db_type=$db_type"

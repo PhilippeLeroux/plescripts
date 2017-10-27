@@ -84,22 +84,11 @@ exit_if_param_undef disks	"$str_usage"
 typeset -a size_list
 typeset -a disk_list
 
-case "$gridversion" in
-	12.1*)
-		while read size disk_name rem
-		do
-			size_list+=( $(( size / 1024 )) )
-			disk_list+=( $disk_name )
-		done<<<"$(kfod nohdr=true op=disks)"
-		;;
-	*)	# A partir de la 12.2 AFD.
-		while read size disk_name rem
-		do
-			size_list+=( $(( size / 1024 )) )
-			disk_list+=( $disk_name )
-		done<<<"$(kfod nohdr=true op=disks | grep AFD)"
-		;;
-esac
+while read size disk_name rem
+do
+	size_list+=( $(( size / 1024 )) )
+	disk_list+=( $disk_name )
+done<<<"$(kfod nohdr=true op=disks | grep -E "AFD:|ORCL:")"
 
 if [ $disks -gt ${#disk_list[@]} ]
 then
@@ -113,7 +102,12 @@ then
 			info "$ ./create_oracleasm_disks_on_new_disks.sh -db=<db id>"
 			;;
 		*)	# A partir de la 12.2 AFD.
-			info "$ ./create_afd_disks_on_new_disks.sh -db=<db id>"
+			if command_exists oracleasm
+			then
+				info "$ ./create_oracleasm_disks_on_new_disks.sh -db=<db id>"
+			else
+				info "$ ./create_afd_disks_on_new_disks.sh -db=<db id>"
+			fi
 			;;
 	esac
 	LN

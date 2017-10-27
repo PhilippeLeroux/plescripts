@@ -227,10 +227,34 @@ function load_node_cfg
 
 # $1 disks file conf
 # $2 dg name
-# print to stdout all disks free
+# print to stdout all disks free available for DG
+function get_free_oracleasm_disks
+{
+	typeset	-r	disk_cfg_file="$1"
+
+	typeset		dg_name
+	typeset	-i	dg_size
+	typeset	-i	dg_first_nr
+	typeset	-i	dg_last_nr
+	IFS=':' read dg_name dg_size dg_first_nr dg_last_nr<<<"$(cat $disk_cfg_file | grep "$2")"
+
+	typeset	-i	total_disks=$(( dg_last_nr - dg_first_nr + 1 ))
+
+	((--dg_first_nr))
+	typeset		list
+	while read orcldisk
+	do
+		[ x"$list" == x ] && list=ORCL:$orcldisk || list="$list,ORCL:$orcldisk"
+	done<<<"$(ssh root@${node_names[0]} "oracleasm listdisks | head -$((dg_first_nr+total_disks)) | tail -$total_disks")"
+	echo $list
+}
+
+# $1 disks file conf
+# $2 dg name
+# print to stdout all disks free available for DG
 function get_free_disks
 {
-	typeset -r disk_cfg_file="$1"
+	typeset	-r	disk_cfg_file="$1"
 
 	typeset		dg_name
 	typeset	-i	dg_size
@@ -255,7 +279,6 @@ function create_response_file
 	exec_cmd cp -f template_grid_${oracle_release%.*.*}.rsp $rsp_file
 	LN
 
-	#update_value ORACLE_HOSTNAME							${node_names[0]}	$rsp_file
 	update_value ORACLE_BASE								$ORACLE_BASE		$rsp_file
 	update_value INVENTORY_LOCATION							${ORACLE_BASE%/*/*}/app/oraInventory	$rsp_file
 	update_value oracle.install.asm.SYSASMPassword			$oracle_password	$rsp_file
@@ -273,11 +296,19 @@ function create_response_file
 		update_value oracle.install.crs.config.networkInterfaceList empty			$rsp_file
 		update_value oracle.install.crs.config.storageOption		empty			$rsp_file
 		update_value oracle.install.asm.storageOption				ASM				$rsp_file
-		typeset disk_list=$(get_free_disks $disk_cfg_file DATA)
+		if [ "$device_persistence" == "AFD" ]
+		then
+			typeset disk_list=$(get_free_disks $disk_cfg_file DATA)
+			update_value oracle.install.asm.configureAFD		true					$rsp_file
+			update_value oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"	$rsp_file
+		else
+			typeset disk_list=$(get_free_oracleasm_disks $disk_cfg_file DATA)
+			update_value oracle.install.asm.configureAFD		false					$rsp_file
+			update_value oracle.install.asm.diskGroup.diskDiscoveryString "ORCL:\*"		$rsp_file
+		fi
 		update_value oracle.install.asm.diskGroup.disks				"$disk_list"	$rsp_file
 		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
 		update_value oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
-		update_value oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"	$rsp_file
 	else
 		update_value oracle.install.option						CRS_CONFIG				$rsp_file
 		update_value oracle.install.asm.diskGroup.name			CRS						$rsp_file
@@ -293,12 +324,19 @@ function create_response_file
 		typeset nil=$if_pub_name:${pub_network}:1,$if_rac_name:${rac_network}:5,$if_iscsi_name:${iscsi_network}:3
 		update_value oracle.install.crs.config.networkInterfaceList $nil				$rsp_file
 		update_value oracle.install.crs.config.storageOption	empty					$rsp_file
-		typeset disk_list=$(get_free_disks $disk_cfg_file CRS)
+		if [ "$device_persistence" == "AFD" ]
+		then
+			typeset disk_list=$(get_free_disks $disk_cfg_file CRS)
+			update_value oracle.install.asm.configureAFD		true					$rsp_file
+			update_value oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"	$rsp_file
+		else
+			typeset disk_list=$(get_free_oracleasm_disks $disk_cfg_file CRS)
+			update_value oracle.install.asm.configureAFD		false					$rsp_file
+			update_value oracle.install.asm.diskGroup.diskDiscoveryString "ORCL:\*"		$rsp_file
+		fi
 		update_value oracle.install.asm.diskGroup.disks			"$disk_list"			$rsp_file
 		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
 		update_value oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
-		update_value oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"		$rsp_file
-
 		# Les données du CRS et de GIMR ne sont plus séparées.
 		update_value oracle.install.asm.configureGIMRDataDG		false					$rsp_file
 		#update_value oracle.install.asm.gimrDG.AUSize			4						$rsp_file
@@ -308,8 +346,6 @@ function create_response_file
 		#update_value oracle.install.asm.gimrDG.disks			$disk_list				$rsp_file
 		#disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
 		#update_value oracle.install.asm.gimrDG.disksWithFailureGroupNames "${disk_list}," $rsp_file
-		[ $configureAFD == yes ] && cAFD=true || cAFD=false
-		update_value oracle.install.asm.configureAFD			$cAFD					$rsp_file
 	fi
 	LN
 }
@@ -773,8 +809,6 @@ do
 	load_node_cfg $inode
 done
 
-[ "$ol7_kernel_version" == "redhat" ] && configureAFD=no || true
-
 typeset -ra extract_grid_mn=( "~2mn" "~2mn" )
 typeset -ra grid_installion_mn=( "~3mn" "~12mn" )
 typeset -ra post_install_root_script_node1_mn=( "~3mn" "~35mn" )
@@ -853,7 +887,7 @@ then
 		fi
 	fi
 
-	if [ $configureAFD == yes ]
+	if [ "$device_persistence" == "AFD" ]
 	then
 		line_separator
 		info "Init AFD disks"
