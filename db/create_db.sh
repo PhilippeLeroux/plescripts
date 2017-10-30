@@ -21,65 +21,90 @@ else
 fi
 
 typeset -r	orcl_version=$(read_orcl_version)
+if [ "$orcl_version" != "$oracle_release" ]
+then
+	error "Configuration file global.cfg bad Oracle release."
+	error "From $client_hostname execute :"
+	error "$ ~/plescripts/update_local_cfg.sh ORACLE_RELEASE=$orcl_version"
+	LN
+	info "And rerun this script."
+	LN
+	exit 1
+fi
+
 typeset	-r	orcl_release="$(cut -d. -f1-2<<<"$orcl_version")"
 typeset		db=undef
 typeset		sysPassword=$oracle_password
 
 if [ $crs_used == yes ]
 then
-	typeset	automaticMemoryManagement=false
+	typeset	automaticMemoryManagement=true
+	typeset	data=DATA
+	typeset	fra=FRA
 else
 	typeset	automaticMemoryManagement=true
+	typeset	data=$ORCL_FS_DATA
+	typeset	fra=$ORCL_FS_FRA
 fi
 
 typeset	-i	totalMemory=0
 typeset	-i	memoryMaxTarget=0
+typeset		sga_target="0"
+typeset		pga_aggregate_target="0"
 if [[ $orcl_release == 12.2 ]]
 then
 	typeset -r set_param_totalMemory=no
 else
 	typeset -r set_param_totalMemory=yes
 fi
-if [ $set_param_totalMemory == yes ]
-then
-	if [ $crs_used == yes ]
-	then
-		totalMemory=$(to_mb $shm_for_db)
-	else
-		typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
-		totalMemory=$(compute -i "$shm_max_mb - ($shm_max_mb*10)/100")
-	fi
-else # Bug Oracle 12.2 totalMemory est ignoré.
-	if [ $crs_used == yes ]
-	then
-		memoryMaxTarget=$(to_mb $shm_for_db)
-	else
-		typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
-		memoryMaxTarget=$(compute -i "$shm_max_mb - ($shm_max_mb*10)/100")
-	fi
-fi
 
+function adjust_memory_parameters
+{
+	if [ $automaticMemoryManagement == true ]
+	then
+		if [ $set_param_totalMemory == yes ]
+		then
+			if [ $crs_used == yes ]
+			then
+				totalMemory=$(to_mb $shm_for_db)
+			else
+				typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
+				totalMemory=$(compute -i "$shm_max_mb - ($shm_max_mb*10)/100")
+			fi
+		else # Bug Oracle 12.2 totalMemory est ignoré.
+			if [ $crs_used == yes ]
+			then
+				memoryMaxTarget=$(to_mb $shm_for_db)
+			else
+				typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
+				memoryMaxTarget=$(compute -i "$shm_max_mb - ($shm_max_mb*10)/100")
+			fi
+		fi
+	else
+		sga_target=$(($(to_mb $shm_for_db) - 80))m
+		pga_aggregate_target=80m
+	fi
+}
+
+adjust_memory_parameters
+
+# L'ajustement de ces paramètres permettent d'éviter (ou au moins d'atténuer) les
+# erreurs d'allocation mémoire lors de la création des schémas de démos.
 case "$orcl_release" in
 	12.1)
-		typeset	shared_pool_size="344M"	# Strict minimum 256M
+		# Avec des VMs à 2 512 Mb il n'est plus utile de définir ces paramètres.
+		typeset	shared_pool_size="0"
+		typeset	java_pool_size="0" #8M
 		;;
 	12.2)
-		typeset	shared_pool_size="344M"
+		typeset	shared_pool_size="350M"
+		typeset	java_pool_size="8M"
 		;;
 	*)
 		error "Oracle Database '$orcl_release' invalid."
 		LN
 		exit 1
 esac
-
-if [ $crs_used == no ]
-then
-	typeset	data=$ORCL_FS_DATA
-	typeset	fra=$ORCL_FS_FRA
-else
-	typeset	data=DATA
-	typeset	fra=FRA
-fi
 
 typeset		templateName=General_Purpose.dbc
 typeset		db_type=undef
@@ -343,20 +368,46 @@ function make_dbca_args
 	add_dynamic_cmd_param "-systemPassword $sysPassword"
 	add_dynamic_cmd_param "-redoLogFileSize $redoSize"
 
+	typeset initParams="-initParams threaded_execution=true"
+
 	if [ "$automaticMemoryManagement" == true ]
 	then
 		add_dynamic_cmd_param "-automaticMemoryManagement true"
-	elif [ $totalMemory -ne 0 ]
-	then
-		add_dynamic_cmd_param "-totalMemory $totalMemory"
-		if [[ $crs_used == yes && "$shm_for_db" != "0" && $totalMemory -gt $(to_mb $shm_for_db) ]]
+		if [ $totalMemory -ne 0 ]
 		then
-			warning "totalMemoy (${totalMemory}M) > shm_for_db ($shm_for_db)"
-			LN
+			add_dynamic_cmd_param "-totalMemory $totalMemory"
+			if [[ $crs_used == yes && "$shm_for_db" != "0" && $totalMemory -gt $(to_mb $shm_for_db) ]]
+			then
+				warning "totalMemory (${totalMemory}M) > shm_for_db ($shm_for_db)"
+				LN
+			fi
+		elif [[ $memoryMaxTarget -ne 0 ]]
+		then # Ne doit être définie que pour une base single : bug Oracle.
+			if [[ $crs_used == yes && "$shm_for_db" != "0" && $memoryMaxTarget -gt $(to_mb $shm_for_db) ]]
+			then
+				warning "memoryMaxTarget (${memoryMaxTarget}M) > shm_for_db ($shm_for_db)"
+				LN
+			fi
+
+			initParams="$initParams,memory_target=${memoryMaxTarget}m"
+		fi
+	else
+		add_dynamic_cmd_param "-automaticMemoryManagement false"
+		if [ $sga_target != "0" ]
+		then
+			initParams="$initParams,memory_target=0,sga_target=$sga_target,pga_aggregate_target=$pga_aggregate_target"
 		fi
 	fi
 
-	typeset initParams="-initParams threaded_execution=true"
+	if [ "$shared_pool_size" != "0" ]
+	then
+		initParams="$initParams,shared_pool_size=$shared_pool_size"
+	fi
+
+	if [ "$java_pool_size" != "0" ]
+	then	
+		initParams="$initParams,java_pool_size=$java_pool_size"
+	fi
 
 	if [ $crs_used == no ]
 	then # sur FS il faut activer les asynch I/O & co.
@@ -371,27 +422,11 @@ function make_dbca_args
 		initParams="$initParams,fast_start_mttr_target=$fast_start_mttr_target"
 	fi
 
-	if [[ "$automaticMemoryManagement" == false && $memoryMaxTarget -ne 0 ]]
-	then # Ne doit être définie que pour une base single : bug Oracle.
-		if [[ $crs_used == yes && "$shm_for_db" != "0" && $memoryMaxTarget -gt $(to_mb $shm_for_db) ]]
-		then
-			warning "memoryMaxTarget (${memoryMaxTarget}M) > shm_for_db ($shm_for_db)"
-			LN
-		fi
-
-		initParams="$initParams,memory_max_target=${memoryMaxTarget}m"
-	fi
-
 	case $lang in
 		french)
 			initParams="$initParams,nls_language=FRENCH,NLS_TERRITORY=FRANCE"
 			;;
 	esac
-
-	if [[ "$automaticMemoryManagement" == false && "$shared_pool_size" != "0" ]]
-	then
-		initParams="$initParams,shared_pool_size=$shared_pool_size"
-	fi
 
 	if [ $crs_used == no ]
 	then # Bug ou pas ? même sur FS utilisation d'OMF.
@@ -509,7 +544,7 @@ function fsdb_enable_autostart
 	LN
 }
 
-function adjust_parameters
+function adjust_policymanaged_parameters
 {
 	#	Si Policy Managed création du pool 'poolAllNodes' si aucun pool de précisé.
 	[[ $policyManaged == yes && $serverPoolName == undef ]] && serverPoolName=poolAllNodes || true
@@ -531,14 +566,22 @@ function create_links
 	fi
 }
 
-# dbca me gonfle !
-function workaround_bug_dbca_122
+# Les paramètres doivent être modifiés sur chaque instance ou au niveau du spfile.
+# La base sera redémarrée plus tard.
+function rac12cR2_adjust_poolsize
 {
 	if [[ "$shared_pool_size" != "0" ]]
 	then
 		line_separator
-		info "Workaround bug dbca 12.2.0.1"
-		sqlplus_cmd "$(set_sql_cmd "alter system set shared_pool_size=$shared_pool_size scope=both sid='*';")"
+		function adjust_params
+		{
+			set_sql_cmd "alter system set shared_pool_size=$shared_pool_size scope=spfile sid='*';"
+			if [ "$java_pool_size" != "0" ]
+			then
+				set_sql_cmd "alter system set java_pool_size=$java_pool_size scope=spfile sid='*';"
+			fi
+		}
+		sqlplus_cmd "$(adjust_params)"
 		LN
 	fi
 }
@@ -631,17 +674,19 @@ function next_instructions
 #	============================================================================
 exit_if_param_undef		db				"$str_usage"
 exit_if_param_invalid	cdb "yes no"	"$str_usage"
+exit_if_param_invalid	enable_flashback	"yes no"	"$str_usage"
 if [ $db_type != undef ]
 then
 	exit_if_param_invalid	db_type "SINGLE RAC RACONENODE"	"$str_usage"
 fi
-exit_if_param_invalid	enable_flashback	"yes no"	"$str_usage"
 
 script_start
 
 ple_enable_log -params $PARAMS
 
-adjust_parameters
+adjust_memory_parameters
+
+adjust_policymanaged_parameters
 
 check_tuned_profile
 
@@ -682,7 +727,7 @@ wait_if_high_load_average 5
 
 [ $crs_used == no ] && fsdb_enable_autostart || true
 
-[ $orcl_release == 12.2 ] && workaround_bug_dbca_122 || true
+[ $orcl_release == 12.2 ] && rac12cR2_adjust_poolsize || true
 
 wait_if_high_load_average 5
 

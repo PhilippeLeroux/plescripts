@@ -45,15 +45,11 @@ done
 
 must_be_user oracle
 
-if [ -f $TNS_ADMIN/sqlnet.ora ]
-then # sed plante si le fichier n'existe pas.
-	info "Remove wallet configuration."
-	execute_on_all_nodes_v2 'sed -i "/WALLET_LOCATION/d" $TNS_ADMIN/sqlnet.ora'
-	execute_on_all_nodes_v2 'sed -i "/SQLNET.WALLET_OVERRIDE/d" $TNS_ADMIN/sqlnet.ora'
-	LN
-else
-	info "\$TNS_ADMIN/sqlnet.ora not exists, nothing to do."
-fi
+info "Remove wallet configuration."
+# sed plante si le fichier n'existe pas, donc utilisation de -c
+execute_on_all_nodes_v2 -c 'sed -i "/WALLET_LOCATION/d" $TNS_ADMIN/sqlnet.ora'
+execute_on_all_nodes_v2 -c 'sed -i "/SQLNET.WALLET_OVERRIDE/d" $TNS_ADMIN/sqlnet.ora'
+LN
 
 if [ -d "$wallet_path" ]
 then
