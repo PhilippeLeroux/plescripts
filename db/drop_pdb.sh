@@ -117,14 +117,14 @@ function close_pdb_on_physical_standby_database
 		return 0
 	fi
 
-	for i in $( seq 0 $(( ${#physical_list[@]} - 1 )) )
+	for (( i=0; i<${#physical_list[@]}; ++i ))
 	do
-		exec_cmd $force_flag "ssh -t -t ${stby_server_list[i]}				\
-							\". .bash_profile;								\
-							cd plescripts/db;								\
-							./drop_pdb.sh	-db=${physical_list[i]}			\
-											-pdb=${pdb}						\
-											-nolog							\
+		exec_cmd $force_flag "ssh -t -t ${stby_server_list[i]}		\
+							\". .bash_profile;						\
+							~/plescripts/db/drop_pdb.sh				\
+											-db=${physical_list[i]}	\
+											-pdb=${pdb}				\
+											-nolog					\
 											-physical\"</dev/null"
 	done
 }
@@ -147,8 +147,12 @@ exit_if_param_invalid role "primary physical"	"$str_usage"
 
 if ! service_exists $db $(mk_oci_service $pdb)
 then
-	warning "Service not exists for pdb $pdb."
-	confirm_or_exit "Continue"
+	if [ "$role" != "physical" ]
+	then	# Le script étant lancé via ssh est un '</dev/null' la réponse ne
+			# peut être saisie.
+		warning "Service not exists for pdb $pdb."
+		confirm_or_exit "Continue"
+	fi
 fi
 
 [ $log == yes ] && ple_enable_log -params $PARAMS || true
@@ -196,16 +200,16 @@ wait_if_high_load_average
 
 line_separator
 info "Delete credential for sys"
-exec_cmd "wallet/delete_credential.sh -tnsalias=sys${pdb}"
+exec_cmd "~/plescripts/db/wallet/delete_credential.sh -tnsalias=sys${pdb}"
 LN
 
 wait_if_high_load_average
 
 if [ $crs_used == yes ]
 then
-	exec_cmd "./drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
+	exec_cmd "~/plescripts/db/drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
 else
-	exec_cmd "./fsdb_drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
+	exec_cmd "~/plescripts/db/fsdb_drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
 fi
 
 wait_if_high_load_average
