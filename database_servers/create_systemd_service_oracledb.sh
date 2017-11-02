@@ -44,7 +44,7 @@ info "Create systemd service for Oracle Database"
 
 cat <<EOS > $service_file
 [Unit]
-Description=Start all Oracle database
+Description=Oracle database
 Wants=iscsi.service
 After=iscsi.service
 
