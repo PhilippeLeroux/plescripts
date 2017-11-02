@@ -57,33 +57,23 @@ fi
 exec_cmd "./01_create_oracle_users.sh -release=$oracle_release -db_type=$db_type"
 LN
 
-exec_cmd "./02_install_some_rpms.sh"
+line_separator
+exec_cmd "LANG=C yum -y -q install				\
+							$oracle_rdbms_rpm	\
+							~/plescripts/rpm/rlwrap-0.42-1.el7.x86_64.rpm"
 LN
-
-# $1 rpm name.
-function install_cvuqdisk
-{
-	typeset -r cvuqdisk="$1"
-	info "Install cvuqdisk : $(sed "s/.*-\(.*\)-.*/\1/"<<<"$cvuqdisk")"
-	# Par défaut le groupe est oinstall, pas besoin d'exporter CVUQDISK_GRP
-	LANG=C exec_cmd yum -y -q install $cvuqdisk
-	LN
-}
 
 if [ $db_type != single_fs ]
 then
-	if [ "${oracle_release%.*.*}" == "12.1" ]
-	then
-		install_cvuqdisk cvuqdisk-1.0.9-1.rpm
-	else
-		install_cvuqdisk cvuqdisk-1.0.10-1.rpm
-	fi
+	line_separator
+	exec_cmd "./02_install_cvuqdisk.sh"
+	LN
 
 	if [ "$device_persistence" == "oracleasm" ]
 	then
 		exec_cmd "./03_install_oracleasm.sh"
+		LN
 	fi
-	LN
 fi
 
 exec_cmd "./04_apply_os_prerequis.sh -db_type=$db_type"

@@ -189,9 +189,6 @@ function run_oracle_preinstall
 			;;
 	esac
 
-	#	Source .bash_profile pour éviter les erreurs du script oracle_preinstall/02_install_some_rpms.sh
-	#	Voir dans le script la section "NFS problem workaround"
-	#	Note je ne sais pas si c'est efficace, c'est un teste.
 	ssh_server ". .bash_profile;	\
 					plescripts/oracle_preinstall/run_all.sh -db_type=$db_type"
 	LN
@@ -522,8 +519,6 @@ function configure_server
 #	Met en place tous les pré requis Oracle
 function configure_oracle_accounts
 {
-	run_oracle_preinstall
-
 	if [ $cfg_db_type != fs ]
 	then
 		if ! ping_test github.com
@@ -751,6 +746,10 @@ fi
 
 configure_server
 
+add_oracle_install_directory_to_fstab
+
+run_oracle_preinstall
+
 configure_oracle_accounts
 
 #	----------------------------------------------------------------------------
@@ -774,8 +773,6 @@ LN
 install_vim_plugin
 
 copy_color_file
-
-add_oracle_install_directory_to_fstab
 
 bug_rac122_workaround
 
