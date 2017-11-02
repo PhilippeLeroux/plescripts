@@ -19,6 +19,8 @@ from
 	cdb_data_files cdf
 	inner join v$containers c
 		on cdf.con_id = c.con_id
+order by
+	c.name
 ;
 
 col name	clear
