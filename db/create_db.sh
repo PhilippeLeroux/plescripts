@@ -97,8 +97,14 @@ case "$orcl_release" in
 		typeset	java_pool_size="0" #8M
 		;;
 	12.2)
-		typeset	shared_pool_size="350M"
-		typeset	java_pool_size="8M"
+		if [ $crs_used == yes ]
+		then
+			typeset	shared_pool_size="350M"
+			typeset	java_pool_size="8M"
+		else
+			typeset	shared_pool_size="0"
+			typeset	java_pool_size="0"
+		fi
 		;;
 	*)
 		error "Oracle Database '$orcl_release' invalid."
@@ -672,8 +678,8 @@ function next_instructions
 #	============================================================================
 #	MAIN
 #	============================================================================
-exit_if_param_undef		db				"$str_usage"
-exit_if_param_invalid	cdb "yes no"	"$str_usage"
+exit_if_param_undef		db								"$str_usage"
+exit_if_param_invalid	cdb					"yes no"	"$str_usage"
 exit_if_param_invalid	enable_flashback	"yes no"	"$str_usage"
 if [ $db_type != undef ]
 then
