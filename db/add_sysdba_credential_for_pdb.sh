@@ -10,7 +10,10 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
-"Usage : $ME -db=name -pdb=name [-service=auto]
+"Usage : $ME
+	-db=name
+	-pdb=name
+	[-service=auto] Default pdb name.
 
 Le script prend en charge les RACs.
 
@@ -61,7 +64,7 @@ done
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
-[ $service == auto ] && service=$(mk_oci_service $pdb) || true
+[ $service == auto ] && service=$pdb || true
 
 typeset -r tnsalias=sys${pdb}
 

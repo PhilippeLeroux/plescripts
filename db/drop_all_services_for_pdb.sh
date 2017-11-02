@@ -58,11 +58,15 @@ typeset -i	count=0
 
 while read label service rem
 do
-	[ x"$label" == x ] && continue
+	[ x"$label" == x ] && continue || true
 
 	exec_cmd "~/plescripts/db/drop_service.sh -db=$db -service=$service"
 	LN
 	count=count+1
+
+	info "Useful only if no wallet manager."
+	exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=sys$pdb"
+	LN
 done<<<"$(srvctl status service -db $db | grep -iE "(pdb){,1}${pdb}_.*")"
 # (pdb){,1} nécessaire pour supprimer les services avec l'ancienne convention
 # de nomage.

@@ -258,6 +258,31 @@ function create_pdb_services
 		LN
 	fi
 
+	if [ $wallet == no ]
+	then
+		line_separator
+		info "Add alias sys$pdb for sysdba connection."
+		exec_cmd "./add_tns_alias.sh				\
+						-service=$pdb				\
+						-host_name=$(hostname -s)	\
+						-tnsalias=sys$pdb"
+		LN
+
+		if [[ $dataguard == yes && ${#physical_list[@]} -ne 0 ]]
+		then
+			for stby_server in ${stby_server_list[*]}
+			do
+				info "Physical server $stby_server"
+				exec_cmd "ssh -t oracle@$stby_server				\
+								\". .bash_profile	&&				\
+								./add_tns_alias.sh					\
+										-service=$pdb				\
+										-host_name=$stby_server		\
+										-tnsalias=sys$pdb\""
+			done
+		fi
+	fi
+
 	line_separator
 	info "Create services"
 	if [[ $dataguard == yes && ${#physical_list[@]} -ne 0 ]]

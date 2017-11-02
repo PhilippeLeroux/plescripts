@@ -80,7 +80,7 @@ typeset db_role="$(read_database_role $db)"
 while read service_name
 do
 	[[ x"$service_name" == x || "$service_name" == dba_services ]]	\
-														&& continue || true
+			&& continue || true
 
 	function sql_drop_service
 	{
@@ -98,6 +98,10 @@ do
 	exec_cmd $HOME/plescripts/db/delete_tns_alias.sh -tnsalias=$service_name
 	LN
 done<<<"$(sql_query_read_service)"
+
+info "Useful only if no wallet manager."
+exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=sys$pdb"
+LN
 
 line_separator
 sqlplus_cmd "$(set_sql_cmd "alter system register;")"
