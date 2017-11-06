@@ -129,7 +129,7 @@ typeset	-i	fast_start_mttr_target=$db_fast_start_mttr_target
 typeset		create_database=yes
 
 add_usage "-db=name"									"Database name."
-add_usage "[-lang=$lang]"								"Language."
+add_usage "[-lang=$lang]"								"Language, ignored if NLS_LANG defined."
 add_usage "[-sysPassword=$sysPassword]"
 add_usage "[-automaticMemoryManagement=$automaticMemoryManagement]" "false|true (1)"
 if [ $set_param_totalMemory == yes ]
@@ -411,7 +411,7 @@ function make_dbca_args
 	fi
 
 	if [ "$java_pool_size" != "0" ]
-	then	
+	then
 		initParams="$initParams,java_pool_size=$java_pool_size"
 	fi
 
@@ -428,11 +428,14 @@ function make_dbca_args
 		initParams="$initParams,fast_start_mttr_target=$fast_start_mttr_target"
 	fi
 
-	case $lang in
-		french)
-			initParams="$initParams,nls_language=FRENCH,NLS_TERRITORY=FRANCE"
-			;;
-	esac
+	if [ x"$NLS_LANG" == x ]
+	then
+		case $lang in
+			french)
+				initParams="$initParams,nls_language=FRENCH,NLS_TERRITORY=FRANCE"
+				;;
+		esac
+	fi
 
 	if [ $crs_used == no ]
 	then # Bug ou pas ? même sur FS utilisation d'OMF.
