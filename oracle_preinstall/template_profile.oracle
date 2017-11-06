@@ -72,16 +72,18 @@ alias sugrid='sudo -u grid -i'
 
 export SQLPATH=~/plescripts/db/sql
 
-alias lsdiag="sp @\"$HOME/db/sql/lsdiag\""
-alias lspdbs="sp @\"$HOME/db/sql/lspdbs\""
-alias lsconn="sp @\"$HOME/db/sql/lsconn\""
-alias lsdbrole="sp @\"$HOME/db/sql/lsdbrole\""
-alias lstbs="sp @\"$HOME/db/sql/lstbs\""
-alias lspga="sp @\"$HOME/db/sql/lspga\""
+alias sp2='sqlplus -s sys/Oracle12 as sysdba'
+alias lsdiag="sp2 @\"$HOME/db/sql/lsdiag\"<<<exit"
+alias lspdbs="sp2 @\"$HOME/db/sql/lspdbs\"<<<exit"
+alias lsconn="sp2 @\"$HOME/db/sql/lsconn\"<<<exit"
+alias lsdbrole="sp2 @\"$HOME/db/sql/lsdbrole\"<<<exit"
+alias lstbs="sp2 @\"$HOME/db/sql/lstbs\"<<<exit"
+alias lspga="sp2 @\"$HOME/db/sql/lspga\"<<<exit"
 alias lsstby="$HOME/db/stby/show_dataguard_cfg.sh"
-alias lsfra="sp @\"$HOME/db/sql/lsfra\""
-alias lssrv="sp @\"$HOME/db/sql/lssrv\""
-alias lsasync="sp @\"$HOME/db/sql/lsasync\""
+alias lsfra="sp2 @\"$HOME/db/sql/lsfra\"<<<exit"
+alias lssrv="sp2 @\"$HOME/db/sql/lssrv\"<<<exit"
+alias lsasync="sp2 @\"$HOME/db/sql/lsasync\"<<<exit"
+
 # Ne fonctionne pas avec un RAC
 alias via='vi  $ORACLE_BASE/diag/rdbms/$(tr [:upper:] [:lower:]<<<$ORACLE_SID)/$ORACLE_SID/trace/alert_$ORACLE_SID.log'
 alias vib='vi  $ORACLE_BASE/diag/rdbms/$(tr [:upper:] [:lower:]<<<$ORACLE_SID)/$ORACLE_SID/trace/drc$ORACLE_SID.log'
