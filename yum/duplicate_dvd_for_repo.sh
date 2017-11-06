@@ -135,7 +135,7 @@ then
 	exec_cmd -c yum -y -q install ./deltarpm-3.6-3.el7.x86_64.rpm
 	exec_cmd -c yum -y -q install ./createrepo-0.9.9-26.el7.noarch.rpm
 	exec_cmd -c yum -y -q install ./python-deltarpm-3.6-3.el7.x86_64.rpm
-	L?
+	LN
 fi
 exec_cmd createrepo --update $repo_path
 fake_exec_cmd cd -
