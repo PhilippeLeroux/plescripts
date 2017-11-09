@@ -94,9 +94,11 @@ function VMs_folder
 		fi
 
 		ask_for_variable vm_p "VMs folder :"
+		vm_p="${vm_p/\~/$HOME}"
 		info -n "Exists $(replace_paths_by_shell_vars $vm_p) : "
 		if [ ! -d "$vm_p" ]
 		then
+			vm_p="$vm_path"
 			((++count_errors))
 			info -f "[$KO]"
 			LN
@@ -313,6 +315,9 @@ function update_local_cfg
 
 typeset -i count_errors=0
 
+exec_cmd "touch $HOME/plescripts/local.cfg"
+LN
+
 VMs_folder
 
 Oracle_Linux_Release
@@ -349,8 +354,11 @@ update_local_cfg "$common_uid" "$UID" COMMON_UID
 
 update_local_cfg "$if_net_bridgeadapter" "$if_net_bridgeadapter_n" IF_NET_BRIDGEADAPTER
 
-# Le premier paramètre permet de forcer la mise à jour de la variable.
-update_local_cfg "forcer_maj" "\"$vm_p\"" VM_PATH
+if [ "$vm_p" != "No VMs folder" ]
+then
+	# Le premier paramètre permet de forcer la mise à jour de la variable.
+	update_local_cfg "forcer_maj" "\"$vm_p\"" "VM_PATH"
+fi
 
 update_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVER
 
