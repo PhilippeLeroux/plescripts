@@ -54,8 +54,6 @@ do
 	esac
 done
 
-ple_enable_log -params $PARAMS
-
 exit_if_param_undef db		"$str_usage"
 
 exit_if_param_invalid role "primary physical" "$str_usage"
@@ -203,6 +201,8 @@ from
 		LN
 	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
 }
+
+ple_enable_log -params $PARAMS
 
 exit_if_database_not_exists $db
 

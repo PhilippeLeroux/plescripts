@@ -75,17 +75,16 @@ function file_nr_extends_ok
 	typeset -r	vdi_file=$1
 
 	typeset -ri nr_extents=$(sudo xfs_bmap "$vdi_file" | tail -1 | tr -s [:space:] | cut -d: -f1)+1
+	count_total_ext=count_total_ext+nr_extents
 
 	typeset -r	file_size=$(fmt_bytesU_2_better $(stat --printf="%s" "$vdi_file"))
 	typeset	-r	msg=$(printf "%-20s %8s : %2d extents " "${vdi_file##*/}" $file_size $nr_extents)
 	if [ $nr_extents -le $max_ext ]
 	then
 		info "$msg [$OK]"
-		LN
 		return 0
 	else
 		info "$msg [$KO] limit $max_ext extents, defrag needed..."
-		LN
 		return 1
 	fi
 }
@@ -122,13 +121,47 @@ function defrag_file
 	fi
 }
 
-function read_all_vm_paths
+function check_all_vdi_files
 {
+	typeset		sep=no
+	typeset	-i	count_vms=0
+	typeset	-i	count_vdi_files=0
+	typeset	-i	count_total_ext=0
+
 	while read vm_name
 	do
-		file=$(VBoxManage showvminfo $vm_name|grep -E "^Config file:"|cut -d: -f2)
-		echo "${file%/*}"
+		[ $sep == no ] && sep=yes || line_separator
+
+		((++count_vms))
+		info "Check files for VM $vm_name :"
+		while read vdi_name
+		do
+			((++count_vdi_files))
+			if ! file_nr_extends_ok "$vdi_name"
+			then
+				if [ $defrag == yes ]
+				then
+					defrag_file "$vdi_name"
+				else
+					info "    Détails avec :"
+					info "    sudo xfs_bmap -v \"$vdi_name\""
+					info ""
+					info "    Défragmentation :"
+					info "       - sudo xfs_fsr -v \"$vdi_name\""
+					info "       - ${ME##*/} -defrag (Tous les fichiers seront défragmentés)"
+					LN
+				fi
+			fi
+		done<<<"$(VBoxManage showvminfo $vm_name			|\
+						grep -E "^SATA"|grep -v "Snapshot"	|\
+						sed "s/.*: \(.*vdi\) .*/\1/g")"
+		LN
 	done<<<"$(VBoxManage list vms | cut -d\" -f2)"
+
+	info "VM        : $count_vms"
+	info -n "vdi files : $count_vdi_files, "
+	info -f "average $(compute -l2 "$count_total_ext / $count_vdi_files") extends per file."
+	LN
 }
 
 [ $ask == yes ] && defrag=yes || true
@@ -147,27 +180,4 @@ then
 	LN
 fi
 
-while read vm_path2
-do
-	while read file_name
-	do
-		[ x"$file_name" == x ] && continue || true
-		line_separator
-		info "$file_name"
-		if ! file_nr_extends_ok "$file_name"
-		then
-			if [ $defrag == yes ]
-			then
-				defrag_file "$file_name"
-			else
-				info "    Détails avec :"
-				info "    sudo xfs_bmap -v \"$file_name\""
-				info ""
-				info "    Défragmentation :"
-				info "       - sudo xfs_fsr -v \"$file_name\""
-				info "       - ${ME##*/} -defrag (Tous les fichiers seront défragmentés)"
-				LN
-			fi
-		fi
-	done<<<"$(find "$vm_path2" -name "*.vdi" 2>/dev/null)"
-done<<<"$(read_all_vm_paths)"
+check_all_vdi_files

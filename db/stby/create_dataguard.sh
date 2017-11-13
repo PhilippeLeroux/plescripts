@@ -321,15 +321,18 @@ typeset -r script=/tmp/setup_listener.sh
 cat<<EOS > $script
 #!/bin/bash
 
-grep -q "# Added by bibi : $standby" \$TNS_ADMIN/listener.ora
-if [ \$? -eq 0 ]
+if [ -f \$TNS_ADMIN/listener.ora ]
 then
-	echo "Already configured."
-	exit 0
+	if grep -q "# Added by bibi : $standby" \$TNS_ADMIN/listener.ora
+	then
+		echo "Already configured."
+		exit 0
+	fi
+else
+	cp \$TNS_ADMIN/listener.ora \$TNS_ADMIN/listener.ora.bibi.backup
 fi
 
 echo "Configuration :"
-cp \$TNS_ADMIN/listener.ora \$TNS_ADMIN/listener.ora.bibi.backup
 echo "$standby_sid_list" >> \$TNS_ADMIN/listener.ora
 lsnrctl stop
 lsnrctl start
@@ -429,16 +432,16 @@ function start_stby
 
 	[ $crs_used == no ] && stdby_update_oratab Y || true
 
-ssh -t -t $standby_host<<EO_SSH_STBY | tee -a $PLELIB_LOG_FILE
-rm -f $ORACLE_HOME/dbs/sp*${standby}* $ORACLE_HOME/dbs/init*${standby}*
-echo "db_name='$standby'" > $ORACLE_HOME/dbs/init${standby}.ora
-export ORACLE_SID=$standby
-\sqlplus -s sys/Oracle12 as sysdba<<EO_SQL_DBSTARTUP
-whenever sqlerror exit 1;
-startup nomount
-EO_SQL_DBSTARTUP
-exit \$?
-EO_SSH_STBY
+	ssh -t -t $standby_host<<-EO_SSH_STBY | tee -a $PLELIB_LOG_FILE
+	rm -f $ORACLE_HOME/dbs/sp*${standby}* $ORACLE_HOME/dbs/init*${standby}*
+	echo "db_name='$standby'" > $ORACLE_HOME/dbs/init${standby}.ora
+	export ORACLE_SID=$standby
+	\sqlplus -s sys/Oracle12 as sysdba<<EO_SQL_DBSTARTUP
+	whenever sqlerror exit 1;
+	startup nomount
+	EO_SQL_DBSTARTUP
+	exit \$?
+	EO_SSH_STBY
 
 	info "startup nomount return $?"
 	LN

@@ -39,33 +39,44 @@ done
 
 exit_if_ORACLE_SID_not_defined
 
-function exec_dgmgrl
-{
-	exec_cmd dgmgrl -silent -echo sys/$oracle_password "'$@'"
-}
+typeset	-i	nr_stby=0
 
 while read dbname dash role rem
 do
 	case "$role" in
-		"Primary")	primary=$dbname ;;
-		"Physical")	standby_list="$standby_list$dbname ";;
+		"Primary")
+			primary=$dbname
+			;;
+		"Physical")
+			((++nr_stby))
+			standby_list="$standby_list$dbname "
+			;;
 		*)	error "No dataguard configuration."
 			exit 1
 	esac
 done<<<"$(dgmgrl -silent -echo sys/$oracle_password "show configuration" |\
 			grep -E "Primary|Physical")"
 
-exec_dgmgrl "show configuration"
-
-line_separator
 info "Primary $primary"
-exec_dgmgrl "show database $primary"
-exec_dgmgrl "validate database $primary"
+fake_exec_cmd "dgmgrl -silent -echo sys/$oracle_password<<EO_CMD"
+dgmgrl -silent -echo sys/$oracle_password<<EO_CMD
+show configuration
+show database $primary
+validate database $primary
+EO_CMD
+LN
+
+info "$nr_stby physical database(s)"
+LN
 
 for standby in $standby_list
 do
 	line_separator
-	info "Standby $standby"
-	exec_dgmgrl "show database $standby"
-	exec_dgmgrl "validate database $standby"
+	info "Physical $standby"
+	fake_exec_cmd "dgmgrl -silent -echo sys/$oracle_password<<EO_CMD"
+	dgmgrl -silent -echo sys/$oracle_password<<-EO_CMD
+	show database $standby
+	validate database $standby
+	EO_CMD
+	LN
 done
