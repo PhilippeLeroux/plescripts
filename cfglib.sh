@@ -70,7 +70,7 @@ function cfg_total_disk_size_gb
 	do
 		count=$(( $last_no - $first_no + 1 ))
 		l_total_size_gb=$(( l_total_size_gb + size_gb * count ))
-	done < $cfg_path_prefix/$db/disks
+	done < $cfg_path_prefix/$l_db/disks
 
 	echo $l_total_size_gb
 }
