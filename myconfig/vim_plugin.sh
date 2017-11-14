@@ -11,9 +11,9 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
-	-url=<url>         : Installe depuis l'url github un plugin
+	-url=<url>         : Installe depuis l'url github un plugin.
 	-show              : Affiche l'ensemble des plugins installés.
-	-del=<plugin name> : Supprime un plugin
+	-del=<plugin name> : Supprime un plugin.
 	-init              : Réinitialise tous les plugins.
 
 Pour l'initialisation (-init) les plugins à installer sont lues dans le fichier :
@@ -90,28 +90,66 @@ function backup_and_remove_tod_vim
 	fi
 
 	exec_cmd "mkdir -p ~/.vim/autoload"
+	LN
+}
+
+# Variable languageToolDirectory must exists.
+function directory_LanguageTool_exists
+{
+	if [ ! -v languageToolDirectory ]
+	then
+		error "Variable languageToolDirectory not declared."
+		LN
+		exit 1
+	fi
+
+	typeset -a path_list=( $(find ~/ -maxdepth 1 -type d -name "LanguageTool*"|tr '\n' ' ') )
+
+	case ${#path_list[*]} in
+		0)
+			warning "No path ~/LanguageTool* found."
+			LN
+			return 1
+			;;
+		1)
+			languageToolDirectory=${path_list##*/}
+			return 0
+			;;
+		*)
+			warning "${#path_list[*]} paths ~/LanguageTool* found."
+			LN
+			return 1
+			;;
+	esac
 }
 
 function install_plugin
 {
-	typeset -r	url=${1#https:}
-	typeset		name=${url##*/}; name=${name%.git}
+	# Supprime https: ou git: s'ils sont précisés eau début de l'URL.
+	typeset url=${1#https:}
+	url=${url#git:}
 
-	info "git  : $url"
+	# Lecture du nom du plugin.
+	typeset	name=${url##*/}
+	name=${name%.git}
+
+	info "git  : git:$url"
 	info "name : $name"
+	LN
 
 	exec_cmd "cd ~/.vim && git submodule add git:$url bundle/$name"
 	exec_cmd "cd ~/.vim && git submodule init && git submodule update"
+	LN
 
 	# Particularité pour chaque plugin.
 	case "$name" in
 		"vim-grammarous")
-			if [ -d ~/LanguageTool-3.4 ]
+			typeset languageToolDirectory=undef
+			if directory_LanguageTool_exists
 			then
 				exec_cmd "mkdir ~/.vim/bundle/vim-grammarous/misc"
-				exec_cmd "ln -s ~/LanguageTool-3.4 ~/.vim/bundle/vim-grammarous/misc/LanguageTool-3.4"
-			else
-				warning "~/LanguageTool-3.4 not exists."
+				exec_cmd "ln -s ~/$languageToolDirectory ~/.vim/bundle/vim-grammarous/misc/$languageToolDirectory"
+				LN
 			fi
 			;;
 	esac
@@ -124,6 +162,7 @@ function uninstall_plugin
 	exec_cmd "cd ~/.vim && git submodule deinit -f  bundle/$plugin_name"
 	exec_cmd "cd ~/.vim && git rm -f  bundle/$plugin_name"
 	exec_cmd "rm -rf ~/.vim/.git/modules/bundle/$plugin_name"
+	LN
 }
 
 function install_pathogen
@@ -153,16 +192,15 @@ function install_all
 	exit_if_file_not_exists $plugin_list
 
 	backup_and_remove_tod_vim
-	LN
 
 	install_pathogen
-	LN
 
 	while read line
 	do
 		case ${line:0:1} in
 			'#')
 				info "${line:1}"
+				LN
 				;;
 
 			'/'|'h')
@@ -175,6 +213,7 @@ function install_all
 
 			*)
 				warning "'${line:0:1}' : $line"
+				LN
 				;;
 		esac
 	done<<<"$( cat $plugin_list )"
@@ -184,18 +223,9 @@ function install_all
 #	MAIN
 #	======================================================================
 
-#	Si aucun argument l'action par défaut est -show
-if [ $action == undef ]
-then
-	action=show
-	info "$str_usage"
-	LN
-fi
-
 case $action in
 	init)
 		install_all
-		LN
 		exec_cmd "cd ~/.vim && git status"
 		LN
 
@@ -206,25 +236,32 @@ case $action in
 		;;
 
 	show)
-		exec_cmd "cat ~/.vim/.gitmodules"
+		exec_cmd "cd ~/.vim && git submodule"
+		LN
 		;;
 
 	install_plugin)
 		exit_if_pathogen_not_installed
 		install_plugin $url
-		LN
 		exec_cmd "cd ~/.vim && git status"
 		LN
 		;;
 
 	uninstall_plugin)
 		uninstall_plugin $plugin_name
-		LN
 		exec_cmd "cd ~/.vim && git status"
 		LN
 		;;
 
+	undef)
+		info "$str_usage"
+		LN
+		exit 1
+		;;
 	*)
 		error "Unknow action $action"
+		LN
+		info "$str_usage"
+		LN
 		exit 1
 esac
