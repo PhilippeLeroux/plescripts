@@ -120,6 +120,14 @@ typeset -i nr_vm_started=0	# Nombre de VM démarré.
 typeset	-a vm_started_list	# Nom des VMs démarrées.
 typeset	-a dataguard_list	# Nom des autres VMs dans le groupe dataguard.
 
+if [ $server != $infra_hostname ] && ! vm_running $infra_hostname
+then
+	warning "$infra_hostname not running."
+	exec_cmd "start_vm $infra_hostname"
+	info "continue..."
+	LN
+fi
+
 #	============================================================================
 load_vm_list
 
