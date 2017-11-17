@@ -38,63 +38,88 @@ do
 	esac
 done
 
-#ple_enable_log -params $PARAMS
+#	Mémorise le nom des VM affichées, utile pour les Dataguard
+typeset	vm_printed_list
 
-info "Infra :"
-info -n "Master $master_hostname : "
-if vm_running $master_hostname
-then
-	info -f "${UNDERLINE}running${NORM}."
-else
-	info -f "not running."
-fi
+# $1 vm name
+function print_vm_running_status
+{
+	if vm_running $1
+	then
+		info -n -f "${UNDERLINE}$1${NORM}"
+	else
+		info -n -f "$1"
+	fi
+}
 
-info -n "Infra  $infra_hostname : "
-if vm_running $infra_hostname
-then
-	info -f "${UNDERLINE}running${NORM}."
-else
-	info -f "not running."
-fi
-LN
+# $1 dbid
+# [$2] skip_stby
+function print_vm_database
+{
+	typeset -r	dbid=$1
+	typeset	-r	stby_action=$2
 
-line_separator
-info "Databases :"
-while read fullpath
-do
-	[ x"$fullpath" == x ] && continue || true
+	typeset	-r	str_dbid=$(printf "%-8s" $dbid)
+	typeset	-ri	max_nodes=$(cfg_max_nodes $dbid)
 
-	dbid=${fullpath##*/}
-	max_nodes=$(cfg_max_nodes $dbid)
 	cfg_load_node_info $dbid 1
+	if [[ "$vm_printed_list" == *$cfg_server_name* ]]
+	then
+		return 0
+	fi
+
+	if [[ $cfg_standby != none && "$stby_action" != "skip_stby" ]]
+	then
+		info "Dataguard servers :"
+	fi
+
 	if [ $max_nodes -eq 2 ]
 	then
-		info -n "$dbid : Oracle RAC $cfg_orarel, servers $cfg_server_name"
+		info -n "$str_dbid : Oracle RAC $cfg_orarel, $(print_vm_running_status $cfg_server_name), "
+		vm_printed_list="$vm_printed_list $cfg_server_name"
 		cfg_load_node_info $dbid 2
-		info -n -f ",$cfg_server_name"
+		print_vm_running_status $cfg_server_name
+		vm_printed_list="$vm_printed_list $cfg_server_name"
 	else
-		info -n "$dbid : Oracle $cfg_orarel, server $cfg_server_name"
+		info -n "$str_dbid : Oracle $cfg_orarel, $(print_vm_running_status $cfg_server_name)"
+		vm_printed_list="$vm_printed_list $cfg_server_name"
 	fi
 	info -n -f ", storage $cfg_luns_hosted_by"
 	case $cfg_db_type in
 		std|rac)
-			info -n -f "/ASM"
+			info -f "/ASM"
 			;;
 
 		fs)
-			info -n -f "/FS"
+			info -f "/FS"
 			;;
 	esac
-			
+
 	if [ $cfg_standby != none ]
 	then
-		info -n -f ", standby with $cfg_standby"
-	fi
-	if vm_running $cfg_server_name
-	then
-		info -f ", ${UNDERLINE}running${NORM}."
+		if [ "$stby_action" != skip_stby ]
+		then
+			print_vm_database $cfg_standby skip_stby
+		else
+			LN
+		fi
 	else
-		info -f ", not running."
+		LN
 	fi
-	LN
+}
+
+#ple_enable_log -params $PARAMS
+
+info "Infra :"
+info "Master $(print_vm_running_status $master_hostname)"
+info "Infra  $(print_vm_running_status $infra_hostname)"
+LN
+
+line_separator
+info "Databases :"
+LN
+
+while read fullpath
+do
+	[ x"$fullpath" != x ] && print_vm_database ${fullpath##*/} || true
 done<<<"$(find ~/plescripts/database_servers/* -type d)"
