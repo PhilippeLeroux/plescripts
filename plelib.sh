@@ -839,10 +839,12 @@ function exec_cmd
 
 	if [ $path_2_var == YES ]
 	then
-		typeset -r	simplified_cmd=$(replace_paths_by_shell_vars $(simplify_cmd $*))
+		typeset simplified_cmd=$(replace_paths_by_shell_vars $(simplify_cmd $*))
 	else
-		typeset -r	simplified_cmd=$(simplify_cmd $*)
+		typeset simplified_cmd=$(simplify_cmd $*)
 	fi
+
+	simplified_cmd=$(escape_symbol_nl "$simplified_cmd")
 
 	case $EXEC_CMD_ACTION in
 		NOP)
@@ -1177,6 +1179,12 @@ function exit_if_param_invalid
 function double_symbol_percent
 {
 	echo "${@//\%/%%}"
+}
+
+# Escape \n from $@
+function escape_symbol_nl
+{
+	sed "s/\\\n/\\\\\\\n/g"<<<"$@"
 }
 
 #*> Escape " from $@
