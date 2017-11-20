@@ -113,10 +113,24 @@ function read_vm_path_folder
 	sed "s/^ *//"<<<${config_file%/*}
 }
 
+# If "$@" begin with a ~, it's replaced by $HOME
+function translate_tilde_to_home
+{
+	typeset	the_path="$@"
+	[ ${the_path:0:1} == "~" ] && echo "$HOME${the_path:1}" || echo $the_path
+}
+
 if [ "$disk_path" == default ]
 then
 	typeset	-r disk_full_path="$(read_vm_path_folder $vm_name)/${disk_name}.vdi"
 else
+	disk_path=$(translate_tilde_to_home $disk_path)
+	if [ ! -d "$disk_path" ]
+	then
+		error "Path '$disk_path' not exists."
+		LN
+		exit 1
+	fi
 	typeset	-r disk_full_path="$disk_path/${disk_name}.vdi"
 fi
 
