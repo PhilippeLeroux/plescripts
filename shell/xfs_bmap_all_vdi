@@ -136,6 +136,10 @@ function check_all_vdi_files
 		info "Check files for VM $vm_name :"
 		while read vdi_name
 		do
+			# Arrive lors des snapshots, le .vdi original n'est pas listé,
+			# seulement le snapshot.
+			[ x"$vdi_name" == x ] && continue || true
+
 			((++count_vdi_files))
 			if ! file_nr_extends_ok "$vdi_name"
 			then
