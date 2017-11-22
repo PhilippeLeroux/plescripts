@@ -695,28 +695,23 @@ function rac_executeConfigTools
 	test_ntp_synchro_all_servers
 
 	executeConfigTools -c
-	typeset ret=$?
 	if [[ "$do_hacks" == yes && "$mgmtdb_autostart" == disable ]]
 	then
 		line_separator
 		info "Disable and stop database mgmtdb."
 		for node in ${node_names[*]}
 		do # Il faut absolument désactiver sur tous les nœuds.
-			ssh_node0 root srvctl disable mgmtlsnr -node $node
+			ssh_node0 -c root srvctl disable mgmtlsnr -node $node
 			LN
-			if [ $ret -eq 0 ]
-			then
-				ssh_node0 root srvctl disable mgmtdb -node $node
-				LN
-			fi
+
+			ssh_node0 -c root srvctl disable mgmtdb -node $node
+			LN
 		done
 
-		if [ $ret -eq 0 ]
-		then
-			ssh_node0 grid srvctl stop mgmtdb -force
-			LN
-		fi
-		ssh_node0 grid srvctl stop mgmtlsnr -force
+		ssh_node0 -c grid srvctl stop mgmtdb -force
+		LN
+
+		ssh_node0 -c grid srvctl stop mgmtlsnr -force
 		LN
 	fi
 	# L'installation d'Oracle Database Server se fera mieux.
