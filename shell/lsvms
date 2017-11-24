@@ -59,6 +59,13 @@ function print_vm_database
 	typeset -r	dbid=$1
 	typeset	-r	stby_action=$2
 
+	if ! cfg_exists $dbid use_return_code 1>/dev/null 2>&1
+	then
+		warning "Configuration not exists for $dbid."
+		LN
+		return 0
+	fi
+
 	typeset	-r	str_dbid=$(printf "%-8s" $dbid)
 	typeset	-ri	max_nodes=$(cfg_max_nodes $dbid)
 
