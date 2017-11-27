@@ -44,12 +44,19 @@ done
 
 exit_if_param_undef	db	"$str_usage"
 
-# Si les disques viennet d'être ajouté je les scans.
-info "Scan new disks."
-exec_cmd iscsiadm -m node --rescan
-LN
-execute_on_other_nodes '. .bash_profile; iscsiadm -m node --rescan'
-LN
+must_be_user root
+
+# Test si les disques sont gérés par le SAN ou par VBox
+# Code dupliqué dans create_afd_disks_on_new_disks.sh
+if lsscsi | grep -qE "LIO-ORG"
+then
+	# Si les disques viennent d'être ajouté je les scans.
+	info "Scan new disks."
+	exec_cmd iscsiadm -m node --rescan
+	LN
+	execute_on_other_nodes '. .bash_profile; iscsiadm -m node --rescan'
+	LN
+fi
 
 line_separator
 nr_disk=$(oracleasm listdisks | sort | tail -1 | sed "s/.*\(..\)$/\1/")
@@ -62,7 +69,8 @@ fi
 
 while read device
 do
-	[ x"$device" == x ] && exit
+	[ x"$device" == x ] && exit || true
+
 	add_partition_to $device
 	part_name=${device}1
 	oracle_label=$(printf "s1disk${db}%02d" $nr_disk)
