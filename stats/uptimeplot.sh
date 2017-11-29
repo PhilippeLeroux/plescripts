@@ -101,15 +101,28 @@ typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 cfg_load_node_info $db 1
 
 [ $date == undef ] && set_to_last_date || true
-typeset	-a server_list=( $cfg_server_name )
+typeset	-a	server_list=( $cfg_server_name )
 typeset	-r	log_name01=${PLELOG_ROOT}/$date/stats/uptime_${cfg_server_name}.log
+typeset	-a	boot_time_list=( $(head -1 "$log_name01"|awk '{print $3}') )
 if [ $max_nodes -eq 2 ]
 then
 	cfg_load_node_info $db 2
-	server_list+=( $cfg_server_name )
 	typeset	-r	log_name02=${PLELOG_ROOT}/$date/stats/uptime_${cfg_server_name}.log
+	server_list+=( $cfg_server_name )
+	boot_time_list+=( $(head -1 "$log_name02"|awk '{print $3}') )
+elif [ $cfg_standby != none ] && cfg_exists $cfg_standby use_return_code
+then
+	cfg_load_node_info $cfg_standby 1
+	typeset	log_name02=${PLELOG_ROOT}/$date/stats/uptime_${cfg_server_name}.log
+	if [ -f "$log_name02" ]
+	then
+		server_list+=( $cfg_server_name )
+		boot_time_list+=( $(head -1 "$log_name02"|awk '{print $3}') )
+	else
+		warning "unset $log_name02"
+		unset log_name02
+	fi
 fi
-
 
 #	Lecture de l'heure de début des mesures
 #	Lire la première ligne peut fausser le résulat donc lecture de la ligne 2 (là 3 avec le labe)
@@ -125,9 +138,9 @@ typeset		refresh_rate=1
 
 # boxes lines linespoints points impulses histeps
 # ok : points, histeps, linespoints
-#typeset -r with="linespoints pointinterval $(( (5*60) / refresh_rate ))"
-typeset -r with="histeps"
-#typeset -r with="linespoints"
+#typeset -r	with="linespoints pointinterval $(( (5*60) / refresh_rate ))"
+typeset -r	with="histeps"
+#typeset -r	with="linespoints"
 
 typeset	-r	fmt_time="%H:%M:%S"
 
@@ -138,6 +151,11 @@ typeset -r	plot_cmds=/tmp/uptime.plot.$$
 typeset -i line_to_skip=1
 
 typeset graph_title="Load Avg/Mn"
+graph_title="$graph_title : ${server_list[0]} boot time ${boot_time_list[0]}"
+if [ ${#server_list[@]} -eq 2 ]
+then
+	graph_title="$graph_title, ${server_list[1]} boot time ${boot_time_list[1]}"
+fi
 
 if [ $loop == yes ]
 then
