@@ -365,11 +365,19 @@ function add_stby_redolog
 	typeset	-i	nr_redo=-1
 	read redo_size_mb nr_redo <<<"$(sqlplus_exec_query "select distinct round(bytes/1024/1024)||'M', count(*) from v\$log group by bytes;" | tail -1)"
 
+	typeset -ri	nr_srl=$(sqlplus_exec_query "select count(*) from v\$logfile where type = 'STANDBY';"|tail -1)
+
 	typeset -ri nr_stdby_redo=nr_redo+1
 	info "$primary : $nr_redo redo logs of $redo_size_mb"
-	info " --> Add $nr_stdby_redo SRLs of $redo_size_mb"
-	sqlplus_cmd "$(sqlcmd_create_stby_redo_logs $nr_stdby_redo $redo_size_mb)"
-	LN
+	if [ $nr_srl -ne 0 ]
+	then
+		info "SRLs already exists #$nr_srl."
+		LN
+	else
+		info " --> Add $nr_stdby_redo SRLs of $redo_size_mb"
+		sqlplus_cmd "$(sqlcmd_create_stby_redo_logs $nr_stdby_redo $redo_size_mb)"
+		LN
+	fi
 
 	sqlplus_print_query "$(sql_print_redo)"
 	LN
