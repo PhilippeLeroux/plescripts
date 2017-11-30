@@ -2,10 +2,10 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
-. ~/plescripts/global.cfg
-EXEC_CMD_ACTION=EXEC
-
+. ~/plescripts/cfglib.sh
 . ~/plescripts/stats/statslib.sh
+#. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
@@ -19,6 +19,7 @@ typeset title=""
 typeset show_log_only=no
 typeset	clear_log=no
 typeset	range_mn=5
+typeset	skip_standby=no
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -32,6 +33,7 @@ typeset -r str_usage=\
 		[-start_at=HHhMM]    skip tt before HHhMM
 		[-show_log_only]     show log files.
 		[-clear_log]         remove log files.
+		[-skip_standby]
 
 Display files produced by memstats.sh with gnuplot"
 
@@ -89,6 +91,11 @@ do
 			shift
 			;;
 
+		-skip_standby)
+			skip_standby=yes
+			shift
+			;;
+
 		*)
 			error "Arg '$1' invalid."
 			LN
@@ -97,6 +104,9 @@ do
 			;;
 	esac
 done
+
+typeset		db=undef
+typeset		launch_second_script=no
 
 # HH:MM:SS
 function time_to_secs
@@ -141,6 +151,8 @@ function make_log_names
 			exit 1
 		fi
 
+		db=$ID_DB
+
 		if [ x"$server" != x ]
 		then
 			error "-node & -server cannot be used together."
@@ -148,9 +160,13 @@ function make_log_names
 		fi
 
 		server=$(printf "srv%s%02d" $ID_DB $node)
+	elif [[ x"$server" == x && x"$ID_DB" != x ]]
+	then
+		db=$ID_DB
+		server=$(printf "srv%s01" $ID_DB)
 	fi
 
-	[ $date == undef ] && set_to_last_date
+	[ $date == undef ] && set_to_last_date || true
 
 	if [ $time == undef ]
 	then
@@ -209,6 +225,15 @@ then
 fi
 
 make_log_names
+
+if [ $db != undef ] && cfg_exists $db use_return_code 1>/dev/null 2>&1
+then
+	cfg_load_node_info $db 1
+	if [[ $(cfg_max_nodes $db) -eq 2 ]] || [[ $cfg_standby != none && $skip_standby == no ]]
+	then
+		launch_second_script=yes
+	fi
+fi
 
 #	Lecture de l'heure de début des mesures
 typeset -r	start_time=$(sed -n "2p" $log_shm | cut -d' ' -f1)
@@ -308,9 +333,29 @@ info "Load file    $log_swap"
 LN
 
 line_separator
+if [ $launch_second_script == yes ]
+then
+	if [ $cfg_standby == none ]
+	then
+		if [ $node -eq 2 ]
+		then
+			info "RAC lanch second script on second server."
+			~/plescripts/stats/memplot.sh -node=2 &
+			LN
+		fi
+	else # pas testé, mais ne fonctionnerra pas !
+		info "Dataguard lanch second script on second server $cfg_standby."
+		fake_exec_cmd "ID_DB=$cfg_standby ~/plescripts/stats/memplot.sh -skip_standby &"
+		ID_DB=$cfg_standby ~/plescripts/stats/memplot.sh -skip_standby &
+		LN
+	fi
+fi
+
+line_separator
 gnuplot $plot_cmds
 info "gnuplot return $?"
 rm $plot_cmds
+
 exit 0
 #rm -rf nohup.out >/dev/null 2>&1
 #nohup gnuplot $plot_cmds &
