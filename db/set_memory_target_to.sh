@@ -135,15 +135,15 @@ else
 	fi
 fi
 
-info	"OS free memory    : $(fmt_bytesU_2_better $os_free_memory)"
-info	"shm total         : $(fmt_bytesU_2_better $shm_total)"
-info	"shm available     : $(fmt_bytesU_2_better $shm_available)"
+info	"OS free memory    : $(fmt_bytes_2_better $os_free_memory)"
+info	"shm total         : $(fmt_bytes_2_better $shm_total)"
+info	"shm available     : $(fmt_bytes_2_better $shm_available)"
 if [ x"$asm_memory_target" != x ]
 then
-	info	"asm_memory_target : $(fmt_bytesU_2_better $asm_memory_target)"
+	info	"asm_memory_target : $(fmt_bytes_2_better $asm_memory_target)"
 fi
-info -n	"memory_max_target : $(fmt_bytesU_2_better $cur_memory_target)"
-info -f	", maximum : $(fmt_bytesU_2_better $max_memory_target) ($(fmt_number $(to_mb ${max_memory_target}b))Mb)"
+info -n	"memory_max_target : $(fmt_bytes_2_better $cur_memory_target)"
+info -f	", maximum : $(fmt_bytes_2_better $max_memory_target) ($(fmt_number $(to_mb ${max_memory_target}b))Mb)"
 LN
 
 if [ $val -eq -1 ]
@@ -151,11 +151,11 @@ then
 	exit 0
 fi
 
-info -n "set memory_max_target to $(fmt_bytesU_2_better $val) : "
+info -n "set memory_max_target to $(fmt_bytes_2_better $val) : "
 typeset -ri	diff=$(( val - cur_memory_target ))
 if [ $diff -gt 0 ]
 then
-	info -f "increase of $(fmt_bytesU_2_better $diff)"
+	info -f "increase of $(fmt_bytes_2_better $diff)"
 	if [ $val -gt $max_memory_target ]
 	then
 		LN
@@ -164,13 +164,13 @@ then
 		exit 1
 	fi
 else
-	info -f "decrease of $(fmt_bytesU_2_better $(abs $diff))"
+	info -f "decrease of $(fmt_bytes_2_better $(abs $diff))"
 fi
 LN
 
 if [[ $set_max == yes && $val -lt $cur_memory_target ]]
 then
-	error "memory_max_target $(fmt_bytesU_2_better $val) < current memory_target $(fmt_bytesU_2_better $cur_memory_target)"
+	error "memory_max_target $(fmt_bytes_2_better $val) < current memory_target $(fmt_bytes_2_better $cur_memory_target)"
 	LN
 	exit 1
 fi
@@ -206,8 +206,8 @@ LN
 
 line_separator
 load_memory_info
-info "OS free memory    : $(fmt_bytesU_2_better $os_free_memory)"
-info "shm total         : $(fmt_bytesU_2_better $shm_total)"
-info "shm available     : $(fmt_bytesU_2_better $shm_available)"
-info "memory_max_target : $(fmt_bytesU_2_better $cur_memory_target)"
+info "OS free memory    : $(fmt_bytes_2_better $os_free_memory)"
+info "shm total         : $(fmt_bytes_2_better $shm_total)"
+info "shm available     : $(fmt_bytes_2_better $shm_available)"
+info "memory_max_target : $(fmt_bytes_2_better $cur_memory_target)"
 LN

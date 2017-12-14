@@ -232,7 +232,7 @@ function _shell_in_path
 {
 	line_separator
 	info -n "\$PATH contains \$HOME/plescripts/shell "
-	if $(test_if_cmd_exists stop_vm)
+	if command_exists stop_vm
 	then
 		info -f "[$OK]"
 	else
@@ -255,7 +255,7 @@ function _in_path
 
 	typeset -r msg=$(printf "%-10s " $cmd)
 	info -n "  $msg"
-	if $(test_if_cmd_exists $cmd)
+	if command_exists $cmd
 	then
 		info -f "[$OK]"
 	else

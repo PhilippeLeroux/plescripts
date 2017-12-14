@@ -125,7 +125,7 @@ function restore
 
 	typeset	gvim_installed=no
 
-	if test_if_cmd_exists gvim
+	if command_exists gvim
 	then
 		install_gvim=no
 		gvim_installed=yes
@@ -156,7 +156,7 @@ function restore
 		LN
 	fi
 
-	if [ $gvim_installed == yes ] || test_if_cmd_exists vim
+	if [ $gvim_installed == yes ] || command_exists vim
 	then
 		line_separator
 		info "[G]vim configuration :"

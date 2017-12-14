@@ -74,13 +74,6 @@ done
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
-if command_exists olsnodes
-then
-	typeset -r crs_used=yes
-else
-	typeset -r crs_used=no
-fi
-
 #	http://docs.oracle.com/database/121/RACAD/hafeats.htm#RACAD7026
 #	Creating Services for Application Continuity ssi -failovertype TRANSACTION
 #	-replay_init_time par défaut 300s
@@ -93,14 +86,6 @@ fi
 #	-commit_outcome TRUE
 #	To use Transaction Guard, a DBA must grant permission, as follows:
 #	GRANT EXECUTE ON DBMS_APP_CONT;
-
-#	$1 service name
-#	return 0 if service exists, else return 1
-function pdb_service_exists
-{
-	typeset -r service=$1
-	srvctl status service -db $db -service $service >/dev/null 2>&1
-}
 
 function create_or_modify_oci_service
 {
@@ -115,14 +100,14 @@ function create_or_modify_oci_service
 	esac
 
 	line_separator
-	info "$db : create service $service on pluggable database $pdb."
+	info "$hostn> $db : create service $service on pluggable database $pdb."
 	LN
 
-	if pdb_service_exists $service
+	if service_exists $db $service
 	then
 		if [ $role == undef ]
 		then
-			error "Service $service exists and no role specified."
+			error "$hostn> Service $service exists and no role specified."
 			LN
 			info "$str_usage"
 			LN
@@ -160,8 +145,7 @@ function create_or_modify_oci_service
 	fi
 
 	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
-					-service=$service -host_name=$(hostname -s)"
-	LN
+					-service=$service -host_name=$hostn"
 }
 
 function create_or_modify_java_service
@@ -178,14 +162,14 @@ function create_or_modify_java_service
 
 	line_separator
 	#	Services for Application Continuity (java)
-	info "$db : create service $service on pluggable database $pdb."
+	info "$hostn> $db : create service $service on pluggable database $pdb."
 	LN
 
-	if pdb_service_exists $service
+	if service_exists $db $service
 	then
 		if [ $role == undef ]
 		then
-			error "Service $service exist and no role specified."
+			error "$hostn> Service $service exist and no role specified."
 			LN
 			info "$str_usage"
 			LN
@@ -228,18 +212,25 @@ function create_or_modify_java_service
 
 	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
 					-service=$service -host_name=$(hostname -s)"
-	LN
 }
 
 #	============================================================================
 #	Gestion des services sans le crs (et c'est chiant)
 
-#	$1 service name
-#	return 0 if service exists, else return 1
-function pdb_service_exists_no_crs
+# La variable service doit être déclarée par la fonction appelante.
+function start_service_no_crs
 {
-	typeset -r service=$1
-	lsnrctl status|grep -q "Service \"$service\" has .*"
+	# $1 pdb name
+	# $2 service name
+	function plsql_start_service
+	{
+		set_sql_cmd "alter session set container=$1;"
+		set_sql_cmd "exec dbms_service.start_service( '$2' );"
+	}
+
+	info "$hostn> $db[$pdb] : start service $service"
+	sqlplus_cmd "$(plsql_start_service $pdb $service)"
+	LN
 }
 
 # $1 service name
@@ -248,20 +239,21 @@ function create_service_no_crs
 	typeset	-r	service="$1"
 
 	line_separator
-	info "$db : create service $service on pluggable database $pdb."
+	info "$hostn> $db : create service $service on pluggable database $pdb."
 	LN
 
-	if pdb_service_exists_no_crs $service
+	if service_exists $db $service
 	then
 		action=modify
-		warning "modify service without crs nothing to do ?"
+		warning "$hostn> modify service without crs nothing to do ?"
 		LN
+		[[ $start == yes ]] && start_service_no_crs || true
 		return 0
 
 		# Code gardé pour éventuelles évolutions.
 		if [ $role == undef ]
 		then
-			error "$db[$pdb] : service $service exists and no role specified."
+			error "$hostn> $db[$pdb] : service $service exists and no role specified."
 			LN
 			info "$str_usage"
 			LN
@@ -279,31 +271,14 @@ function create_service_no_crs
 		set_sql_cmd "exec dbms_service.create_service( service_name=>'$2', network_name=>'$2' );"
 	}
 
-	# $1 pdb name
-	# $2 service name
-	function plsql_start_service
-	{
-		set_sql_cmd "alter session set container=$1;"
-		set_sql_cmd "exec dbms_service.start_service( '$2' );"
-	}
-
-	info "$db[$pdb] : create service $service"
+	info "$hostn> $db[$pdb] : create service $service"
 	sqlplus_cmd "$(plsql_create_service $pdb $service)"
 	LN
 
-	if [ $action == add ]
-	then
-		if [ $start == yes ]
-		then
-			info "$db[$pdb] : start service $service"
-			sqlplus_cmd "$(plsql_start_service $pdb $service)"
-			LN
-		fi
-	fi
+	[[ $action == add && $start == yes ]] && start_service_no_crs || true
 
 	exec_cmd "~/plescripts/db/add_tns_alias.sh	\
 					-service=$service -host_name=$(hostname -s)"
-	LN
 }
 
 function create_or_modify_oci_service_no_crs
@@ -336,6 +311,15 @@ function create_or_modify_java_service_no_crs
 	create_service_no_crs $service
 }
 
+typeset	-r	hostn=$(hostname -s)
+
+if command_exists crsctl
+then
+	typeset -r crs_used=yes
+else
+	typeset -r crs_used=no
+fi
+
 case "$role" in
 	primary|undef|physical_standby)
 		:
@@ -347,6 +331,9 @@ case "$role" in
 		info "$str_usage"
 		exit 1
 esac
+
+info "Database $db role = $role"
+LN
 
 if [ $crs_used == yes ]
 then

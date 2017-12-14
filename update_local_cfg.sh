@@ -179,8 +179,7 @@ typeset -r local_cfg=~/plescripts/local.cfg
 
 if [ "$value" == remove ]
 then
-	info "Remove variable $var"
-	remove_value $var $local_cfg
+	remove_variable $var $local_cfg
 	LN
 else
 
@@ -198,7 +197,6 @@ else
 		value="\\\"$value\\\""
 	fi
 
-	info "Update $var = $value"
-	update_value $var "$value" "$local_cfg"
+	update_variable $var "$value" "$local_cfg"
 	LN
 fi

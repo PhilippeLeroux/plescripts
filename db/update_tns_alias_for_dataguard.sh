@@ -87,16 +87,14 @@ function add_or_update_tns_alias
 								-service=$alias					\
 								-host_name=$hostn				\
 								-dataguard_list=\"$dataguard_list\""
-	LN
 
 	for server_name in $dataguard_list
 	do
-		exec_cmd ssh $server_name ". .bash_profile &&					\
+		exec_cmd "ssh $server_name '. .bash_profile &&					\
 									~/plescripts/db/add_tns_alias.sh	\
 										-service=$alias					\
 										-host_name=$hostn				\
-										-dataguard_list=\"$dataguard_list\""
-		LN
+										-dataguard_list=\"$dataguard_list\"'"
 	done
 }
 
@@ -112,24 +110,6 @@ function add_or_update_tns_alias_for_pdb
 
 function add_or_update_tns_alias_for_all_pdbs
 {
-# Requête permettant de lire tous les PDBs existant sur la base $primary
-# Les bases en RO sont considérées comme des SEED.
-# Attention code dupliqué dans create_dataguard.sh & convert_stby.sh
-# Remarque : ne fonctionnerait pas sur un RAC en dataguard, il ne faut pas
-# passer le nom de la base mais de l'instance.
-typeset -r sql_read_pdbs_rw=\
-"select
-	c.name
-from
-	gv\$containers c
-	inner join gv\$instance i
-		on  c.inst_id = i.inst_id
-	where
-		i.instance_name = '$db'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' )
-	and c.open_mode = 'READ WRITE';
-"
-
 	info "Database $db read all PDBs."
 	while read pdb
 	do
@@ -137,7 +117,7 @@ from
 
 		add_or_update_tns_alias_for_pdb $pdb
 
-	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
+	done<<<"$(get_sql_read_pdbs_rw $ORACLE_SID)"
 }
 
 typeset	-r	tnsnames_file=$TNS_ADMIN/tnsnames.ora

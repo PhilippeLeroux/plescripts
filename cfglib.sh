@@ -18,7 +18,7 @@ function cfg_exists
 }
 
 #*> $1 db
-#*> return max nodes.
+#*> print to stdout max nodes.
 function cfg_max_nodes
 {
 	typeset -r db=$(to_lower $1)
@@ -29,7 +29,7 @@ function cfg_max_nodes
 #*> $1 db
 #*> $2 #node
 #*> Init variables :
-#*>		- cfg_db_type			std, rac ou fs
+#*>		- cfg_db_type			std (Grid infra), rac ou fs
 #*>		- cfg_server_name		nom du serveur
 #*>		- cfg_server_ip			ip du serveur
 #*>		- cfg_server_vip		vip du serveur
@@ -37,8 +37,8 @@ function cfg_max_nodes
 #*>		- cfg_iscsi_ip			ip des disques iscsi
 #*>		- cfg_luns_hosted_by	vbox|san
 #*>		- cfg_oracle_home		ocfs2|xfs
-#*>		- cfg_standby			standby id	or none
 #*>		- cfg_orarel			Oracle Release 12.1.0.2 or 12.2.0.1
+#*>		- cfg_dataguard			yes|no
 #*>
 #*> La fonction test_if_other_nodes_up du script clone_master.sh lie le nom
 #*> des serveurs sans passer pas cette fonction : ne pas déplacer le champs
@@ -54,13 +54,13 @@ function cfg_load_node_info
 				cfg_rac_network cfg_iscsi_ip					\
 				cfg_luns_hosted_by								\
 				cfg_oracle_home									\
-				cfg_standby										\
 				cfg_orarel										\
+				cfg_dataguard									\
 		<$cfg_file
 }
 
 #*> $1 db
-#*> return total disk size (Gb)
+#*> print to stdout total disk size (Gb)
 function cfg_total_disk_size_gb
 {
 	typeset -r	l_db=$(to_lower $1)

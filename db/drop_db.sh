@@ -82,8 +82,8 @@ function remove_database_from_broker
 	EOS
 	LN
 
-	exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
-	exec_cmd -c sudo -u grid -i "asmcmd rm -f FRA/$db/dr2db_*.dat"
+	exec_cmd -c sudo -iu grid "asmcmd rm -f DATA/$db/dr1db_*.dat"
+	exec_cmd -c sudo -iu grid "asmcmd rm -f FRA/$db/dr2db_*.dat"
 	LN
 }
 
@@ -96,7 +96,7 @@ then
 	remove_database_from_broker
 fi
 
-if test_if_cmd_exists crsctl
+if command_exists crsctl
 then
 	typeset -r crs_used=yes
 else
@@ -240,8 +240,8 @@ if [ $crs_used == yes ]
 then
 	line_separator
 	info "Clean up ASM :"
-	exec_cmd -c "sudo -u grid -i asmcmd rm -rf DATA/$db"
-	exec_cmd -c "sudo -u grid -i asmcmd rm -rf FRA/$db"
+	exec_cmd -c "sudo -iu grid asmcmd rm -rf DATA/$db"
+	exec_cmd -c "sudo -iu grid asmcmd rm -rf FRA/$db"
 	LN
 else
 	line_separator

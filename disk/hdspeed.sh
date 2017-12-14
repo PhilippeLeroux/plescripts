@@ -59,7 +59,7 @@ must_be_user root
 
 exit_if_param_undef device	"$str_usage"
 
-if ! test_if_cmd_exists hdparm
+if ! command_exists hdparm
 then
 	info "Install hdparm"
 	exec_cmd yum install hdparm -y

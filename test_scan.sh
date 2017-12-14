@@ -12,6 +12,13 @@ typeset scan_name=$1
 [ x"$scan_name" == x ] && scan_name=$(olsnodes -c 2>/dev/null)
 [ x"$scan_name" == x ] && error "$ME <scan-adress>" && exit 1
 
+if [ $disable_dns_cache == yes ]
+then
+	info "Stop nscd.service"
+	exec_cmd -c sudo systemctl stop nscd.service
+	LN
+fi
+
 typeset -a	ip_list
 
 line_separator
@@ -60,6 +67,13 @@ do
 	i=i+1
 done
 LN
+
+if [ $disable_dns_cache == yes ]
+then
+	info "Start nscd.service"
+	exec_cmd -c sudo systemctl start nscd.service
+	LN
+fi
 
 info "$dup ping sur la même IP"
 LN

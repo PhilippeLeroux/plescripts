@@ -72,8 +72,7 @@ line_separator
 #	Mais dans les faits ca ne marche pas lors de l'installation d'ASM, une fois
 #	ASM installé SELinux peut être activé et ASM fonctionnera.
 info "Disable selinux"
-update_value SELINUX disabled /etc/selinux/config
-LN
+update_variable SELINUX disabled /etc/selinux/config
 
 line_separator
 info "Disable firewall"

@@ -52,12 +52,17 @@ cfg_exists $db
 
 typeset -ri max_nodes=$(cfg_max_nodes $db)
 
+cfg_load_node_info $db 1
+
 typeset -a other_node_list
-for (( i=2; i <= max_nodes; ++i ))
-do
-	cfg_load_node_info $db $i
-	other_node_list+=( $cfg_server_name )
-done
+if [ $cfg_db_type == rac ]
+then
+	for (( i=2; i <= max_nodes; ++i ))
+	do
+		cfg_load_node_info $db $i
+		other_node_list+=( $cfg_server_name )
+	done
+fi
 
 fake_exec_cmd export ORACLE_HOME=$GRID_HOME
 export ORACLE_HOME=$GRID_HOME

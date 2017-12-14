@@ -20,15 +20,16 @@ fi
 
 typeset -r str_usage=\
 "Usage : $ME
-Exécute sqldeveloper ou sqlcl.
+Execute sqldeveloper or sqlcl.
 
-Valeur par défaut :
+Default values :
 	SQLDEVELOPER_PATH=\$HOME/sqldeveloper
 	SQLCL_PATH=\$SQLDEVELOPER_PATH/sqldeveloper/bin
 
-sqlcl est un alias sur sqld.
+You can export variables SQLDEVELOPER_PATH and SQLCL_PATH with other values
+before to call this script.
 
-Répertoire :
+Directories :
 	sqldeveloper : $SQLDEVELOPER_PATH
 	sqlc         : $SQLCL_PATH
 "
@@ -75,7 +76,7 @@ then
 		info "export TNS_ADMIN=~/plescripts/tnsadmin"
 		export TNS_ADMIN=~/plescripts/tnsadmin
 	else
-		warning "no TNS_ADMIN"
+		warning "no TNS_ADMIN, run tnssqldev.sh"
 		LN
 	fi
 fi
@@ -84,7 +85,7 @@ if [ $disable_dns_cache == yes ]
 then
 	info "Stop nscd.service"
 	exec_cmd sudo systemctl stop nscd.service
-	LN 
+	LN
 fi
 
 exec_cmd -c "$script ${@:1}"

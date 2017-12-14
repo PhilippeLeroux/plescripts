@@ -70,6 +70,12 @@ function print_node # $1 #inode
 		LN
 	fi
 
+	if [[ $cfg_dataguard == yes && $inode -eq 1 ]]
+	then
+		info "Dataguard 2 members."
+		LN
+	fi
+
 	case $cfg_db_type in
 		rac)
 			info "Node #$inode RAC : "
@@ -81,6 +87,7 @@ function print_node # $1 #inode
 	esac
 
 	info "	Server name     ${cfg_server_name}       : ${cfg_server_ip}"
+
 	if [ $cfg_db_type == rac ]
 	then
 		info "	VIP             ${cfg_server_name}-vip   : ${cfg_server_vip}"
@@ -100,12 +107,6 @@ function print_node # $1 #inode
 			warning "	Old cfg file."
 			;;
 	esac
-
-	if [ "$cfg_standby" != none ]
-	then
-		LN
-		info "Dataguard with $cfg_standby"
-	fi
 }
 
 function print_scan
@@ -132,7 +133,7 @@ function print_disks
 	do
 		typeset	-i total_disks=$(( no_last_disk - no_first_disk + 1 ))
 
-		if [[ $max_nodes -eq 1 && $cfg_db_type == fs ]]
+		if [[ $cfg_dataguard == yes || $max_nodes -eq 1 ]] && [[ $cfg_db_type == fs ]]
 		then # Base single sur FS.
 			if [ ${dg_name:2} == "DATA" ]
 			then

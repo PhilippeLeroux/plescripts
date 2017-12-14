@@ -129,7 +129,7 @@ function disable_markers
 
 #	Valeurs possible : ENABLE | DISABLE | FILE
 #	Par défault ENABLE
-#	TODO : DISABLE n'est plus utilisé depuis longtemps, le supprimer ?
+#	DISABLE est utile pour les scripts lancés par systemd au démarrage ou arrêt.
 [ x"$PLELIB_OUTPUT" == x ] && typeset PLELIB_OUTPUT=ENABLE || true
 
 [ "$PLELIB_OUTPUT" == DISABLE ] && disable_markers || enable_markers
@@ -153,19 +153,16 @@ function move_log_to_server
 {
 	[ x"$PLELIB_LOG_FILE" == x ] && return 0 || true
 
-	LN
-
 	typeset -r local_log_path=$HOME/log/$(date +"%Y-%m-%d")
-
-	line_separator
-	info "copy log to $local_log_path"
-	LN
 
 	# Sauvegarde la log sur le serveur.
 	[ ! -d $local_log_path ] && mkdir -p $local_log_path || true
 
-	exec_cmd "cp \"$PLELIB_LOG_FILE\" $local_log_path"
+	cp "$PLELIB_LOG_FILE" $local_log_path
 	clean_log_file "$local_log_path/${PLELIB_LOG_FILE/$PLELOG_PATH\/}"
+
+	LN
+	info "log ${PLELIB_LOG_FILE/$PLELOG_PATH\/} copied to $local_log_path"
 	LN
 }
 
@@ -259,19 +256,19 @@ function clean_plelib_log_file
 #*> Hide cursor
 function hide_cursor
 {
-	tput civis
+	[ $PLELIB_OUTPUT != DISABLE ] && tput civis || true
 }
 
 #*> Show cursor
 function show_cursor
 {
-	tput cnorm
+	[ $PLELIB_OUTPUT != DISABLE ] && tput cnorm  || true
 }
 
-#*> return number of col for the terminal
+#*> print to stdout number of col for the terminal. if no terminal print 80
 function term_cols
 {
-	tput cols
+	[ $PLELIB_OUTPUT != DISABLE ] && tput cols || 80
 }
 
 #*< Show cursor on Ctrl+c
@@ -434,7 +431,12 @@ function line_separator
 {
 	[ $# -eq 0 ] && typeset	car="=" || typeset  car="$1"
 
-	info $(fill "$car" $(tput cols)-3)
+	if [ "$PLELIB_OUTPUT" == DISABLE ]
+	then
+		info $(fill "$car" 77)
+	else
+		info $(fill "$car" $(tput cols)-3)
+	fi
 }
 
 #*> New line
@@ -1063,24 +1065,34 @@ function change_value
 {
 	typeset -r var_name="$(escape_slash "$1")"
 	typeset -r file="$3"
-	[ "$2" == "empty" ] && new_val="" || new_val="$(escape_slash "$2")"
 
+	if [ "$2" == "empty" ]
+	then
+		typeset -r new_val=""
+		info "Remove value for : $var_name"
+	else
+		typeset -r new_val="$(escape_slash "$2")"
+		info "Update value : $var_name = $2"
+	fi
 	exec_cmd "sed -i 's/^\(${var_name}\s\{0,\}=\s\{0,\}\).*/\1$new_val/' $file"
+	LN
 }
 
-#*< add_value <var> <value> <file>
+#*< add_new_variable <var> <value> <file>
 #*< Format : var=value
 #*< If <value> == empty no value specified.
-function add_value
+function add_new_variable
 {
 	typeset -r var_name="$1"
-	[ "$2" == "empty" ] && new_val="" || new_val="$2"
+	[ "$2" == "empty" ] && typeset -r new_val="" || typeset -r new_val="$2"
 	typeset -r file="$3"
 
+	info "Add new variable : $var_name=$new_val"
 	exec_cmd "echo \"$var_name=$new_val\" >> $file"
+	LN
 }
 
-#*> update_value <var> <value> <file>
+#*> update_variable <var> <value> <file>
 #*>	Update variable <var> from file <file> with value <value>
 #*> If variable doesn't exist, it's added.
 #*> If value = empty reset value but not remove variable.
@@ -1088,9 +1100,9 @@ function add_value
 #*<	Format ^var\\s*=\\s*value
 #*>
 #*> If file doesn't exist script aborted.
-function update_value
+function update_variable
 {
-	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$3" "Call function update_value $1 $2" || true
+	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$3" "Call function update_variable $1 $2" || true
 
 	typeset -r var_name="$1"
 	typeset -r var_value="$2"
@@ -1100,27 +1112,28 @@ function update_value
 	then
 		change_value "$var_name" "$var_value" "$file"
 	else
-		add_value "$var_name" "$var_value" "$file"
+		add_new_variable "$var_name" "$var_value" "$file"
 	fi
 }
 
-#*> remove_value <var> <file>
+#*> remove_variable <var> <file>
 #*>
 #*> Remove variable <var> from file <file>
 #*>		Format ^war\s*=.*
 #*>
 #*> If file doesn't exist script aborted.
-function remove_value
+function remove_variable
 {
-	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$2" "Call function remove_value" || true
+	[ $EXEC_CMD_ACTION == EXEC ] && exit_if_file_not_exists "$2" "Call function remove_variable" || true
 
 	typeset -r var_name=$(escape_slash "$1")
 	typeset -r file="$2"
 	if exists_var "$var_name" "$file"
 	then
+		info "Remove variable : $var_name"
 		exec_cmd "sed -i '/^${var_name}\s*=.*$/d' $file"
 	else
-		info "remove_value : variable '$var_name' not exists in $file"
+		info "remove_variable : variable '$var_name' not exists in $file"
 	fi
 }
 
@@ -1222,7 +1235,6 @@ function initcap
 {
 	sed 's/\(.\)/\U\1/' <<< "$@"
 }
-
 
 #*> fill <car> <no#>
 #*> Return a buffer filled with no# characteres car
@@ -1483,8 +1495,7 @@ function fmt_number
 
 #*> to_mb string_size
 #*> Convert string_size in Mb
-#*>		Last digits is the unit : G, Gb, M, Mb, Kb or K
-#*>		no digit for byte.
+#*>		Last digits is the unit : G, Gb, M, Mb, Kb or K, b or B
 function to_mb
 {
 	typeset -r	arg=$1
@@ -1556,7 +1567,7 @@ function to_bytes
 #*>
 #*> 1024K == 1Mb
 #*> 1024M == 1Gb
-function fmt_bytesU_2_better
+function fmt_bytes_2_better
 {
 	typeset compute_arg="-l2"
 	if [ "$1" == "-i" ]
@@ -1585,10 +1596,11 @@ function fmt_bytesU_2_better
 #	Fonctions inclassable
 ################################################################################
 
-#*> return 0 if cmd $1 exists else return 1
-function test_if_cmd_exists
+# $1 variable value
+# return 0 if is a number, else return 1
+function is_number
 {
-	which $1 >/dev/null 2>&1
+	[[ $1 =~ ^[0-9]+$ ]]
 }
 
 #*> return 0 if cmd $1 exists else return 1

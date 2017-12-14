@@ -1,6 +1,7 @@
 #!/bin/bash
 # vim: ts=4:sw=4
 
+[ ! -t 0 ] && PLELIB_OUTPUT=DISABLE || true
 . ~/plescripts/plelib.sh
 . ~/plescripts/networklib.sh
 . ~/plescripts/cfglib.sh
@@ -21,28 +22,41 @@ function ping_server
 	info -n "Wait network interface up :  "
 	start=$SECONDS
 	duration=0
-	car="|"
-	while [ $duration -lt $max_time ]
-	do
-		printf "\b\b\b[$car]"
-		if ! ping_test $server_name
-		then
-			case $car in
-				"|")	car="/"
-					;;
-				"/")	car="-"
-					;;
-				"-")	car="\\"
-					;;
-				"\\")	car="|"
-					;;
-			esac
-			duration=$(( $SECONDS - $start ))
-		else
-			break
-		fi
-	done
-	printf "\b\b\b\b "
+	if [ $PLELIB_OUTPUT != DISABLE ]
+	then
+		car="|"
+		while [ $duration -lt $max_time ]
+		do
+			printf "\b\b\b[$car]"
+			if ! ping_test $server_name
+			then
+				case $car in
+					"|")	car="/"
+						;;
+					"/")	car="-"
+						;;
+					"-")	car="\\"
+						;;
+					"\\")	car="|"
+						;;
+				esac
+				duration=$(( $SECONDS - $start ))
+			else
+				break
+			fi
+		done
+		printf "\b\b\b\b "
+	else
+		while [ $duration -lt $max_time ]
+		do
+			if ! ping_test $server_name
+			then
+				duration=$(( $SECONDS - $start ))
+			else
+				break
+			fi
+		done
+	fi
 
 	if [ $duration -ge $max_time ]
 	then
@@ -73,12 +87,18 @@ function wait_for
 	do
 		if ! port_open $server_name 22
 		then
-			pause_in_secs 5 "$suffix"
-			typeset -i l=$?
-			b=$(fill "\b" $l)
-			printf "$b"
-			suffix=" (Total : $(fmt_seconds $(( $SECONDS - $start ))))"
-			duration=$(( $SECONDS - $start ))
+			if [ $PLELIB_OUTPUT != DISABLE ]
+			then
+				pause_in_secs 5 "$suffix"
+				typeset -i l=$?
+				b=$(fill "\b" $l)
+				printf "$b"
+				suffix=" (Total : $(fmt_seconds $(( $SECONDS - $start ))))"
+				duration=$(( $SECONDS - $start ))
+			else
+				sleep 5
+				duration=$(( $SECONDS - $start ))
+			fi
 		else
 			break
 		fi

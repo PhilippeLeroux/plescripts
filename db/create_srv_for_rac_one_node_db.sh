@@ -63,7 +63,6 @@ exec_cmd srvctl add service -db $db -service $oci_service -pdb $pdb
 exec_cmd srvctl start service -db $db -service $oci_service
 exec_cmd "~/plescripts/db/add_tns_alias.sh -service=$oci_service	\
 										-host_name=$(hostname -s)"
-LN
 
 exec_cmd srvctl add service -db $db -service $java_service -pdb $pdb
 exec_cmd srvctl start service -db $db -service $java_service

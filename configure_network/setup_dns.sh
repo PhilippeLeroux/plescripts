@@ -59,7 +59,7 @@ exec_cmd "ssh -t $dns_conn	\
 					-ip=$cfg_server_ip		\
 					-not_restart_named'"
 
-if [ $max_nodes -gt 1 ]
+if [[ $max_nodes -gt 1 && $cfg_dataguard == no ]]
 then
 	info "DNS : add server VIP."
 	exec_cmd "ssh -t $dns_conn 'plescripts/dns/add_server_2_dns.sh		\

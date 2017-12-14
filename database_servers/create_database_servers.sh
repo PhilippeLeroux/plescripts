@@ -6,8 +6,8 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
 typeset		db=undef
 typeset		vmGroup
@@ -61,6 +61,8 @@ cfg_exists $db
 
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
+cfg_load_node_info $db 1
+
 for (( inode=1; inode <= max_nodes; ++inode ))
 do
 	exec_cmd ./clone_master.sh	-db=$db -node=$inode -vmGroup=\"$vmGroup\"	\
@@ -79,6 +81,20 @@ else
 	script_name=install_grid12cR1.sh
 fi
 
-notify "Grid infrastructure can be installed."
-info "./$script_name -db=$db"
-LN
+if [ $cfg_dataguard == no ]
+then
+	notify "Grid infrastructure can be installed."
+	info "./$script_name -db=$db"
+	LN
+else
+	if [ $cfg_db_type == std ]
+	then
+		notify "Grid infrastructure can be installed."
+		info "./$script_name -db=$db -dg_node=1"
+		LN
+	else
+		notify "Oracle software can be installed."
+		info "./install_oracle.sh -db=$db -dg_node=1"
+		LN
+	fi
+fi

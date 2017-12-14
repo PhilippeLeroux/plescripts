@@ -452,7 +452,7 @@ function make_dbca_args
 #		- db_type : SINGLE ou RAC si n'est pas définie.
 function load_node_list_and_update_dbtype
 {
-	if test_if_cmd_exists olsnodes
+	if command_exists olsnodes
 	then
 		typeset -i count_nodes=0
 		while read node_name
@@ -652,29 +652,20 @@ function enable_flashback
 function next_instructions
 {
 	typeset -r instance=$(ps -ef |  grep [p]mon | grep -vE "MGMTDB|\+ASM" | cut -d_ -f3-4)
+	line_separator
+
 	info "To create a pdb use script create_pdb.sh :"
 	info "$ export ORACLE_SID=$instance"
 	info "$ ./create_pdb.sh -db=$db -pdb=pdb01"
 	LN
 
-	if cfg_exists $db use_return_code >/dev/null 2>&1
+	if [ "$cfg_dataguard" == yes ]
 	then
-		cfg_load_node_info $db 1
-		if [[ "$cfg_standby" != none	&& $(dataguard_config_available) == no
-										&& ! -d $cfg_path_prefix/$cfg_standby ]]
-		then
-			info "Create second server :"
-			info "From virtual-host $client_hostname execute :"
-			info "$ cd ~/plescripts/database_servers"
-			typeset params="-rel=$orcl_release"
-			[ $crs_used == no ] && params="$params -storage=FS" || true
-			if [ $disks_hosted_by != $cfg_luns_hosted_by ]
-			then
-				params="$params -luns_hosted_by=$cfg_luns_hosted_by"
-			fi
-			info "$ ./define_new_server.sh -db=$cfg_standby -standby=$(to_lower $db) $params"
-			LN
-		fi
+		info "To create dataguard execute :"
+		info "$ export ORACLE_SID=$instance"
+		info "$ cd ~/plescripts/db/stby/"
+		info "$ ./create_dataguard.sh"
+		LN
 	fi
 }
 
@@ -702,6 +693,13 @@ check_tuned_profile
 stats_tt start create_$lower_db
 
 typeset prefixInstance=${db:0:8}
+case ${db:${#db}-2} in
+	01|02)
+		typeset	-r	dbid=$(to_lower ${db:0:${#db}-2})
+		cfg_exists $dbid
+		[ $? -eq 0 ] && cfg_load_node_info $dbid 1 || true
+		;;
+esac
 
 load_node_list_and_update_dbtype
 

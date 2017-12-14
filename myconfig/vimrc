@@ -28,13 +28,13 @@ set modeline
 
 "	Pathogen
 let g:pathogen_disabled = []
-if has("gui_running")
-	call add(g:pathogen_disabled, 'vim-togglemouse')
-else
+"if has("gui_running")
+"	call add(g:pathogen_disabled, 'vim-togglemouse')
+"else
 	"	Par défaut c'est le terminal qui à la sourie.
 	"	togglemouse map la touche F12 pour switcher entre le terminal et vim.
-	let &mouse=""
-endif
+"	let &mouse=""
+"endif
 
 if v:version <= 704
 	call add(g:pathogen_disabled, 'vim-Grammalecte')
@@ -144,6 +144,37 @@ autocmd BufRead *.template,*.doc.sh let g:syntastic_check_on_open = 0
 nnoremap <C-s> :syntax on<CR>
 
 "	============================================================================
+"	Sauver la position du curseur
+"	http://vim.wikia.com/wiki/Restore_cursor_to_file_position_in_previous_editing_session
+"	Sous windows il faut une adaptation
+"	'100,<50,s10,h
+set viminfo='10,\"100,:20,%,n~/.viminfo
+function! RestoreCursor()
+	if line("'\"") <= line("$")
+		normal! g`"
+		return 1
+	endif
+endfunction
+
+augroup restoreCursor
+	autocmd!
+	autocmd BufWinEnter * call RestoreCursor()
+augroup END
+	
+"	============================================================================
+"	toggle between terminal and vim mouse
+if ! has("gui_running")
+	noremap <silent><F12> :let &mouse=(&mouse == "a"?"":"a")<CR>:call ShowMouseMode()<CR>
+	function ShowMouseMode()
+	if (&mouse == 'a')
+		echo "vim handle mouse."
+	else
+		echo "Terminal handle mouse."
+	endif
+	endfunction
+endif
+
+"	============================================================================
 source $HOME/vimfunc/ApplyConfigOnFileType.vim
 autocmd! BufRead * call ApplyConfigOnFileType()
 
@@ -197,7 +228,7 @@ map <silent> <F5> :NERDTreeToggle<CR>
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 " Go to previous (last accessed) window.
 autocmd VimEnter * wincmd p
-
+ 
 "	============================================================================
 source $HOME/vimfunc/ToggleColorscheme.vim
 map <silent> <F6> :call ToggleColorscheme()<CR>

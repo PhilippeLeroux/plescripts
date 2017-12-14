@@ -2,29 +2,32 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
-typeset db=undef
-typeset pdb=undef
-typeset service=auto
-typeset account_name=dbfsadm
-typeset	account_password=dbfs
-typeset wallet=$(enable_wallet $(read_orcl_release))
+typeset		db=undef
+typeset		pdb=undef
+typeset		service=auto
+typeset		account_name=dbfsadm
+typeset		account_password=dbfs
+typeset		wallet=$(enable_wallet $(read_orcl_release))
+
+add_usage "-db=name"								"Database name"
+add_usage "-pdb=name"								"PDB name."
+add_usage "[-service=$service]"						"Service name."
+add_usage "[-account_name=$account_name]"			"DBFS account name."
+add_usage "[-account_password=$account_password]"	"DBFS account password."
+add_usage "[-wallet=$wallet]"						"yes|no : no ==> password file."
 
 typeset -r str_usage=\
 "Usage : $ME
-	-db=name
-	-pdb=name
-	[-service=$service]
-	[-account_name=$account_name]
-	[-account_password=$account_password]
-	[-wallet=$wallet]	yes|no : no ==> password file.
+$(print_usage)
 
 For dataguard must be executed first on the primary database.
 "
@@ -92,13 +95,6 @@ exit_if_param_undef account_password	"$str_usage"
 exit_if_param_invalid wallet "yes no"	"$str_usage"
 
 ple_enable_log -params $PARAMS
-
-[ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
-
-typeset	-r	dbfs_tbs=${account_name}_tbs
-typeset	-r	dbfs_name=staging_area
-typeset -r	pass_file=~/${pdb}_pass
-account_name=$(to_upper $account_name)
 
 function create_user_dbfs
 {
@@ -217,10 +213,9 @@ function resume
 	LN
 }
 
-resume
+typeset -r dataguard_member="$(dataguard_config_available)"
 
-typeset -r dg_cfg_available="$(dataguard_config_available)"
-if [ "$dg_cfg_available" == yes ]
+if [ "$dataguard_member" == yes ]
 then
 	if [[  $gi_count_nodes -gt 1 ]]
 	then
@@ -231,6 +226,20 @@ then
 else
 	typeset -r role=primary
 fi
+
+typeset	service_auto=no
+if [ "$service" == auto ]
+then
+	service_auto=yes
+	service=$(mk_oci_service $pdb)
+fi
+
+typeset	-r	dbfs_tbs=${account_name}_tbs
+typeset	-r	dbfs_name=staging_area
+typeset -r	pass_file=~/${pdb}_pass
+account_name=$(to_upper $account_name)
+
+resume
 
 if [ $role == primary ]
 then
@@ -282,7 +291,7 @@ add_dynamic_cmd_param "-db=$db -pdb=$pdb -nolog\""
 exec_dynamic_cmd "su - root -c"
 LN
 
-if test_if_cmd_exists crsctl
+if command_exists crsctl
 then
 	line_separator
 	add_dynamic_cmd_param "plescripts/db/dbfs/create_crs_resource_for_dbfs.sh"
@@ -296,17 +305,21 @@ else
 	LN
 fi
 
-if [[ $dg_cfg_available == yes && $role == primary ]]
+if [[ $dataguard_member == yes && $role == primary ]]
 then
 	typeset -a physical_list
 	typeset -a stby_server_list
+	if [ $service_auto == no ]
+	then
+		service_name_to_used=" -service=$service"
+	fi
 	load_stby_database
 	for (( i=0; i<${#physical_list[*]}; ++i ))
 	do
 		warning "On server ${stby_server_list[i]}"
 		info "$ ssh oracle@${stby_server_list[i]}"
 		info "$ cd ~/plescripts/db/dbfs"
-		info "$ $ME -db=${physical_list[i]} -pdb=$pdb -service=$service"
+		info "$ $ME -db=${physical_list[i]} -pdb=$pdb$service_name_to_used"
 		LN
 	done
 fi

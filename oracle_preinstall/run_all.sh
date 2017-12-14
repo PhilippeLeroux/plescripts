@@ -55,7 +55,6 @@ then
 fi
 
 exec_cmd "./01_create_oracle_users.sh -release=$oracle_release -db_type=$db_type"
-LN
 
 line_separator
 exec_cmd "LANG=C yum -y -q install				\
@@ -67,16 +66,12 @@ if [ $db_type != single_fs ]
 then
 	line_separator
 	exec_cmd "./02_install_cvuqdisk.sh"
-	LN
 
 	if [ "$device_persistence" == "oracleasm" ]
 	then
 		exec_cmd "./03_install_oracleasm.sh"
-		LN
 	fi
 fi
 
+line_separator
 exec_cmd "./04_apply_os_prerequis.sh -db_type=$db_type"
-LN
-
-exit

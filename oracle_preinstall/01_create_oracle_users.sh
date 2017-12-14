@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 # vim: ts=4:sw=4:ft=sh
 # ft=sh car la colorisation ne fonctionne pas si le nom du script commence par
 # un n°
@@ -182,12 +182,27 @@ line_separator
 info "create user oracle"
 exec_cmd useradd -u 1050 -g oinstall -G dba,asmdba,oper	\
 			-s /bin/${the_shell} -c \"Oracle Software Owner\" oracle
+LN
 
+info "Copy rlwrap alias file."
 exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /home/oracle/rlwrap.alias
+LN
 
+info "Update sys password for rlwrap.alias."
+exec_cmd "sed -i \"s/ORACLE_PASSWORD/${oracle_password}/g\"	\
+											/home/oracle/rlwrap.alias"
+LN
+
+info "Copy and update profile for oracle."
 exec_cmd "sed \"s/RELEASE_ORACLE/${ORACLE_RELEASE}/g\"	\
 			./template_profile.oracle |					\
 			sed \"s/ORA_NLSZZ/ORA_NLS${ORCL_RELEASE}/g\" > /home/oracle/profile.oracle"
+LN
+
+info "Update sys password for profile.oracle"
+exec_cmd "sed -i \"s/ORACLE_PASSWORD/${oracle_password}/g\"	\
+											/home/oracle/profile.oracle"
+LN
 
 if [ $the_shell == ksh ]
 then
@@ -242,6 +257,9 @@ fi
 line_separator
 make_vimrc_file "/root"
 LN
+
+line_separator
+info "Update /root/.bashrc"
 exec_cmd sed -i \"/$bashrc_firstline/a $bashrc_code_to_append\" /root/.bashrc
 LN
 
@@ -259,10 +277,13 @@ then
 			echo ". rlwrap.alias"
 		)	>> /root/.bash_profile
 	else # Le grid infra n'est pas installé.
-		echo ". rlwrap.alias" /root/.bash_profile
+		echo ". rlwrap.alias" >> /root/.bash_profile
 	fi
+	info "/root/.bash_profile updated."
 	LN
+
 	exec_cmd cp ~/plescripts/oracle_preinstall/rlwrap.alias /root/rlwrap.alias
+	LN
 fi
 
 #	============================================================================

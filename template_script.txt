@@ -5,13 +5,13 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
-typeset -r str_usage=\
+typeset	-r	str_usage=\
 "Usage : $ME ...."
 
-typeset db=undef
+typeset	db=undef
 
 while [ $# -ne 0 ]
 do
@@ -43,5 +43,5 @@ done
 
 #ple_enable_log -params $PARAMS
 
-[[ $db == undef && x"$ID_DB" == x ]] && db=$ID_DB
+[[ $db = undef ]] && [[ -v ID_DB ]] && db=$ID_DB || true
 exit_if_param_undef db	"$str_usage"

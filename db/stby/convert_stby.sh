@@ -103,9 +103,9 @@ function remove_broker_cfg
 	LN
 
 	line_separator
-	exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
+	exec_cmd -c sudo -iu grid "asmcmd rm -f DATA/$db/dr1db_*.dat"
 	LN
-	exec_cmd -c sudo -u grid -i "asmcmd rm -f FRA/$db/dr2db_*.dat"
+	exec_cmd -c sudo -iu grid "asmcmd rm -f FRA/$db/dr2db_*.dat"
 	LN
 }
 
@@ -119,8 +119,31 @@ function remove_database_from_broker
 	EOS
 	LN
 
-	exec_cmd -c sudo -u grid -i "asmcmd rm -f DATA/$db/dr1db_*.dat"
-	exec_cmd -c sudo -u grid -i "asmcmd rm -f FRA/$db/dr2db_*.dat"
+	exec_cmd -c sudo -iu grid "asmcmd rm -f DATA/$db/dr1db_*.dat"
+	exec_cmd -c sudo -iu grid "asmcmd rm -f FRA/$db/dr2db_*.dat"
+	LN
+}
+
+function remove_shared_memory_segment
+{
+	info "Oracle process running :"
+	exec_cmd "ps -ef|grep -E 'ora.*$ORACLE_SID'|grep -v grep|awk '{ print \$2 }'"
+	LN
+
+	typeset	-r	pid_orcl_process=$(ps -ef|grep -E "ora.*$ORACLE_SID"|grep -v grep|awk '{ print $2 }'|xargs)
+	if [ x"$pid_orcl_process" == x ]
+	then
+		info "no oracle process running."
+		LN
+	else
+		info "kill oracle process $pid_orcl_process"
+		exec_cmd -c "kill -9 $pid_orcl_process"
+		sleep 1
+		LN
+	fi
+
+	exec_cmd "srvctl start database -db $db"
+	sleep 2
 	LN
 }
 
@@ -130,9 +153,14 @@ function convert_physical_to_primary
 	{
 		set_sql_cmd "recover managed standby database finish;"
 		set_sql_cmd "alter database commit to switchover to primary with session shutdown;"
+
 		set_sql_cmd "whenever sqlerror exit 1;"
 		set_sql_cmd "alter database open;"
 	}
+
+	info "Restart database to mount state."
+	LN
+
 	if [ $crs_used == yes ]
 	then
 		exec_cmd srvctl stop database -db $db
@@ -147,10 +175,23 @@ function convert_physical_to_primary
 		sqlplus_cmd "$(sql_mount_db)"
 		LN
 	fi
+
+	info "Convert Physical database to Primary database."
+	LN
 	sqlplus_cmd "$(sql_convert_to_primary)"
 	ret=$?
 	LN
-	[ $ret -ne 0 ] && exit 1 || true
+	if [ $ret -ne 0 ]
+	then
+		if [ $crs_used == yes ]
+		then
+			# Depuis la mise à jour de OL7.4 de novembre le convert échoue
+			# si les disques sont gérés par iSCSI
+			remove_shared_memory_segment
+		else
+			exit 1
+		fi
+	fi
 }
 
 function remove_SRLs
@@ -176,22 +217,6 @@ function drop_all_services
 
 function create_services_for_single_db
 {
-# Requête permettant de lire tous les PDBs existant sur la base $primary
-# Les bases en RO sont considérées comme des SEED.
-# Attention code dupliqué dans create_dataguard.sh & update_tns_alias_for_dataguard.sh
-typeset -r sql_read_pdbs_rw=\
-"select
-	c.name
-from
-	gv\$containers c
-	inner join gv\$instance i
-		on  c.inst_id = i.inst_id
-	where
-		i.instance_name = '$db'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' )
-	and c.open_mode = 'READ WRITE';
-"
-
 	while read pdb
 	do
 		[ x"$pdb" == x ] && continue
@@ -199,7 +224,7 @@ from
 		line_separator
 		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh -db=$db -pdb=$pdb"
 		LN
-	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
+	done<<<"$(get_sql_read_pdbs_rw $ORACLE_SID)"
 }
 
 ple_enable_log -params $PARAMS
@@ -208,7 +233,7 @@ exit_if_database_not_exists $db
 
 load_oraenv_for $db
 
-if test_if_cmd_exists crsctl
+if command_exists crsctl
 then
 	typeset -r crs_used=yes
 else
@@ -218,6 +243,7 @@ fi
 typeset -r role_cfg=$(read_database_role $(to_lower $db))
 
 info "$db role=$role, role read from configuration : $role_cfg"
+LN
 
 if [[ x"$role_cfg" != x && "$role" != "$role_cfg" ]]
 then

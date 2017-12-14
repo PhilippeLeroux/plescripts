@@ -28,7 +28,8 @@ https://github.com/kocakosm/hilal.git
 https://github.com/xero/sourcerer.vim.git
 
 #	Util dans un terminal toggle la sourie entre le terminal et vim
-https://github.com/nvie/vim-togglemouse.git
+#	Remplacer par script perso.
+#	https://github.com/nvie/vim-togglemouse.git
 
 #	Montre les undo sous forme arborescente. Je ne m'en sers plus
 #//github.com/mbbill/undotree.git

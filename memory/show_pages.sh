@@ -59,10 +59,10 @@ function read_hpages_from_alert_log
 		typeset -ri	expected_pages_size=expected_pages*page_size_b
 		typeset -ri	allocated_pages_size=allocated_pages*page_size_b
 
-		info "HugePage size          : $(fmt_bytesU_2_better -i $page_size_kb)"
-		info "Available pages        : $available_pages = $(fmt_bytesU_2_better -i $available_pages_size)"
-		info "Expected pages         : $expected_pages = $(fmt_bytesU_2_better -i $expected_pages_size)"
-		info "Allocated pages        : $allocated_pages = $(fmt_bytesU_2_better -i $allocated_pages_size)"
+		info "HugePage size          : $(fmt_bytes_2_better -i $page_size_kb)"
+		info "Available pages        : $available_pages = $(fmt_bytes_2_better -i $available_pages_size)"
+		info "Expected pages         : $expected_pages = $(fmt_bytes_2_better -i $expected_pages_size)"
+		info "Allocated pages        : $allocated_pages = $(fmt_bytes_2_better -i $allocated_pages_size)"
 		LN
 
 		if [ $allocated_pages -lt $expected_pages ]

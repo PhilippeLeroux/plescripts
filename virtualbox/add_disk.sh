@@ -123,6 +123,8 @@ function translate_tilde_to_home
 if [ "$disk_path" == default ]
 then
 	typeset	-r disk_full_path="$(read_vm_path_folder $vm_name)/${disk_name}.vdi"
+	info "Disks created to path '$disk_full_path'"
+	LN
 else
 	disk_path=$(translate_tilde_to_home $disk_path)
 	if [ ! -d "$disk_path" ]

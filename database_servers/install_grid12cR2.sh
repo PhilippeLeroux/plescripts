@@ -12,8 +12,9 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
-	-db=name      Identifiant de la base.
-	[-keep_tfa]   RAC ne pas désactiver tfa.
+	-db=name      Database id
+	[-dg_node=#]  Dataguard node number 1 or 2
+	[-keep_tfa]   RAC keep tfa.
 
 Debug flags :
 	-reponse_file_only
@@ -35,21 +36,22 @@ Debug flags :
 	-oracle_home_for_test permet de tester le script sans que les VMs existent.
 "
 
-typeset db=undef
-typeset keep_tfa=no
-typeset	extract_grid_image=yes
-typeset	init_afd_disks=yes
-typeset	create_reponse_file=yes
-typeset	install_grid=yes
-typeset	post_install=yes
-typeset configTools_install=yes
-typeset create_dg=yes
-typeset	reponse_file_only=no
-typeset	oracle_home_for_test=no
-typeset	do_hacks=yes
+typeset		db=undef
+typeset	-i	dg_node=-1	# Ne doit être définie que pour un membre d'un dataguard.
+typeset		keep_tfa=no
+typeset		extract_grid_image=yes
+typeset		init_afd_disks=yes
+typeset		create_reponse_file=yes
+typeset		install_grid=yes
+typeset		post_install=yes
+typeset		configTools_install=yes
+typeset		create_dg=yes
+typeset		reponse_file_only=no
+typeset		oracle_home_for_test=no
+typeset		do_hacks=yes
 
 # L'option n'existe pas encore.
-typeset oracle_home_for_test=no
+typeset		oracle_home_for_test=no
 
 while [ $# -ne 0 ]
 do
@@ -61,6 +63,11 @@ do
 
 		-db=*)
 			db=${1##*=}
+			shift
+			;;
+
+		-dg_node=*)
+			dg_node=${1##*=}
 			shift
 			;;
 
@@ -207,6 +214,15 @@ function load_node_cfg
 	info "Load node #${inode}"
 	cfg_load_node_info $db $inode
 
+	if [[ $cfg_dataguard == yes && $dg_node -eq -1 ]]
+	then
+		error "Dataguard, parameter -dg_node=# missing"
+		LN
+		info "$str_usage"
+		LN
+		exit 1
+	fi
+
 	if [ x"$clusterNodes" = x ]
 	then
 		clusterNodes=$cfg_server_name:${cfg_server_name}-vip:HUB
@@ -279,73 +295,73 @@ function create_response_file
 	exec_cmd cp -f template_grid_${oracle_release%.*.*}.rsp $rsp_file
 	LN
 
-	update_value ORACLE_BASE								$ORACLE_BASE		$rsp_file
-	update_value INVENTORY_LOCATION							${ORACLE_BASE%/*/*}/app/oraInventory	$rsp_file
-	update_value oracle.install.asm.SYSASMPassword			$oracle_password	$rsp_file
-	update_value oracle.install.asm.monitorPassword			$oracle_password	$rsp_file
+	update_variable ORACLE_BASE								$ORACLE_BASE		$rsp_file
+	update_variable INVENTORY_LOCATION							${ORACLE_BASE%/*/*}/app/oraInventory	$rsp_file
+	update_variable oracle.install.asm.SYSASMPassword			$oracle_password	$rsp_file
+	update_variable oracle.install.asm.monitorPassword			$oracle_password	$rsp_file
 
-	if [ $max_nodes -eq 1 ]
+	if [ $cfg_db_type != rac ]
 	then
-		update_value oracle.install.option							HA_CONFIG		$rsp_file
-		update_value oracle.install.asm.diskGroup.name				DATA			$rsp_file
-		update_value oracle.install.asm.diskGroup.redundancy		EXTERNAL		$rsp_file
-		update_value oracle.install.crs.config.gpnp.scanName		empty			$rsp_file
-		update_value oracle.install.crs.config.gpnp.scanPort		empty			$rsp_file
-		update_value oracle.install.crs.config.clusterName			empty			$rsp_file
-		update_value oracle.install.crs.config.clusterNodes			empty			$rsp_file
-		update_value oracle.install.crs.config.networkInterfaceList empty			$rsp_file
-		update_value oracle.install.crs.config.storageOption		empty			$rsp_file
-		update_value oracle.install.asm.storageOption				ASM				$rsp_file
+		update_variable oracle.install.option							HA_CONFIG		$rsp_file
+		update_variable oracle.install.asm.diskGroup.name				DATA			$rsp_file
+		update_variable oracle.install.asm.diskGroup.redundancy		EXTERNAL		$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanName		empty			$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanPort		empty			$rsp_file
+		update_variable oracle.install.crs.config.clusterName			empty			$rsp_file
+		update_variable oracle.install.crs.config.clusterNodes			empty			$rsp_file
+		update_variable oracle.install.crs.config.networkInterfaceList empty			$rsp_file
+		update_variable oracle.install.crs.config.storageOption		empty			$rsp_file
+		update_variable oracle.install.asm.storageOption				ASM				$rsp_file
 		if [ "$device_persistence" == "AFD" ]
 		then
 			typeset disk_list=$(get_free_disks $disk_cfg_file DATA)
-			update_value oracle.install.asm.configureAFD		true					$rsp_file
-			update_value oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"	$rsp_file
+			update_variable oracle.install.asm.configureAFD		true					$rsp_file
+			update_variable oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"	$rsp_file
 		else
 			typeset disk_list=$(get_free_oracleasm_disks $disk_cfg_file DATA)
-			update_value oracle.install.asm.configureAFD		false					$rsp_file
-			update_value oracle.install.asm.diskGroup.diskDiscoveryString "ORCL:\*"		$rsp_file
+			update_variable oracle.install.asm.configureAFD		false					$rsp_file
+			update_variable oracle.install.asm.diskGroup.diskDiscoveryString "ORCL:\*"		$rsp_file
 		fi
-		update_value oracle.install.asm.diskGroup.disks				"$disk_list"	$rsp_file
+		update_variable oracle.install.asm.diskGroup.disks				"$disk_list"	$rsp_file
 		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
-		update_value oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
+		update_variable oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
 	else
-		update_value oracle.install.option						CRS_CONFIG				$rsp_file
-		update_value oracle.install.asm.diskGroup.name			CRS						$rsp_file
-		update_value oracle.install.asm.diskGroup.redundancy	EXTERNAL				$rsp_file
-		update_value oracle.install.crs.config.gpnp.scanName	$scan_name				$rsp_file
-		update_value oracle.install.crs.config.gpnp.scanPort	1521					$rsp_file
-		update_value oracle.install.crs.config.clusterName		$scan_name				$rsp_file
-		update_value oracle.install.crs.config.clusterNodes		$clusterNodes			$rsp_file
+		update_variable oracle.install.option						CRS_CONFIG				$rsp_file
+		update_variable oracle.install.asm.diskGroup.name			CRS						$rsp_file
+		update_variable oracle.install.asm.diskGroup.redundancy	EXTERNAL				$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanName	$scan_name				$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanPort	1521					$rsp_file
+		update_variable oracle.install.crs.config.clusterName		$scan_name				$rsp_file
+		update_variable oracle.install.crs.config.clusterNodes		$clusterNodes			$rsp_file
 
 		typeset	pub_network=$(right_pad_ip $if_pub_network)
 		typeset	rac_network=$(right_pad_ip $if_rac_network)
 		typeset	iscsi_network=$(right_pad_ip $if_iscsi_network)
 		typeset nil=$if_pub_name:${pub_network}:1,$if_rac_name:${rac_network}:5,$if_iscsi_name:${iscsi_network}:3
-		update_value oracle.install.crs.config.networkInterfaceList $nil				$rsp_file
-		update_value oracle.install.crs.config.storageOption	empty					$rsp_file
+		update_variable oracle.install.crs.config.networkInterfaceList $nil				$rsp_file
+		update_variable oracle.install.crs.config.storageOption	empty					$rsp_file
 		if [ "$device_persistence" == "AFD" ]
 		then
 			typeset disk_list=$(get_free_disks $disk_cfg_file CRS)
-			update_value oracle.install.asm.configureAFD		true					$rsp_file
-			update_value oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"	$rsp_file
+			update_variable oracle.install.asm.configureAFD		true					$rsp_file
+			update_variable oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"	$rsp_file
 		else
 			typeset disk_list=$(get_free_oracleasm_disks $disk_cfg_file CRS)
-			update_value oracle.install.asm.configureAFD		false					$rsp_file
-			update_value oracle.install.asm.diskGroup.diskDiscoveryString "ORCL:\*"		$rsp_file
+			update_variable oracle.install.asm.configureAFD		false					$rsp_file
+			update_variable oracle.install.asm.diskGroup.diskDiscoveryString "ORCL:\*"		$rsp_file
 		fi
-		update_value oracle.install.asm.diskGroup.disks			"$disk_list"			$rsp_file
+		update_variable oracle.install.asm.diskGroup.disks			"$disk_list"			$rsp_file
 		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
-		update_value oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
+		update_variable oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
 		# Les données du CRS et de GIMR ne sont plus séparées.
-		update_value oracle.install.asm.configureGIMRDataDG		false					$rsp_file
-		#update_value oracle.install.asm.gimrDG.AUSize			4						$rsp_file
-		#update_value oracle.install.asm.gimrDG.name				GIMR					$rsp_file
-		#update_value oracle.install.asm.gimrDG.redundancy		EXTERNAL				$rsp_file
+		update_variable oracle.install.asm.configureGIMRDataDG		false					$rsp_file
+		#update_variable oracle.install.asm.gimrDG.AUSize			4						$rsp_file
+		#update_variable oracle.install.asm.gimrDG.name				GIMR					$rsp_file
+		#update_variable oracle.install.asm.gimrDG.redundancy		EXTERNAL				$rsp_file
 		#typeset disk_list=$(get_free_disks $disk_cfg_file GIMR)
-		#update_value oracle.install.asm.gimrDG.disks			$disk_list				$rsp_file
+		#update_variable oracle.install.asm.gimrDG.disks			$disk_list				$rsp_file
 		#disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
-		#update_value oracle.install.asm.gimrDG.disksWithFailureGroupNames "${disk_list}," $rsp_file
+		#update_variable oracle.install.asm.gimrDG.disksWithFailureGroupNames "${disk_list}," $rsp_file
 	fi
 	LN
 }
@@ -413,7 +429,6 @@ function start_grid_installation
 	fi
 	LN
 
-	line_separator
 	for node in ${node_names[@]}
 	do
 		ssh grid@$node ". .bash_profile && echo 'SQLNET.INBOUND_CONNECT_TIMEOUT=300' > \$TNS_ADMIN/sqlnet.ora"
@@ -489,23 +504,19 @@ function workaround_post_install_root_scripts
 	# c'est que le temps sur le serveur fait des sauts.
 
 	error "root scripts on server $node_n failed."
+	LN
 	[ $node_nr -eq 1 ] && exit 1 || true
 
-	LN
 	warning "Workaround :"
 	LN
 
 	run_post_install_root_scripts_on_node 1 ${node_names[0]}
-	LN
 
 	timing 10
 	LN
 
 	run_post_install_root_scripts_on_node $node_nr $node_n
-	typeset -i ret=$?
-	LN
-
-	if [ $ret -ne 0 ]
+	if [ $? -ne 0 ]
 	then
 		error "Workaround failed."
 		LN
@@ -520,19 +531,16 @@ function run_post_install_root_scripts
 	do
 		typeset node_name=${node_names[inode]}
 
-		[ $max_nodes -gt 1 ] && test_ntp_synchro_on_server $node_name || true
+		[ $cfg_db_type == rac ] && test_ntp_synchro_on_server $node_name || true
 		LN
 
 		run_post_install_root_scripts_on_node $((inode+1)) $node_name
-		typeset -i ret=$?
-		LN
-
-		if [ $ret -ne 0 ]
+		if [ $? -ne 0 ]
 		then
 			workaround_post_install_root_scripts $((inode+1)) $node_name
 		fi
 
-		if [ $max_nodes -gt 1 ]
+		if [ $cfg_db_type == rac ]
 		then
 			if [ "$rac12cR2_diagsnap" == disable ]
 			then
@@ -543,6 +551,8 @@ function run_post_install_root_scripts
 			then
 				rac_disable_tfa $node_name
 			fi
+		else
+			break # exit for
 		fi
 	done
 }
@@ -552,9 +562,9 @@ function executeConfigTools
 {
 	[ "$1" == "-c" ] && typeset param="-c" || typeset param
 
+	[ $cfg_db_type == rac ] && test_ntp_synchro_on_server ${node_names[0]} || true
+
 	line_separator
-	[ $max_nodes -gt 1 ] && test_ntp_synchro_on_server ${node_names[0]} || true
-	LN
 	info "Execute config tools (${configtools[idx_times]})"
 	add_dynamic_cmd_param "$ORACLE_HOME/gridSetup.sh"
 	add_dynamic_cmd_param "    -executeConfigTools"
@@ -587,7 +597,7 @@ function create_dg
 function create_all_dgs
 {
 	# Pour le RAC uniquement, le premier DG étant CRS ou GRID
-	[ $max_nodes -gt 1 ] && create_dg DATA || true
+	[ $cfg_db_type == rac ] && create_dg DATA || true
 
 	create_dg FRA
 }
@@ -653,7 +663,7 @@ function set_ASM_memory_target_low_and_restart_ASM
 				~/plescripts/database_servers/set_ASM_memory_target_low.sh\""
 		LN
 
-		[ $max_nodes -gt 1 ] && restart_rac_cluster || restart_standalone_crs
+		[ $cfg_db_type == rac ] && restart_rac_cluster || restart_standalone_crs
 	else
 		info "do nothing : asm_allow_small_memory_target == $asm_allow_small_memory_target"
 		LN
@@ -720,8 +730,8 @@ function rac_executeConfigTools
 
 function post_installation
 {
-	if [ $max_nodes -gt 1 ]
-	then	#	RAC
+	if [ $cfg_db_type == rac ]
+	then
 		test_ntp_synchro_all_servers
 
 		if [ $do_hacks == yes ]
@@ -776,6 +786,7 @@ function setup_ohasd_service
 		info "ohasd : iSCSI dependency on server $node_name"
 		exec_cmd "ssh -t root@${node_name} plescripts/database_servers/setup_ohasd_service.sh"
 		LN
+		[ $cfg_db_type != rac ] && break || true
 	done
 }
 
@@ -799,10 +810,15 @@ typeset -a	node_iscsi_ips
 typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
 line_separator
-for (( inode = 1; inode <= max_nodes; ++inode ))
-do
-	load_node_cfg $inode
-done
+if [ $dg_node -eq -1 ]
+then
+	for (( inode = 1; inode <= max_nodes; ++inode ))
+	do
+		load_node_cfg $inode
+	done
+else
+	load_node_cfg $dg_node
+fi
 
 typeset -ra extract_grid_mn=( "~2mn" "~2mn" )
 typeset -ra grid_installion_mn=( "~3mn" "~12mn" )
@@ -810,7 +826,7 @@ typeset -ra post_install_root_script_node1_mn=( "~3mn" "~35mn" )
 typeset -ra post_install_root_script_other_node_mn=( "~3mn" "~15mn" )
 typeset -ra configtools=( "~3mn" "~1h15mn" )
 
-if [ $max_nodes -gt 1 ]
+if [ $cfg_db_type == rac ]
 then
 	typeset -ri	idx_times=1
 	exit_if_file_not_exists $db_cfg_path/scanvips
@@ -855,12 +871,17 @@ if [ $extract_grid_image == yes ]
 then
 	line_separator
 	info "Extract Grid Infra image (${extract_grid_mn[idx_times]})"
+	LN
+	info "Test if Grid Infra extracted."
 	ssh_node0 -c grid "test -f $ORACLE_HOME/gridSetup.sh"
 	if [ $? -eq 0 ]
 	then
-		warning "Grid Infra extracted, unzip skipped."
+		LN
+		warning "Grid Infra is extracted, unzip skipped."
 		LN
 	else
+		LN
+		info "Extract Grid Infra"
 		ssh_node0 grid "cd $ORACLE_HOME && unzip -q /mnt/oracle_install/grid/linuxx64_12201_grid_home.zip"
 		LN
 	fi
@@ -871,12 +892,15 @@ then
 	if [ $create_reponse_file == yes ]
 	then
 		# Ne pas utiler $rsp_file
+		info "Test if reponse file exists on $cfg_server_name"
 		ssh_node0 -c grid "test -f grid_$db.rsp"
 		if [ $? -eq 0 ]
 		then
+			LN
 			warning "Create response file skipped."
 			LN
 		else
+			LN
 			create_response_file $db_cfg_path/disks
 			copy_response_file
 		fi
@@ -893,7 +917,7 @@ fi
 
 if [ $install_grid == yes ]
 then
-	[ $max_nodes -gt 1 ] && test_ntp_synchro_all_servers || true
+	[ $cfg_db_type == rac ] && test_ntp_synchro_all_servers || true
 
 	start_grid_installation
 
@@ -904,7 +928,7 @@ fi
 
 [ $create_dg == yes ] && create_all_dgs || true
 
-[ $max_nodes -gt 1 ] && add_scan_to_local_known_hosts || true
+[ $cfg_db_type == rac ] && add_scan_to_local_known_hosts || true
 
 setup_ohasd_service
 
@@ -917,6 +941,20 @@ LN
 script_stop $ME $db
 LN
 
-notify "Oracle software can be installed."
-info "./install_oracle.sh -db=$db"
-LN
+if [[ $cfg_dataguard == yes ]]
+then
+	if [[ $dg_node -eq 1 ]]
+	then
+		notify "Grid infrastructure can be installed on second member."
+		info "$ME -db=$db -dg_node=2"
+		LN
+	else
+		notify "Oracle software can be installed."
+		info "./install_oracle.sh -db=$db -dg_node=1"
+		LN
+	fi
+else
+	notify "Oracle software can be installed."
+	info "./install_oracle.sh -db=$db"
+	LN
+fi

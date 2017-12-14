@@ -75,7 +75,7 @@ exit_if_param_undef pdb		"$str_usage"
 #	return 0 if cluster, 1 if standalone server
 function is_cluster
 {
-	if test_if_cmd_exists olsnodes
+	if command_exists olsnodes
 	then
 		test $(wc -l<<<"$(olsnodes)") -gt 1
 	else
@@ -123,7 +123,7 @@ typeset	-r	orcl_release=$(su - oracle -c	\
 info "Oracle release $orcl_release"
 LN
 
-if test_if_cmd_exists crsctl
+if command_exists crsctl
 then # root ne peut utiliser lsnrctl.
 	exit_if_service_not_exists $db $service
 fi
@@ -239,7 +239,7 @@ then
 	LN
 fi
 
-if ! test_if_cmd_exists crsctl && grep -qE "oracle" <<<"$(who)"
+if ! command_exists crsctl && grep -qE "oracle" <<<"$(who)"
 then
 	line_separator
 	warning "***********************************"

@@ -32,8 +32,7 @@ if_hwaddr=$(get_if_hwaddr $if_pub_name)
 exec_cmd nmcli connection modify	$if_pub_name					\
 									ethernet.mac-address $if_hwaddr
 LN
-update_value UUID	$(uuidgen $if_pub_name)	$if_pub_file
-LN
+update_variable UUID	$(uuidgen $if_pub_name)	$if_pub_file
 
 line_separator
 info "Update iSCSI Iface $if_iscsi_name :"
@@ -47,8 +46,8 @@ exec_cmd nmcli connection modify			$if_iscsi_name			\
 					ethernet.mac-address	$if_hwaddr				\
 					connection.autoconnect	yes
 LN
-update_value UUID	$(uuidgen $if_iscsi_name)	$if_iscsi_file
-LN
+update_variable UUID	$(uuidgen $if_iscsi_name)	$if_iscsi_file
+
 exec_cmd ifup $if_iscsi_name
 LN
 
@@ -73,8 +72,7 @@ exec_cmd nmcli connection modify			$if_net_name	\
 					ethernet.mac-address	$if_hwaddr		\
 					connection.autoconnect	yes
 LN
-update_value UUID	$(uuidgen $if_net_name)	$if_net_file
-LN
+update_variable UUID	$(uuidgen $if_net_name)	$if_net_file
 
 line_separator
 info "Create links on frequently used directories"

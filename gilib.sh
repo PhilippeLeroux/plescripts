@@ -8,7 +8,7 @@
 #	Si le serveur courant n'appartient pas à un cluster la fonction ne retourne rien.
 function _get_other_nodes
 {
-	if $(test_if_cmd_exists olsnodes)
+	if command_exists olsnodes
 	then
 		# Si le Grid n'est pas démarré olsnodes ne fonctionne pas.
 		typeset nl=$(olsnodes | xargs)
@@ -27,6 +27,7 @@ function _get_other_nodes
 
 typeset -r	gi_node_list=$(_get_other_nodes)
 typeset -r	gi_current_node=$(hostname -s)
+# Dans le cas d'un Dataguard gi_count_nodes vaudra 1.
 typeset	-ri	gi_count_nodes=$(( $(wc -w<<<"$gi_node_list") + 1 ))
 
 #	Exécute la commande "$@" sur tous les autres nœuds du cluster
@@ -135,7 +136,7 @@ function enable_wallet
 			;;
 
 		12.2)
-			if test_if_cmd_exists crsctl
+			if command_exists crsctl
 			then
 				if [ $gi_count_nodes -gt 1 ]
 				then # Avec le RAC le wallet fonctionne.

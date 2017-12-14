@@ -163,8 +163,7 @@ info "Huge pages for $ORACLE_SID : $(fmt_number $total_hpages)"
 LN
 
 info "Setup huge pages : $total_hpages + 1"
-update_value vm.nr_hugepages "$(( total_hpages + 1 )) # Oracle+ASM" $tuned_profile_file
-LN
+update_variable vm.nr_hugepages "$(( total_hpages + 1 )) # Oracle+ASM" $tuned_profile_file
 
 set_orcl_memory_to $orcl_sga_max_size_str $orcl_pga_max_size_str
 

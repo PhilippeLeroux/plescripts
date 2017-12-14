@@ -87,7 +87,7 @@ function ddl_unlock_all_accounts
 	ddl_set_password_and_unlock_account SCOTT
 }
 
-if test_if_cmd_exists olsnodes
+if command_exists olsnodes
 then
 	typeset -r crs_used=yes
 else

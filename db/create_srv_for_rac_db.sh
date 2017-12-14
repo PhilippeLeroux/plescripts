@@ -181,7 +181,6 @@ info "Update tnsnames.ora on servers $gi_current_node ${gi_node_list[*]}"
 execute_on_all_nodes_v2 "~/plescripts/db/add_tns_alias.sh	\
 								-service=$oci_service		\
 								-host_name=$scan_name"
-LN
 
 line_separator
 #	Services for Application Continuity (java)

@@ -97,6 +97,13 @@ function load_stby_database
 
 }
 
+# $1 standby name
+# return 0 if stby is disabled, else return 1
+function stby_is_disabled
+{
+	dgmgrl sys/$oracle_password 'show configuration'|grep -i "$1" | grep -q "(disabled)"
+}
+
 # print to stdout primary database name
 function read_primary_name
 {
@@ -170,6 +177,7 @@ function sqlplus_cmd
 	sqlplus_cmd_with "sys/$oracle_password as sysdba" "$@"
 }
 
+
 #*>	Exécute les commandes "$@" avec sqlplus en sysasm
 #*>	Affichage correct sur la sortie std et la log.
 #*> return :
@@ -213,6 +221,26 @@ function sqlplus_exec_query
 	sqlplus_exec_query_with	"sys/$oracle_password as sysdba" "$1"
 }
 
+# Affiche tous les PDB RW de l'instance $1
+# Les bases en RO sont considérées comme des SEED.
+# $1 instance name
+function get_sql_read_pdbs_rw
+{
+typeset	-r	l_sql_read_pdb_rw=\
+"select
+	c.name
+from
+	gv\$containers c
+	inner join gv\$instance i
+		on  c.inst_id = i.inst_id
+where
+	i.instance_name = '$(to_upper $1)'
+and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' )
+and c.open_mode = 'READ WRITE';
+"
+	sqlplus_exec_query "$l_sql_read_pdb_rw"
+}
+
 # $1 database parameter
 function orcl_parameter_value
 {
@@ -236,8 +264,7 @@ function sqlplus_print_query
 	typeset -r	seq_query="$(double_symbol_percent "$1")"
 	sqlplus_init_spool
 	fake_exec_cmd "sqlplus -s sys/$oracle_password as sysdba"
-	info "$query"
-	printf "${SPOOL}whenever sqlerror exit 1\n$spq_query" | \
+	printf "${SPOOL}whenever sqlerror exit 1\n$seq_query" | \
 		sqlplus -s sys/$oracle_password as sysdba
 	LN
 }

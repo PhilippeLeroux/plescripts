@@ -217,8 +217,7 @@ then
 	exit 0
 fi
 
-test_if_cmd_exists gnuplot
-if [ $? -ne 0 ]
+if ! command_exists gnuplot
 then
 	error "gnuplot n'est pas installé ou pas dans PATH."
 	exit 1

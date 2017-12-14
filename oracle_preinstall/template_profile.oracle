@@ -79,10 +79,14 @@ alias lsconn="sp2 @\"$HOME/db/sql/lsconn\"<<<exit"
 alias lsdbrole="sp2 @\"$HOME/db/sql/lsdbrole\"<<<exit"
 alias lstbs="sp2 @\"$HOME/db/sql/lstbs\"<<<exit"
 alias lspga="sp2 @\"$HOME/db/sql/lspga\"<<<exit"
-alias lsstby="$HOME/db/stby/show_dataguard_cfg.sh"
 alias lsfra="sp2 @\"$HOME/db/sql/lsfra\"<<<exit"
 alias lssrv="sp2 @\"$HOME/db/sql/lssrv\"<<<exit"
 alias lsasync="sp2 @\"$HOME/db/sql/lsasync\"<<<exit"
+
+alias lsstby="$HOME/db/stby/show_dataguard_cfg.sh"
+alias lsstbyconf="dgmgrl -silent -echo sys/ORACLE_PASSWORD 'show configuration'"
+alias lsstbyconf="dgmgrl -silent -echo sys/ORACLE_PASSWORD \"show database verbose \$ORACLE_SID\""
+alias lsstbyapply="$HOME/db/stby/lsstbyapply.sh"
 
 # Ne fonctionne pas avec un RAC
 alias via='vi  $ORACLE_BASE/diag/rdbms/$(tr [:upper:] [:lower:]<<<$ORACLE_SID)/$ORACLE_SID/trace/alert_$ORACLE_SID.log'

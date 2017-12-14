@@ -77,10 +77,12 @@ fi
 
 [ $tnsalias == undef ] && tnsalias=$service || true
 
-info "Delete TNS alias $tnsalias if exists."
+typeset	-r	hostn=$(hostname -s)
+
+info "$hostn : Delete TNS alias $tnsalias if exists."
 exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias"
 
-info "Append new alias : $tnsalias"
+info "$hostn : Append new alias : $tnsalias"
 if [ "$dataguard_list" == undef ]
 then
 	exec_cmd "~/plescripts/shell/gen_tns_alias.sh			\
@@ -94,5 +96,5 @@ else
 				-server_list=\"$host_name $dataguard_list\" >> $tnsnames_file"
 fi
 
-info "\$TNS_ADMIN/tnsnames.ora updated."
+info "$hostn : \$TNS_ADMIN/tnsnames.ora updated."
 LN

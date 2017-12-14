@@ -42,7 +42,7 @@ must_be_user root
 
 typeset -r lower_db=$(to_lower $db)
 
-if test_if_cmd_exists crsctl
+if command_exists crsctl
 then
 	typeset crs_used=yes
 else

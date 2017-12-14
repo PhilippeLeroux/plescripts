@@ -6,48 +6,47 @@
 . ~/plescripts/db/wallet/walletlib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
-#PAUSE=ON
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
+
 typeset -r str_usage=\
 "Usage : $ME
-	-standby=name             Nom de la base standby (sera créée)
-	-standby_host=name        Nom du serveur ou résidera la standby
-	[-create_primary_cfg=yes] Mettre 'no' si la configuration a déjà été faite.
 	[-no_backup]              Ne pas faire de backup.
 
 	Le script doit être exécuté sur le serveur de la base primaire et
 	l'environnement de la base primaire doit être chargé.
 
-	Flags de debug :
-		setup_network : configuration des tns et listeners des 2 serveurs.
-			-skip_setup_network passe cette étape.
+Flags de debug :
+	Ne pas tester les pré requis.
+		-skip_prereq
 
-		setup_primary : configuration de la base primaire.
-			-skip_setup_primary passe cette étape.
+	setup_network : configuration des tns et listeners des 2 serveurs.
+		-skip_setup_network passe cette étape.
 
-		duplicate     : duplication de la base primaire.
-			-skip_duplicate passe cette étape.
+	setup_primary : configuration de la base primaire.
+		-skip_setup_primary passe cette étape.
 
-		register_stby_to_GI : finalise la configuration de la standby
-			-skip_register_stby_to_GI passe cette étape.
+	duplicate     : duplication de la base primaire.
+		-skip_duplicate passe cette étape.
 
-		create_dataguard_services : crée les services.
-			-skip_create_dataguard_services passe cette étape
+	register_stby_to_GI : finalise la configuration de la standby
+		-skip_register_stby_to_GI passe cette étape.
 
-		configure_dataguard : configure le broker et le dataguard.
-			-skip_configure_dataguard passe cette étape.
+	configure_dataguard : configure le broker et le dataguard.
+		-skip_configure_dataguard passe cette étape.
+
+	create_dataguard_services : crée les services.
+		-skip_create_dataguard_services passe cette étape
 "
 
-typeset standby=undef
-typeset standby_host=undef
-typeset create_primary_cfg=yes
+typeset	create_primary_cfg=to_defined
 typeset	backup=yes
 
-typeset _setup_primary=yes
-typeset _setup_network=yes
-typeset _duplicate=yes
+typeset	_check_prereq=yes
+typeset	_setup_primary=yes
+typeset	_setup_network=yes
+typeset	_duplicate=yes
 typeset	_register_stby_to_GI=yes
 typeset	_create_dataguard_services=yes
 typeset	_configure_dataguard=yes
@@ -60,23 +59,13 @@ do
 			shift
 			;;
 
-		-standby=*)
-			standby=$(to_upper ${1##*=})
-			shift
-			;;
-
-		-standby_host=*)
-			standby_host=${1##*=}
-			shift
-			;;
-
 		-no_backup)
 			backup=no
 			shift
 			;;
 
-		-create_primary_cfg=*)
-			create_primary_cfg=$(to_lower ${1##*=})
+		-skip_prereq)
+			_check_prereq=no
 			shift
 			;;
 
@@ -126,28 +115,8 @@ do
 done
 
 exit_if_ORACLE_SID_not_defined
-typeset -r primary=$ORACLE_SID
-
-exit_if_param_undef standby			"$str_usage"
-exit_if_param_undef standby_host	"$str_usage"
 
 ple_enable_log -params $PARAMS
-
-# Requête permettant de lire tous les PDBs existant sur la base $primary
-# Les bases en RO sont considérées comme des SEED.
-# Attention code dupliqué dans convert_stby.sh & update_tns_alias_for_dataguard.sh
-typeset -r sql_read_pdbs_rw=\
-"select
-	c.name
-from
-	gv\$containers c
-	inner join gv\$instance i
-		on  c.inst_id = i.inst_id
-	where
-		i.instance_name = '$primary'
-	and	c.name not in ( 'PDB\$SEED', 'CDB\$ROOT' )
-	and c.open_mode = 'READ WRITE';
-"
 
 # $1 account
 # $@ command
@@ -168,7 +137,7 @@ function ssh_stby
 	typeset -r ssh_account="$1"
 	shift
 
-	exec_cmd $farg "ssh -t $ssh_account@${standby_host} \". .bash_profile; $@\"</dev/null"
+	exec_cmd $farg "ssh -t -t $ssh_account@${standby_host} \". .bash_profile; $@\"</dev/null"
 }
 
 #	Exécute la commande "$@" avec sqlplus sur la standby
@@ -229,9 +198,9 @@ function get_db_unique_name_for_stby
 
 	if [ "$db_name" == "$db_unique_name" ]
 	then # Base à l'origine du Dataguard
-		echo "$standby"
+		echo "${dbid}02"
 	else # Base créée à partir de la Primary
-		echo "$db_name"
+		echo "${dbid}01"
 	fi
 }
 
@@ -301,7 +270,7 @@ EOS
 	exec_cmd "chmod ug=rwx $script"
 	if [ $crs_used == yes ]
 	then
-		exec_cmd "sudo -u grid -i $script"
+		exec_cmd "sudo -iu grid $script"
 	else
 		exec_cmd "$script"
 	fi
@@ -342,7 +311,7 @@ EOS
 	exec_cmd "scp $script $standby_host:$script"
 	if [ $crs_used == yes ]
 	then
-		exec_cmd "ssh -t $standby_host sudo -u grid -i $script"
+		exec_cmd "ssh -t $standby_host sudo -iu grid $script"
 	else
 		exec_cmd "ssh -t $standby_host '. .bash_profile && $script'"
 	fi
@@ -352,15 +321,14 @@ EOS
 function sql_print_redo
 {
 	set_sql_cmd "set lines 130 pages 45"
-	set_sql_cmd "col member for a45"
+	set_sql_cmd "col member for a60"
+	set_sql_cmd "break on type skip 1"
 	set_sql_cmd "select * from v\$logfile order by type, group#;"
 }
 
 #	Création des SRLs sur la base primaire.
 function add_stby_redolog
 {
-	info "Add stdby redo log"
-
 	typeset		redo_size_mb=undef
 	typeset	-i	nr_redo=-1
 	read redo_size_mb nr_redo <<<"$(sqlplus_exec_query "select distinct round(bytes/1024/1024)||'M', count(*) from v\$log group by bytes;" | tail -1)"
@@ -426,21 +394,27 @@ function setup_tnsnames
 #		- puis démarre la standby uniquement avec le paramètre db_name
 function start_stby
 {
-	info "Copie du fichier password."
+	info "Copy password file."
 	exec_cmd scp $ORACLE_HOME/dbs/orapw${primary} ${standby_host}:$ORACLE_HOME/dbs/orapw${standby}
 	LN
 
 	line_separator
-	info "Création du répertoire $ORACLE_BASE/$standby/adump sur $standby_host"
+	info "Create directory $ORACLE_BASE/$standby/adump on $standby_host"
 	exec_cmd -c "ssh $standby_host mkdir -p $ORACLE_BASE/admin/$standby/adump"
 	LN
 
 	line_separator
-	info "Configure et démarre $standby sur $standby_host (configuration minimaliste.)"
+	info "Start $standby on $standby_host."
 
 	[ $crs_used == no ] && stdby_update_oratab Y || true
 
-	ssh -t -t $standby_host<<-EO_SSH_STBY | tee -a $PLELIB_LOG_FILE
+	info "On $standby_host :"
+	info "$ echo db_name='$standby' > \$ORACLE_HOME/dbs/init${standby}.ora"
+	info "$ export ORACLE_SID=$standby"
+	info "$ sqlplus -s sys/Oracle12 as sysdba <<<\"startup nomount\""
+	LN
+
+	ssh -t -t $standby_host<<-EO_SSH_STBY > /tmp/stby_startup.log
 	rm -f $ORACLE_HOME/dbs/sp*${standby}* $ORACLE_HOME/dbs/init*${standby}*
 	echo "db_name='$standby'" > $ORACLE_HOME/dbs/init${standby}.ora
 	export ORACLE_SID=$standby
@@ -450,8 +424,17 @@ function start_stby
 	EO_SQL_DBSTARTUP
 	exit \$?
 	EO_SSH_STBY
+	ret=$?
 
-	info "startup nomount return $?"
+	if [ $ret -ne 0 ]
+	then
+		clean_log_file /tmp/stby_startup.log
+		cat /tmp/stby_startup.log | tee -a $PLELIB_LOG_FILE
+		rm /tmp/stby_startup.log
+		LN
+	fi
+
+	info "startup nomount return $ret"
 	LN
 }
 
@@ -462,8 +445,9 @@ function run_duplicate
 	# Sur la Primary et sur la Physical les db_name sont identiques.
 	typeset db_name=$(orcl_parameter_value db_name)
 
-	info "db_name stby        : $db_name"
-	info "db_unique_name stby : $stby_db_unique_name"
+	info "Physical standby"
+	info "db_name        : $db_name"
+	info "db_unique_name : $stby_db_unique_name"
 	LN
 
 	if [ $crs_used == no ]
@@ -627,17 +611,10 @@ function stdby_update_oratab
 
 #	Après que la duplication ait été faite, finalise la configuration.
 #	Actions :
-#		- backup de l'alertlog de la standby (pour ne plus avoir 50K de messages d'erreurs)
 #		- démarre la synchro
 #		- enregistre la standby dans le GI.
 function register_stby_to_GI
 {
-	line_separator
-	info "Backup standby alertlog :"
-	typeset -r alert_log="$ORACLE_BASE/diag/rdbms/$(to_lower $standby)/$standby/trace/alert_${standby}.log"
-	exec_cmd "ssh $standby_host '. .profile; mv $alert_log ${alert_log}.after_duplicate'"
-	LN
-
 	line_separator
 	info "GI : register standby database on $standby_host :"
 	exec_cmd "ssh -t $standby_host \". .profile;					\
@@ -663,7 +640,7 @@ function register_stby_to_GI
 function create_dataguard_config
 {
 	info "Create data guard configuration."
-	timing 10 "Wait data guard broker"
+	timing 10 "Wait recover"
 	LN
 	fake_exec_cmd "dgmgrl -silent -echo sys/$oracle_password"
 	dgmgrl -silent -echo sys/$oracle_password<<-EOS | tee -a $PLELIB_LOG_FILE
@@ -713,106 +690,16 @@ function configure_dataguard
 #		-	2 services (oci et java) avec le role primary sur les 2 bases.
 #		-	2 services (oci et java) avec le role standby sur les 2 bases.
 #	Les services sont créés à partir du nom du PDB
-#	****************************************************************************
-#	Attention :
-#	le script db/create_pdb.sh utilise le script db/create_srv_for_dataguard.sh
-#	****************************************************************************
-function create_dataguard_services_no_crs
-{
-	typeset oci_stby_service
-	typeset java_stby_service
-
-	while read pdb
-	do
-		[ x"$pdb" == x ] && continue
-
-		oci_stby_service=$(mk_oci_stby_service $pdb)
-		java_stby_service=$(mk_java_stby_service $pdb)
-
-		line_separator
-		info "$primary[$pdb] : update services."
-		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-							-db=$primary -pdb=$pdb				\
-							-role=primary -start=yes"
-		LN
-
-		info "$primary[$pdb] : create standby services."
-		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-							-db=$primary -pdb=$pdb				\
-							-role=physical_standby -start=no"
-		LN
-
-		if [ -d $wallet_path ]
-		then
-			line_separator
-			info "Standby $standby_host : wallet add sys for $pdb to wallet"
-			ssh_stby oracle "~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
-														-db=$standby -pdb=$pdb"
-			LN
-		fi
-
-	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
-}
-
-#	Création des services :
-#		-	2 services (oci et java) avec le role primary sur les 2 bases.
-#		-	2 services (oci et java) avec le role standby sur les 2 bases.
-#	Les services sont créés à partir du nom du PDB
-#	****************************************************************************
-#	Attention :
-#	le script db/create_pdb.sh utilise le script db/create_srv_for_dataguard.sh
-#	****************************************************************************
 function create_dataguard_services
 {
 	line_separator
 	while read pdb
 	do
-		[ x"$pdb" == x ] && continue
+		[ x"$pdb" == x ] && continue || true
 
-		if [ $create_primary_cfg == yes ]
-		then
-			info "Create stby service for pdb $pdb on cdb $primary"
-			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-						-db=$primary -pdb=$pdb	-role=primary"
-			LN
-
-			info "(1) Need to start stby services on primary $primary for a short time."
-			# Il est important de démarrer les services stby sinon le démarrage
-			# des services sur la standby échoura. (1)
-			exec_cmd "~/plescripts/db/create_srv_for_single_db.sh	\
-						-db=$primary -pdb=$pdb -role=physical_standby"
-			LN
-		fi
-
-		info "Create services for pdb $pdb on cdb $standby"
-		exec_cmd "ssh -t -t $standby_host '. .profile;			\
-					~/plescripts/db/create_srv_for_single_db.sh	\
-						-db=$standby -pdb=$pdb					\
-						-role=primary -start=no'</dev/null"
-		LN
-
-		#	Ne pas démarrer les services stby sur la stdy sinon sa plante.
-		#	Le faire après la création du broker.
-		exec_cmd "ssh -t -t $standby_host '. .profile;				\
-					~/plescripts/db/create_srv_for_single_db.sh		\
-						-db=$standby -pdb=$pdb						\
-						-role=physical_standby -start=no'</dev/null"
-		LN
-
-		typeset	oci_stby_service=$(mk_oci_stby_service $pdb)
-		typeset	java_stby_service=$(mk_java_stby_service $pdb)
-
-		if [ $create_primary_cfg == yes ]
-		then	#(1) Il faut stopper les services stdby sur la primary.
-				#	Les services stdby démarreront automatiquement lors de
-				#	l'ouverture de la stdby en RO.
-			info "(1) Stop stby services on primary $primary :"
-			exec_cmd "srvctl stop service -db $primary	\
-										-service $oci_stby_service"
-			exec_cmd "srvctl stop service -db $primary	\
-										-service $java_stby_service"
-			LN
-		fi
+		exec_cmd "~/plescripts/db/create_srv_for_dataguard.sh	\
+								-db=$primary -pdb=$pdb			\
+								-standby=$standby -standby_host=$standby_host</dev/null"
 
 		if [ -d $wallet_path ]
 		then
@@ -823,7 +710,7 @@ function create_dataguard_services
 			LN
 		fi
 
-	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
+	done<<<"$(get_sql_read_pdbs_rw $ORACLE_SID)"
 }
 
 #	Instruction pour activer le flashback sur la base standby.
@@ -875,31 +762,14 @@ function check_ssh_prereq_and_if_stby_exist
 #	Valide les paramètres.
 #	Si la configuration dataguard existe alors il faut utiliser le paramètre -create_primary_cfg=no
 #	return 1 if error, else 0
-function check_params
+function test_if_dataguard_configuration_exists
 {
-	typeset errors=no
-
 	line_separator
 	typeset -ri c=$(dgmgrl -silent sys/$oracle_password 'show configuration' |\
 						grep -E "Primary|Physical" | wc -l 2>/dev/null)
+	[ $c -eq 0 ] && create_primary_cfg=yes || create_primary_cfg=no
 	info "Dataguard broker : $c database configured."
-	if [ $create_primary_cfg == yes ]
-	then
-		if [ $c -ne 0 ]
-		then
-			error "Dataguard broker configuration exist, add -create_primary_cfg=no"
-			errors=yes
-		fi
-	else
-		if [ $c -eq 0 ]
-		then
-			error "Dataguard broker configuration not exist, remove -create_primary_cfg=no"
-			errors=yes
-		fi
-	fi
 	LN
-
-	[ $errors == yes ] && return 1 || return 0
 }
 
 #	Vérifie si la base est en mode Archive Log
@@ -958,16 +828,6 @@ function check_prereq
 {
 	typeset errors=no
 
-	if ! check_ssh_prereq_and_if_stby_exist
-	then
-		errors=yes
-	fi
-
-	if ! check_params
-	then
-		errors=yes
-	fi
-
 	if ! check_log_mode
 	then
 		errors=yes
@@ -993,6 +853,8 @@ function check_prereq
 function stby_enable_block_change_traking
 {
 	# Doit être activé sur la stby, ce paramètre est ignoré par le duplicate.
+	line_separator
+	info "Enable block change tracking."
 	exec_cmd -c "ssh $standby_host								\
 			'. .bash_profile; rman target sys/$oracle_password	\
 				@$HOME/plescripts/db/rman/enable_block_change_tracking.sql'"
@@ -1045,22 +907,41 @@ function dbfs_instructions
 
 	info "$ ssh $standby_host"
 	info "$ cd ~/plescripts/db/dbfs"
-	LN
 
-	while read pdb
+	while read cfg_fullpath
 	do
-		[ x"$pdb" == x ] && continue || true
+		[ x"$cfg_fullpath" == x ] && continue || true
 
-		info "$ ./create_dbfs.sh -db=$(to_lower $standby) -pdb=$(to_lower $pdb)"
+		cfg_file=${cfg_fullpath##*/}
+		pdb_name=$(cut -d_ -f1<<<"$cfg_file")
+
+		info "$ ./create_dbfs.sh -db=$(to_lower $standby) -pdb=$(to_lower $pdb_name)"
 		LN
-	done<<<"$(sqlplus_exec_query "$sql_read_pdbs_rw")"
+	done<<<"$(find ~ -name "*_dbfs.cfg")"
 }
 
+typeset	-r	primary=$ORACLE_SID
 typeset	-r	primary_host=$(hostname -s)
+typeset	-r	dbid=${primary:0:${#primary}-2}
+case "${primary:${#primary}-2}" in
+	01)
+		typeset -r	standby_host=${primary_host:0:${#primary_host}-2}02
+		typeset	-r	standby=$(to_upper ${dbid}02)
+		;;
+	02)
+		typeset -r	standby_host=${primary_host:0:${#primary_host}-2}01
+		typeset	-r	standby=$(to_upper ${dbid}01)
+		;;
+	*)
+		error "ORACLE_SID $ORACLE_SID not conform, suffix must be 01 or 02"
+		LN
+		exit 1
+		;;
+esac
 
 script_start
 
-if test_if_cmd_exists crsctl
+if command_exists crsctl
 then
 	typeset	-r crs_used=yes
 else
@@ -1076,7 +957,9 @@ info "	- Primary database          : $primary on $primary_host"
 info "	- Physical standby database : $standby on $standby_host"
 LN
 
-check_prereq
+test_if_dataguard_configuration_exists
+
+[ $_check_prereq == yes ] && check_prereq || true
 
 [ $_setup_network == yes ] && setup_network || true
 
@@ -1087,22 +970,6 @@ check_prereq
 stby_create_oracle_home_links
 
 [ $_register_stby_to_GI == yes ] && register_stby_to_GI || true
-
-# Il faut configurer les services avant d'appeler configure_dataguard qui
-# démarrera les service stby lors de l'ouverture de la base en RO.
-if [ $_create_dataguard_services == yes ]
-then
-	if [ $crs_used == yes ]
-	then
-		create_dataguard_services
-	else
-		create_dataguard_services_no_crs
-	fi
-
-	line_separator
-	exec_cmd "~/plescripts/db/update_tns_alias_for_dataguard.sh	\
-						-db=$primary -pdb=all -dataguard_list=$standby_host"
-fi
 
 [ $_configure_dataguard == yes ] && configure_dataguard || true
 
@@ -1117,12 +984,16 @@ then
 	line_separator
 	info "Enable flashback on $standby"
 	sqlplus_cmd_on_stby "$(sql_enable_flashback)"
+	LN
 fi
 
 stby_enable_block_change_traking
+
+[ $_create_dataguard_services == yes ] && create_dataguard_services || true
+
 stby_backup
 
-timing 20 "Waiting database synchronisation"
+timing 20 "Waiting database synchronization"
 LN
 
 exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"

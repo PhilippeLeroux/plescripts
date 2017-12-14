@@ -101,10 +101,10 @@ if [ $iostat_on == ALL ]
 then
 	load_all_disks
 else
-	if test_if_cmd_exists oracleasm
+	if command_exists oracleasm
 	then
 		load_oracleasm_disks
-	elif test_if_cmd_exists asmcmd
+	elif command_exists asmcmd
 	then
 		load_afd_disks
 	else

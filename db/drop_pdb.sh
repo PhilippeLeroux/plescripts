@@ -105,11 +105,6 @@ function close_pdb_on_physical_standby_database
 	info "Close pdb $pdb on physical standby database."
 	LN
 
-	typeset -a physical_list
-	typeset -a stby_server_list
-
-	load_stby_database
-
 	if [ ${#physical_list[@]} -eq 0 ]
 	then
 		warning "no Physical Standby found."
@@ -157,17 +152,41 @@ fi
 
 [ $log == yes ] && ple_enable_log -params $PARAMS || true
 
-test_if_cmd_exists olsnodes
-[ $? -eq 0 ] && crs_used=yes || crs_used=no
+if command_exists olsnodes
+then
+	typeset	-r	crs_used=yes
+else
+	typeset	-r	crs_used=no
+fi
 
 [ $crs_used == yes ] && exit_if_database_not_exists $db || true
 
 exit_if_ORACLE_SID_not_defined
 
-typeset	-r dataguard=$(dataguard_config_available)
+typeset	-r	dataguard=$(dataguard_config_available)
+typeset	-i	count_stby_error=0
 
 info "Dataguard : $dataguard"
 LN
+
+typeset -a physical_list
+typeset -a stby_server_list
+load_stby_database
+
+for stby_name in ${physical_list[*]}
+do
+	if stby_is_disabled $stby_name
+	then
+		((++count_stby_error))
+		warning "Physical database $stby_name is disabled."
+		LN
+	fi
+done
+if [ $count_stby_error -ne 0 ]
+then
+	confirm_or_exit "Continue"
+	LN
+fi
 
 wait_if_high_load_average
 
@@ -175,8 +194,14 @@ if [ $dataguard == yes ]
 then
 	if [ $role == primary ]
 	then	# Physical standby must be deleted first
-		exit_if_db_not_primary_database
-		close_pdb_on_physical_standby_database
+		if [ $count_stby_error -ne 0 ]
+		then
+			warning "Standby database disabled."
+			LN
+		else
+			exit_if_db_not_primary_database
+			close_pdb_on_physical_standby_database
+		fi
 	else
 		exit_if_db_not_physical_standby_database
 	fi

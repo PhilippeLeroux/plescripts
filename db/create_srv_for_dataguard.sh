@@ -9,11 +9,6 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
-#	****************************************************************************
-#	Le scripts db/stby/create_dataguard.sh la fonction create_dataguard_services
-#	utilise une autre méthode pour crééer les services.
-#	****************************************************************************
-
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name
@@ -26,10 +21,10 @@ typeset -r str_usage=\
 	* RAC non pris en compte.
 "
 
-typeset db=undef
-typeset pdb=undef
-typeset standby=undef
-typeset standby_host=undef
+typeset	db=undef
+typeset	pdb=undef
+typeset	standby=undef
+typeset	standby_host=undef
 
 while [ $# -ne 0 ]
 do
@@ -80,7 +75,7 @@ exit_if_param_undef pdb				"$str_usage"
 exit_if_param_undef standby			"$str_usage"
 exit_if_param_undef standby_host	"$str_usage"
 
-if test_if_cmd_exists crsctl
+if command_exists crsctl
 then
 	typeset -r crs_used=yes
 else
@@ -101,19 +96,21 @@ function ssh_stby
 		typeset farg
 	fi
 
-	exec_cmd $farg "ssh -t ${standby_host} '. .bash_profile; $@'"
+	exec_cmd $farg "ssh -t  ${standby_host}		\
+						'. .bash_profile; export TERM=$TERM; $@'"
 }
 
 #	Les services 'stby' sont démarrées, il seront stoppées par les fonctions
 #	create_standby_services[_no_crs]
 function create_or_update_primary_services
 {
+	info "Create or update services on Primary $db[$pdb]."
+	LN
 	exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
 								-db=$db						\
 								-pdb=$pdb					\
 								-role=primary				\
 								-start=yes
-	LN
 
 	#	Il faut démarrer les services stby, puis les stopper sinon la création
 	#	des services échouera sur la stby.
@@ -122,7 +119,6 @@ function create_or_update_primary_services
 								-pdb=$pdb					\
 								-role=physical_standby		\
 								-start=yes
-	LN
 }
 
 function create_standby_services
@@ -131,24 +127,35 @@ function create_standby_services
 	info "$db[$pdb] : stop all standby services."
 	LN
 
-	#	Arrêt des services stdby.
-	exec_cmd srvctl stop service -db $db -service $(mk_oci_stby_service $pdb)
-	LN
+	typeset -r oci_stby_service=$(mk_oci_stby_service $pdb)
+	if service_running $db $oci_stby_service
+	then
+		exec_cmd srvctl stop service -db $db -service $oci_stby_service
+		LN
+	else
+		info "Service $oci_stby_service not running."
+		LN
+	fi
 
-	exec_cmd srvctl stop service -db $db -service $(mk_java_stby_service $pdb)
-	LN
+	typeset -r java_stby_service=$(mk_java_stby_service $pdb)
+	if service_running $db $java_stby_service
+	then
+		exec_cmd srvctl stop service -db $db -service $java_stby_service
+		LN
+	else
+		info "Service $java_stby_service not running."
+		LN
+	fi
 
 	line_separator
-	info "Create service on standby $standby_host"
+	info "Create service on standby $standby_host[$pdb]"
 	LN
 
-	ssh_stby "~/plescripts/db/create_srv_for_single_db.sh	\
-				-db=$standby -pdb=$pdb -role=primary -start=no"
-	LN
+	ssh_stby ~/plescripts/db/create_srv_for_single_db.sh	\
+				-db=$standby -pdb=$pdb -role=primary -start=no
 
-	ssh_stby "~/plescripts/db/create_srv_for_single_db.sh	\
-			-db=$standby -pdb=$pdb -role=physical_standby -start=yes"
-	LN
+	ssh_stby ~/plescripts/db/create_srv_for_single_db.sh	\
+				-db=$standby -pdb=$pdb -role=physical_standby -start=yes
 }
 
 function create_standby_services_no_crs
@@ -162,9 +169,11 @@ function create_standby_services_no_crs
 	}
 
 	# $1 pdb name
-	function open_stby_pdb
+	# $2 service name
+	function start_stby_service
 	{
-		set_sql_cmd "alter pluggable database $1 open read only;"
+		set_sql_cmd "alter session set container=$1;"
+		set_sql_cmd "exec dbms_service.start_service( '$2' );"
 	}
 
 	line_separator
@@ -172,17 +181,32 @@ function create_standby_services_no_crs
 	LN
 
 	typeset -r oci_stby_service=$(mk_oci_stby_service $pdb)
-	sqlplus_cmd "$(stop_stby_service $pdb $oci_stby_service)"
-	LN
+	if service_running $db $oci_stby_service
+	then
+		sqlplus_cmd "$(stop_stby_service $pdb $oci_stby_service)"
+		LN
+	else
+		info "Service $oci_stby_service not running."
+		LN
+	fi
 
 	typeset -r java_stby_service=$(mk_java_stby_service $pdb)
-	sqlplus_cmd "$(stop_stby_service $pdb $java_stby_service)"
-	LN
+	if service_running $db $java_stby_service
+	then
+		sqlplus_cmd "$(stop_stby_service $pdb $java_stby_service)"
+		LN
+	else
+		info "Service $java_stby_service not running."
+		LN
+	fi
 
 	line_separator
-	info "Open pluggable database $pdb on standby $standby"
-	sqlplus_cmd_with "sys/$oracle_password@$standby as sysdba"	\
-													"$(open_stby_pdb $pdb)"
+	info "$standby[$pdb] : start all standby services."
+	LN
+	typeset	-r	connect_str="sys/$oracle_password@$standby as sysdba"
+	sqlplus_cmd_with $connect_str "$(start_stby_service $pdb $oci_stby_service)"
+	LN
+	sqlplus_cmd_with $connect_str "$(start_stby_service $pdb $java_stby_service)"
 	LN
 }
 

@@ -12,11 +12,13 @@ typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	-db=name           Identifier.
+	-node=#            RAC/Dataguard node number
 	-vm_memory_mb=#    RAM for VM.
 	[-vmGroup=name]    Group name for VM.
 "
 
 typeset		db=undef
+typeset	-i	node=-1
 typeset	-i	vm_memory_mb=-1
 typeset		vmGroup=undef
 
@@ -35,6 +37,11 @@ do
 
 		-db=*)
 			db=${1##*=}
+			shift
+			;;
+
+		-node=*)
+			node=${1##*=}
 			shift
 			;;
 
@@ -59,28 +66,29 @@ do
 done
 
 exit_if_param_undef db				"$str_usage"
+exit_if_param_undef node			"$str_usage"
 exit_if_param_undef vm_memory_mb	"$str_usage"
 
 cfg_exists $db
 
 typeset		node_list
 typeset -ri max_nodes=$(cfg_max_nodes $db)
-#	ici le n° du nœud n'est pas important et il y a toujours un nœud 1.
-cfg_load_node_info $db 1
+
+cfg_load_node_info $db	$node
 
 if [[ "$vmGroup" != undef && ${vmGroup:0:1} != '/' ]]
 then
 	vmGroup="/$vmGroup"
 fi
 
-if [ $max_nodes -eq 1 ]
+if [ $cfg_db_type == rac ]
 then
-	typeset -r nr_cpus=$vm_nr_cpus_for_single_db
-else
 	typeset -r nr_cpus=$vm_nr_cpus_for_rac_db
+else
+	typeset -r nr_cpus=$vm_nr_cpus_for_single_db
 fi
 
-for nr_node in $( seq $max_nodes )
+for (( nr_node = $node; nr_node <= $max_nodes; ++nr_node ))
 do
 	cfg_load_node_info $db $nr_node
 	typeset	vm_name=$cfg_server_name
@@ -145,6 +153,8 @@ do
 
 	exec_cmd VBoxManage setextradata "$vm_name" GUI/GuruMeditationHandler PowerOff
 	LN
+
+	[ $cfg_db_type != rac ] && break || true
 done
 
 if [[ $cfg_db_type == rac && $cfg_oracle_home == ocfs2 ]]
@@ -163,4 +173,9 @@ fi
 
 [ $cfg_luns_hosted_by == san ] && exit 0 || true
 
-exec_cmd "$vm_scripts_path/create_oracle_disks.sh -db=$db"
+if [ $cfg_dataguard == yes ]
+then
+	exec_cmd "$vm_scripts_path/create_oracle_disks.sh -db=$db -dg_node=$node"
+else
+	exec_cmd "$vm_scripts_path/create_oracle_disks.sh -db=$db"
+fi

@@ -56,17 +56,10 @@ info "Stop running VMs."
 info "    $vm_count VMs running : ${vm_list[@]}"
 for vm in ${vm_list[*]}
 do
-	exec_cmd stop_vm $vm &
+	exec_cmd stop_vm $vm
 	LN
 done
 LN
-
-if [ $vm_count -ne 0 ]
-then
-	info "Wait all VMs...."
-	wait
-	LN
-fi
 
 if [ $infra_running == yes ]
 then

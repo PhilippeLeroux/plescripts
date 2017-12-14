@@ -48,7 +48,7 @@ function clear_device
 		error "clear_device : $device not a block device"
 	else
 		[ $# -eq 1 ] && size_bytes=$(( 1024*1024*100 ))
-		info "clear device $device : $(fmt_bytesU_2_better $size_bytes)"
+		info "clear device $device : $(fmt_bytes_2_better $size_bytes)"
 		exec_cmd dd if=/dev/zero of=$device bs=$size_bytes count=1
 	fi
 }

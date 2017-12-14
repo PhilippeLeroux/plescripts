@@ -82,7 +82,7 @@ function read_gateway_ip
 
 function VMs_folder
 {
-	if test_if_cmd_exists VBoxManage
+	if command_exists VBoxManage
 	then
 		if [ "$common_user_name" == "$USER" ]
 		then # global.cfg a déjà été configuré.
@@ -209,6 +209,7 @@ function configure_gateway
 function LUNs_storage
 {
 	disks_stored_on=$disks_hosted_by
+	info "On a computer with low power choose vbox."
 	ask_for_variable disks_stored_on "Disks managed by san or vbox (vbox = VirtualBox) :"
 	LN
 	disks_stored_on=$(to_lower $disks_stored_on)
@@ -307,9 +308,7 @@ function update_local_cfg
 {
 	if [ "$1" != "$2" ]
 	then
-		info "local.cfg : update $3 = $2"
-		update_value "$3" "$2" $HOME/plescripts/local.cfg
-		LN
+		update_variable "$3" "$2" $HOME/plescripts/local.cfg
 	fi
 }
 
@@ -364,21 +363,18 @@ update_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVE
 
 if [ "$disks_hosted_by" != "$disks_stored_on" ]
 then
-	update_value "DISKS_HOSTED_BY" "$DISKS_HOSTED_BY" ~/plescripts/local.cfg
-	update_value "SAN_DISK" "$san_disk_n" ~/plescripts/local.cfg
-	LN
+	update_variable "DISKS_HOSTED_BY" "$DISKS_HOSTED_BY" ~/plescripts/local.cfg
+	update_variable "SAN_DISK" "$san_disk_n" ~/plescripts/local.cfg
 fi
 
 update_local_cfg "$OL7_LABEL" "$OL7_LABEL_n" OL7_LABEL
 
 info "Configure repository OL7"
-if	[[ $OL7_LABEL_n == 7.4 && $ol7_repository_release != R4 ]] ||	\
-	[[ $OL7_LABEL_n == 7.3 && $ol7_repository_release != R3 ]] ||	\
-	[[ $OL7_LABEL_n == 7.2  ]]
+if	[[ $ol7_repository_release != $orcl_yum_repository_release ||	\
+					$OL7_LABEL_n == 7.3 || $OL7_LABEL_n == 7.2  ]]
 then
-	update_value "INFRA_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
-	update_value "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
-	LN
+	update_variable "INFRA_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
+	update_variable "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
 fi
 
 if [ $count_errors -ne 0 ]

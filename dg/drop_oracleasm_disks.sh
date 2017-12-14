@@ -100,13 +100,19 @@ LN
 if [ $disks_hosted_by == san ]
 then
 	line_separator
-	exec_cmd ssh -t root@$infra_hostname					\
-					"~/plescripts/san/delete_db_lun.sh		\
-										-db=$db				\
-										-lun=$nr_disk		\
-										-count=$count		\
-										-vg_name=$vg_name"
-	LN
+	if [ $(dataguard_config_available) == yes ]
+	then
+		warning "Dataguard LUN not remove from $infra_hostname"
+		LN
+	else
+		exec_cmd ssh -t root@$infra_hostname					\
+						"~/plescripts/san/delete_db_lun.sh		\
+											-db=$db				\
+											-lun=$nr_disk		\
+											-count=$count		\
+											-vg_name=$vg_name"
+		LN
+	fi
 else
 	warning "Disks not removed form VBox : DIY"
 	LN

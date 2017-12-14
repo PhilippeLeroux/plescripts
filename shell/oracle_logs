@@ -70,7 +70,7 @@ cfg_exists $db
 
 typeset -r	max_nodes=$(cfg_max_nodes $db)
 
-[ $max_nodes -gt 2 ] && error "Maximum RAC 2 nœuds" && exit 1
+[ $max_nodes -gt 2 ] && error "Maximum 2 nœuds" && exit 1
 
 cfg_load_node_info $db 1
 typeset -r	server1=$cfg_server_name
@@ -80,7 +80,7 @@ typeset 	inst1=$(ssh oracle@$server1 plescripts/db/get_active_instance.sh)
 set_terminal_title "ORCL LOGS"
 trap 'set_terminal_title default' EXIT
 
-if [ $max_nodes -eq 2 ]
+if [ $cfg_db_type == rac ]
 then	#	RAC 2 nœuds.
 	cfg_load_node_info $db 2
 	typeset -r	server2=$cfg_server_name
@@ -133,12 +133,14 @@ else	#	Mono Instance.
 		inst1=$(ssh oracle@$server1 grep "^[A-Z].*" /etc/oratab | cut -d: -f1)
 	fi
 
-	if [ "$cfg_standby" != none ]
+	if [ $cfg_dataguard == yes ]
 	then
-		db_stby=$cfg_standby
-		cfg_load_node_info $cfg_standby 1
+		cfg_load_node_info $db 2
 		if ping -c 1 $cfg_server_name >/dev/null 2>&1
 		then
+			db_stby=${db}02
+			db=${db}01
+
 			server2=$cfg_server_name
 			inst2=$(ssh oracle@$server2 plescripts/db/get_active_instance.sh)
 			if [ x"$inst2" == x ]

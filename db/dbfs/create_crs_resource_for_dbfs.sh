@@ -8,8 +8,8 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r	ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
 typeset		db=undef
 typeset		pdb=undef
@@ -97,13 +97,6 @@ must_be_user grid
 exit_if_param_undef db		"$str_usage"
 exit_if_param_undef pdb		"$str_usage"
 
-[ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
-
-typeset	-r	script_name=~/mount-dbfs-$pdb
-typeset	-r	resource_name="pdb.${pdb}.dbfs"
-typeset	-r	dbfs_name=staging_area
-typeset -r	ora_service=$(to_lower "ora.${db}.${service}.svc")
-
 function create_script
 {
 	line_separator
@@ -176,6 +169,7 @@ function create_local_resource
 	exec_dynamic_cmd "crsctl add resource $resource_name"
 
 	info "Status"
+	sleep 2
 	exec_cmd crsctl stat res $resource_name -t
 	LN
 
@@ -183,9 +177,10 @@ function create_local_resource
 	then
 		info "Start $resource_name"
 		exec_cmd -c crsctl start res $resource_name
-		if [ $? -ne 0 ]
+		ret=$?
+		LN
+		if [ $ret -ne 0 ]
 		then # En 12.2 le premier call peut échouer.
-			LN
 			if is_RAC_12cR2
 			then
 				typeset wait_s=10
@@ -198,8 +193,6 @@ function create_local_resource
 
 			exec_cmd crsctl start res $resource_name
 			LN
-		else
-			LN
 		fi
 
 		info "Status"
@@ -210,6 +203,13 @@ function create_local_resource
 		LN
 	fi
 }
+
+[ "$service" == auto ] && service=$(mk_oci_service $pdb) || true
+
+typeset	-r	script_name=~/mount-dbfs-$pdb
+typeset	-r	resource_name="pdb.${pdb}.dbfs"
+typeset	-r	dbfs_name=staging_area
+typeset -r	ora_service=$(to_lower "ora.${db}.${service}.svc")
 
 exit_if_service_not_exists $db $service
 

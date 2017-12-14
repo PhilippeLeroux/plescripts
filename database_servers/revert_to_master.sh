@@ -94,8 +94,7 @@ LN
 
 line_separator
 info "Set master config"
-update_value IPADDR ${if_pub_network}.${master_ip_node}	$if_pub_file
-LN
+update_variable IPADDR ${if_pub_network}.${master_ip_node}	$if_pub_file
 
 exec_cmd "echo ${master_hostname}.${infra_domain} > /etc/hostname"
 LN

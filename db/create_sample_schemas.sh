@@ -143,4 +143,4 @@ exec_cmd ~/plescripts/db/sample_schemas_unlock_accounts.sh	\
 											-service=$service_param
 LN
 
-script_stop $ME
+script_stop $ME $db

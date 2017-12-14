@@ -134,8 +134,10 @@ function sync_repo
 	LN
 
 	info "Update repository : $repo_name"
-	test_if_cmd_exists createrepo
-	[ $? -ne 0 ] && exec_cmd yum -y install createrepo
+	if ! command_exists createrepo
+	then
+		exec_cmd yum -y install createrepo
+	fi
 	exec_cmd createrepo --update $infra_olinux_repository_path/$repo_name
 	LN
 }

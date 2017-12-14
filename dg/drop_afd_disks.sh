@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -96,26 +97,20 @@ done
 if [ $disks_hosted_by == san ]
 then
 	line_separator
-	exec_cmd ssh -t root@$infra_hostname				\
-					"~/plescripts/san/delete_db_lun.sh	\
-									-db=$db				\
-									-lun=$nr_disk		\
-									-count=$count		\
-									-vg_name=$vg_name"
-	LN
+	if [ $(dataguard_config_available) == yes ]
+	then
+		warning "Dataguard LUN not remove from $infra_hostname"
+		LN
+	else
+		exec_cmd ssh -t root@$infra_hostname				\
+						"~/plescripts/san/delete_db_lun.sh	\
+										-db=$db				\
+										-lun=$nr_disk		\
+										-count=$count		\
+										-vg_name=$vg_name"
+		LN
+	fi
 else
 	warning "Disks not removed form VBox : DIY"
 	LN
 fi
-
-if [ 0 -eq 1 ]; then
-if [ $gi_count_nodes -gt 1 ]
-then
-	line_separator
-	for server_name in ${gi_node_list[*]}
-	do
-		exec_cmd "ssh $server_name \". .bash_profile; oracleasm scandisks\""
-		LN
-	done
-fi
-fi # [ 0 -eq 1 ]; then

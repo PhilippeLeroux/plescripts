@@ -56,7 +56,7 @@ do
 	then
 		if [ $afdonly == no ]
 		then
-			info "disk $disk $(fmt_bytesU_2_better $size_b) ${BLINK}${UNDERLINE}Unused${NORM}."
+			info "disk $disk $(fmt_bytes_2_better $size_b) ${BLINK}${UNDERLINE}Unused${NORM}."
 			((++nr_unused_disks))
 		fi
 	else
@@ -64,7 +64,7 @@ do
 		if [ $nb_part -ne 0 ]
 		then
 			[ $afdonly == yes ] && continue || true
-			info -n "disk $disk $(fmt_bytesU_2_better $size_b) type $type"
+			info -n "disk $disk $(fmt_bytes_2_better $size_b) type $type"
 			info -f ", partitions :"
 			for (( ipart=1; ipart <= nb_part; ++ipart ))
 			do
@@ -87,11 +87,11 @@ do
 			done
 		elif [ $type == oracleasm ]
 		then # Utilisation de AFD : 12.2
-			info -n "disk $disk $(fmt_bytesU_2_better $size_b) type $type"
+			info -n "disk $disk $(fmt_bytes_2_better $size_b) type $type"
 			info -f " : $(label_of $disk)"
 		elif [ $afdonly == no ]
 		then
-			info "disk $disk $(fmt_bytesU_2_better $size_b) type $type"
+			info "disk $disk $(fmt_bytes_2_better $size_b) type $type"
 			info "\tlsblk -t $disk"
 			lsblk -t $disk | sed "s/^/\t/g"
 		else

@@ -55,7 +55,7 @@ exec_cmd "rm -rf ${ORACLE_BASE%/*}/oraInventory"
 exec_cmd "rm -rf $ORACLE_HOME/*"
 LN
 
-if test_if_cmd_exists olsnodes
+if command_exists olsnodes
 then
 	# En 12.2 l'ORACLE_HOME des autres nœuds ne sont pas supprimés.
 	while read node

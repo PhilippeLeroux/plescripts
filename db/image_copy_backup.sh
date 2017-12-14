@@ -100,4 +100,4 @@ then
 	LN
 fi
 
-script_stop ${ME##*/}
+script_stop ${ME##*/} $ORACLE_SID

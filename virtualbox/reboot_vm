@@ -2,17 +2,29 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/cfglib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/virtualbox/vboxlib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
-typeset -r str_usage=\
-"Usage : $ME <str>"
 
-typeset server=undef
-typeset error_on_poweroff=no
+add_usage "[server name]"			"Server name or db idendifiant."
+add_usage "[-server=server name]"	"Full server name"
+add_usage "[-error_on_poweroff]"	"On poweroff return 1"
+add_usage "[1|2|all]"				"Dataguard node number"
+
+typeset -r str_usage=\
+"Usage :
+${ME##*/}
+$(print_usage)
+"
+
+typeset		server=undef
+typeset		error_on_poweroff=no
+typeset	-i	dg_node=-1
 
 while [ $# -ne 0 ]
 do
@@ -24,6 +36,16 @@ do
 
 		-server=*)
 			server=${1##*=}
+			shift
+			;;
+
+		1|2)
+			dg_node=$1
+			shift
+			;;
+
+		all)
+			dg_node=99
 			shift
 			;;
 
@@ -53,7 +75,43 @@ do
 	esac
 done
 
-[[ "$server" == undef && -v ID_DB ]] && server=$ID_DB || true
+if [[ "$server" == undef ]]
+then
+	if [[ -v ID_DB ]]
+	then
+		server=$ID_DB
+		if cfg_exists $server
+		then
+			cfg_load_node_info $server 1
+			if [ $cfg_dataguard == yes ]
+			then
+				if [[ $dg_node -ne 1 && $dg_node -ne 2 && $dg_node -ne 99 ]]
+				then
+					error "Dataguard member add node number 1 or 2 or all"
+					LN
+					exit 1
+				elif [ $dg_node -ne 99 ]
+				then
+					cfg_load_node_info $server $dg_node
+					server=$cfg_server_name
+				fi
+			fi
+		fi
+	else
+		error "Identifant not defined (use set_db)."
+		LN
+		info "$str_usage"
+		LN
+		exit 1
+	fi
+elif is_number $server
+then
+	error "Error server cannot be a number."
+	LN
+	info "$str_usage"
+	LN
+	exit 1
+fi
 
 exit_if_param_undef server	"$str_usage"
 

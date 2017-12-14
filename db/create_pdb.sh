@@ -8,21 +8,21 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
 typeset	-r	orcl_release="$(read_orcl_release)"
 
-typeset db=undef
-typeset pdb=undef
-typeset from_pdb=default
-typeset wallet=${WALLET:-$(enable_wallet $orcl_release)}
-typeset	sampleSchema=no
-typeset is_seed=no
-typeset admin_user=pdbadmin
-typeset admin_pass=$oracle_password
+typeset		db=undef
+typeset		pdb=undef
+typeset		from_pdb=default
+typeset		wallet=${WALLET:-$(enable_wallet $orcl_release)}
+typeset		sampleSchema=no
+typeset		is_seed=no
+typeset		admin_user=pdbadmin
+typeset		admin_pass=$oracle_password
 
-typeset	log=yes
+typeset		log=yes
 
 add_usage "-db=name"			"Database name."
 add_usage "-pdb=name"			"PDB name."
@@ -120,7 +120,7 @@ exit_if_param_invalid	sampleSchema	"yes no"	"$str_usage"
 
 [ $log == yes ] && script_start || true
 
-if test_if_cmd_exists olsnodes
+if command_exists olsnodes
 then
 	typeset -r crs_used=yes
 else
@@ -169,10 +169,19 @@ function print_pdbs_status
 
 	if [ $dataguard == yes ]
 	then
-		info "Standby $stby_name status :"
-		typeset conn_string="sys/$oracle_password@$stby_name as sysdba"
-		sqlplus_cmd_with $conn_string "$(sql_lspdbs)"
-		LN
+		if [ $count_stby_error -ne 0 ]
+		then
+			warning "At least one Physical Database is disabled."
+			LN
+		else
+			for stby_name in ${physical_list[*]}
+			do
+				info "Standby $stby_name status :"
+				typeset conn_string="sys/$oracle_password@$stby_name as sysdba"
+				sqlplus_cmd_with $conn_string "$(sql_lspdbs)"
+				LN
+			done
+		fi
 	fi
 }
 
@@ -261,25 +270,33 @@ function create_pdb_services
 	if [ $wallet == no ]
 	then
 		line_separator
+		info "Wallet not used."
+		LN
 		info "Add alias sys$pdb for sysdba connection."
-		exec_cmd "./add_tns_alias.sh				\
-						-service=$pdb				\
-						-host_name=$(hostname -s)	\
+		exec_cmd "$HOME/plescripts/db/add_tns_alias.sh	\
+						-service=$pdb					\
+						-host_name=$(hostname -s)		\
 						-tnsalias=sys$pdb"
 		LN
 
 		if [[ $dataguard == yes && ${#physical_list[@]} -ne 0 ]]
 		then
-			for stby_server in ${stby_server_list[*]}
-			do
-				info "Physical server $stby_server"
-				exec_cmd "ssh -t oracle@$stby_server				\
-								\". .bash_profile	&&				\
-								./add_tns_alias.sh					\
-										-service=$pdb				\
-										-host_name=$stby_server		\
-										-tnsalias=sys$pdb\""
-			done
+			if [ $count_stby_error -ne 0 ]
+			then
+				warning "Standby database error, tns alias not updated."
+				LN
+			else
+				for stby_server in ${stby_server_list[*]}
+				do
+					info "Physical server $stby_server"
+					exec_cmd "ssh -t oracle@$stby_server					\
+									\". .bash_profile	&&					\
+									$HOME/plescripts/db/add_tns_alias.sh	\
+											-service=$pdb					\
+											-host_name=$stby_server			\
+											-tnsalias=sys$pdb\""
+				done
+			fi
 		fi
 	fi
 
@@ -287,15 +304,22 @@ function create_pdb_services
 	info "Create services"
 	if [[ $dataguard == yes && ${#physical_list[@]} -ne 0 ]]
 	then
-		for (( i=0; i < ${#physical_list[@]}; ++i ))
-		do
-			add_dynamic_cmd_param "-db=$primary"
-			add_dynamic_cmd_param "-pdb=$pdb"
-			add_dynamic_cmd_param "-standby=${physical_list[i]}"
-			add_dynamic_cmd_param "-standby_host=${stby_server_list[i]}"
-			exec_dynamic_cmd "./create_srv_for_dataguard.sh"
+		if [ $count_stby_error -ne 0 ]
+		then
+			warning "Cannot create standby services !"
 			LN
-		done
+			exec_cmd ./create_srv_for_single_db.sh -db=$db -pdb=$pdb
+		else
+			for (( i=0; i < ${#physical_list[@]}; ++i ))
+			do
+				add_dynamic_cmd_param "-db=$primary"
+				add_dynamic_cmd_param "-pdb=$pdb"
+				add_dynamic_cmd_param "-standby=${physical_list[i]}"
+				add_dynamic_cmd_param "-standby_host=${stby_server_list[i]}"
+				exec_dynamic_cmd "./create_srv_for_dataguard.sh"
+				LN
+			done
+		fi
 	else
 		if [ $dataguard == yes ]
 		then
@@ -342,17 +366,23 @@ function create_wallet
 	exec_cmd "~/plescripts/db/add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb"
 	if [ $dataguard == yes ]
 	then
-		for (( i=0; i < ${#physical_list[@]}; ++i ))
-		do
-			exec_cmd "ssh ${stby_server_list[i]}	\
-				'. .bash_profile;	\
-				~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
-									-db=${physical_list[i]} -pdb=$pdb'"
+		if [ $count_stby_error -ne 0 ]
+		then
+			warning "Cannot create sysdba credential on standby databases..."
 			LN
-		done
+		else
+			for (( i=0; i < ${#physical_list[@]}; ++i ))
+			do
+				exec_cmd "ssh ${stby_server_list[i]}	\
+					'. .bash_profile;	\
+					~/plescripts/db/add_sysdba_credential_for_pdb.sh	\
+										-db=${physical_list[i]} -pdb=$pdb'"
+				LN
+			done
+		fi
 	fi
 
-	if [[ $orcl_release == 12.2 && $gi_count_nodes -eq 1 ]] && test_if_cmd_exists crsctl
+	if [[ $orcl_release == 12.2 && $gi_count_nodes -eq 1 ]] && command_exists crsctl
 	then
 		warning "Database cannot start with wallet enable."
 		LN
@@ -404,7 +434,8 @@ function stby_create_temporary_file
 
 [ $is_seed == yes ] && wallet=no || true
 
-typeset	-r dataguard=$(dataguard_config_available)
+typeset	-r	dataguard=$(dataguard_config_available)
+typeset	-i	count_stby_error=0
 
 if [ $dataguard == yes ]
 then
@@ -426,6 +457,21 @@ then
 	typeset -a physical_list
 	typeset -a stby_server_list
 	load_stby_database
+
+	for stby_name in ${physical_list[*]}
+	do
+		if stby_is_disabled $stby_name
+		then
+			((++count_stby_error))
+			warning "Physical database $stby_name is disabled."
+			LN
+		fi
+	done
+	if [ $count_stby_error -ne 0 ]
+	then
+		confirm_or_exit "Continue"
+		LN
+	fi
 fi
 
 info "On database $db create pdb $pdb"
@@ -465,7 +511,7 @@ info "Open RW $db[$pdb] and save state."
 sqlplus_cmd "$(open_pdb_and_save_state $pdb)"
 LN
 
-if [[ $dataguard == yes && ${#physical_list[*]} -ne 0 ]]
+if [[ $dataguard == yes && $count_stby_error -eq 0 && ${#physical_list[*]} -ne 0 ]]
 then
 	stby_create_temporary_file
 fi
@@ -512,4 +558,22 @@ LN
 
 [ $is_seed == no ] && print_pdbs_status || true
 
-[ $log == yes ] && script_stop ${ME##*/} || true
+if [[ $dataguard == yes && $count_stby_error -ne 0 ]]
+then
+	warning "When Dataguard server available :"
+	warning "On server(s) ${stby_server_list[*]}"
+	warning "Update tns alias : ~/plescripts/db/add_tns_alias.sh"
+	warning "~/plescripts/db/create_trigger_open_stby_pdbs_ro.sql"
+	warning "~/plescripts/db/create_trigger_start_pdb_services.sql"
+	if [ $wallet == yes ]
+	then
+		warning "~/plescripts/db/add_sysdba_credential_for_pdb.sh"
+	fi
+	LN
+
+	warning "From this server execute :"
+	warning "~/plescripts/db/create_srv_for_dataguard.sh"
+	LN
+fi
+
+[ $log == yes ] && script_stop ${ME##*/} $db || true

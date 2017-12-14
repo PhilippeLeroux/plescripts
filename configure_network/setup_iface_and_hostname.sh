@@ -55,7 +55,7 @@ line_separator
 cfg_load_node_info $db $node
 info "Configure node $node"
 info "	server     : $cfg_server_name / $cfg_server_ip"
-if [ $max_nodes -gt 1 ]
+if [ $cfg_db_type == rac ]
 then
 	info "	vip        : ${cfg_server_name}-vip / $cfg_server_vip"
 	info "	ip rac     : ${cfg_server_name}-rac / ${if_rac_network}.${cfg_iscsi_ip##*.}"
@@ -79,8 +79,7 @@ exec_cmd nmcli connection modify		$if_pub_name					\
 				ethernet.mac-address	$if_hwaddr						\
 				connection.autoconnect	yes
 LN
-update_value UUID	$(uuidgen $if_pub_name)	$if_pub_file
-LN
+update_variable UUID	$(uuidgen $if_pub_name)	$if_pub_file
 
 line_separator
 info "Update Iface $if_iscsi_name :"
@@ -93,10 +92,9 @@ exec_cmd nmcli connection modify		$if_iscsi_name					\
 				ethernet.mac-address	$if_hwaddr						\
 				connection.autoconnect	yes
 LN
-update_value UUID	$(uuidgen $if_iscsi_name)	$if_iscsi_file
-LN
+update_variable UUID	$(uuidgen $if_iscsi_name)	$if_iscsi_file
 
-if [ $max_nodes -gt 1 ]
+if [ $cfg_db_type == rac ]
 then
 	line_separator
 	# Pour l'IP RAC lecture du dernier n° de l'IP iSCSI.
@@ -116,8 +114,7 @@ then
 					ethernet.mac-address	$if_hwaddr				\
 					connection.autoconnect	yes
 	LN
-	update_value UUID	$(uuidgen $if_rac_name)	$if_rac_file
-	LN
+	update_variable UUID	$(uuidgen $if_rac_name)	$if_rac_file
 fi
 
 line_separator
@@ -125,14 +122,14 @@ info "Update /etc/hosts"
 exec_cmd "echo \"\" >> /etc/hosts"
 exec_cmd "echo \"#This node.\" >> /etc/hosts"
 exec_cmd "echo \"$cfg_server_ip	$cfg_server_name\" >> /etc/hosts"
-if [ $max_nodes -gt 1 ]
+if [ $cfg_db_type == rac ]
 then
 	exec_cmd "echo \"$cfg_server_vip	${cfg_server_name}-vip\" >> /etc/hosts"
 	exec_cmd "echo \"#$ip_rac	${cfg_server_name}-rac\" >> /etc/hosts"
 fi
 exec_cmd "echo \"#$cfg_iscsi_ip	${cfg_server_name}-iscsi\" >> /etc/hosts"
 
-if [ $max_nodes -gt 1 ]
+if [ $cfg_db_type == rac ]
 then	# Inscrit dans /etc/hosts les informations concernant les autres nœuds.
 	exec_cmd "echo \"\" >> /etc/hosts"
 	exec_cmd "echo \"#Other nodes :\" >> /etc/hosts"

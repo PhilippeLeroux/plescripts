@@ -10,12 +10,14 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
-	-db=name  Identifier.
-	[-no_crs] No Grid Infra.
+	-db=name       Identifier.
+	[-dg_node=#]   Dataguard node
+	[-no_crs]      No Grid Infra.
 "
 
-typeset	db=undef
-typeset	crs=yes
+typeset		db=undef
+typeset	-i	dg_node=-1
+typeset		crs=yes
 
 while [ $# -ne 0 ]
 do
@@ -28,6 +30,11 @@ do
 
 		-db=*)
 			db=${1##*=}
+			shift
+			;;
+
+		-dg_node=*)
+			dg_node=${1##*=}
 			shift
 			;;
 
@@ -57,10 +64,20 @@ cfg_exists $db
 
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
-cfg_load_node_info $db 1
+if [ $dg_node -eq -1 ]
+then
+	info "Load node $db 1"
+	LN
+	cfg_load_node_info $db 1
+else
+	info "Load dataguard node $db 1"
+	LN
+	cfg_load_node_info $db $dg_node
+fi
+
 first_vm=$cfg_server_name
 
-if [ $max_nodes -gt 1 ]
+if [ $cfg_db_type == rac ]
 then
 	for (( inode=2; inode <= max_nodes; ++inode ))
 	do

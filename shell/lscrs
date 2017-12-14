@@ -13,7 +13,7 @@ typeset -r PARAMS="$*"
 typeset -r str_usage=\
 "Usage : $ME
 	[-db=<str>]            Préciser la base sinon s'appuie sur set_db
-	[-node=<#>]            N° du nœud à attendre.
+	[2]                    N° du nœud pour un dataguard, par défaut le 1.
 	[-server=<str>]        Nom du serveur à attendre.
 	[-wait_time_secs=<#>]  Temps de pause entre chaque tentative.
 
@@ -23,7 +23,7 @@ Autre utilisation : ${ME##*/} id est équivalent à ${ME##*/} -db=id
 "
 
 typeset		db=undef
-typeset	-i	nr_node=-1
+typeset	-i	dg_node=1
 typeset		server_name=undef
 typeset	-i	wait_time_secs=10
 
@@ -45,8 +45,8 @@ do
 			shift
 			;;
 
-		-node=*)
-			nr_node=${1##*=}
+		2)
+			dg_node=2
 			shift
 			;;
 
@@ -83,31 +83,42 @@ then
 	fi
 elif [ $db == undef ]
 then
-	[[ -v ID_DB ]] && db=$ID_DB
+	[[ -v ID_DB ]] && db=$ID_DB || true
 	exit_if_param_undef db "$str_usage"
 fi
 
 if [ $server_name == undef ]
 then
-	if [ $nr_node -eq -1 ]
-	then
-		cfg_exists $db
-		typeset -ri max_nodes=$(cfg_max_nodes $db)
-		# Pour un RAC utilise l'adresse de scan.
-		[ $max_nodes -gt 1 ] && server_name=$db-scan || true
-	fi
+	cfg_exists $db
+	typeset -ri max_nodes=$(cfg_max_nodes $db)
+	cfg_load_node_info $db $dg_node
 
-	[ $server_name == undef ] && server_name=$(printf "srv%s01" ${db}) || true
+	# Pour un RAC utilise l'adresse de scan.
+	if [ $cfg_db_type == rac ]
+	then
+		server_name=$db-scan
+	else
+		if [ $dg_node -gt 1 ]
+		then
+			if [ $cfg_dataguard == no ]
+			then
+				error "$db not a dataguard."
+				LN
+				exit 1
+			fi
+		fi
+		server_name=$(printf "srv%s%02d" ${db} $dg_node)
+	fi
 fi
 
-if [[ $disable_dns_cache == yes && $max_nodes -gt 1 ]]
+if [[ $disable_dns_cache == yes && $cfg_db_type == rac ]]
 then
 	exec_cmd sudo systemctl stop nscd.service
 fi
 
 wait_server $server_name
 ret=$?
-if [[ $disable_dns_cache == yes && $max_nodes -gt 1 ]]
+if [[ $disable_dns_cache == yes && $cfg_db_type == rac ]]
 then
 	exec_cmd sudo systemctl start nscd.service
 fi

@@ -15,7 +15,7 @@ typeset -r	all_params="$*"
 
 typeset		rel=undef
 typeset		db=undef
-typeset		standby=none
+typeset		dataguard=no
 typeset	-i	ip_node=-1
 typeset	-i	max_nodes=1
 typeset	-i	size_dg_gb=$default_size_dg_gb
@@ -29,7 +29,7 @@ typeset		OH_FS=$rac_orcl_fs
 
 add_usage "-rel=12.1|12.2"			"Oracle release"
 add_usage "-db=name"				"Database name."
-add_usage "[-standby=id]"			"ID for standby server."
+add_usage "[-dataguard]"			"Create dataguard (SINGLE database only)."
 add_usage "[-max_nodes=1]"			"RAC #nodes"
 add_usage "[-storage=$storage]"		"ASM|FS"
 add_usage "[-OH_FS=$OH_FS]"			"RAC : ORACLE_HOME FS : ocfs2|$rdbms_fs_type."
@@ -75,8 +75,8 @@ do
 			shift
 			;;
 
-		-standby=*)
-			standby=$(to_lower ${1##*=})
+		-dataguard)
+			dataguard=yes
 			shift
 			;;
 
@@ -130,18 +130,21 @@ exit_if_param_invalid rel "12.1 12.2" "$str_usage"
 
 exit_if_param_undef db	"$str_usage"
 
-if [ ${#db} -gt 8 ]
+if [ $dataguard == no ]
 then
-	error "db $db exceed 8 characteres."
-	LN
-	exit 1
-fi
-
-if [ ${#standby} -gt 8 ]
-then
-	error "Standby $standby exceed 8 characteres."
-	LN
-	exit 1
+	if [ ${#db} -gt 8 ]
+	then
+		error "db $db exceed 8 characteres."
+		LN
+		exit 1
+	fi
+else
+	if [ ${#db} -gt 6 ]
+	then
+		error "Dataguard db $db exceed 6 characteres."
+		LN
+		exit 1
+	fi
 fi
 
 exit_if_param_invalid storage "ASM FS" "$str_usage"
@@ -159,11 +162,11 @@ fi
 
 [ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
 
-if [[ $db_type == rac && $standby != none ]]
+if [[ $db_type == rac && $dataguard == yes ]]
 then
-	warning "-standby=$standby ignored for RAC"
+	warning "-dataguard ignored for RAC"
 	LN
-	standby=none
+	dataguard=no
 fi
 
 exit_if_param_invalid OH_FS "ocfs2 $rdbms_fs_type $rac_orcl_fs" "$str_usage"
@@ -207,19 +210,20 @@ function normalyze_node
 
 	server_private_ip=$if_iscsi_network.$ip_node
 	rac_network=${if_rac_network}.${ip_node}
-	ip_node=ip_node+1
+	((++ip_node))
 
 	if [ $db_type == rac ]
 	then
 		test_ip_node_used $ip_node
 		server_vip=$if_pub_network.$ip_node
+		((++ip_node))
 	else
 		server_vip=undef
 		rac_network=undef
 	fi
-	ip_node=ip_node+1
 
-	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${standby}:${oracle_release}" > $cfg_path/node${num_node}
+	#echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${standby}:${oracle_release}" > $cfg_path/node${num_node}
+	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${oracle_release}:${dataguard}" > $cfg_path/node${num_node}
 }
 
 function normalyze_scan
@@ -231,7 +235,7 @@ function normalyze_scan
 	do
 		scan_vip=$if_pub_network.$node_scan
 		buffer=$buffer:${scan_vip}
-		node_scan=node_scan+1
+		((++node_scan))
 	done
 
 	echo "$buffer" > $cfg_path/scanvips
@@ -336,7 +340,12 @@ function set_ip_node
 	# Détermine le nombre d'adresse IPs à obtenir.
 	if [ $max_nodes -eq 1 ]
 	then # Standalone server.
-		typeset -ri ip_range=1
+		if [ $dataguard == yes ]
+		then
+			typeset -ri ip_range=2
+		else
+			typeset -ri ip_range=1
+		fi
 	else # RAC server.
 		typeset -ri ip_range=max_nodes*2+3	# 2 IP / nodes, 3 SCAN IP
 	fi
@@ -347,12 +356,12 @@ function set_ip_node
 
 function next_instructions
 {
-	if [ $max_nodes -eq 1 ]
+	if [[ $max_nodes -gt 1 || $dataguard == yes ]]
 	then
-		info "Execute : ./clone_master.sh -db=$db"
+		info "Execute : ./create_database_servers.sh -db=$db"
 		LN
 	else
-		info "Execute : ./create_database_servers.sh -db=$db"
+		info "Execute : ./clone_master.sh -db=$db"
 		LN
 	fi
 }
@@ -391,21 +400,16 @@ do
 	normalyze_node $inode
 done
 
+if [ $dataguard == yes ]
+then
+	normalyze_node 2
+fi
+
 [ $db_type == rac ] && normalyze_scan || true
 
 normalyse_disks
 
 ./show_info_server.sh -db=$db
-
-if [ "$standby" != none ] && cfg_exists $standby use_return_code >/dev/null 2>&1
-then
-	cfg_load_node_info $standby 1
-	if [ "$oracle_release" != "$cfg_orarel" ]
-	then
-		warning "Dataguard different release : $db $oracle_release, $standby $cfg_orarel"
-		LN
-	fi
-fi
 
 typeset -i	nodes=1
 typeset		type=single
@@ -417,7 +421,7 @@ then
 	type=RAC
 	mem=$vm_memory_mb_for_rac_db
 	cpus=$vm_nr_cpus_for_rac_db
-elif [ $standby != "none" ]
+elif [ $dataguard == yes ]
 then
 	nodes=2
 	type=dataguard

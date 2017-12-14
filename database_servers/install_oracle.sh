@@ -9,18 +9,20 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
-typeset db=undef
-typeset action=install
-typeset edition=EE
+typeset		db=undef
+typeset	-i	dg_node=-1
+typeset		action=install
+typeset		edition=EE
 
-typeset install_oracle=yes
-typeset relink=no
-typeset attachHome=no
+typeset		install_oracle=yes
+typeset		relink=no
+typeset		attachHome=no
 
 add_usage "-db=name"			"Database identifier"
+add_usage "[-dg_node=#]"		"Dataguard node number 1 or 2"
 add_usage "[-edition=$edition]"	"12.2 only : SE2|EE"
 typeset -r u1=$(print_usage)
 reset_usage
@@ -50,6 +52,11 @@ do
 
 		-db=*)
 			db=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-dg_node=*)
+			dg_node=${1##*=}
 			shift
 			;;
 
@@ -100,22 +107,20 @@ exit_if_param_invalid	action	"install config"	"$str_usage"
 
 cfg_exists $db
 
-#	Répertoire contenant le fichiers de configuration de la db
-typeset -r db_cfg_path=$cfg_path_prefix/$db
+#	Répertoire contenant le fichier de configuration de la db
+typeset	-r	db_cfg_path=$cfg_path_prefix/$db
 
 #	Nom du "fichier réponse" pour l'installation d'oracle
-typeset -r rsp_file=${db_cfg_path}/oracle_$db.rsp
+typeset	-r	rsp_file=${db_cfg_path}/oracle_$db.rsp
 
 #
-typeset -a	node_names
-typeset -a	node_ips
-typeset -a	node_vip_names
-typeset -a	node_vips
-typeset -a	node_priv_names
-typeset -a	node_priv_ips
-typeset -ri	max_nodes=$(cfg_max_nodes $db)
-
-typeset		primary_db=none
+typeset	-a	node_names
+typeset	-a	node_ips
+typeset	-a	node_vip_names
+typeset	-a	node_vips
+typeset	-a	node_priv_names
+typeset	-a	node_priv_ips
+typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
 function empty_swap
 {
@@ -136,12 +141,13 @@ function load_node_cfg
 	info "Load node #${inode}"
 	cfg_load_node_info $db $inode
 
-	if [[ $inode -eq $max_nodes && $cfg_standby != none ]]
+	if [[ $cfg_dataguard == yes && $dg_node -eq -1 ]]
 	then
-		if [ -d $cfg_path_prefix/$cfg_standby ]
-		then # La config exist, donc sur ce serveur créer une standby
-			primary_db=$cfg_standby
-		fi
+		error "Dataguard, parameter -dg_node=# missing"
+		LN
+		info "$str_usage"
+		LN
+		exit 1
 	fi
 
 	if [ x"$clusterNodes" = x ]
@@ -179,21 +185,21 @@ function create_response_file_12cR1
 
 	typeset	-r	O_HOME=$O_BASE/$cfg_orarel/dbhome_1
 
-	update_value oracle.install.option				INSTALL_DB_SWONLY	$rsp_file
-	update_value ORACLE_HOSTNAME					${node_names[0]}	$rsp_file
-	update_value UNIX_GROUP_NAME					oinstall			$rsp_file
-	update_value INVENTORY_LOCATION					$ORA_INVENTORY		$rsp_file
-	update_value ORACLE_HOME						$O_HOME				$rsp_file
-	update_value ORACLE_BASE						$O_BASE				$rsp_file
-	update_value oracle.install.db.CLUSTER_NODES	empty				$rsp_file
-	update_value oracle.install.db.InstallEdition	EE					$rsp_file
-	update_value oracle.install.db.DBA_GROUP		dba					$rsp_file
-	update_value oracle.install.db.OPER_GROUP		oper				$rsp_file
-	update_value oracle.install.db.BACKUPDBA_GROUP	dba					$rsp_file
-	update_value oracle.install.db.DGDBA_GROUP		dba					$rsp_file
-	update_value oracle.install.db.KMDBA_GROUP		dba					$rsp_file
+	update_variable oracle.install.option				INSTALL_DB_SWONLY	$rsp_file
+	update_variable ORACLE_HOSTNAME						${node_names[0]}	$rsp_file
+	update_variable UNIX_GROUP_NAME						oinstall			$rsp_file
+	update_variable INVENTORY_LOCATION					$ORA_INVENTORY		$rsp_file
+	update_variable ORACLE_HOME							$O_HOME				$rsp_file
+	update_variable ORACLE_BASE							$O_BASE				$rsp_file
+	update_variable oracle.install.db.CLUSTER_NODES		empty				$rsp_file
+	update_variable oracle.install.db.InstallEdition	EE					$rsp_file
+	update_variable oracle.install.db.DBA_GROUP			dba					$rsp_file
+	update_variable oracle.install.db.OPER_GROUP		oper				$rsp_file
+	update_variable oracle.install.db.BACKUPDBA_GROUP	dba					$rsp_file
+	update_variable oracle.install.db.DGDBA_GROUP		dba					$rsp_file
+	update_variable oracle.install.db.KMDBA_GROUP		dba					$rsp_file
 
-	if [ $max_nodes -gt 1 ]
+	if [[ $cfg_db_type == rac ]]
 	then
 		server_list=${node_names[0]}
 		for (( inode=1; inode < max_nodes; ++inode ))
@@ -201,7 +207,7 @@ function create_response_file_12cR1
 			server_list=$server_list","${node_names[inode]}
 		done
 
-		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
+		update_variable oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
 	fi
 	LN
 }
@@ -223,20 +229,20 @@ function create_response_file_12cR2
 
 	typeset	-r	O_HOME=$O_BASE/$cfg_orarel/dbhome_1
 
-	update_value oracle.install.option					INSTALL_DB_SWONLY	$rsp_file
-	update_value UNIX_GROUP_NAME						oinstall			$rsp_file
-	update_value INVENTORY_LOCATION						$ORA_INVENTORY		$rsp_file
-	update_value ORACLE_HOME							$O_HOME				$rsp_file
-	update_value ORACLE_BASE							$O_BASE				$rsp_file
-	update_value oracle.install.db.CLUSTER_NODES		empty				$rsp_file
-	update_value oracle.install.db.InstallEdition		$edition			$rsp_file
-	update_value oracle.install.db.OSDBA_GROUP			dba					$rsp_file
-	update_value oracle.install.db.OSOPER_GROUP			oper				$rsp_file
-	update_value oracle.install.db.OSBACKUPDBA_GROUP	dba					$rsp_file
-	update_value oracle.install.db.OSDGDBA_GROUP		dba					$rsp_file
-	update_value oracle.install.db.OSKMDBA_GROUP		dba					$rsp_file
+	update_variable oracle.install.option					INSTALL_DB_SWONLY	$rsp_file
+	update_variable UNIX_GROUP_NAME						oinstall			$rsp_file
+	update_variable INVENTORY_LOCATION						$ORA_INVENTORY		$rsp_file
+	update_variable ORACLE_HOME							$O_HOME				$rsp_file
+	update_variable ORACLE_BASE							$O_BASE				$rsp_file
+	update_variable oracle.install.db.CLUSTER_NODES		empty				$rsp_file
+	update_variable oracle.install.db.InstallEdition		$edition			$rsp_file
+	update_variable oracle.install.db.OSDBA_GROUP			dba					$rsp_file
+	update_variable oracle.install.db.OSOPER_GROUP			oper				$rsp_file
+	update_variable oracle.install.db.OSBACKUPDBA_GROUP	dba					$rsp_file
+	update_variable oracle.install.db.OSDGDBA_GROUP		dba					$rsp_file
+	update_variable oracle.install.db.OSKMDBA_GROUP		dba					$rsp_file
 
-	if [ $max_nodes -gt 1 ]
+	if [[ $cfg_db_type == rac ]]
 	then
 		server_list=${node_names[0]}
 		for (( inode=1; inode < max_nodes; ++inode ))
@@ -244,7 +250,7 @@ function create_response_file_12cR2
 			server_list=$server_list","${node_names[inode]}
 		done
 
-		update_value oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
+		update_variable oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
 	fi
 	LN
 }
@@ -287,6 +293,7 @@ function check_oracle_size
 
 	typeset -r server=$1
 	exec_cmd "ssh oracle@$server '. .bash_profile && plescripts/database_servers/check_bin_oracle_size.sh'"
+	LN
 }
 
 function exec_attachHome
@@ -326,7 +333,7 @@ function check_ntp_error
 
 function start_oracle_installation
 {
-	if [ $max_nodes -ne 1 ]
+	if [[ $cfg_db_type == rac ]]
 	then
 		line_separator
 		for node in ${node_names[*]}
@@ -435,11 +442,11 @@ function exec_post_install_root_scripts_on_node
 function next_instructions
 {
 	line_separator
-	if [ $primary_db == none ]
+	if [[ $cfg_dataguard == no ]]
 	then
 		notify "Database can be created :"
 		LN
-		if [ $max_nodes -eq 1 ]
+		if [ $cfg_db_type != rac ]
 		then
 			info "$ ssh oracle@${node_names[0]}"
 			info "oracle@${node_names[0]}:NOSID:~> cd db"
@@ -457,19 +464,23 @@ function next_instructions
 			LN
 		fi
 	else
-		add_dynamic_cmd_param "-user1=oracle"
-		add_dynamic_cmd_param "-server1=srv${db}01"
-		add_dynamic_cmd_param "-server2=srv${primary_db}01"
-		exec_dynamic_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh"
-		LN
+		if [ $dg_node -eq 1 ]
+		then
+			notify "Server srv${db}01 ready, install Oracle on second member."
+			LN
+			info "Execute : $ME -db=$db -dg_node=2"
+			LN
+		else # dg_node == 2
+			notify "Server srv${db}02 ready"
+			LN
 
-		notify "Server srv${primary_db}01 ready"
-		LN
-		info "Execute :"
-		info "$ ssh oracle@srv${primary_db}01"
-		info "$ cd ~/plescripts/db/stby/"
-		info "$ ./create_dataguard.sh -standby=$db -standby_host=srv${db}01"
-		LN
+			info "Database can be created :"
+			LN
+			info "$ ssh oracle@srv${db}01"
+			info "oracle@srv${db}01:NOSID:~> cd db"
+			info "oracle@srv${db}01:NOSID:db> ./create_db.sh -db=${db}01"
+			LN
+		fi
 	fi
 }
 
@@ -486,10 +497,16 @@ then
 fi
 
 line_separator
-for (( inode=1; inode <= max_nodes; ++inode ))
-do
-	load_node_cfg $inode
-done
+# Chargement de la configuration.
+if [ $dg_node -eq -1 ]
+then
+	for (( inode=1; inode <= max_nodes; ++inode ))
+	do
+		load_node_cfg $inode
+	done
+else
+	load_node_cfg $dg_node
+fi
 
 if [ "$cfg_orarel" == "12.2.0.1" ]
 then
@@ -499,24 +516,25 @@ else
 fi
 
 info "Total nodes #${max_nodes}"
-if [ $max_nodes -gt 1 ]
-then
-	info "==> clusterNodes  = $clusterNodes"
-
-	if [ $cfg_oracle_home == ocfs2 ]
-	then	#	oraInventory ne peut pas être sur un CFS.
-		ORA_INVENTORY=/$GRID_DISK/app/oraInventory
-	else
-		ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
-	fi
-else
-	if [ $cfg_db_type == fs ]
-	then
+case $cfg_db_type in
+	rac)
+		info "==> clusterNodes  = $clusterNodes"
+		if [ $cfg_oracle_home == ocfs2 ]
+		then	#	oraInventory ne peut pas être sur un CFS.
+			ORA_INVENTORY=/$GRID_DISK/app/oraInventory
+		else
+			ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
+		fi
+		;;
+	fs)	# Base sur FS
+		info "Database on FS"
 		ORA_INVENTORY=/$ORCL_SW_FS_DISK/app/oraInventory
-	else
+		;;
+	std)  # Base sur ASM 
+		info "Database on ASM"
 		ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
-	fi
-fi
+		;;
+esac
 LN
 
 if [ $install_oracle == yes ]
@@ -538,6 +556,7 @@ then
 	[ $action == config ] && exit 0	# Pas d'installation.
 
 	exec_cmd wait_server ${node_names[0]}
+	LN
 
 	stats_tt start oracle_installation
 
@@ -572,10 +591,16 @@ stats_tt stop oracle_installation
 
 empty_swap
 
-if [ $install_oracle == yes ]
+if [ $dg_node -eq 1 ]
 then
-	script_stop $ME $db
+	add_dynamic_cmd_param "-user1=oracle"
+	add_dynamic_cmd_param "-server1=srv${db}01"
+	add_dynamic_cmd_param "-server2=srv${db}02"
+	exec_dynamic_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh"
 	LN
 fi
+
+script_stop $ME $db
+LN
 
 next_instructions

@@ -16,8 +16,7 @@ else
 	exit 1
 fi
 
-cfg_exists $db use_return_code
-if [[ $? -eq 1 ]]
+if ! cfg_exists $db use_return_code
 then
 	warning "Try connection to : $db"
 	wait_server ${db}
@@ -28,9 +27,19 @@ fi
 typeset -ri max_nodes=$(cfg_max_nodes $db)
 
 typeset -i node=1
-[ $# -eq 2 ] && node=$2
+[ $# -eq 2 ] && node=$2 || true
 
-[ $max_nodes -gt 1 ] && type=RAC || type=single
+cfg_load_node_info $db $node
+
+if [ $cfg_db_type == rac ]
+then
+	type=RAC
+elif [ $cfg_dataguard == yes ]
+then
+	type=Dataguard
+else
+	type=single
+fi
 info "$type node."
 
 typeset -r server_name=$(printf "srv%s%02d" $db $node)

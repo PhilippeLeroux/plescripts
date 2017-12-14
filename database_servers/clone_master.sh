@@ -8,11 +8,11 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
 typeset		db=undef
-typeset -i	node=-1
+typeset -i	node=1
 typeset		vmGroup
 typeset		update_os=no
 typeset		vg_name=$infra_vg_name_for_db_luns
@@ -23,12 +23,12 @@ typeset		kvmclock=$rac_kvmclock
 
 add_usage "-db=name"			"Database name."
 add_usage "[-vmGroup=name]"		"VBox group name."
-add_usage "[-node=#]"           "For RAC server : node number."
+add_usage "[-node=$node]"       "RAC & Dataguard server : node number."
 add_usage "[-update_os]"		"Update OS."
 add_usage "[-vg_name=$vg_name]"	"VG name to use on $infra_hostname"
 add_usage "[-skip_instructions]" "Used by create_database_servers.sh"
 
-typeset -r str_usage=\
+typeset	-r	str_usage=\
 "Usage :
 $ME
 $(print_usage)
@@ -105,9 +105,6 @@ cfg_exists $db
 
 typeset -ri max_nodes=$(cfg_max_nodes $db)
 
-# Pour un serveur standalone il n'est pas nécessaire de préciser le n° du nœud.
-[[ $node -eq -1 && $max_nodes -eq 1 ]] && node=1 || true
-
 exit_if_param_undef node	"$str_usage"
 
 #	Exécute, via ssh, la commande '$@' sur le master
@@ -136,16 +133,11 @@ function make_vmGroup
 {
 	case $cfg_db_type in
 		std|fs)
-			if [ $cfg_standby == none ]
+			if [ $cfg_dataguard == yes ]
 			then
-				vmGroup="Single $(initcap $db)"
+				vmGroup="DG $(initcap $db)"
 			else
-				if [ -d $cfg_path_prefix/$cfg_standby ]
-				then # Le premier serveur existe
-					vmGroup="DG $(initcap $cfg_standby)-$(initcap $db)"
-				else
-					vmGroup="DG $(initcap $db)-$(initcap $cfg_standby)"
-				fi
+				vmGroup="Single $(initcap $db)"
 			fi
 			;;
 
@@ -413,7 +405,7 @@ function create_disks_for_oracle_and_grid_softwares
 					-noatime
 	LN
 
-	if [[ $max_nodes -gt 1 && $cfg_oracle_home == ocfs2 ]]
+	if [[ $cfg_db_type == rac && $cfg_oracle_home == ocfs2 ]]
 	then
 		info "Install ocfs2"
 		ssh_server "yum -y -q install ocfs2-tools"
@@ -444,15 +436,16 @@ function create_disks_for_oracle_and_grid_softwares
 #	Configure le master cloné
 function configure_server
 {
-	if [ $node -eq 1 ] && [ $start_server_only == no ]
+	if [[ $node -eq 1 || $cfg_dataguard == yes ]] && [[ $start_server_only == no ]]
 	then
-		if [ $max_nodes -eq 1 ]
+		if [[ $cfg_db_type != rac ]]
 		then
 			typeset -r vm_memory=$vm_memory_mb_for_single_db
 		else
 			typeset -r vm_memory=$vm_memory_mb_for_rac_db
 		fi
 		exec_cmd "$vm_scripts_path/clone_vm.sh	-db=$db						\
+												-node=$node					\
 												-vm_memory_mb=$vm_memory	\
 												-vmGroup=\"$vmGroup\""
 		LN
@@ -689,7 +682,7 @@ function create_stats_services
 
 	ssh_server "plescripts/stats/create_service_uptime_stats.sh"
 
-	if [ $max_nodes -gt 1 ]
+	if [[ $cfg_db_type == rac ]]
 	then
 		ssh_server "plescripts/stats/create_service_ifrac_stats.sh"
 	fi
@@ -776,7 +769,7 @@ copy_color_file
 
 bug_rac122_workaround
 
-if [ $node -eq 1 ]
+if [[ $node -eq 1 || $cfg_dataguard == yes ]]
 then
 	[ $cfg_luns_hosted_by == san ] && create_and_export_san_LUNs || true
 
@@ -801,8 +794,7 @@ fi
 
 create_stats_services
 
-#	Pour utiliser chrony définir la variable RAC_NTP=chrony
-[[ $max_nodes -gt 1 && "$RAC_NTP" != chrony ]] && rac_configure_ntp || true
+[ $cfg_db_type == rac ] && rac_configure_ntp || true
 
 exec_cmd reboot_vm $server_name
 LN
@@ -825,8 +817,8 @@ LN
 
 if [ $node -eq $max_nodes ]
 then	# C'est le dernier nœud
-	if [ $max_nodes -ne 1 ]
-	then	# Plus de 1 nœud donc c'est un RAC.
+	if [[ $cfg_db_type == rac ]]
+	then
 		exec_cmd "~/plescripts/database_servers/apply_ssh_prereq_on_all_nodes.sh -db=$db"
 		LN
 	fi
@@ -849,8 +841,8 @@ then	# C'est le dernier nœud
 		fi
 		LN
 	fi
-elif [[ $max_nodes -ne 1 && $show_instructions == yes ]]
-then	# Ce n'est pas le dernier nœud et il y a plus de 1 nœud.
+elif [[ $cfg_db_type == rac && $show_instructions == yes ]]
+then
 	notify "Server cloned."
 	info "Run script :"
 	info "$ME -db=$db -node=$(( node + 1 ))"

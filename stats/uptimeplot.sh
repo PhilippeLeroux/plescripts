@@ -7,20 +7,20 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
-typeset db=undef
-typeset	loop=yes
-typeset date=undef
-typeset	range_mn=1
+typeset		db=undef
+typeset		loop=yes
+typeset		date=undef
+typeset	-i	window_range_mn=20
 
 typeset -r str_usage=\
 "Usage : $ME
 		[-db=name]
-		[-range_mn=$range_mn]
+		[-window_range_mn=$window_range_mn]
 		[-no_loop]
-		[-start_at=HHhMM]    skip tt before HHhMM
+		[-date=YYYY-MM-DD]  default last log.
 
 Display files produced by watch_uptime.sh with gnuplot"
 
@@ -39,8 +39,8 @@ do
 			shift
 			;;
 
-		-range_mn=*)
-			range_mn=${1##*=}
+		-window_range_mn=*)
+			window_range_mn=${1##*=}
 			shift
 			;;
 
@@ -66,16 +66,8 @@ done
 [[ $db == undef && x"$ID_DB" != x ]] && db=$ID_DB || true
 exit_if_param_undef db  "$str_usage"
 
-# HH:MM:SS
-function time_to_secs
-{
-	typeset -r ti=$1
-
-	IFS=':' read hour mn s<<<"$ti"
-	compute "$hour*60*60 + $mn*60 + $s"
-}
-
-
+# Recherche le répertoire de log le plus récent.
+# initialise la variable date.
 function set_to_last_date
 {
 	last_log_path=$(ls -d ${PLELOG_ROOT}/* | tail -1)
@@ -84,12 +76,24 @@ function set_to_last_date
 	LN
 }
 
+# $1 time : HH:MM:SS
+# print to stdout seconds
+function convert_to_seconds
+{
+	typeset	-i	lh
+	typeset	-i	lm
+	typeset	-i	ls
+
+	IFS=':' read lh lm ls <<<"$1"
+
+	echo $(( (lh * 60 * 60) + (lm * 60) + ls ))
+}
+
 #	============================================================================
 #	MAIN
 #	============================================================================
 
-test_if_cmd_exists gnuplot
-if [ $? -ne 0 ]
+if ! command_exists gnuplot
 then
 	error "gnuplot n'est pas installé ou pas dans PATH."
 	exit 1
@@ -110,43 +114,40 @@ then
 	typeset	-r	log_name02=${PLELOG_ROOT}/$date/stats/uptime_${cfg_server_name}.log
 	server_list+=( $cfg_server_name )
 	boot_time_list+=( $(head -1 "$log_name02"|awk '{print $3}') )
-elif [ $cfg_standby != none ] && cfg_exists $cfg_standby use_return_code
-then
-	cfg_load_node_info $cfg_standby 1
-	typeset	log_name02=${PLELOG_ROOT}/$date/stats/uptime_${cfg_server_name}.log
-	if [ -f "$log_name02" ]
-	then
-		server_list+=( $cfg_server_name )
-		boot_time_list+=( $(head -1 "$log_name02"|awk '{print $3}') )
-	else
-		warning "unset $log_name02"
-		unset log_name02
-	fi
 fi
 
 #	Lecture de l'heure de début des mesures
 #	Lire la première ligne peut fausser le résulat donc lecture de la ligne 2 (là 3 avec le labe)
-typeset -r	start_time=$(sed -n "3p" ${log_name01} | awk '{ print $3 }')
+typeset -ri	start_time_s=$(convert_to_seconds $(sed -n "3p" ${log_name01} | awk '{ print $3 }'))
 
 # Lecture de la seconde mesure (ligne 3 donc) pour déterminer le refresh rate.
-typeset -r	second_time=$(sed -n "4p" ${log_name01} | awk '{ print $3 }')
+typeset -ri	second_time_s=$(convert_to_seconds $(sed -n "4p" ${log_name01} | awk '{ print $3 }'))
+
+typeset	-i	interval_s=$(( second_time_s - start_time_s ))
+[ $interval_s -lt 60 ] && interval_s=60 || true
+
+typeset	-i	refresh_rate_s=$(( interval_s / 2 ))
+
+typeset	-r	max_measures=$(( $window_range_mn / ($interval_s/60) ))
 
 # Fréquence de rafraîchissement :
-debug "start_time  = $start_time"
-debug "second_time = $second_time"
-typeset		refresh_rate=1
+info "window_range_mn = ${window_range_mn}mn ($(fmt_seconds $(($window_range_mn*60))))"
+info "Compute interval :"
+info "start_time      = $(fmt_seconds $start_time_s)"
+info "second_time     = $(fmt_seconds $second_time_s)"
+info "interval        = $(fmt_seconds $interval_s)"
+info "refresh_rate_s  = $(fmt_seconds $refresh_rate_s) (interval/2)"
+info "max_measures    = $(fmt_number $max_measures) (window_range_mn/interval)"
+LN
 
 # boxes lines linespoints points impulses histeps
 # ok : points, histeps, linespoints
-#typeset -r	with="linespoints pointinterval $(( (5*60) / refresh_rate ))"
 typeset -r	with="histeps"
-#typeset -r	with="linespoints"
 
-typeset	-r	fmt_time="%H:%M:%S"
+typeset	-r	fmt_time="%H:%M"
 
 typeset -r	plot_cmds=/tmp/uptime.plot.$$
 #typeset -r	plot_cmds=/tmp/debug.txt
-#https://www2.uni-hamburg.de/Wiss/FB/15/Sustainability/schneider/gnuplot/colors.htm
 
 typeset -i line_to_skip=1
 
@@ -159,40 +160,15 @@ fi
 
 if [ $loop == yes ]
 then
-	cmds="$(printf "pause $refresh_rate\nreread\nreplot\n")"
+	cmds="$(printf "pause $refresh_rate_s\nreread\nreplot\n")"
 else
 	cmds="pause -1"
 fi
 
-typeset -r stats_markers=$PLESTATS_PATH/stats_info.txt
-typeset labels
-if [ -f $stats_markers ]
-then
-	info "Fabrication des labels..."
-	typeset -i	loop=0
-	typeset -i	trans=400
-	typeset	-ri	offset_trans=200
-	while read action what tt
-	do
-		loop=loop+1
-		w=unset
-		case "$what" in
-			grid_installation)		w="GI" ;;
-			oracle_installation)	w="Orcl" ;;
-			create_*)				w="${what##*_}" ;;
-			*)	error "'$what' unknow !!!"	;;
-		esac
-		labels=$(printf "$labels\nset label \"$action $w\" at \"$tt\",$trans")
-		[ $(( loop % 2 )) -eq 0 ] && trans=$(( trans + offset_trans ))
-	done<$stats_markers
-fi
-
-typeset	-r	range_max_lines=$(( (range_mn * 60) / refresh_rate ))
-
-plot01="\"< tail -n$range_max_lines ${log_name01}\"	using 4:14 with ${with}	title '${server_list[0]}' lt rgb \"blue\""
+plot01="\"< tail -n$max_measures ${log_name01}\"	using 4:14 with ${with}	title '${server_list[0]}' lt rgb \"blue\""
 if [ x"$log_name02" != x ]
 then
-	plot01="$plot01, \"< tail -n$range_max_lines ${log_name02}\"	using 4:14 with ${with}	title '${server_list[1]}' lt rgb \"red\""
+	plot01="$plot01, \"< tail -n$max_measures ${log_name02}\"	using 4:14 with ${with}	title '${server_list[1]}' lt rgb \"red\""
 fi
 debug "plot01 :"
 debug "   '$plot01'"
@@ -206,25 +182,27 @@ set format x '$fmt_time'
 set timefmt '$fmt_time'
 set xdata time
 set xlabel 'Time'
-set xtic rotate by -90
+set xtic rotate by -0
 $labels
 plot	\
 	$plot01
 $cmds
 EOS
-#set ylabel 'Load Avg/mn'
-#"< tail -n$range_max_lines ${log_name01}"	using 1:11 title 'Load Avg'	with ${with}	lt rgb "blue"
-#"${log_name01}"	using 1:(\$2+\$4) title 'S Kb'	with ${with}	lt rgb "blue"
 
 line_separator
 cat $plot_cmds
 LN
 
 line_separator
-info "Refresh rate $(fmt_seconds $refresh_rate)"
-info "Range : ( ${range_mn}mn * 60 ) / ${refresh_rate}s = ${range_max_lines} last lines read from input file."
+info "Window range ${window_range_mn}mn"
+info "Refresh rate $(fmt_seconds $refresh_rate_s)"
 LN
+
 info "Load file    ${log_name01}"
+if [ x"$log_name02" != x ]
+then
+	info "Load file    ${log_name02}"
+fi
 LN
 
 line_separator
@@ -237,7 +215,3 @@ else
 	info "Debug file not removed : $plot_cmds"
 	LN
 fi
-exit 0
-#rm -rf nohup.out >/dev/null 2>&1
-#nohup gnuplot $plot_cmds &
-#info "My pid is $!"

@@ -20,32 +20,27 @@ typeset -r bottom_left=+0+550
 #	Font du terminal
 typeset -r xterm_static_options="-fa 'Monospace' -fs 14 +sb -rv"
 
-db=$1
-
 [ -t 0 ] && exec_from=terminal || exec_from=gui
 
-if [ $# -eq 0 ]
+[ -f /tmp/id_db ] && ID_DB=$(cat /tmp/id_db)
+if [ -z $ID_DB ]
 then
-	[ -f /tmp/id_db ] && ID_DB=$(cat /tmp/id_db)
-	if [ -z $ID_DB ]
+	if [ $exec_from == terminal ]
 	then
-		if [ $exec_from == terminal ]
-		then
-			error "Erreur id_db attendu."
-			LN
-		else
-			notify "Error ID_DB undef."
-			LN
-		fi
-		exit 1
+		error "Erreur id_db attendu."
+		LN
+	else
+		notify "Error ID_DB undef."
+		LN
 	fi
-
-	db=$ID_DB
-
-	[ $exec_from == gui ] && notify "Wait server : $db" || true
-	wait_server
-	[[ $? -ne 0 && $exec_from == gui ]] && notify "Wait server $db failed." || true
+	exit 1
 fi
+
+db=$ID_DB
+
+[ $exec_from == gui ] && notify "Wait server : $db" || true
+wait_server
+[[ $? -ne 0 && $exec_from == gui ]] && notify "Wait server $db failed." || true
 
 if [ $exec_from == terminal ]
 then
@@ -61,11 +56,17 @@ fi
 
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
-if [ $max_nodes -eq 2 ]
+cfg_load_node_info $db 1
+if [ $cfg_db_type == rac ]
 then
 	xterm $xterm_static_options -geometry ${width_rac}x${height}$top_left \
 		-e "tmux_monitor_server.sh -node1=srv${db}01 -node2=srv${db}02" &
 else
 	xterm $xterm_static_options -geometry ${width_rac}x${height}$top_right \
 		-e "tmux_monitor_server.sh -node1=srv${db}01" &
+	if [ $cfg_dataguard == yes ]
+	then
+	xterm $xterm_static_options -geometry ${width_rac}x${height}$top_right \
+		-e "tmux_monitor_server.sh -node1=srv${db}02" &
+	fi
 fi

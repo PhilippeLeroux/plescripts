@@ -153,7 +153,6 @@ else
 	typeset -ri shm_size=$(( $(to_bytes $shm_for_db) + $(to_bytes $hack_asm_memory) ))
 fi
 
-line_separator
 nsswitch_settings
 LN
 

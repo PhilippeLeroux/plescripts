@@ -370,7 +370,7 @@ if grep -q remove_oracle_disks <<< "$action_list"
 then
 	if [ $storage == ASM ]
 	then
-		if test_if_cmd_exists oracleasm
+		if command_exists oracleasm
 		then
 			remove_oracleasm_disks
 		else

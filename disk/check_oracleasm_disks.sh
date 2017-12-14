@@ -13,7 +13,7 @@ then
 	exit 1
 fi
 
-if ! test_if_cmd_exists oracleasm
+if ! command_exists oracleasm
 then
 	error "oracleasm not installed."
 	exit 1

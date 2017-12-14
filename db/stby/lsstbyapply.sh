@@ -2,13 +2,15 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/dblib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"
+
 typeset -r str_usage=\
-"Usage : $ME exit 1 if $ORACLE_HOME/bin/oracle size == 0"
+"Usage : $ME"
 
 while [ $# -ne 0 ]
 do
@@ -35,25 +37,22 @@ done
 
 #ple_enable_log -params $PARAMS
 
-if [ x"$ORACLE_HOME" == x ]
+must_be_user oracle
+
+exit_if_ORACLE_SID_not_defined
+
+if [ $(dataguard_config_available) == no ]
 then
-	error "ORACLE_HOME not defined."
+	error "No Dataguard config."
 	LN
 	exit 1
 fi
 
-info "Check : $ORACLE_HOME/bin/oracle"
-exec_cmd "ls -l $ORACLE_HOME/bin/oracle"
-LN
+typeset	-a	physical_list
+typeset	-a	stby_server_list
+load_stby_database
 
-size="$(du -s $ORACLE_HOME/bin/oracle|awk '{ print $1 }')"
-info "$ORACLE_HOME/bin/oracle size : '$size'"
-
-if [ "$size" == "0" ]
-then
-	error "Invalide size : $size"
-	LN
-	exit 1
-fi
-
-exit 0
+for physical_name in ${physical_list[*]}
+do
+	dgmgrl -silent -echo sys/$oracle_password "show database ${physical_name}"
+done

@@ -123,7 +123,7 @@ function enable_archivelog_with_GI
 	LN
 }
 
-if test_if_cmd_exists olsnodes
+if command_exists olsnodes
 then
 	enable_archivelog_with_GI
 else
