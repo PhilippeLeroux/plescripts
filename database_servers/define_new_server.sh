@@ -11,8 +11,6 @@ EXEC_CMD_ACTION=EXEC
 typeset -r	ME=$0
 typeset -r	PARAMS="$*"
 
-typeset -r	all_params="$*"
-
 typeset		rel=undef
 typeset		db=undef
 typeset		dataguard=no
@@ -375,11 +373,13 @@ then
 	info "Update Oracle Release"
 	exec_cmd ~/plescripts/update_local_cfg.sh ORACLE_RELEASE=$rel
 
-	info "Call with local config updated."
-	exec_cmd $ME $all_params
+	info "Rerun with local config updated."
+	exec_cmd $ME $PARAMS
 	LN
 	exit 0
 fi
+
+exec_cmd "~/plescripts/database_servers/check_if_all_servers_exists.sh"
 
 validate_config
 
