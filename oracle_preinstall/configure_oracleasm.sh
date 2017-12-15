@@ -6,7 +6,7 @@ EXEC_CMD_ACTION=EXEC
 
 line_separator
 info "Configure oracleasm"
-if ! grep -q "oracleasm is deprecated." /etc/init.d/oracleasm
+if [ -f /etc/init.d/oracleasm ] && ! grep -q "oracleasm is deprecated." /etc/init.d/oracleasm
 then
 	info "    OLD oracleasm version."
 	fake_exec_cmd "/etc/init.d/oracleasm configure <<< grid asmadmin y y"
