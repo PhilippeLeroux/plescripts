@@ -6,14 +6,28 @@ EXEC_CMD_ACTION=EXEC
 
 line_separator
 info "Configure oracleasm"
-fake_exec_cmd "/etc/init.d/oracleasm configure <<< grid asmadmin y y"
-/etc/init.d/oracleasm configure <<EOS
-grid
-asmadmin
-y
-y
-EOS
-LN
+if ! grep -q "oracleasm is deprecated." /etc/init.d/oracleasm
+then
+	info "    OLD oracleasm version."
+	fake_exec_cmd "/etc/init.d/oracleasm configure <<< grid asmadmin y y"
+	/etc/init.d/oracleasm configure <<-EOS
+	grid
+	asmadmin
+	y
+	y
+	EOS
+	LN
+else
+	info "    NEW oracleasm version."
+	fake_exec_cmd "oracleasm configure -i<<<\"grid asmadmin y y\""
+	oracleasm configure -i<<-EOS
+	grid
+	asmadmin
+	y
+	y
+	EOS
+	LN
+fi
 
 exec_cmd oracleasm configure
 #oracleasm init n'est utile que si une désinstallation a été faite.
