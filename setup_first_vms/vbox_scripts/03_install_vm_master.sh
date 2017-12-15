@@ -23,8 +23,8 @@ Flag utilisé quand je créé des master différent test ou autre.
 	[-update_os=$update_os]	no : aucun package n'est installé et les dépôts locaux ne sont pas configurés.
 
 Création de la VM ${master_hostname}.
-    - IP               : $master_ip
-    - Interface réseau : $hostifname
+	- IP               : $master_ip
+	- Interface réseau : $hostifname
 
 Ce script doit être exécuté uniquement lorsque la VM d'infra est prête.
 "
@@ -93,18 +93,10 @@ function master_ssh
 
 function update_hostname_and_network
 {
-	confirm_or_exit "Mettre à jour le nom et l'IP du serveur, puis configuration réseau"
-	LN
-
-	typeset -i current_ip_node=0
-	info -n "N° du nœud IP du  master (2 par exemple) : "
-	read current_ip_node
-	LN
-
-	typeset -r current_ip=${infra_network}.${current_ip_node}
-	if ! ping_test $current_ip
+	ssh root@${infra_hostname} "~/plescripts/dns/test_ip_node_used.sh $master_ip_node"
+	if [ $? -ne 0 ]
 	then
-		error "IP $current_ip not pingable."
+		error "IP $master_ip in used."
 		LN
 		exit 1
 	fi
@@ -115,26 +107,18 @@ function update_hostname_and_network
 
 	info "Cleanup :"
 	exec_cmd ~/plescripts/shell/remove_from_known_host.sh	\
-											-ip=${current_ip}
+											-ip=${master_ip}
 	LN
 
 	info "Ajout de $master_hostname dans le DNS"
 	exec_cmd "ssh -t $infra_conn \"dns/add_server_2_dns.sh -name=$master_hostname -ip_node=$master_ip_node\""
 	LN
 
-	# Une seule commande pour ne saisir qu'une seule fois le mot de passe root.
-	info "Change le nom d'hôte, l'adresse IP et reboot."
-	exec_cmd -c "ssh -t root@${current_ip} \"hostnamectl set-hostname ${master_hostname}.${infra_domain}; sed -i \"s/^IPADDR.*/IPADDR=\\\\\"$master_ip\\\\\"/\" /etc/sysconfig/network-scripts/ifcfg-$if_pub_name; reboot\""
-	LN
-
-	wait_server $master_hostname
-	LN
-
 	info "Restauration de ~/.ssh/known_hosts"
 	exec_cmd "mv ~/.ssh/known_hosts.backup ~/.ssh/known_hosts"
 	LN
 
-	info "Le script peut être lancé."
+	info "Le script peut être relancé."
 	LN
 
 	exit 1
@@ -149,7 +133,7 @@ script_start
 if ! ssh root@K2 "dns/show_dns.sh | grep $master_hostname >/dev/null"
 then
 	LN
-	error "$master_hostname n'est pas dans le DNS."
+	warning "$master_hostname n'est pas dans le DNS."
 	LN
 	# la fonction fait un exit 1
 	update_hostname_and_network

@@ -125,12 +125,29 @@ function print_vm_database
 
 #ple_enable_log -params $PARAMS
 
+typeset	vm_printed_list="$infra_hostname"
+
 info "Infra :"
-info "Database master       $(print_vm_running_status $master_hostname)"
+info "Database master :"
+while read vm_name
+do
+	if vm_exists $vm_name
+	then
+		info -n "    - $(print_vm_running_status $vm_name)"
+	else
+		info -n "    - server not exists for $vm_name"
+	fi
+	if [ $vm_name == $master_hostname ]
+	then
+		info -f " ${GREEN}Actif${NORM}"
+	else
+		info -f " ${ITALIC}Inactif${NORM}"
+	fi
+	vm_printed_list="$vm_printed_list $vm_name"
+done<<<"$(VBoxManage list vms | grep -E "*master*" | cut -d\" -f2)"
+
 info "Server infrastructure $(print_vm_running_status $infra_hostname)"
 LN
-
-typeset	vm_printed_list="$master_hostname $infra_hostname"
 
 line_separator
 info "Databases :"

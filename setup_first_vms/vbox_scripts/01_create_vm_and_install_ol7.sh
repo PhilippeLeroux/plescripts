@@ -132,7 +132,7 @@ info "Create and attach OS disk :"
 exec_cmd "$vm_scripts_path/add_disk.sh						\
 				-vm_name=$master_hostname					\
 				-disk_name=\"$master_hostname\"				\
-				-disk_mb=$(( 24 * 1024 ))"
+				-disk_mb=$(( 40 * 1024 ))"
 LN
 
 line_separator

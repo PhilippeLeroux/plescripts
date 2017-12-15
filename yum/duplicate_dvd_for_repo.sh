@@ -56,6 +56,8 @@ done
 
 exit_if_param_invalid release "DVD_R2 DVD_R3 DVD_R4" "$str_usage"
 
+must_be_executed_on_server $infra_hostname
+
 #	Function dupliquée de sync_oracle_repository.sh
 function nfs_export_repo
 {
@@ -132,9 +134,9 @@ fake_exec_cmd cd $repo_path
 cd $repo_path
 if ! command_exists createrepo
 then
-	exec_cmd -c yum -y -q install ./deltarpm-3.6-3.el7.x86_64.rpm
-	exec_cmd -c yum -y -q install ./createrepo-0.9.9-26.el7.noarch.rpm
-	exec_cmd -c yum -y -q install ./python-deltarpm-3.6-3.el7.x86_64.rpm
+	exec_cmd -c yum -y -q install ./$(ls deltarpm*.rpm)
+	exec_cmd -c yum -y -q install ./$(ls createrepo*.rpm)
+	exec_cmd -c yum -y -q install ./$(ls python-deltarpm*.rpm)
 	LN
 fi
 exec_cmd createrepo --update $repo_path
