@@ -260,29 +260,29 @@ function create_response_file
 	update_variable ORACLE_HOSTNAME							${node_names[0]}	$rsp_file
 	update_variable ORACLE_BASE								$ORACLE_BASE		$rsp_file
 	update_variable ORACLE_HOME								$ORACLE_HOME		$rsp_file
-	update_variable INVENTORY_LOCATION							${ORACLE_BASE%/*/*}/app/oraInventory	$rsp_file
-	update_variable oracle.install.asm.SYSASMPassword			$oracle_password	$rsp_file
-	update_variable oracle.install.asm.monitorPassword			$oracle_password	$rsp_file
+	update_variable INVENTORY_LOCATION						${ORACLE_BASE%/*/*}/app/oraInventory	$rsp_file
+	update_variable oracle.install.asm.SYSASMPassword		$oracle_password	$rsp_file
+	update_variable oracle.install.asm.monitorPassword		$oracle_password	$rsp_file
 
 	if [ $cfg_db_type != rac ]
 	then
 		update_variable oracle.install.option							HA_CONFIG		$rsp_file
 		update_variable oracle.install.asm.diskGroup.name				DATA			$rsp_file
-		update_variable oracle.install.asm.diskGroup.redundancy		EXTERNAL		$rsp_file
-		update_variable oracle.install.crs.config.gpnp.scanName		empty			$rsp_file
-		update_variable oracle.install.crs.config.gpnp.scanPort		empty			$rsp_file
+		update_variable oracle.install.asm.diskGroup.redundancy			EXTERNAL		$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanName			empty			$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanPort			empty			$rsp_file
 		update_variable oracle.install.crs.config.clusterName			empty			$rsp_file
 		update_variable oracle.install.crs.config.clusterNodes			empty			$rsp_file
-		update_variable oracle.install.crs.config.networkInterfaceList empty			$rsp_file
-		update_variable oracle.install.crs.config.storageOption		empty			$rsp_file
+		update_variable oracle.install.crs.config.networkInterfaceList	empty			$rsp_file
+		update_variable oracle.install.crs.config.storageOption			empty			$rsp_file
 		update_variable oracle.install.asm.diskGroup.disks $(make_disk_list $disk_cfg_file) $rsp_file
 	else
-		update_variable oracle.install.option						CRS_CONFIG				$rsp_file
-		update_variable oracle.install.asm.diskGroup.name			CRS						$rsp_file
-		update_variable oracle.install.crs.config.gpnp.scanName	$scan_name				$rsp_file
-		update_variable oracle.install.crs.config.gpnp.scanPort	1521					$rsp_file
-		update_variable oracle.install.crs.config.clusterName		$scan_name				$rsp_file
-		update_variable oracle.install.crs.config.clusterNodes		$clusterNodes			$rsp_file
+		update_variable oracle.install.option						CRS_CONFIG			$rsp_file
+		update_variable oracle.install.asm.diskGroup.name			CRS					$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanName		$scan_name			$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanPort		1521				$rsp_file
+		update_variable oracle.install.crs.config.clusterName		$scan_name			$rsp_file
+		update_variable oracle.install.crs.config.clusterNodes		$clusterNodes		$rsp_file
 
 		typeset	pub_network=$(right_pad_ip $if_pub_network)
 		typeset	rac_network=$(right_pad_ip $if_rac_network)
@@ -671,6 +671,17 @@ then
 	done
 else
 	load_node_cfg $dg_node
+fi
+
+if [ "$cfg_orarel" != "${oracle_release}" ]
+then
+	warning "Bad Oracle Release"
+	exec_cmd ~/plescripts/update_local_cfg.sh ORACLE_RELEASE=$cfg_orarel
+
+	info "Rerun with local config updated."
+	exec_cmd $ME $PARAMS
+	LN
+	exit 0
 fi
 
 if [ $cfg_db_type == rac ]

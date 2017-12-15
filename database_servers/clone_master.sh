@@ -726,6 +726,17 @@ function bug_rac122_workaround
 
 cfg_load_node_info $db $node
 
+if [ "$cfg_orarel" != "${oracle_release}" ]
+then
+	warning "Bad Oracle Release"
+	exec_cmd ~/plescripts/update_local_cfg.sh ORACLE_RELEASE=$cfg_orarel
+
+	info "Rerun with local config updated."
+	exec_cmd $ME $PARAMS
+	LN
+	exit 0
+fi
+
 typeset -r server_name=$cfg_server_name
 
 [ x"$vmGroup" == x ] && make_vmGroup || true

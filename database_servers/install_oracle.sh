@@ -508,6 +508,17 @@ else
 	load_node_cfg $dg_node
 fi
 
+if [ "$cfg_orarel" != "${oracle_release}" ]
+then
+	warning "Bad Oracle Release"
+	exec_cmd ~/plescripts/update_local_cfg.sh ORACLE_RELEASE=$cfg_orarel
+
+	info "Rerun with local config updated."
+	exec_cmd $ME $PARAMS
+	LN
+	exit 0
+fi
+
 if [ "$cfg_orarel" == "12.2.0.1" ]
 then
 	exit_if_param_invalid	edition "EE SE2"	"$str_usage"

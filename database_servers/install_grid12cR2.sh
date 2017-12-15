@@ -296,43 +296,43 @@ function create_response_file
 	LN
 
 	update_variable ORACLE_BASE								$ORACLE_BASE		$rsp_file
-	update_variable INVENTORY_LOCATION							${ORACLE_BASE%/*/*}/app/oraInventory	$rsp_file
-	update_variable oracle.install.asm.SYSASMPassword			$oracle_password	$rsp_file
-	update_variable oracle.install.asm.monitorPassword			$oracle_password	$rsp_file
+	update_variable INVENTORY_LOCATION						${ORACLE_BASE%/*/*}/app/oraInventory	$rsp_file
+	update_variable oracle.install.asm.SYSASMPassword		$oracle_password	$rsp_file
+	update_variable oracle.install.asm.monitorPassword		$oracle_password	$rsp_file
 
 	if [ $cfg_db_type != rac ]
 	then
 		update_variable oracle.install.option							HA_CONFIG		$rsp_file
 		update_variable oracle.install.asm.diskGroup.name				DATA			$rsp_file
-		update_variable oracle.install.asm.diskGroup.redundancy		EXTERNAL		$rsp_file
-		update_variable oracle.install.crs.config.gpnp.scanName		empty			$rsp_file
-		update_variable oracle.install.crs.config.gpnp.scanPort		empty			$rsp_file
+		update_variable oracle.install.asm.diskGroup.redundancy			EXTERNAL		$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanName			empty			$rsp_file
+		update_variable oracle.install.crs.config.gpnp.scanPort			empty			$rsp_file
 		update_variable oracle.install.crs.config.clusterName			empty			$rsp_file
 		update_variable oracle.install.crs.config.clusterNodes			empty			$rsp_file
-		update_variable oracle.install.crs.config.networkInterfaceList empty			$rsp_file
-		update_variable oracle.install.crs.config.storageOption		empty			$rsp_file
+		update_variable oracle.install.crs.config.networkInterfaceList	empty			$rsp_file
+		update_variable oracle.install.crs.config.storageOption			empty			$rsp_file
 		update_variable oracle.install.asm.storageOption				ASM				$rsp_file
 		if [ "$device_persistence" == "AFD" ]
 		then
 			typeset disk_list=$(get_free_disks $disk_cfg_file DATA)
-			update_variable oracle.install.asm.configureAFD		true					$rsp_file
+			update_variable oracle.install.asm.configureAFD		true						$rsp_file
 			update_variable oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"	$rsp_file
 		else
 			typeset disk_list=$(get_free_oracleasm_disks $disk_cfg_file DATA)
-			update_variable oracle.install.asm.configureAFD		false					$rsp_file
+			update_variable oracle.install.asm.configureAFD		false						$rsp_file
 			update_variable oracle.install.asm.diskGroup.diskDiscoveryString "ORCL:\*"		$rsp_file
 		fi
-		update_variable oracle.install.asm.diskGroup.disks				"$disk_list"	$rsp_file
+		update_variable oracle.install.asm.diskGroup.disks						"$disk_list"	$rsp_file
 		disk_list=$(sed "s/,/,,/g"<<<"$disk_list")
 		update_variable oracle.install.asm.diskGroup.disksWithFailureGroupNames "${disk_list}," $rsp_file
 	else
-		update_variable oracle.install.option						CRS_CONFIG				$rsp_file
-		update_variable oracle.install.asm.diskGroup.name			CRS						$rsp_file
+		update_variable oracle.install.option					CRS_CONFIG				$rsp_file
+		update_variable oracle.install.asm.diskGroup.name		CRS						$rsp_file
 		update_variable oracle.install.asm.diskGroup.redundancy	EXTERNAL				$rsp_file
 		update_variable oracle.install.crs.config.gpnp.scanName	$scan_name				$rsp_file
 		update_variable oracle.install.crs.config.gpnp.scanPort	1521					$rsp_file
-		update_variable oracle.install.crs.config.clusterName		$scan_name				$rsp_file
-		update_variable oracle.install.crs.config.clusterNodes		$clusterNodes			$rsp_file
+		update_variable oracle.install.crs.config.clusterName	$scan_name				$rsp_file
+		update_variable oracle.install.crs.config.clusterNodes	$clusterNodes			$rsp_file
 
 		typeset	pub_network=$(right_pad_ip $if_pub_network)
 		typeset	rac_network=$(right_pad_ip $if_rac_network)
@@ -343,11 +343,11 @@ function create_response_file
 		if [ "$device_persistence" == "AFD" ]
 		then
 			typeset disk_list=$(get_free_disks $disk_cfg_file CRS)
-			update_variable oracle.install.asm.configureAFD		true					$rsp_file
+			update_variable oracle.install.asm.configureAFD					true			$rsp_file
 			update_variable oracle.install.asm.diskGroup.diskDiscoveryString "/dev/sd\*"	$rsp_file
 		else
 			typeset disk_list=$(get_free_oracleasm_disks $disk_cfg_file CRS)
-			update_variable oracle.install.asm.configureAFD		false					$rsp_file
+			update_variable oracle.install.asm.configureAFD					false			$rsp_file
 			update_variable oracle.install.asm.diskGroup.diskDiscoveryString "ORCL:\*"		$rsp_file
 		fi
 		update_variable oracle.install.asm.diskGroup.disks			"$disk_list"			$rsp_file
@@ -818,6 +818,17 @@ then
 	done
 else
 	load_node_cfg $dg_node
+fi
+
+if [ "$cfg_orarel" != "${oracle_release}" ]
+then
+	warning "Bad Oracle Release"
+	exec_cmd ~/plescripts/update_local_cfg.sh ORACLE_RELEASE=$cfg_orarel
+
+	info "Rerun with local config updated."
+	exec_cmd $ME $PARAMS
+	LN
+	exit 0
 fi
 
 typeset -ra extract_grid_mn=( "~2mn" "~2mn" )
