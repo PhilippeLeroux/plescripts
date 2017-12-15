@@ -73,7 +73,7 @@ then
 	LN
 fi
 
-if [[ $role == infra && "$time_server" != internet ]]
+if [[ $role == infra && "$time_server" == internet ]]
 then
 	[ $backup == todo ] && exec_cmd "cp $chrony_conf ${chrony_conf}.backup"
 
