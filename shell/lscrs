@@ -91,6 +91,13 @@ if [ $server_name == undef ]
 then
 	cfg_exists $db
 	typeset -ri max_nodes=$(cfg_max_nodes $db)
+	if [ $dg_node -gt $max_nodes ]
+	then
+		error "no node number $dg_node, max nodes $max_nodes."
+		LN
+		exit 1
+	fi
+
 	cfg_load_node_info $db $dg_node
 
 	# Pour un RAC utilise l'adresse de scan.
