@@ -53,6 +53,8 @@ LN
 if [ $crs_used == no ]
 then
 	typeset -r disk_space_before="$(df -h /u0*)"
+else
+	typeset -r disk_space_before="$(~/plescripts/dg/dg_space.sh)"
 fi
 
 if is_oracle_enterprise_edition
@@ -88,16 +90,18 @@ LN
 exec_cmd "cd -"
 LN
 
+line_separator
+info "Espace disque avant backup :"
+echo "$disk_space_before"
+
+info "Espace disque après backup :"
 if [ $crs_used == no ]
 then
-	line_separator
-	info "Espace disque avant backup :"
-	echo "$disk_space_before"
 	LN
-
-	info "Espace disque après backup :"
 	exec_cmd "df -h /u0*"
 	LN
+else
+	exec_cmd ~/plescripts/dg/dg_space.sh
 fi
 
 script_stop ${ME##*/} $ORACLE_SID
