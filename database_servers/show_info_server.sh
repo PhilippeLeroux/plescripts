@@ -78,33 +78,33 @@ function print_node # $1 #inode
 
 	case $cfg_db_type in
 		rac)
-			info "Node #$inode RAC : "
+			info "Node #$inode RAC :"
 			;;
 
 		std|fs)
-			info "Node #$inode standalone : "
+			info "Node #$inode standalone :"
 			;;
 	esac
 
-	info "	Server name     ${cfg_server_name}       : ${cfg_server_ip}"
+	info "    Server name     ${cfg_server_name}       : ${cfg_server_ip}"
 
 	if [ $cfg_db_type == rac ]
 	then
-		info "	VIP             ${cfg_server_name}-vip   : ${cfg_server_vip}"
-		info "	Interco RAC     ${cfg_server_name}-rac   : ${cfg_rac_network}"
+		info "    VIP             ${cfg_server_name}-vip   : ${cfg_server_vip}"
+		info "    Interco RAC     ${cfg_server_name}-rac   : ${cfg_rac_network}"
 	fi
 
 	case $cfg_luns_hosted_by in
 		san)
-			info "	Interco iSCSI   ${cfg_server_name}-iscsi : ${cfg_iscsi_ip}"
+			info "    Interco iSCSI   ${cfg_server_name}-iscsi : ${cfg_iscsi_ip}"
 			;;
 
 		vbox)
-			info "	Disks hosted by VirtualBox ($if_iscsi_name unused for LUNs)"
+			info "    Disks hosted by VirtualBox ($if_iscsi_name unused for LUNs)"
 			;;
 
 		*)
-			warning "	Old cfg file."
+			warning "    Old cfg file."
 			;;
 	esac
 }
@@ -145,19 +145,19 @@ function print_disks
 		else
 			info "DG $dg_name :"
 			typeset	-i	size=0
-			typeset	-i	label_len=0
+			typeset	-i	left_padding=0
 			typeset		disk_name
 			typeset		label
 			typeset		idisk
-			for idisk in $( seq $no_first_disk $no_last_disk )
+			for (( idisk = no_first_disk; idisk <= no_last_disk; ++idisk ))
 			do
 				disk_name=$(printf "S1DISK%s%02d" $upper_db $idisk)
-				label=$(printf "	%s  %dGb\n" $disk_name $disk_size)
+				label=$(printf "    %s  %dGb\n" $disk_name $disk_size)
 				info "$label"
-				label_len=${#label}
+				left_padding=${#disk_name}+4 # 4 == begining spaces
 				size=size+disk_size
 			done
-			info "$(printf "%${label_len}s %02dGb" "$total_disks disks" $size)"
+			info "$(printf "%${left_padding}s %02dGb" "$total_disks disks" $size)"
 		fi
 		LN
 	done < $file
