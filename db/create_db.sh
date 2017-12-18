@@ -23,13 +23,13 @@ fi
 typeset -r	orcl_version=$(read_orcl_version)
 if [ "$orcl_version" != "$oracle_release" ]
 then
-	error "Configuration file global.cfg bad Oracle release."
-	error "From $client_hostname execute :"
-	error "$ ~/plescripts/update_local_cfg.sh ORACLE_RELEASE=$orcl_version"
+	warning "Bad Oracle Release"
+	exec_cmd ~/plescripts/update_local_cfg.sh ORACLE_RELEASE="$orcl_version"
+
+	info "Rerun with local config updated."
+	exec_cmd $ME $PARAMS
 	LN
-	info "And rerun this script."
-	LN
-	exit 1
+	exit 0
 fi
 
 typeset	-r	orcl_release="$(cut -d. -f1-2<<<"$orcl_version")"
