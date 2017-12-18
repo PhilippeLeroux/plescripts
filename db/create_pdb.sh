@@ -196,6 +196,29 @@ function clone_pdb_pdbseed
 	[ $? -ne 0 ] && exit 1 || true
 }
 
+#	En 12cR1 et 12cR2 pour cloner un PDB il faut le fermer puis l'ouvrir RO. Une
+#	fois le clonage terminer il faut donc réouvrir le PDB RW. Problème le crs
+#	ne redémarre pas les services.
+#	$1 nom du pdb à l'origine du clone.
+function workaround_bug_crs
+{
+	typeset	srv
+	srv=$(mk_oci_service $1)
+	if ! service_running $srv
+	then
+		warning "Dataguard + CRS bug : start primary service for PDB $1"
+		exec_cmd srvctl start service -db $db -service $srv
+		LN
+	fi
+
+	srv=$(mk_java_service $1)
+	if ! service_running $srv
+	then
+		exec_cmd srvctl start service -db $db -service $srv
+		LN
+	fi
+}
+
 # $1 pdb name
 function clone_from_pdb
 {
@@ -226,6 +249,8 @@ function clone_from_pdb
 	fi
 	sqlplus_cmd "$(ddl_clone_from_pdb $1)"
 	[ $? -ne 0 ] && exit 1 || true
+
+	[ $crs_used == yes ] && workaround_bug_crs $1 || true
 }
 
 # $1 pdb name
