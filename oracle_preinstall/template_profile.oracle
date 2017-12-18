@@ -82,6 +82,7 @@ alias lspga="sp2 @\"$HOME/db/sql/lspga\"<<<exit"
 alias lsfra="sp2 @\"$HOME/db/sql/lsfra\"<<<exit"
 alias lssrv="sp2 @\"$HOME/db/sql/lssrv\"<<<exit"
 alias lsasync="sp2 @\"$HOME/db/sql/lsasync\"<<<exit"
+alias lspdbhist="sp2 @\"$HOME/db/sql/lspdbhist\"<<<exit"
 
 alias lsstby="$HOME/db/stby/show_dataguard_cfg.sh"
 alias lsstbyconf="dgmgrl -silent -echo sys/ORACLE_PASSWORD 'show configuration'"
