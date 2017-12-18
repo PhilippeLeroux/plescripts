@@ -114,47 +114,27 @@ function VMs_folder
 	fi
 }
 
-function Oracle_Linux_Release
+function select_oracle_linux_release
 {
-	OL7_LABEL_n=$OL7_LABEL
-	ask_for_variable OL7_LABEL_n "Oracle Linux release : 7.2, 7.3, 7.4 :"
-	LN
-
-	case $OL7_LABEL_n in
-		7.2|7.3|7.4)
-			;;
-		*)
-			((++count_errors))
-			error "Release $OL7_LABEL_n invalid."
-			LN
-	esac
-}
-
-function Oracle_Linux_ISO
-{
-	case "$OL7_LABEL_n" in
-	"7.2")
-		full_linux_iso_n="$iso_olinux_path/V100082-01.iso"
-		;;
-
-	"7.3")
-		full_linux_iso_n="$iso_olinux_path/V834394-01.iso"
-		;;
-
-	"7.4")
-		full_linux_iso_n="$iso_olinux_path/V921569-01.iso"
-		;;
-	esac
-
-	info -n "Exists $(replace_paths_by_shell_vars $full_linux_iso_n) : "
-	if [ ! -f "$full_linux_iso_n" ]
+	if [ -f "$iso_olinux_path/V921569-01.iso" ]
 	then
-		((++count_errors))
-		info -f "[$KO] : download Oracle Linux ISO."
+		info "ISO Oracle Linux 7.4 [$OK]"
 		LN
+		OL7_LABEL_n=7.4
+	elif [ -f "$iso_olinux_path/V834394-01.iso" ]
+	then
+		info "ISO Oracle Linux 7.3 [$OK]"
+		LN
+		OL7_LABEL_n=7.3
+	elif [ -f "$iso_olinux_path/V100082-01.iso" ]
+	then
+		info "ISO Oracle Linux 7.2 [$OK]"
+		LN
+		OL7_LABEL_n=7.2
 	else
-		info -f "[$OK]"
+		error "No Oracle Linux ISO fonud in '$iso_olinux_path'"
 		LN
+		((++count_errors))
 	fi
 }
 
@@ -285,7 +265,7 @@ function sync_time_source
 {
 	master_time_server_n=$(hostname -s)
 	info "Sync time source for VMs."
-	info "if $master_time_server_n do not have a ntp server, choose internet."
+	info "if $master_time_server_n do not have ntp server, choose internet."
 	ask_for_variable master_time_server_n "Default $master_time_server_n, enter internet for internet."
 	LN
 
@@ -319,11 +299,9 @@ LN
 
 VMs_folder
 
-Oracle_Linux_Release
+select_oracle_linux_release
 
 yum_repository
-
-Oracle_Linux_ISO
 
 configure_gateway
 
