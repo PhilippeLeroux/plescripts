@@ -80,13 +80,13 @@ function set_to_last_date
 # print to stdout seconds
 function convert_to_seconds
 {
-	typeset	-i	lh
-	typeset	-i	lm
-	typeset	-i	ls
+	typeset	lh
+	typeset	lm
+	typeset	ls
 
 	IFS=':' read lh lm ls <<<"$1"
 
-	echo $(( (lh * 60 * 60) + (lm * 60) + ls ))
+	echo $(( (10#$lh * 60 * 60) + (10#$lm * 60) + 10#$ls ))
 }
 
 #	============================================================================
@@ -119,7 +119,6 @@ fi
 #	Lecture de l'heure de début des mesures
 #	Lire la première ligne peut fausser le résulat donc lecture de la ligne 2 (là 3 avec le labe)
 typeset -ri	start_time_s=$(convert_to_seconds $(sed -n "3p" ${log_name01} | awk '{ print $3 }'))
-
 # Lecture de la seconde mesure (ligne 3 donc) pour déterminer le refresh rate.
 typeset -ri	second_time_s=$(convert_to_seconds $(sed -n "4p" ${log_name01} | awk '{ print $3 }'))
 
