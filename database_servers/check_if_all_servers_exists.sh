@@ -68,7 +68,7 @@ if [ $all_vms_created == yes ]
 then
 	exit 0
 else
-	error "All servers must have created before defining new ones."
+	error "All servers must have been created before defining new ones."
 	LN
 	exit 1
 fi
