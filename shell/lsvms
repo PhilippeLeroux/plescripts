@@ -50,6 +50,21 @@ function print_vm_running_status
 	info -n -f " ($(vm_memory_size $1))"
 }
 
+# $1 Oracle Version like 12.2.0.1
+function print_oracle_release
+{
+	typeset -r	v=$1
+	typeset	-r	r=$(cut -d. -f1-2<<<"$v")
+	case "$r" in
+		12.1)
+			echo "12cR1 ($v)"
+			;;
+		12.2)
+			echo "12cR2 ($v)"
+			;;
+	esac
+}
+
 # $1 dbid
 function print_vm_database
 {
@@ -72,9 +87,9 @@ function print_vm_database
 		vm_printed_list="$vm_printed_list $cfg_server_name"
 		if vm_exists $cfg_server_name
 		then
-			info -n "$str_dbid : RAC Oracle $cfg_orarel, $(print_vm_running_status $cfg_server_name), "
+			info -n "$str_dbid : RAC Oracle $(print_oracle_release $cfg_orarel), $(print_vm_running_status $cfg_server_name), "
 		else
-			info -n "$str_dbid : RAC Oracle $cfg_orarel, server not exist"
+			info -n "$str_dbid : RAC Oracle $(print_oracle_release $cfg_orarel), server not exist"
 		fi
 		cfg_load_node_info $dbid 2
 		if vm_exists $cfg_server_name
@@ -89,9 +104,9 @@ function print_vm_database
 		vm_printed_list="$vm_printed_list $cfg_server_name"
 		if vm_exists $cfg_server_name
 		then
-			info -n "$str_dbid : Dataguard Oracle $cfg_orarel, $(print_vm_running_status $cfg_server_name), "
+			info -n "$str_dbid : Dataguard Oracle $(print_oracle_release $cfg_orarel), $(print_vm_running_status $cfg_server_name), "
 		else
-			info -n "$str_dbid : Dataguard Oracle $cfg_orarel, server not exist"
+			info -n "$str_dbid : Dataguard Oracle $(print_oracle_release $cfg_orarel), server not exist"
 		fi
 		cfg_load_node_info $dbid 2
 		if vm_exists $cfg_server_name
@@ -105,12 +120,12 @@ function print_vm_database
 		vm_printed_list="$vm_printed_list $cfg_server_name"
 		if vm_exists $cfg_server_name
 		then
-			info -n "$str_dbid : Oracle $cfg_orarel, $(print_vm_running_status $cfg_server_name)"
+			info -n "$str_dbid : Oracle $(print_oracle_release $cfg_orarel), $(print_vm_running_status $cfg_server_name)"
 		else
-			info -n "$str_dbid : Oracle $cfg_orarel, server not exists"
+			info -n "$str_dbid : Oracle $(print_oracle_release $cfg_orarel), server not exists"
 		fi
 	fi
-	info -n -f ", storage $cfg_luns_hosted_by"
+	info -n -f ", $cfg_luns_hosted_by"
 	case $cfg_db_type in
 		std|rac)
 			info -f "/ASM"
