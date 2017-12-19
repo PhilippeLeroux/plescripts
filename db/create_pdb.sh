@@ -196,29 +196,6 @@ function clone_pdb_pdbseed
 	[ $? -ne 0 ] && exit 1 || true
 }
 
-#	En 12cR1 et 12cR2 pour cloner un PDB il faut le fermer puis l'ouvrir RO. Une
-#	fois le clonage terminer il faut donc réouvrir le PDB RW. Problème le crs
-#	ne redémarre pas les services.
-#	$1 nom du pdb à l'origine du clone.
-function workaround_bug_crs
-{
-	typeset	srv
-	srv=$(mk_oci_service $1)
-	if ! service_running $srv
-	then
-		warning "Dataguard + CRS bug : start primary service for PDB $1"
-		exec_cmd srvctl start service -db $db -service $srv
-		LN
-	fi
-
-	srv=$(mk_java_service $1)
-	if ! service_running $srv
-	then
-		exec_cmd srvctl start service -db $db -service $srv
-		LN
-	fi
-}
-
 # $1 pdb name
 function clone_from_pdb
 {
@@ -249,8 +226,6 @@ function clone_from_pdb
 	fi
 	sqlplus_cmd "$(ddl_clone_from_pdb $1)"
 	[ $? -ne 0 ] && exit 1 || true
-
-	[ $crs_used == yes ] && workaround_bug_crs $1 || true
 }
 
 # $1 pdb name
@@ -268,12 +243,19 @@ function pdb_seed_open_read_only
 	set_sql_cmd "alter pluggable database $pdb_name open read only instances=all;"
 }
 
-function create_database_trigger_no_crs
+function create_database_trigger_open_stby_pdb
 {
+	line_separator
 	info "Create trigger open_stby_pdbs_ro (open pdbs RO on standby)"
 	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_open_stby_pdbs_ro.sql")"
 	LN
+}
 
+#	Même quand le grid infra est installé il faut utiliser le trigger,
+#	sur un close immediate suivie d'un open le Grid ne démarre pas les services.
+function create_database_trigger_start_pdb_services
+{
+	line_separator
 	typeset pdbconn="sys/$oracle_password@localhost:1521/$pdb as sysdba"
 	info "Create trigger start_pdb_services"
 	sqlplus_cmd_with "$pdbconn"	\
@@ -285,12 +267,9 @@ function create_database_trigger_no_crs
 # le CRS sa donne quoi ??
 function create_pdb_services
 {
-	if [[ $crs_used == no ]]
-	then
-		line_separator
-		create_database_trigger_no_crs
-		LN
-	fi
+	[[ $crs_used == no ]] && create_database_trigger_open_stby_pdb || true
+
+	create_database_trigger_start_pdb_services
 
 	if [ $wallet == no ]
 	then
