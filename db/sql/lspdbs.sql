@@ -8,10 +8,10 @@ select
     i.instance_name
 ,   c.name
 ,   c.open_mode
-,	to_char( c.open_time, 'YY/MM/DD HH24:MI' ) "Open time"
-,	round( c.total_size / 1024 / 1024, 0 ) "Size (Mb)"
+,	to_char( c.open_time, 'YY/MM/DD HH24:MI' )	"Open time"
+,	round( c.total_size / 1024 / 1024, 0 )		"Size (Mb)"
 ,	c.recovery_status
-,	nvl(pss.state,'NOT SAVED') "State"
+,	nvl(pss.state,'NOT SAVED')					"Save state"
 from
     gv$containers c
     inner join gv$instance i
