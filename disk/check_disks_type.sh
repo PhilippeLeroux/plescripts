@@ -54,11 +54,8 @@ do
 	typeset -i size_b=$(disk_size_bytes $disk)
 	if [ "$type" = "unused" ]
 	then
-		if [ $afdonly == no ]
-		then
-			info "disk $disk $(fmt_bytes_2_better $size_b) ${BLINK}${UNDERLINE}Unused${NORM}."
-			((++nr_unused_disks))
-		fi
+		info "disk $disk $(fmt_bytes_2_better $size_b) ${BLINK}${UNDERLINE}Unused${NORM}."
+		((++nr_unused_disks))
 	else
 		typeset -i nb_part=$(count_partition_for $disk)
 		if [ $nb_part -ne 0 ]
