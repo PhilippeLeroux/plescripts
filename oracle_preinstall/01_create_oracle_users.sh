@@ -231,7 +231,9 @@ LN
 exec_cmd chown -R oracle:oinstall /home/oracle
 LN
 
+info "Source $profile_oracle"
 . $profile_oracle
+LN
 
 exec_cmd mkdir -p $ORACLE_BASE
 exec_cmd mkdir -p $ORACLE_HOME
