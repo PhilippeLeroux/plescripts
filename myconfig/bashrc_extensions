@@ -132,3 +132,8 @@ alias empty_swap='sudo swapoff -a; sudo swapon -a'
 #	dark | light
 export GVIM_COLORSCHEME=dark
 export VIM_COLORSCHEME=light
+
+#	Alias Virtual Box
+alias vb=VBoxManage
+alias vblist='VBoxManage list'
+alias vbvminfo='VBoxManage showvminfo'

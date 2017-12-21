@@ -28,3 +28,7 @@ else
 	exec_cmd sudo zypper dup --from http://packman.inode.at/suse/openSUSE_Tumbleweed/
 	LN
 fi
+
+info "Programmes à stopper :"
+exec_cmd sudo zypper ps -s
+LN

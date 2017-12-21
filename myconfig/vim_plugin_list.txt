@@ -35,6 +35,8 @@ https://github.com/xero/sourcerer.vim.git
 #//github.com/mbbill/undotree.git
 
 #	Markdown
+#	Installer Node.js : sudo zypper install npm6
+#	Configurer le plugin : sudo npm -g install instant-markdown-d
 https://github.com/suan/vim-instant-markdown.git
 
 # Grammaire : remplacé par Grammalecte

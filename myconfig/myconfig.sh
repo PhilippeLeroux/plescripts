@@ -118,9 +118,8 @@ function restore
 
 	line_separator
 	info "Apply bashrc extensions :"
-	exec_cmd cp bashrc_extensions ~/.bashrc_extensions
 	exec_cmd "sed -i \"/^.*bashrc_extensions.*$/d\" ~/.bashrc"
-	exec_cmd "echo \"[ -f ~/.bashrc_extensions ] && . ~/.bashrc_extensions || true\" >> ~/.bashrc"
+	exec_cmd "echo \"[ -f ~/plescripts/myconfig/bashrc_extensions ] && . ~/plescripts/myconfig/bashrc_extensions || true\" >> ~/.bashrc"
 	LN
 
 	typeset	gvim_installed=no
