@@ -256,7 +256,7 @@ function create_database_trigger_open_stby_pdb
 function create_database_trigger_start_pdb_services
 {
 	line_separator
-	typeset pdbconn="sys/$oracle_password@localhost:1521/$pdb as sysdba"
+	typeset pdbconn="sys/$oracle_password@$(hostname -s):1521/$pdb as sysdba"
 	info "Create trigger start_pdb_services"
 	sqlplus_cmd_with "$pdbconn"	\
 		"$(set_sql_cmd "@$HOME/plescripts/db/sql/create_trigger_start_pdb_services.sql")"
