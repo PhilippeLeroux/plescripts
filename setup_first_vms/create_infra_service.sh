@@ -70,7 +70,7 @@ After=iscsi.service
 
 [Service]
 RemainAfterExit=yes
-ExecStart=/usr/bin/su - $USER -c "$HOME/plescripts/virtualbox/start_vm $infra_hostname"
+ExecStart=/usr/bin/su - $USER -c "/usr/bin/VBoxManage startvm $infra_hostname --type headless"
 ExecStop=/usr/bin/su - $USER -c "$HOME/plescripts/shell/stop_vm $infra_hostname"
 
 [Install]
