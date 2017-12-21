@@ -86,7 +86,10 @@ exec_cmd VBoxManage modifyvm $vm_name --vram 12
 exec_cmd VBoxManage modifyvm $vm_name --cpus $cpus
 exec_cmd VBoxManage modifyvm $vm_name --rtcuseutc on
 exec_cmd VBoxManage modifyvm $vm_name --largepages on
-exec_cmd VBoxManage modifyvm $vm_name --hpet on
+if [ "$hpet" == on ]
+then
+	exec_cmd VBoxManage modifyvm $vm_name --hpet on
+fi
 LN
 
 line_separator
