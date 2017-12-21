@@ -289,6 +289,27 @@ function test_tools
 	_in_path -o git		"Install git"
 	_in_path -o tmux	"Install tmux"
 	LN
+	if command_exists VBoxManage
+	then
+		info -n "$USER in group vboxusers "
+		gid_vboxusers=$(cat /etc/group|grep vboxusers|cut -d: -f3)
+		if  id|grep -q $gid_vboxusers
+		then
+			info -f "[$OK]"
+			LN
+		else
+			((++count_errors))
+			if cat /etc/group|grep -qE "^vboxusers.*$USER*"
+			then
+				info -f "[$KO] : disconnect user $USER and connect again."
+				LN
+			else
+				info -f "[$KO] execute : sudo usermod -a -G vboxusers $USER"
+				warning "Take effect on a new connection."
+				LN
+			fi
+		fi
+	fi
 }
 
 function test_if_configure_global_cfg_executed
