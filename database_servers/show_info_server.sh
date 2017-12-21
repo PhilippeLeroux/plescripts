@@ -38,7 +38,8 @@ cfg_exists $db
 
 typeset -ri max_nodes=$(cfg_max_nodes $db)
 
-function print_node # $1 #inode
+#	$1	node number
+function print_node
 {
 	typeset	-ri inode=$1
 
@@ -47,6 +48,10 @@ function print_node # $1 #inode
 	if [ $inode -eq 1 ]
 	then
 		info "Oracle Release : $cfg_orarel"
+		if [ x"$cfg_master_name" != x ]
+		then
+			info "Master : $cfg_master_name"
+		fi
 		LN
 
 		info -n "LUNs hosted by : "

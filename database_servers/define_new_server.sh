@@ -220,8 +220,7 @@ function normalyze_node
 		rac_network=undef
 	fi
 
-	#echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${standby}:${oracle_release}" > $cfg_path/node${num_node}
-	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${oracle_release}:${dataguard}" > $cfg_path/node${num_node}
+	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${oracle_release}:${dataguard}:${master_hostname}" > $cfg_path/node${num_node}
 }
 
 function normalyze_scan
