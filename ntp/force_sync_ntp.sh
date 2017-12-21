@@ -9,6 +9,13 @@ typeset -r PARAMS="$*"
 
 typeset -ri	max_offset_ms=$rac_forcesyncntp_max_offset_ms
 
+if [ $master_time_server == internet ]
+then
+	time_server=${infra_hostname}
+else
+	time_server=${master_time_server}
+fi
+
 #	print abs( $1 ) to stdout
 function abs
 {
@@ -36,9 +43,10 @@ function ntpdate_read_offset_ms
 {
 	typeset seconds
 	read day month tt l_ntpdate l_ajust l_time l_server ip_ntp_server	\
-			l_offset seconds l_sec <<<"$(ntpdate -b $infra_hostname)"
+			l_offset seconds l_sec <<<"$(ntpdate -b $time_server)"
 
-	if [ $(abs $(int_part $seconds)) -gt 0 ]
+	typeset	-i	offset=$(abs $(int_part $seconds))
+	if [  $offset -gt 0 ]
 	then
 		echo "1000"
 	else
@@ -54,6 +62,10 @@ typeset -i offset_ms=10#$(ntpq_read_offset_ms)
 [ $status == OK ] && exit 0 || true
 
 [ ! -t 1 ] && exec >> /tmp/force_sync_ntp.$(date +%d) 2>&1 || true
+
+echo "global.cfg : master_time_server = '$master_time_server'"
+echo "set time_server to                '$time_server'"
+echo
 
 TT=$(date +%Hh%M)
 echo "uptime : $(uptime)"
