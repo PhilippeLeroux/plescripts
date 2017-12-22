@@ -153,7 +153,7 @@ function yum_repository
 			;;
 		7.4)
 			typeset do_update=yes
-			ask_for_variable do_update "Update Oracle Linux $OL7_LABEL_n release ? yes no"
+			ask_for_variable do_update "Update Oracle Linux $OL7_LABEL_n from Oracle repository ? yes no"
 			do_update=$(to_lower $do_update)
 			LN
 
