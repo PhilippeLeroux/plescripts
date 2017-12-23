@@ -2,121 +2,74 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+if command_exists olsnodes
+then
+	typeset	-r	olsnodes_ok=yes
+	warning "Si le script est exécuté plusieurs fois supprimer $(which olsnodes)."
+	warning "Sinon le script risque de bloquer."
+	LN
+else
+	typeset	-r	olsnodes_ok=no
+fi
 . ~/plescripts/gilib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+
+typeset	-r	str_usage=\
 "Usage : $ME
-	Désinstalle tous les composants d'un serveur ou cluster Oracle.
+	Désinstalle les composants d'un serveur ou cluster Oracle.
 	Seul root peut exécuter ce script et il doit être exécuté sur le serveur
 	concerné.
 
-	[-all]                  : désinstalle tous les composants
-	[-databases]            : supprime les bases de données.
-	[[!] -oracle]           : désinstalle oracle.
-	[[!] -grid]             : désinstalle grid.
-	[[!] -disks]            : supprime les disques.
-	[[!] -revert_to_master] : repasse sur la config du master.
+	Préciser un des 2 flags :
+	    [-oracle] : désinstalle oracle.
+	    [-grid]   : désinstalle grid.
 
-	-storage=ASM            : Si installation sur FS le préciser !
+	En cas d'échec lors de la désinstallation du grid préciser -db_type lors
+	de la prochaine exécution : -db_type=[single|rac]
 
-	Ajouter le flag '!' permet de ne pas effectuer une action avec le paramètre -all.
+	Si le script est exécute plusieurs fois supprimer olsnodes.
 "
 
-typeset storage=ASM
-typeset action_list
-typeset -r all_actions="delete_databases remove_oracle_binary remove_grid_binary remove_oracle_disks revert_to_master"
-
-typeset not_flag=no
-#	Utiliser lors de l'évaluation de paramètres.
-#	Si $1 vaut yes met fin au script, c'est la contenu de la variable not_flag
-#	qui doit être passé en paramètre.
-function exit_if_not_flag_used
-{
-	if [ $1 == yes ]
-	then
-		error "! not supported with $2"
-		info "$str_usage"
-		exit 1
-	fi
-}
+typeset		action
+typeset		db_type=undef
 
 while [ $# -ne 0 ]
 do
 	case $1 in
-		!)
-			not_flag=yes
-			shift
-			;;
-
 		-emul)
-			exit_if_not_flag_used $not_flag -emul
 			EXEC_CMD_ACTION=NOP
 			arg1="-emul"
 			shift
 			;;
 
-		-storage=*)
-			storage=${1##*=}
-			shift
-			;;
-
-		-all)
-			exit_if_not_flag_used $not_flag -all
-			action_list=$all_actions
-			shift
-			;;
-
-		-databases)
-			exit_if_not_flag_used $not_flag -databases
-			action_list="$action_list delete_databases"
-			shift
-			;;
-
 		-oracle)
-			if [ $not_flag == yes ]
+			if [ x"$action" != x ]
 			then
-				not_flag=no
-				action_list=$(sed "s/ remove_oracle_binary//"<<<"$action_list")
-			else
-				action_list="$action_list remove_oracle_binary"
+				error "Un seul flag."
+				LN
+				exit 1
 			fi
+			action="remove_oracle_binary"
 			shift
 			;;
 
 		-grid)
-			if [ $not_flag == yes ]
+			if [ x"$action" != x ]
 			then
-				not_flag=no
-				action_list=$(sed "s/ remove_grid_binary//"<<<"$action_list")
-			else
-				action_list="$action_list remove_grid_binary"
+				error "Un seul flag."
+				LN
+				exit 1
 			fi
+			action="remove_grid_binary"
 			shift
 			;;
 
-		-disks)
-			if [ $not_flag == yes ]
-			then
-				not_flag=no
-				action_list=$(sed "s/ remove_oracle_disks//"<<<"$action_list")
-			else
-				action_list="$action_list remove_oracle_disks"
-			fi
-			shift
-			;;
-
-		-revert_to_master)
-			if [ $not_flag == yes ]
-			then
-				not_flag=no
-				action_list=$(sed "s/ revert_to_master//"<<<"$action_list")
-			else
-				action_list="$action_list revert_to_master"
-			fi
+		-db_type=*)
+			db_type=${1##*=}
 			shift
 			;;
 
@@ -135,11 +88,7 @@ do
 	esac
 done
 
-ple_enable_log -params $PARAMS
-
 must_be_user root
-
-exit_if_param_invalid storage "FS ASM" "$str_usage"
 
 #	Exécute la commande "$@" en faisant un su - oracle -c
 #	Si le premier paramètre est -f l'exécution est forcée.
@@ -159,32 +108,10 @@ function sugrid
 	exec_cmd $arg "su - grid -c \"$@\""
 }
 
-#	Supprime toutes les bases de données installées.
-function delete_all_db
-{
-	line_separator
-	info "delete all DBs :"
-	while IFS=':' read OSID REM
-	do
-		[ x$"OSID" == x ] && continue || true
-
-		exec_cmd ~/plescripts/db/remove_all_files_for_db.sh -db=$OSID
-	done<<<"$(cat /etc/oratab | grep -E "^[A-Z].*")"
-	LN
-
-	if [  -f /etc/systemd/system/multi-user.target.wants/oracledb.service ]
-	then
-		exec_cmd "systemctl disable oracledb"
-		exec_cmd "rm -f /etc/systemd/system/multi-user.target.wants/oracledb.service"
-		LN
-	fi
-}
-
 #	Désinstalle Oracle.
 function deinstall_oracle
 {
 	line_separator
-	info "deinstall oracle"
 	suoracle -f "~/plescripts/database_servers/oracle_uninstall.sh $arg1"
 
 	execute_on_all_nodes "rm -fr /opt/ORCLfmap"
@@ -199,24 +126,6 @@ function deinstall_oracle
 		exec_cmd "rm -f $service_file"
 		LN
 	fi
-}
-
-#	FS uniquement : supprime le VG et les disques
-function remove_vg
-{
-	line_separator
-	exec_cmd umount /$GRID_DISK
-	exec_cmd "sed -i "/vg_oradata-lv_oradata/d" /etc/fstab"
-	fake_exec_cmd "vgremove vg_oradata<<<\"yy\""
-	if [ $? -eq 0 ]
-	then
-		vgremove vg_oradata <<EOS
-y
-y
-EOS
-	fi
-	exec_cmd -c "~/plescripts/disk/logout_sessions.sh"
-	LN
 }
 
 #	GI uniquement : supprime tous les disques.
@@ -272,39 +181,108 @@ function deinstall_grid_12cR1
 function deinstall_grid_12cR2
 {
 	line_separator
-	execute_on_all_nodes -c "crsctl stop crs"	# pour un RAC
-	exec_cmd -c "crsctl stop has"				# pour un standalone
+	execute_on_all_nodes -c "systemctl disable ohasd.service"
+	execute_on_all_nodes -c "systemctl disable oracle-ohasd.service"
+	execute_on_all_nodes -c "systemctl disable oracle-tfa.service"
+	execute_on_all_nodes -c "systemctl stop ohasd.service"
+	execute_on_all_nodes -c "systemctl stop oracle-ohasd.service"
+	execute_on_all_nodes -c "systemctl stop oracle-tfa.service"
 	LN
 
-	exec_cmd -c "~/plescripts/disk/clear_oracle_afd_disk_headers.sh"
+	line_separator
+	execute_on_all_nodes -c "rmmod oracleafd"
 	LN
 
+	line_separator
 	execute_on_all_nodes -c "rm -rf /etc/rc.d/init.d/afd"
 	execute_on_all_nodes -c "rm -rf /etc/rc.d/init.d/init.ohasd"
 	execute_on_all_nodes -c "rm -rf /etc/rc.d/init.d/ohasd"
 	LN
 
-	execute_on_all_nodes "rm -rf ${GRID_BASE%/*}/oraInventory"
-	LN
-
-	execute_on_all_nodes "find $GRID_BASE/* -maxdepth 1	-type d \
-								! -name \"12.2.0.1\" | xargs rm -rf"
-	LN
-
-	execute_on_all_nodes "rm -fr $GRID_HOME/*"
-	LN
-
+	line_separator
 	execute_on_all_nodes "rm -fr /etc/oracle"
-	LN
-
 	execute_on_all_nodes "rm -fr /etc/oraInst.loc"
-	LN
-
 	execute_on_all_nodes "rm -fr /etc/oratab"
 	LN
 
-	execute_on_all_nodes "rm -fr /$GRID_DISK/app/grid/log"
+	line_separator
+	execute_on_all_nodes "rm -rf /u01/*"
+	execute_on_all_nodes "rm -rf /u02/*"
 	LN
+
+	line_separator
+	execute_on_all_nodes "cd ~/plescripts/oracle_preinstall && ./01_create_oracle_users.sh -release=12.2.0.1 -db_type=$db_type"
+	execute_on_all_nodes "cd ~/plescripts/oracle_preinstall && ./04_apply_os_prerequis.sh -db_type=$db_type"
+	LN
+
+	line_separator
+	execute_on_all_nodes "ln -s /mnt/plescripts /home/grid/plescripts"
+	execute_on_all_nodes "ln -s /home/grid/plescripts/dg /home/grid/dg"
+	execute_on_all_nodes "ln -s /mnt/plescripts /home/oracle/plescripts"
+	execute_on_all_nodes "ln -s /home/oracle/plescripts/db /home/oracle/db"
+	LN
+
+	line_separator
+	execute_on_all_nodes "~/plescripts/database_servers/add_oracle_grid_into_group_users.sh"
+	LN
+
+	line_separator
+	exec_cmd "~/plescripts/disk/clear_oracle_afd_disk_headers.sh"
+	exec_cmd "~/plescripts/disk/clear_oracle_afd_disk_headers.sh"
+	LN
+
+	if [ $olsnodes_ok == no ]
+	then
+		info "Pour un serveur standalone :"
+		info "Depuis $client_hostname exécuter :"
+		info "$ ~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$(hostname -s)"
+		LN
+		info "Pour un RAC"
+		info "Sur l'autre serveur exécuter : $ME -grid"
+		info "Depuis $client_hostname executer :"
+		info "$ ~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=nom_server1"
+		info "$ ~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=nom_server2"
+		info "$ ~/plescripts/ssh/setup_rac_ssh_equivalence.sh -server1=nom_server1 -server2=nom_server2"
+		LN
+	else
+		if [ $gi_count_nodes -eq 1 ]
+		then
+			info "Depuis $client_hostname exécuter :"
+			info "$ ~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$(hostname -s)"
+			LN
+		else
+			info "Depuis $client_hostname exécuter :"
+			srv2=$(awk '{ print $1 }'<<<"$gi_node_list") # supprime l'espace de début.
+			info "$ ~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$(hostname -s)"
+			info "$ ~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh -remote_server=$srv2"
+			info "$ ~/plescripts/ssh/setup_rac_ssh_equivalence.sh -server1=$(hostname -s) -server2=$srv2"
+			LN
+		fi
+	fi
+
+	warning "Rebooter le ou les serveurs."
+	LN
+	exit 0
+}
+
+# $1 username
+function exit_if_user_connected
+{
+	if grep -qE $1 <<<"$(who)"
+	then
+		error "Disconnect $1 from $(hostname -s)"
+		LN
+		exit 1
+	fi
+	if [ $gi_count_nodes -gt 1 ]
+	then
+		if ssh $gi_node_list "grep -qE $1 <<<\"$(who)\""
+		then
+			error "Disconnect $1 from $gi_node_list"
+			LN
+			exit 1
+		fi
+	fi
 }
 
 #	============================================================================
@@ -312,85 +290,78 @@ function deinstall_grid_12cR2
 #	============================================================================
 script_start
 
-if grep -q remove_oracle_binary <<< "$action_list"
+typeset	-r	db_present=$(cat /etc/oratab | grep -E "^[A-Z].*")
+if [ x"$db_present" != x ]
 then
-	if ! grep -q delete_databases <<< "$action_list"
-	then
-		typeset	-r	db_present=$(cat /etc/oratab | grep -E "^[A-Z].*")
-		if [ x"$db_present" != x ]
-		then
-			info "Database active, add flag delete_databases"
-			action_list="delete_databases $action_list"
-		fi
-	fi
+	error "Database active, drop database before !"
+	LN
+	exit 1
 fi
 
-line_separator
-info "Actions : $action_list"
-LN
-if [ x"$action_list" == x ]
+if [ x"$action" == x ]
 then
 	info "$str_usage"
 	LN
 	exit 1
 fi
 
+if [[ $action == remove_oracle_binary && $olsnodes_ok == no ]]
+then
+	db_type=fs
+fi
+
+if [[ $olsnodes_ok == no && $db_type == undef ]]
+then
+	error "-db_type=rac|std missing."
+	LN
+	exit 1
+else
+	[ $gi_count_nodes -gt 1 ] && db_type=rac || db_type=std
+fi
+
 line_separator
 info "Remove components on : $gi_current_node $gi_node_list"
-line_separator
+LN
+
+if [ $action == remove_grid_binary ] && su - oracle -c "test -f \$ORACLE_HOME/bin/oracle"
+then
+	error "oracle n'est pas désinstallé."
+	LN
+	exit 1
+fi
+
+confirm_or_exit "Continue"
+LN
+
+ple_enable_log -params $PARAMS
 LN
 
 exec_cmd -f -c "mount /mnt/oracle_install"
 LN
 
-if grep -q delete_databases <<< "$action_list"
-then
-	delete_all_db
-fi
+case "$action" in
+	remove_oracle_binary)
+		deinstall_oracle
+		;;
 
-if grep -q remove_oracle_binary <<< "$action_list"
-then
-	deinstall_oracle
-fi
-
-if [ $storage == ASM ]
-then
-	if grep -q remove_grid_binary <<< "$action_list"
-	then
-		if [ "${GRID_HOME##*/}" == "12.2.0.1" ]
+	remove_grid_binary)
+		if grep -q "12.2.0.1"<<<"$GRID_HOME"
 		then
+			exit_if_user_connected oracle
+			exit_if_user_connected grid
 			deinstall_grid_12cR2
 		else
 			deinstall_grid_12cR1
-		fi
-	fi
-fi
-
-if grep -q remove_oracle_disks <<< "$action_list"
-then
-	if [ $storage == ASM ]
-	then
-		if command_exists oracleasm
-		then
 			remove_oracleasm_disks
-		else
-			warning "AFD disks not removed : TODO"
 		fi
-	else
-		remove_vg
-	fi
-fi
+		;;
+
+	*)
+		warning "no action."
+		LN
+esac
 
 exec_cmd -f -c "umount /mnt/oracle_install"
 LN
 
-if grep -q revert_to_master <<< "$action_list"
-then
-	line_separator
-	execute_on_other_nodes "plescripts/database_servers/revert_to_master.sh -doit; poweroff"
-	exec_cmd "./revert_to_master.sh -doit"
-	exec_cmd "poweroff"
-	LN
-fi
-
-script_stop $ME
+script_stop $ME $(sed "s/srv\(.*\)0./\1/"<<<"$(hostname -s)")

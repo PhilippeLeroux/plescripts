@@ -44,11 +44,19 @@ done
 
 must_be_user root
 
-export ORACLE_HOME=$GRID_HOME
-export ORACLE_BASE=/tmp
-while read oracle_label dev rem
+if lsmod | grep -q "afd"
+then
+	error "AFD driver loaded."
+	info "Execute : rmmod oracleafd"
+	LN
+	exit 1
+fi
+
+while read c1 c2 disk_name size_gb ltype type sep asm_name
 do
-	[ $dev == Y ] && dev=$rem || true
-	info "clear $oracle_label on $dev"
-	clear_device "$dev"
-done<<<"$($ORACLE_HOME/bin/asmcmd afd_lslbl '/dev/sd*' | grep -E "^S")"
+	[ x"$disk_name" == x ] && continue || true
+
+	info "$asm_name"
+	clear_device $disk_name
+	LN
+done<<<"$(~/plescripts/disk/check_disks_type.sh -afdonly|grep oracleasm)"
