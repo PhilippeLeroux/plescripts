@@ -108,7 +108,7 @@ do
 	esac
 done
 
-if command_exists crscrtl
+if command_exists crsctl
 then
 	error "Don't work with ASM."
 	LN
