@@ -710,7 +710,7 @@ function create_dataguard_services
 			LN
 		fi
 
-	done<<<"$(get_sql_read_pdbs_rw $ORACLE_SID)"
+	done<<<"$(get_rw_pdbs $ORACLE_SID)"
 }
 
 #	Instruction pour activer le flashback sur la base standby.

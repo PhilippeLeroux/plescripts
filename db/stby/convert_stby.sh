@@ -224,7 +224,7 @@ function create_services_for_single_db
 		line_separator
 		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh -db=$db -pdb=$pdb"
 		LN
-	done<<<"$(get_sql_read_pdbs_rw $ORACLE_SID)"
+	done<<<"$(get_rw_pdbs $ORACLE_SID)"
 }
 
 ple_enable_log -params $PARAMS

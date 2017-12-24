@@ -224,7 +224,7 @@ function sqlplus_exec_query
 # Affiche tous les PDB RW de l'instance $1
 # Les bases en RO sont considérées comme des SEED.
 # $1 instance name
-function get_sql_read_pdbs_rw
+function get_rw_pdbs
 {
 typeset	-r	l_sql_read_pdb_rw=\
 "select

@@ -117,7 +117,7 @@ function add_or_update_tns_alias_for_all_pdbs
 
 		add_or_update_tns_alias_for_pdb $pdb
 
-	done<<<"$(get_sql_read_pdbs_rw $ORACLE_SID)"
+	done<<<"$(get_rw_pdbs $ORACLE_SID)"
 }
 
 typeset	-r	tnsnames_file=$TNS_ADMIN/tnsnames.ora
