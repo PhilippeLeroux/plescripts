@@ -11,13 +11,15 @@ EXEC_CMD_ACTION=EXEC
 typeset -r ME=$0
 typeset -r PARAMS="$*"
 
-typeset server=undef
-typeset	wait_os=yes
-typeset dataguard=yes
+typeset		server=undef
+typeset		wait_os=yes
+typeset		dataguard=yes
+typeset		lsvms=yes
 
 add_usage "[-server=name]"			"Si non définie testera ID_DB (cf set_db)"
 add_usage "[-dataguard=$dataguard]"	"yes|no, yes : démarre toutes les VMs du dataguard."
 add_usage "[-wait_os=$wait_os]"		"yes|no, yes : attend le démarrage complet de l'OS avant de poursuivre."
+add_usage "[-lsvms=$lsvms]"			"yes|no"
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -35,6 +37,11 @@ do
 
 		-server=*)
 			server=${1##*=}
+			shift
+			;;
+
+		-lsvms=*)
+			lsvms=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -202,7 +209,7 @@ then
 fi
 
 #	============================================================================
-if [ $PLELIB_OUTPUT != DISABLE ]
+if [[ $PLELIB_OUTPUT != DISABLE && $lsvms == yes ]]
 then
 	line_separator
 	exec_cmd "lsvms"

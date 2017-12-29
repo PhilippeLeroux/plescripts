@@ -8,23 +8,25 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-
-add_usage "[server name]"			"Server name or db idendifiant."
-add_usage "[-server=server name]"	"Full server name"
-add_usage "[-error_on_poweroff]"	"On poweroff return 1"
-add_usage "[1|2|all]"				"Dataguard node number"
-
-typeset -r str_usage=\
-"Usage :
-${ME##*/}
-$(print_usage)
-"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
 typeset		server=undef
 typeset		error_on_poweroff=no
 typeset	-i	dg_node=-1
+typeset		lsvms=yes
+
+add_usage "[server name]"			"Server name or db identifier's."
+add_usage "[-server=server name]"	"Full server name"
+add_usage "[-error_on_poweroff]"	"On poweroff return 1"
+add_usage "[-lsvms=$lsvms]"			"yes|no"
+add_usage "[1|2|all]"				"Dataguard node number"
+
+typeset	-r	str_usage=\
+"Usage :
+${ME##*/}
+$(print_usage)
+"
 
 while [ $# -ne 0 ]
 do
@@ -36,6 +38,11 @@ do
 
 		-server=*)
 			server=${1##*=}
+			shift
+			;;
+
+		-lsvms=*)
+			lsvms=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -173,14 +180,21 @@ case $error_on_poweroff in
 		;;
 esac
 
-exec_cmd "start_vm $server -wait_os=no -dataguard=no"
+line_separator
+exec_cmd "start_vm $server -wait_os=no -dataguard=no -lsvms=no"
 LN
 
 if [ ${#running_db_server_list[@]} -ne 0 ]
 then
 	for vm in ${running_db_server_list[*]}
 	do
-		exec_cmd start_vm -server=$vm -wait_os=no -dataguard=no
+		exec_cmd start_vm -server=$vm -wait_os=no -dataguard=no -lsvms=no
 	done
 	LN
+fi
+
+if [ $lsvms == yes ]
+then
+	line_separator
+	lsvms
 fi
