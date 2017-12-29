@@ -6,15 +6,18 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+typeset	-r	str_usage=\
 "Usage :
 $ME
 	-fs=fs name
+	[-node_list=node2,node3,...] For clustered VG
 "
 
-typeset fs=undef
+typeset		fs=undef
+typeset	-a	node_list
+typeset		keep_vg=no
 
 while [ $# -ne 0 ]
 do
@@ -26,6 +29,19 @@ do
 
 		-fs=*)
 			fs=${1##*=}
+			shift
+			;;
+
+		-node_list=*)
+			while IFS=',' read node_name
+			do
+				node_list+=( $node_name )
+			done<<<"${1##*=}"
+			shift
+			;;
+
+		-keep_vg)
+			keep_vg=yes
 			shift
 			;;
 
@@ -57,14 +73,19 @@ fi
 
 read vgname lvname<<<"$(grep "$fs" /etc/fstab | sed "s/\/dev\/mapper\/\(.*\)-\(.*\) \/.*/\1 \2/")"
 
-partition_list="$(pvs | grep $vgname | awk '{ print $1 }' | xargs)"
-disk_list="$(sed "s/[1-9]//g"<<<"$partition_list")"
+if [ x"$vgname" == x ]
+then
+	error "vg not found."
+	LN
+	exit 1
+fi
+
+partition_list="$(pvs 2>/dev/null | grep $vgname | awk '{ print $1 }' | xargs)"
 
 info "FS         : $fs"
 info "VG         : $vgname"
 info "LV         : $lvname"
 info "Partitions : $partition_list"
-info "Disks      : $disk_list"
 LN
 
 line_separator
@@ -86,25 +107,21 @@ else
 	LN
 fi
 
-line_separator
-info "Remove VG $vgname"
-exec_cmd "vgremove --force $vgname"
-LN
+if [ ${#node_list[*]} -ne 0 ]
+then
+	line_separator
+	info "Drop fs $fs on node(s) : ${node_list[*]}"
+	LN
 
-line_separator
-info "Clear partitions"
-for part_name in $partition_list
-do
-	clear_device "$part_name"
-	LN
-done
+	for node_name in ${node_list[*]}
+	do
+		exec_cmd "ssh -t $node_name 'TERM=$TERM plescripts/disk/drop_fs.sh -fs=$fs -keep_vg'"
+		LN
+	done
+fi
 
-line_separator
-info "Drop partitions and clear disks"
-for disk_name in $disk_list
-do
-	delete_partition $disk_name
-	LN
-	clear_device $disk_name
-	LN
-done
+if [ $keep_vg == no ]
+then
+	line_separator
+	exec_cmd "~/plescripts/disk/drop_vg.sh -vg=$vgname"
+fi

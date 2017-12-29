@@ -237,7 +237,7 @@ function reboot_server
 	typeset -r server=$1
 
 	info "Reboot server $server..."
-	exec_cmd "$vm_scripts_path/reboot_vm $server -error_on_poweroff"
+	exec_cmd "$vm_scripts_path/reboot_vm $server -error_on_poweroff -lsvms=no"
 
 	loop_wait_server $server
 }
@@ -407,8 +407,12 @@ function create_disks_for_oracle_and_grid_softwares
 
 	if [[ $cfg_db_type == rac && $cfg_oracle_home == ocfs2 ]]
 	then
-		info "Install ocfs2"
-		ssh_server "yum -y -q install ocfs2-tools"
+		info "Install CLVM & ocfs2"
+		ssh_server "yum -y -q install lvm2-cluster ocfs2-tools"
+		LN
+
+		info "Enable cluster LVM"
+		ssh_server "lvmconf --enable-cluster"
 		LN
 
 		ssh_server "~/plescripts/disk/create_cluster_ocfs2.sh -db=$db"
@@ -417,12 +421,12 @@ function create_disks_for_oracle_and_grid_softwares
 		typeset action=create
 		[ $node -ne 1 ] && action=add || true
 		ssh_server	plescripts/disk/create_fs_ocfs2.sh	\
-							-db=$db						\
+							-cluster_name=$db			\
 							-mount_point=/$ORCL_DISK	\
-							-device=/dev/sdc			\
+							-suffix_vglv=orcl			\
 							-action=$action
 		LN
-	else
+	else # single + Grid Infra.
 		info "Create mount point /$ORCL_DISK for Oracle"
 		ssh_server	plescripts/disk/create_fs.sh		\
 							-mount_point=/$ORCL_DISK	\
@@ -769,7 +773,7 @@ configure_oracle_accounts
 #	Équivalence entre le virtual-host et le serveur de bdd
 #	Permet depuis le virtual-host de se connecter sans mot de passe avec les
 #	comptes root, grid et oracle.
-[ $cfg_db_type == fs ] && arg="-no_grid_user"
+[ $cfg_db_type == fs ] && arg="-no_grid_user" || true
 exec_cmd "~/plescripts/ssh/make_ssh_equi_with_all_users_of.sh	\
 						-remote_server=$server_name $arg"
 LN

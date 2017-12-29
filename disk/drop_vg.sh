@@ -6,12 +6,12 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+typeset	-r	str_usage=\
 "Usage : $ME -vg=name"
 
-typeset vg=undef
+typeset		vg=undef
 
 while [ $# -ne 0 ]
 do
@@ -45,54 +45,87 @@ ple_enable_log -params $PARAMS
 
 exit_if_param_undef vg	"$str_usage"
 
+# Lecture des partitions du VG.
 typeset -a partition_list
-typeset -a vg_disk_list
 while read f1 disk rem
 do
+	[ x"$disk" == x ] && continue || true
+
 	typeset -i ilastcar=${#disk}
 	((--ilastcar))
 	if [ ${disk:$ilastcar} == 1 ]
 	then
 		partition_list+=( $disk )
-		vg_disk_list+=( ${disk:0:-1} )
-	else
-		vg_disk_list+=( ${disk} )
 	fi
 done<<<"$(pvscan 2>/dev/null|grep $vg)"
 
-exec_cmd vgremove -f $vg 
+if [ ${#partition_list[*]} -eq 0 ]
+then
+	error "No disks found for vg $vg"
+	LN
+	exit 1
+fi
+
+info "${#partition_list[*]} disks for vg $vg"
 LN
 
-if [ ${#partition_list[@]} -ne 0 ]
+exec_cmd -c vgremove -f $vg 
+ret=$?
+LN
+if [ $ret -ne 0 ]
 then
-	if [ ${#partition_list[@]} -ne ${#vg_disk_list[@]} ]
+	if command_exists clvmd
 	then
-		error "Partition #${#partition_list[@]} disks #${#vg_disk_list[@]}"
-		error "Configuration not supported."
+		line_separator
+		warning "Méthode bourrin"
+		LN
+		if [ ${#partition_list[@]} -ne 0 ]
+		then
+			for partition in ${partition_list[*]}
+			do
+				line_separator
+				disk=${partition:0:-1}
+				info "Clear partition $partition and disk $disk."
+				clear_device $partition
+				LN
+
+				clear_device $disk
+				LN
+			done
+		fi
+		exec_cmd -c "partprobe && lvscan --cache && vgscan --cache 2>/dev/null"
+		LN
+
+		if vgs $vg | grep -q "$vg"
+		then
+			warning "Relancer le script $ME $PARAMS"
+			LN
+			exit 1
+		fi
+
+		warning "Reboot !"
+		LN
+
+		exit 0
+	else
+		error "vgremove failed."
 		LN
 		exit 1
 	fi
+fi
 
+if [ ${#partition_list[@]} -ne 0 ]
+then
 	line_separator
 	for partition in ${partition_list[*]}
 	do
 		disk=${partition:0:-1}
 		info "delete partition $partition from $disk"
+		exec_cmd pvremove $partition
+		LN
 		delete_partition $disk
 		LN
-		exec_cmd pvremove $partition
+		clear_device $disk
 		LN
 	done
 fi
-
-line_separator
-for disk in ${vg_disk_list[*]}
-do
-	if [ ${#partition_list[@]} -eq 0 ]
-	then
-		exec_cmd pvremove $disk
-		LN
-	fi
-	clear_device $disk
-	LN
-done
