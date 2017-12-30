@@ -1,9 +1,14 @@
 #!/bin/sh
 
+# Ce script n'est plus nécessaire avec les versions :
+#	- Virtual Box : 5.1.30
+#	- Kernel : 4.1.12-112.14.1.el7uek.x86_64
+# Le script est conservé au cas ou.
+
 # Ce script est copié, lors de l'installation d'un RAC 12.2, dans le répertoire
 # /root.
 #
-# A utiliser quand les répertoires NFS ne fonctionnent plus et que la commande
+# À utiliser quand les répertoires NFS ne fonctionnent plus et que la commande
 # systemctl --failure montre que beaucoup de modules n'ont pas pus démarrer.
 #
 # Fonctionnement :
@@ -14,7 +19,7 @@
 #	instructions pour activer et démarrer le service oracle-ohasd.service sont
 #	affichées.
 #
-# Si il y toujours une erreur, rebooter sur un noyau redhat :
+# S'il y toujours une erreur, rebooter sur un noyau redhat :
 #	- Supprimer le noyau UEK : yum remove kernel-uek....
 #	- rebooter
 #	- installer le noyau UEK
