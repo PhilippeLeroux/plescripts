@@ -32,41 +32,17 @@ besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.
 Le poste exécutant VirtualBox doit avoir au minimum 8Gb de RAM, pour un RAC 12cR2
 prévoir 16Gb.
 
-Les scripts fonctionnent sous Linux uniquement, j'utilise LEAP, je ne prévois
-pas de faire un portage sur MS Windows.
+Les scripts fonctionnent sous Linux uniquement, ils ont été testés sous openSUSE.
 
 --------------------------------------------------------------------------------
 
-### Configuration du poste exécutant VirtualBox
+### Instructions
 
-Avant de créer les VMs il est nécessaire de configurer le poste exécutant VirualBox.
+[Configuration du poste exécutant VirtualBox.](https://github.com/PhilippeLeroux/plescripts/wiki/Configuration-du-virtual-host)
 
-Suivre les [instructions ici](https://github.com/PhilippeLeroux/plescripts/wiki/Configuration-du-virtual-host)
+[Création des serveurs d'infrastructure.](https://github.com/PhilippeLeroux/plescripts/wiki/Création-des-VMs-orclmaster-et-K2)
 
---------------------------------------------------------------------------------
-
-### Création des VMs `orclmaster` et `K2`
-2 VMs sont nécessaires pour commencer : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Création-des-VMs-orclmaster-et-K2)
- - `orclmaster` qui est la VM clonée dès que l'on a besoin d'un nouveau serveur Oracle, pas besoins de réinstaller OL7.
- - `K2` qui est le serveur d'infrastructure (DNS, SAN, Gateway, NTP server, ...)
-
---------------------------------------------------------------------------------
-
-### Création des serveurs de base de données Oracle
-
-* Création serveurs : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers)
-
-* Installation du Grid Infra & d'Oracle : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Installation-:-Grid-infra-&-Oracle)
-
-* Création d'une base : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Cr%C3%A9ation-d'une-base-de-donn%C3%A9e)
-
-* Mise en dataguard de 2 serveurs standalones : [instructions](https://github.com/PhilippeLeroux/plescripts/wiki/Create-dataguard)
-
---------------------------------------------------------------------------------
-
-### Gestion du tnsnames.ora sur le virtual-host et adresse de scan
-
-Comment utiliser l'adresse de scan et gestion du tnsnames.ora décrit [ici](https://github.com/PhilippeLeroux/plescripts/wiki/Gestion-du-tnsname.ora-depuis-le-virtual-host)
+[Création des serveurs de base de données.](https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers)
 
 --------------------------------------------------------------------------------
 
