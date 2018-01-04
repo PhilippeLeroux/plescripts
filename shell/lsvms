@@ -77,20 +77,25 @@ function print_vm_database
 		return 0
 	fi
 
-	typeset	-r	str_dbid=$dbid
 	typeset	-ri	max_nodes=$(cfg_max_nodes $dbid)
 
 	cfg_load_node_info $dbid 1
 
+	if [ "$dbid" == "$ID_DB" ]
+	then
+		info "${BOLD}$dbid${NORM} ($cfg_master_name)"
+	else
+		info "$dbid ($cfg_master_name)"
+	fi
+
 	if [[ $max_nodes -eq 2 && $cfg_dataguard == no ]]
 	then
 		vm_printed_list="$vm_printed_list $cfg_server_name"
-		info "$str_dbid :"
 		if vm_exists $cfg_server_name
 		then
-			info -f -n "  RAC Oracle $(print_oracle_release $cfg_orarel), $(print_vm_running_status $cfg_server_name), "
+			info -f -n "  $(print_oracle_release $cfg_orarel) RAC       : $(print_vm_running_status $cfg_server_name), "
 		else
-			info -f -n "  RAC Oracle $(print_oracle_release $cfg_orarel), server not exist"
+			info -f -n "  $(print_oracle_release $cfg_orarel) RAC       : server not exist"
 		fi
 		cfg_load_node_info $dbid 2
 		if vm_exists $cfg_server_name
@@ -103,12 +108,11 @@ function print_vm_database
 	elif [ $cfg_dataguard == yes ]
 	then
 		vm_printed_list="$vm_printed_list $cfg_server_name"
-		info "$str_dbid :"
 		if vm_exists $cfg_server_name
 		then
-			info -f -n "  Dataguard Oracle $(print_oracle_release $cfg_orarel), $(print_vm_running_status $cfg_server_name), "
+			info -f -n "  $(print_oracle_release $cfg_orarel) Dataguard : $(print_vm_running_status $cfg_server_name), "
 		else
-			info -f -n "  Dataguard Oracle $(print_oracle_release $cfg_orarel), server not exist"
+			info -f -n "  $(print_oracle_release $cfg_orarel) Dataguard : server not exist"
 		fi
 		cfg_load_node_info $dbid 2
 		if vm_exists $cfg_server_name
@@ -120,12 +124,11 @@ function print_vm_database
 		vm_printed_list="$vm_printed_list $cfg_server_name"
 	else
 		vm_printed_list="$vm_printed_list $cfg_server_name"
-		info "$str_dbid :"
 		if vm_exists $cfg_server_name
 		then
-			info -f -n "  Oracle $(print_oracle_release $cfg_orarel), $(print_vm_running_status $cfg_server_name)"
+			info -f -n "  $(print_oracle_release $cfg_orarel) Single    : $(print_vm_running_status $cfg_server_name)"
 		else
-			info -f -n "  Oracle $(print_oracle_release $cfg_orarel), server not exists"
+			info -f -n "  $(print_oracle_release $cfg_orarel) Single    : server not exists"
 		fi
 	fi
 	info -n -f ", $cfg_luns_hosted_by"
