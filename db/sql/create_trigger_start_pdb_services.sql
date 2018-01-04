@@ -10,7 +10,7 @@ begin
 					where
 						network_name not like '%_stby_%'
 					and	(	network_name like '%_oci'
-						or	network_name like '%_java' 
+						or	network_name like '%_java'
 						)
 				)
 		loop

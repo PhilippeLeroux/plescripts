@@ -1,7 +1,7 @@
 -- vim: ts=4:sw=4
 
 set ver off
-accept username prompt 'User name : ' 
+accept username prompt 'User name : '
 define tbs='&username.tbs'
 
 set serveroutput on size unlimited

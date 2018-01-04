@@ -4,7 +4,7 @@ ttitle center "PGA usage (Mb)" skip
 col spid			for	a8		head 'spid'
 col stid			for a8		head 'stid'
 col	program			for a38		head 'Program'
-col	execution_type				head 'Type'	
+col	execution_type				head 'Type'
 col	pga_used		for 99		head 'PGA used'
 col	pga_alloc		for 99		head 'PGA alloc'
 select

@@ -218,7 +218,7 @@ procedure check_prereq
 as
 	timed_stats	constant varchar2(255)	:= parameter_value( 'timed_statistics' );
 begin
-	if timed_stats != 'TRUE' 
+	if timed_stats != 'TRUE'
 	then
 		fatal_error( 'Error timed_statistics == '||timed_stats||' expected TRUE.' );
 	end if;
@@ -227,7 +227,7 @@ end check_prereq;
 --	============================================================================
 begin
 	p( 'max_latency = '||max_latency );
-	
+
 	check_prereq;
 
 	if asm_is_used
