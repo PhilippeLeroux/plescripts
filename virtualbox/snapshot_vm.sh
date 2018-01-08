@@ -10,19 +10,19 @@ EXEC_CMD_ACTION=EXEC
 typeset	-r	ME=$0
 typeset	-r	PARAMS="$*"
 
-typeset		db=$ID_DB
-typeset		snapname=undef
-typeset		action=restore
+typeset		db=undef
 typeset		server=none
+typeset		snapname
+typeset		action
 
 typeset	-r	str_usage=\
 "Usage :
-$ME 
-	[-take=name]    take snapshot named 'name'.
+$ME
+	-db=id|-server=name
+	[-take=desc]    take snapshot with current timestamp and description 'desc'.
 	[-restore=name] restore snapshot named 'name'.
 	[-delete=name]  delete snapshot named 'name'.
 	[-list]         list snapshot names.
-	[-db=$db|-server=name]
 "
 
 while [ $# -ne 0 ]
@@ -51,6 +51,7 @@ do
 
 		-take=*)
 			action=take
+			# Correspondra à la description
 			snapname=${1##*=}
 			shift
 			;;
@@ -85,7 +86,7 @@ function restore_snapshot
 {
 	line_separator
 	info "VM $cfg_server_name restore snapshot $snapname"
-	exec_cmd VBoxManage snapshot $cfg_server_name restore $snapname
+	exec_cmd VBoxManage snapshot $cfg_server_name restore \"$snapname\"
 	LN
 }
 
@@ -93,7 +94,9 @@ function take_snapshot
 {
 	line_separator
 	info "VM $cfg_server_name take snapshot $snapname"
-	exec_cmd VBoxManage snapshot $cfg_server_name take $snapname
+	exec_cmd VBoxManage snapshot $cfg_server_name			\
+						take \"$(date +"%Y/%m/%d %Hh%M")\"	\
+						--description \"$snapname\"
 	LN
 }
 
@@ -101,19 +104,45 @@ function delete_snapshot
 {
 	line_separator
 	info "VM $cfg_server_name delete snapshot $snapname"
-	exec_cmd VBoxManage snapshot $cfg_server_name delete $snapname
+	exec_cmd VBoxManage snapshot $cfg_server_name delete \"$snapname\"
 	LN
 }
 
 #ple_enable_log -params $PARAMS
 
-if [ $action == restore ]
-then
-	exit_if_param_undef	snapname	"$str_usage"
-fi
+case $action in
+	restore|take|delete)
+		if [ x"$snapname" == x ]
+		then
+			error "Snapshot name missing."
+			LN
+			info "$str_usage"
+			LN
+			exit 1
+		fi
+		;;
+	list)
+		:
+		;;
+	*)
+		error "no action."
+		LN
+		info "$str_usage"
+		LN
+		exit 1
+esac
 
 if [ $server == none ]
 then
+	if [ $db == undef ]
+	then
+		error "-db or -server missing."
+		LN
+		info "$str_usage"
+		LN
+		exit 1
+	fi
+
 	cfg_exists $db
 
 	typeset	-ri	max_nodes=$(cfg_max_nodes $db)
@@ -166,7 +195,7 @@ do
 			;;
 		list)
 			info "Snapshot for VM $cfg_server_name"
-			exec_cmd VBoxManage snapshot $cfg_server_name list
+			exec_cmd VBoxManage snapshot $cfg_server_name list --machinereadable
 			LN
 			;;
 	esac
