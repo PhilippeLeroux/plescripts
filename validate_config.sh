@@ -353,6 +353,32 @@ function test_if_configure_global_cfg_executed
 	LN
 }
 
+function test_timer_hpet
+{
+	if [ ! -f /sys/devices/system/clocksource/clocksource0/current_clocksource ]
+	then
+		return
+	fi
+
+	line_separator
+	typeset	-r	timer_name=$(cat /sys/devices/system/clocksource/clocksource0/current_clocksource)
+	if [ "$timer_name" != "hpet" ]
+	then
+		info "Current timer ${RED}$timer_name${NORM}?"
+		if grep -q hpet /sys/devices/system/clocksource/clocksource0/available_clocksource
+		then
+			info "  ==> Enable hpet timer for better performances."
+			LN
+		else
+			info "   hpet timer not available."
+			LN
+		fi
+	else
+		info "Current timer ${GREEN}$timer_name${NORM}."
+		LN
+	fi
+}
+
 typeset -r orarel=${oracle_release%.*.*}
 
 scripts_exists
@@ -379,8 +405,9 @@ if [ "$common_user_name" != "no_user_defined" ]
 then
 	line_separator
 	exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
-	LN
 fi
+
+test_timer_hpet
 
 line_separator
 if [ $count_errors -ne 0 ]
