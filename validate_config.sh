@@ -362,21 +362,31 @@ function test_timer_hpet
 
 	line_separator
 	typeset	-r	timer_name=$(cat /sys/devices/system/clocksource/clocksource0/current_clocksource)
-	if [ "$timer_name" != "hpet" ]
-	then
-		info "Current timer ${RED}$timer_name${NORM}?"
-		if grep -q hpet /sys/devices/system/clocksource/clocksource0/available_clocksource
-		then
-			info "  ==> Enable hpet timer for better performances."
+	case "$timer_name" in
+		"hpet")
+			info "Current timer ${GREEN}$timer_name${NORM}."
 			LN
-		else
-			info "   hpet timer not available."
+			;;
+
+		kvm-clock)
+			error "Timer ${RED}kvm-clock${NORM} invalid."
+			error "$(hostname -s) must be a physical machine."
 			LN
-		fi
-	else
-		info "Current timer ${GREEN}$timer_name${NORM}."
-		LN
-	fi
+			((++count_errors))
+			;;
+
+		*)
+			info "Current timer ${RED}$timer_name${NORM}?"
+			if grep -q hpet /sys/devices/system/clocksource/clocksource0/available_clocksource
+			then
+				info "  ==> Enable hpet timer for better performances."
+				LN
+			else
+				info "   hpet timer not available."
+				LN
+			fi
+			;;
+	esac
 }
 
 typeset -r orarel=${oracle_release%.*.*}
