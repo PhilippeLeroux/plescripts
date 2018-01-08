@@ -5,6 +5,7 @@
 . ~/plescripts/usagelib.sh
 . ~/plescripts/cfglib.sh
 . ~/plescripts/networklib.sh
+. ~/plescripts/vmlib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -379,6 +380,11 @@ then
 fi
 
 exec_cmd "~/plescripts/database_servers/check_if_all_servers_exists.sh"
+
+if ! vm_running $infra_hostname
+then
+	exec_cmd start_vm $infra_hostname
+fi
 
 validate_config
 
