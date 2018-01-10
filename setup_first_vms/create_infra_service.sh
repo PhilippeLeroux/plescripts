@@ -5,17 +5,21 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
 typeset		target=graphical
-typeset -r	service_name=${infra_hostname}.service
-typeset -r	service_file=/usr/lib/systemd/system/${service_name}
+typeset		start=no
+typeset	-r	service_name=${infra_hostname}.service
+typeset	-r	service_file=/usr/lib/systemd/system/${service_name}
 
 typeset -r str_usage=\
-"Usage : $ME -target=$target : graphical or multi-user
-
-Create service $service_name to start VM $infra_hostname on startup."
+"Usage :
+$ME
+	-target=$target : graphical or multi-user
+	[-start] to start $infra_hostname on boot, by default only
+	stop $infra_hostname when $client_hostname stop.
+"
 
 while [ $# -ne 0 ]
 do
@@ -27,6 +31,11 @@ do
 
 		-target=*)
 			target=${1##=*}
+			shift
+			;;
+
+		-start)
+			start=yes
 			shift
 			;;
 
@@ -70,7 +79,14 @@ After=iscsi.service
 
 [Service]
 RemainAfterExit=yes
-ExecStart=/usr/bin/su - $USER -c "/usr/bin/VBoxManage startvm $infra_hostname --type headless"
+EOS
+
+if [ $start == yes ]
+then
+	echo "ExecStart=/usr/bin/su - $USER -c \"/usr/bin/VBoxManage startvm $infra_hostname --type headless\"" >> /tmp/$service_name
+fi
+
+cat<<EOS>>/tmp/$service_name
 ExecStop=/usr/bin/su - $USER -c "$HOME/plescripts/shell/stop_vm $infra_hostname"
 
 [Install]
@@ -81,3 +97,10 @@ exec_cmd sudo mv /tmp/$service_name $service_file
 exec_cmd sudo systemctl enable $service_name
 exec_cmd sudo systemctl start $service_name
 LN
+
+if [ $start == no ]
+then
+	info "Service only stop $infra_hostname"
+	info "add flag -start if you want start $infra_hostname on boot."
+	LN
+fi
