@@ -431,7 +431,7 @@ function create_disks_for_oracle_and_grid_softwares
 		ssh_server	plescripts/disk/create_fs.sh		\
 							-mount_point=/$ORCL_DISK	\
 							-suffix_vglv=orcl			\
-							-type_fs=$cfg_oracle_home	\
+							-type_fs=$rdbms_fs_type		\
 							-noatime
 		LN
 	fi
