@@ -5,13 +5,14 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+typeset	-r	str_usage=\
 "Usage :
 $ME
-	[-add=\"param1 param2=val\"]
-	[-remove=\"param1 param2=val\"]
+	[-add=\"param1 param2\"]
+	[-remove=\"param1 param2\"]
+	[-show]
 "
 
 typeset action=none	# add or remove
@@ -37,6 +38,11 @@ do
 			shift
 			;;
 
+		-show)
+			action=show
+			shift
+			;;
+
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -52,7 +58,14 @@ do
 	esac
 done
 
-if [ "$params" == undef ]
+function show_boot_options
+{
+	info "Boot options :"
+	exec_cmd "grep 'vmlinuz-$(uname -r)' /etc/grub2.cfg|cut -d\  -f3-"
+	LN
+}
+
+if [[ "$params" == undef && $action != show ]]
 then
 	error "no parameter for action $action"
 	LN
@@ -63,23 +76,32 @@ fi
 
 must_be_user root
 
-info "Modify kernel parameter, $action parameters \"$params\""
-LN
+if [ $action != show ]
+then
+	info "Modify kernel parameter, $action parameters \"$params\""
+	LN
 
-line_separator
-info "Backup /etc/grub2.cfg"
-exec_cmd cp /etc/grub2.cfg /etc/grub2.cfg.$(date +%y%m%d_%H%M)
-LN
+	line_separator
+	info "Backup /etc/grub2.cfg"
+	exec_cmd cp /etc/grub2.cfg /etc/grub2.cfg.$(date +%y%m%d_%H%M)
+	LN
 
-line_separator
+	line_separator
+fi
+
 case $action in
 	remove)
 		exec_cmd "grubby --update-kernel=ALL --remove-args=\"$params\""
 		LN
+		show_boot_options
 		;;
 	add)
 		exec_cmd "grubby --update-kernel=ALL --args=\"$params\""
 		LN
+		show_boot_options
+		;;
+	show)
+		show_boot_options
 		;;
 	*)
 		error "Action '$action' invalid."

@@ -47,9 +47,14 @@ case "$ORACLE_RELEASE" in
 		add_usage "MGMTDB_AUTOSTART122=${MGMTDB_AUTOSTART122:-$mgmtdb_autostart}"									"*disable*|enable database mgmtdb"
 		;;
 esac
+typeset	-t main_params="$(print_usage)"
+reset_usage
 
-add_usage new_line
-add_usage "VM_PATH=${VM_PATH:-$vm_path}" "Where to create VM"
+add_usage "KERNEL_KPTI=${KERNEL_KPTI:-disable}"	"enable|*disable* kpti"
+typeset	-r	vm_kernel_params="$(print_usage)"
+reset_usage
+
+add_usage "VM_PATH=\"${VM_PATH:-$vm_path}\"" "Where to create VM"
 typeset -r vm_params="$(print_usage)"
 reset_usage
 
@@ -71,6 +76,11 @@ typeset -r str_usage=\
 "Usage :
 $ME
 $parameters_usage
+
+$main_params
+
+VM kernel parameters :
+$vm_kernel_params
 
 Used to create a new VM for database :
 $vm_params
@@ -105,6 +115,8 @@ function variable_is_valid
 		VM_MEMORY_MB_FOR_RAC_DB_122) return 0 ;;
 		VM_NR_CPUS_FOR_SINGLE_DB_122) return 0 ;;
 		VM_NR_CPUS_FOR_RAC_DB_122) return 0 ;;
+
+		KERNEL_KPTI) return 0 ;;
 
 		VM_PATH) return 0 ;;
 

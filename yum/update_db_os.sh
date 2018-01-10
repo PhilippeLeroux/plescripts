@@ -64,6 +64,13 @@ function execute_yum_update
 	info "update :"
 	exec_cmd "yum -y update"
 	LN
+
+	if [ $kernel_kpti == disable ]
+	then
+		warning "Disable KPTI"
+		exec_cmd '~/plescripts/grub2/setup_kernel_boot_options.sh -add="nopti"'
+		LN
+	fi
 }
 
 function check_module_vboxguest

@@ -504,10 +504,9 @@ function configure_server
 	if [[ $update_os == yes ||
 			$infra_yum_repository_release != $orcl_yum_repository_release ]]
 	then
-		if rpm_update_available $server_name
+		if rpm_update_available -show $server_name
 		then
-			ssh_server "yum -y -q install gperftools-libs"
-			ssh_server "export LD_PRELOAD=\"/usr/lib64/libtcmalloc_minimal.so.4\" && yum -y -q update"
+			ssh_server "yum -y -q update"
 		fi
 		LN
 	fi
@@ -603,6 +602,15 @@ function disable_console_blanking
 	line_separator
 	info "Disable console blanking"
 	ssh_server '~/plescripts/grub2/setup_kernel_boot_options.sh -add="consoleblank=0"'
+	LN
+}
+
+# Si l'option est inconnue pour le kernel, il l'ignore simplement.
+function disable_kpti
+{
+	line_separator
+	warning "Disable KPTI"
+	ssh_server '~/plescripts/grub2/setup_kernel_boot_options.sh -add="nopti"'
 	LN
 }
 
@@ -768,6 +776,9 @@ configure_oracle_accounts
 [ "$ol7_kernel_version" != latest ] && enable_kernel || true
 
 [ $console_blanking == disable ] && disable_console_blanking || true
+
+[ $kernel_kpti == disable ] && disable_kpti || true
+
 #	----------------------------------------------------------------------------
 
 #	Équivalence entre le virtual-host et le serveur de bdd
