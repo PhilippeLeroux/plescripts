@@ -87,3 +87,7 @@ LN
 
 exec_cmd "~/plescripts/san/save_targetcli_config.sh -name=\"reset_all_$db\""
 LN
+
+# Trop peu de mémoire, par précaution je vide le swap.
+exec_cmd "swapoff -a && swapon -a"
+LN
