@@ -21,7 +21,7 @@ function load_lv_info
 
 	#	Lecture des n° du premier et dernier lv existant
 	typeset -r lv_list_file=/tmp/w.$$
-	lvdisplay -c $vg_name | grep -E "${prefix}[0-9].*" | sort > $lv_list_file
+	lvdisplay -c $vg_name | grep -E "lv${prefix}[0-9].*" | sort > $lv_list_file
 	[ ${PIPESTATUS[0]} -ne 0 ] && exit 1
 
 	typeset -ri file_size=$(ls -l $lv_list_file | awk '{ print $5 }')
