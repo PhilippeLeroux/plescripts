@@ -140,7 +140,7 @@ then
 fi
 
 #	La VM ne doit pas être démarrée.
-stop_vm $master_hostname -dataguard=no
+stop_vm $master_hostname
 LN
 
 line_separator
@@ -157,7 +157,7 @@ exec_cmd VBoxManage modifyvm $master_hostname --nictype3 virtio
 exec_cmd VBoxManage modifyvm $master_hostname --cableconnected3 on
 LN
 
-exec_cmd "$vm_scripts_path/start_vm $master_hostname -dataguard=no"
+exec_cmd "$vm_scripts_path/start_vm $master_hostname -lsvms=no"
 LN
 wait_server $master_ip
 LN
@@ -199,7 +199,7 @@ master_ssh "~/plescripts/setup_first_vms/01_prepare_master_vm.sh -update_os=$upd
 LN
 
 line_separator
-exec_cmd "$vm_scripts_path/stop_vm $master_hostname -dataguard=no"
+exec_cmd "$vm_scripts_path/stop_vm $master_hostname"
 exec_cmd VBoxManage modifyvm $master_hostname --memory 1024
 LN
 
@@ -211,7 +211,7 @@ then
 	info "Create BDD server : https://github.com/PhilippeLeroux/plescripts/wiki/Create-servers"
 	LN
 else
-	exec_cmd "$vm_scripts_path/start_vm $master_hostname -dataguard=no"
+	exec_cmd "$vm_scripts_path/start_vm $master_hostname"
 	LN
 
 	info "Server $master_hostname ready."

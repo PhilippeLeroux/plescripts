@@ -12,16 +12,18 @@ EXEC_CMD_ACTION=EXEC
 typeset	-r	ME=$0
 typeset	-r	PARAMS="$*"
 
-typeset	server=undef
-typeset	wait_os=yes
-typeset	reboot_vbox=no
-typeset	error_on_poweroff=no
-typeset	dataguard=yes
+typeset		db=none
+typeset		server=undef
+typeset		wait_os=yes
+typeset		error_on_poweroff=no
 
-add_usage "[-server=name]"			"Si non définie testera ID_DB (cf set_db)"
-add_usage "[-dataguard=$dataguard]"	"yes|no, yes : arrête toutes les VMs du dataguard."
+if [[ x"$ID_DB" == x || "$ID_DB" == undef ]]
+then
+	add_usage "-server=name|name"	"Obligatoire \$ID_DB non définie, cf set_db."
+else
+	add_usage "[-server=name]"		"Si non définie stop les serveurs correspondants au pattern srv$ID_DB[0-9][0-9]."
+fi
 add_usage "[-wait_os=$wait_os]"		"yes|no, yes : attend l'arrêt complet de l'OS avant de poursuivre."
-add_usage "[-reboot_vbox]"			"Reboot tous les composants de vbox."
 add_usage "[-error_on_poweroff]"	"Si un poweroff est nécessaire retourne 1"
 
 typeset	-r	str_usage=\
@@ -47,18 +49,13 @@ do
 			shift
 			;;
 
-		-reboot_vbox)
-			reboot_vbox=yes
-			shift
-			;;
-
 		-error_on_poweroff)
 			error_on_poweroff=yes
 			shift
 			;;
 
 		-dataguard=*)
-			dataguard=${1##*=}
+			warning "Parameter '$1' obsolete."
 			shift
 			;;
 
@@ -71,7 +68,12 @@ do
 		*)
 			if [ $server == undef ]
 			then
-				server=$1
+				if [[ "${1:0:3}" == srv || "$1" == "$infra_hostname" || "$1" == "$master_hostname" ]]
+				then
+					server=$1
+				else
+					server="srv$1[0-9][0-9]"
+				fi
 				shift
 			else
 				error "Arg '$1' invalid."
@@ -83,7 +85,12 @@ do
 	esac
 done
 
-[[ $server == undef && -v ID_DB ]] && server=$ID_DB || true
+if [[ $server == undef && -v ID_DB ]]
+then
+	server="srv$ID_DB[0-9][0-9]"
+	db=$ID_DB
+fi
+
 exit_if_param_undef server	"$str_usage"
 
 # Utilisé par wait_vm_until_stopped
@@ -151,33 +158,6 @@ function wait_vm_until_stopped
 }
 
 #	$1 vm name
-#	print group name to stdout
-function group_name_for_vm
-{
-	VBoxManage showvminfo "$1" | grep -E "^Groups:" | cut -d/ -f2-
-}
-
-#	$1 group name
-#	$2 vm name to exclude
-#	register all VMs in group $1 to dataguard_list
-#	Declare dataguard_list before to call function : typeset -a dataguard_list
-function load_vm_in_group
-{
-	typeset -r search_group="$1"
-	typeset	-r exclude="$2"
-
-	while read vm_name
-	do
-		[[ x"$vm_name" == x || "$vm_name" == "$exclude" ]] && continue || true
-
-		if [ "$(group_name_for_vm $vm_name)" == "$search_group" ]
-		then
-			dataguard_list+=( $vm_name )
-		fi
-	done<<<"$(VBoxManage list vms | cut -d\" -f2)"
-}
-
-#	$1 vm name
 function stop_vm
 {
 	typeset -r vm_to_stop="$1"
@@ -212,19 +192,17 @@ typeset	-i	timeout_s=120 # passe à 180 pour un RAC 12cR2
 
 typeset	-a	vm_list			# Nom de toutes les VMs running
 typeset	-a	vm_stopped_list	# Nom des VMs stoppées.
-typeset	-a	dataguard_list	# Nom des autres VMs dans le groupe dataguard.
 typeset	-i	count_errors=0
 
 # Si arrêt de la VM d'infra alors tous les serveurs de base de données sont
 # stoppés. Le nom des serveurs de base de données commence par srv.
 [ "$server" == "$infra_hostname" ] && server="srv" || true
 
-if [ "$server" == "$ID_DB" ]
+if [ "$db" != "none" ]
 then
-	cfg_exists $server use_return_code
-	if [ $? -eq 0 ]
+	if cfg_exists $db use_return_code
 	then
-		cfg_load_node_info $server 1
+		cfg_load_node_info $db 1
 		if [[ $cfg_db_type == rac && $cfg_orarel == 12.2.0.1 ]]
 		then
 			timeout_s=180
@@ -238,8 +216,8 @@ fi
 # Mémorise dans vm_list le nom des VMs runnings correspondantes au pattern $server
 while read vm_name
 do
-	[ x"$vm_name" != x ] && vm_list+=( $vm_name )
-done<<<"$(VBoxManage list runningvms | grep "$server" | cut -d\" -f2)"
+	[ x"$vm_name" != x ] && vm_list+=( $vm_name ) || true
+done<<<"$(VBoxManage list runningvms | grep -E "$server" | cut -d\" -f2)"
 
 [ "$server" == srv ] && info "Stop infra server : $infra_hostname" || true
 info "${#vm_list[@]} running VMs found for pattern $server : ${vm_list[@]}"
@@ -251,43 +229,12 @@ then
 else
 	#===========================================================================
 	# Stop les VMs et mémorise leurs noms dans vm_stopped_list
-	# Mémorise le nom des serveurs en dataguard dans dataguard_list.
 	line_separator
 	for vm in ${vm_list[@]}
 	do
 		stop_vm "$vm"
-
-		if [[ $dataguard == yes && ${#vm_list[@]} -eq 1 ]]
-		then # Actuellement seul les serveurs standalone sont en DG.
-			dg_group="$(group_name_for_vm $vm)"
-			if [ "${dg_group:0:2}" == "DG" ]
-			then
-				load_vm_in_group "$dg_group" "$vm"
-			fi
-		fi
-
 		LN
 	done
-
-	if [ ${#dataguard_list[@]} -ne 0 ]
-	then
-		#	====================================================================
-		#	Arrête les éventuelles autres VMs du dataguard.
-		line_separator
-		info "Stop dataguard members : ${dataguard_list[*]}"
-		for vm_name in ${dataguard_list[*]}
-		do
-			if vm_running $vm_name
-			then
-				vm_list+=( $vm_name )
-				stop_vm "$vm_name"
-				LN
-			else
-				info "$vm_name not running."
-				LN
-			fi
-		done
-	fi
 
 	#===========================================================================
 	if [[ $EXEC_CMD_ACTION == EXEC && $wait_os == yes ]]
@@ -310,8 +257,11 @@ fi
 if [ "$server" == srv ]
 then # Arrêt de la VM d'infra quand tous les serveurs sont stoppés.
 	stop_vm $infra_hostname
-	wait_vm_until_stopped $infra_hostname
-	timing 2
+	if [[ $EXEC_CMD_ACTION == EXEC && $wait_os == yes ]]
+	then
+		wait_vm_until_stopped $infra_hostname
+		timing 2
+	fi
 fi
 
 #===============================================================================
@@ -320,9 +270,5 @@ then
 	warning "$count_errors failed."
 	exit 1
 else
-	if [[ $reboot_vbox == yes && $(VBoxManage list runningvms | wc -l) -eq 1 ]]
-	then # Ne fonctionnera qu'avec l'option -wait_os
-		exec_cmd "~/plescripts/virtualbox/restart_vboxdrv.sh"
-	fi
 	exit 0
 fi

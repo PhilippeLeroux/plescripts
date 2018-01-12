@@ -13,13 +13,16 @@ typeset -r PARAMS="$*"
 
 typeset		server=undef
 typeset		wait_os=yes
-typeset		dataguard=yes
 typeset		lsvms=yes
 
-add_usage "[-server=name]"			"Si non définie testera ID_DB (cf set_db)"
-add_usage "[-dataguard=$dataguard]"	"yes|no, yes : démarre toutes les VMs du dataguard."
+if [[ x"$ID_DB" == x || "$ID_DB" == undef ]]
+then
+	add_usage "-server=name|name"	"Obligatoire \$ID_DB non définie, cf set_db."
+else
+	add_usage "[-server=name]"		"Si non définie démarre les serveurs correspondants au pattern srv$ID_DB[0-9][0-9]."
+fi
 add_usage "[-wait_os=$wait_os]"		"yes|no, yes : attend le démarrage complet de l'OS avant de poursuivre."
-add_usage "[-lsvms=$lsvms]"			"yes|no"
+add_usage "[-lsvms=$lsvms]"			"yes|no, yes : affiche l'état des VM."
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -51,7 +54,7 @@ do
 			;;
 
 		-dataguard=*)
-			dataguard=${1##*=}
+			warning "Parameter '$1' obsolete."
 			shift
 			;;
 
@@ -64,7 +67,16 @@ do
 		*)
 			if [ $server == undef ]
 			then
-				server=$1
+				if [[ "${1:0:3}" == srv || "$1" == "$infra_hostname" || "$1" == "$master_hostname" ]]
+				then
+					# Recherche les serveurs sur le pattern srv ou une des 2
+					# VM d'infra.
+					server=$1
+				else
+					# Toutes les VM qui correspondront au pattern ci dessous
+					# seront démarrées.
+					server="srv$1[0-9][0-9]"
+				fi
 				shift
 			else
 				error "Arg '$1' invalid."
@@ -76,37 +88,13 @@ do
 	esac
 done
 
-[[ $server == undef && -v ID_DB ]] && server=$ID_DB || true
-exit_if_param_undef server	"$str_usage"
+if [ $server == undef ]
+then
+	[[ x"$ID_DB" != x && "$ID_DB" != undef ]] && server="srv$ID_DB[0-9][0-9]" || true
+fi
+exit_if_param_undef		server	"$str_usage"
 
-exit_if_param_invalid wait_os "yes no" "$str_usage"
-
-#	$1 vm name
-#	print group name to stdout
-function group_name_for_vm
-{
-	VBoxManage showvminfo "$1" | grep -E "^Groups:" | cut -d/ -f2-
-}
-
-#	$1 group name
-#	$2 vm name to exclude
-#	register all VMs in group $1 to dataguard_list
-#	Declare dataguard_list before to call function : typeset -a dataguard_list
-function load_vm_in_group
-{
-	typeset -r search_group="$1"
-	typeset	-r exclude="$2"
-
-	while read vm_name
-	do
-		[[ x"$vm_name" == x || "$vm_name" == "$exclude" ]] && continue || true
-
-		if [ "$(group_name_for_vm $vm_name)" == "$search_group" ]
-		then
-			dataguard_list+=( $vm_name ) 
-		fi
-	done<<<"$(VBoxManage list vms | cut -d\" -f2)"
-}
+exit_if_param_invalid	wait_os	"yes no" "$str_usage"
 
 #	Load to vm_list all server who match $server
 #	exit 1 if no server found.
@@ -115,7 +103,7 @@ function load_vm_list
 	while read vm_name
 	do
 		[ x"$vm_name" != x ] && vm_list+=( $vm_name )
-	done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+	done<<<"$(VBoxManage list vms | grep -E "$server" | cut -d\" -f2)"
 
 	info "${#vm_list[@]} server(s) found for pattern $server : ${vm_list[*]}"
 	LN
@@ -126,13 +114,11 @@ function load_vm_list
 typeset -a vm_list			# Nom de toutes les VMs.
 typeset -i nr_vm_started=0	# Nombre de VM démarré.
 typeset	-a vm_started_list	# Nom des VMs démarrées.
-typeset	-a dataguard_list	# Nom des autres VMs dans le groupe dataguard.
 
 if [ $server != $infra_hostname ] && ! vm_running $infra_hostname
 then
-	warning "$infra_hostname not running."
-	exec_cmd "start_vm $infra_hostname"
-	info "continue..."
+	info "Start infra server : $infra_hostname."
+	exec_cmd "start_vm $infra_hostname -lsvms=no"
 	LN
 fi
 
@@ -157,45 +143,11 @@ do
 		sleep 2	# RAC 12.2 le premier nœud par tjrs en live.
 		((++nr_vm_started))
 		vm_started_list+=( $vm )
-		if [[ $dataguard == yes && ${#vm_list[@]} -eq 1 ]]
-		then # Actuellement seul les serveurs standalone sont en DG.
-			dg_group="$(group_name_for_vm $vm)"
-			if [ "${dg_group:0:2}" == "DG" ]
-			then
-				load_vm_in_group "$dg_group" "$vm"
-			fi
-		fi
 	else
-		error "Failed to start $vm" 
+		error "Failed to start $vm"
 	fi
 	LN
-
 done
-
-#	============================================================================
-#	Démarre les éventuelles autres VMs du dataguard.
-if [ ${#dataguard_list[@]} -ne 0 ]
-then
-	line_separator
-	info "Start dataguard members : ${dataguard_list[*]}"
-	for vm_name in ${dataguard_list[*]}
-	do
-		if vm_running $vm_name
-		then
-			info "$vm_name is running."
-		else
-			vm_list+=( $vm_name )
-			exec_cmd -c "VBoxManage startvm $vm_name --type headless"
-			if [ $? -eq 0 ]
-			then
-				sleep 2
-				vm_started_list+=( $vm_name )
-				((++nr_vm_started))
-			fi
-		fi
-		LN
-	done
-fi
 
 #	============================================================================
 if [[ $EXEC_CMD_ACTION == EXEC && $wait_os == yes ]]

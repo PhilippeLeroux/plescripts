@@ -70,7 +70,14 @@ do
 		*)
 			if [ $server == undef ]
 			then
-				server=$1
+				if [[ "${1:0:3}" == srv || "$1" == "$infra_hostname" || "$1" == "$master_hostname" ]]
+				then
+					server=$1
+				else
+					# Toutes les VM qui correspondront au pattern ci dessous
+					# seront démarrées.
+					server="srv$1[0-9][0-9]"
+				fi
 				shift
 			else
 				error "Arg '$1' invalid."
@@ -82,14 +89,16 @@ do
 	esac
 done
 
+typeset		db=none
+
 if [[ "$server" == undef ]]
 then
-	if [[ -v ID_DB ]]
+	if [[ x"$ID_DB" != x || "$ID_DB" != undef ]]
 	then
-		server=$ID_DB
-		if cfg_exists $server
+		db=$ID_DB
+		if cfg_exists $db
 		then
-			cfg_load_node_info $server 1
+			cfg_load_node_info $db 1
 			if [ $cfg_dataguard == yes ]
 			then
 				if [[ $dg_node -ne 1 && $dg_node -ne 2 && $dg_node -ne 99 ]]
@@ -98,10 +107,15 @@ then
 					LN
 					exit 1
 				elif [ $dg_node -ne 99 ]
-				then
-					cfg_load_node_info $server $dg_node
+				then # reboot le serveur $dg_node uniquement
+					cfg_load_node_info $db $dg_node
 					server=$cfg_server_name
+				else # reboot tous les serveurs du dataguard.
+					server="${db}"
 				fi
+			else
+				# reboot tous les serveurs d'un RAC ou 1 seul serveur standalone.
+				server="${db}"
 			fi
 		fi
 	else
@@ -147,7 +161,7 @@ function load_running_vms
 	[ ${#running_db_server_list[@]} -eq 0 ] && return 1 || return 0
 }
 
-if ! vm_running $server
+if [ $db == none ] && ! vm_running $server
 then
 	error "VM $server not running."
 	LN
@@ -163,7 +177,7 @@ then # On doit arrêter les serveurs de BDD pour arrêter le serveur d'infra.
 
 		for vm in ${running_db_server_list[*]}
 		do
-			exec_cmd stop_vm -server=$vm -dataguard=no
+			exec_cmd stop_vm -server=$vm
 		done
 		LN
 	fi
@@ -171,26 +185,25 @@ fi
 
 case $error_on_poweroff in
 	no)
-		exec_cmd stop_vm -server=$server -dataguard=no
+		exec_cmd stop_vm -server=$server
 		LN
 		;;
 	yes)
-		exec_cmd stop_vm -server=$server -error_on_poweroff -dataguard=no
+		exec_cmd stop_vm -server=$server -error_on_poweroff
 		LN
 		;;
 esac
 
 line_separator
-exec_cmd "start_vm $server -wait_os=no -dataguard=no -lsvms=no"
+exec_cmd "start_vm $server -wait_os=no -lsvms=no"
 LN
 
 if [ ${#running_db_server_list[@]} -ne 0 ]
 then
 	for vm in ${running_db_server_list[*]}
 	do
-		exec_cmd start_vm -server=$vm -wait_os=no -dataguard=no -lsvms=no
+		exec_cmd start_vm -server=$vm -wait_os=no -lsvms=no
 	done
-	LN
 fi
 
 if [ $lsvms == yes ]

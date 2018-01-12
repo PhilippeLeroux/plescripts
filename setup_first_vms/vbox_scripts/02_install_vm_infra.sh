@@ -16,8 +16,8 @@ typeset -r str_usage=\
 	[-emul]
 
 Création de la VM ${infra_hostname}.
-    - IP               : $infra_ip
-    - Interface réseau : $hostifname
+	- IP               : $infra_ip
+	- Interface réseau : $hostifname
 "
 
 while [ $# -ne 0 ]
@@ -137,15 +137,15 @@ then
 
 	info "Stop VM $master_hostname"
 	#	Normalement la VM est démarrée, si ce n'est pas le cas erreur mais continue.
-	exec_cmd stop_vm -server=$master_hostname -dataguard=no
+	exec_cmd stop_vm -server=$master_hostname
 	LN
 else
 	#	Je considère que l'équivalence est faite et que je recommence un test de
 	#	création de la VM d'infra.
-	exec_cmd start_vm $master_hostname -wait_os=no -dataguard=no
+	exec_cmd start_vm $master_hostname -wait_os=no -lsvms=no
 	exec_cmd wait_server $master_ip
 	add_to_known_hosts $master_ip
-	exec_cmd stop_vm -server=$master_hostname -dataguard=no
+	exec_cmd stop_vm -server=$master_hostname
 	LN
 fi
 
@@ -198,8 +198,8 @@ then
 		exec_cmd $vm_scripts_path/add_raw_disk.sh	\
 						-vm_name=$infra_hostname	\
 						-disk_name=asm01_disk01		\
-						-os_device="$san_disk"		
-		
+						-os_device="$san_disk"
+
 		LN
 
 	fi
@@ -212,7 +212,7 @@ LN
 
 line_separator
 info "Start VM $infra_hostname"
-exec_cmd "$vm_scripts_path/start_vm $infra_hostname -wait_os=no -dataguard=no"
+exec_cmd "$vm_scripts_path/start_vm $infra_hostname -wait_os=no -lsvms=no"
 LN
 
 #	La VM à encore l'IP du master.
@@ -268,7 +268,7 @@ LN
 
 line_separator
 info "Stop VM $infra_hostname to adjust RAM"
-exec_cmd "stop_vm -server=$infra_hostname -dataguard=no"
+exec_cmd "stop_vm -server=$infra_hostname"
 LN
 
 line_separator
@@ -278,7 +278,7 @@ LN
 
 line_separator
 info "Start VM."
-exec_cmd "start_vm $infra_hostname -wait_os=no -dataguard=no"
+exec_cmd "start_vm $infra_hostname -wait_os=no -lsvms=no"
 exec_cmd wait_server $infra_ip
 LN
 

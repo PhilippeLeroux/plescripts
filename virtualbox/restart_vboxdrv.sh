@@ -73,6 +73,7 @@ line_separator
 info "Arrêt de Oracle VirtualBox manager"
 for sig in 1 15 9
 do
+	nr_process_killed=0
 	while read user pid ppid c stime tt time cmd
 	do
 		[ x"$pid" == x ] && continue || true
@@ -83,9 +84,9 @@ do
 		LN
 	done<<<"$(ps -ef|grep -E "/usr/lib/.*[V]irtual.*")"
 
-	[ $nr_process_killed -ne 0 ] && timing 2 || true
-	LN
+	[ $nr_process_killed -ne 0 ] && timing 2 && LN || true
 done
+LN
 
 line_separator
 exec_cmd "sudo systemctl stop vboxes"
@@ -94,9 +95,9 @@ LN
 
 line_separator
 info "Vérifie que plus aucun process n'est actif."
-nr_process_killed=0
 for sig in 15 9
 do
+	nr_process_killed=0
 	while read pid term tt process
 	do
 		[ x"$pid" == x ] && continue || true
@@ -107,8 +108,7 @@ do
 		LN
 	done<<<"$(ps -e|grep [V]Box)"
 
-	[ $nr_process_killed -ne 0 ] && timing 5 || true
-	LN
+	[ $nr_process_killed -ne 0 ] && timing 5 && LN || true
 done
 
 exec_cmd -c "ps -ef|grep [V]Box"
@@ -132,13 +132,12 @@ if [ $infra_running == yes ]
 then
 	line_separator
 	info "Start $infra_hostname"
-	exec_cmd start_vm $infra_hostname
+	exec_cmd start_vm $infra_hostname -lsvms=no
 	LN
 fi
 
 line_separator
 exec_cmd "sudo ifconfig"
-LN
 
 if [ $vm_count -ne 0 ]
 then
@@ -146,7 +145,13 @@ then
 	info "Start $vm_count VMs"
 	for vm in ${vm_list[*]}
 	do
-		exec_cmd start_vm $vm
-		LN
+		exec_cmd start_vm $vm -lsvms=no -wait_os=no
 	done
+
+	# Attend que la dernière VM ait démarré.
+	exec_cmd wait_server $vm
+	LN
 fi
+
+line_separator
+exec_cmd lsvms
