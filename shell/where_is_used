@@ -5,15 +5,20 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
-"Usage : $ME [-ns] word
-Sans ns recherche strictement le mot word
-Avec ns recherche si le mot word est dans une chaîne"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
-typeset word=undef
-typeset strict=yes
+typeset	-r	str_usage=\
+"Usage : $ME [-ns] [-wiki] word
+Sans ns recherche strictement le mot word
+Avec ns recherche si le mot word est dans une chaîne
+
+-wiki recherche dans les fichiers markdown du wiki
+"
+
+typeset		word=undef
+typeset		strict=yes
+typeset		wiki=no
 
 while [ $# -ne 0 ]
 do
@@ -35,13 +40,18 @@ do
 			shift
 			;;
 
+		-wiki)
+			wiki=yes
+			shift
+			;;
+
 		*) word=$1
 			shift
 			;;
 	esac
 done
 
-[ "$word" = undef ] && info "$str_usage" && exit 1
+exit_if_param_undef word "$str_usage"
 
 typeset -i count=0
 
@@ -105,7 +115,8 @@ function search_in_dir
 }
 
 search_in_dir ~/plescripts/
-search_in_dir ~/plewiki/
+
+[ $wiki == yes ] && search_in_dir ~/plewiki/ || true
 
 info "'$word' présent dans $count fichiers."
 LN
