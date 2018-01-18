@@ -6,8 +6,7 @@ After=named.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/sleep 60
-ExecStart=/usr/bin/su - root -c "/root/san/check_target.sh"
+ExecStart=/usr/bin/su - root -c "/root/san/check_target.sh -sleep"
 
 [Install]
 WantedBy=multi-user.target

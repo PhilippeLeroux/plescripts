@@ -59,6 +59,10 @@ function backstore_exists
 	targetcli ls backstores/block/$1 >/dev/null 2>&1
 }
 
+# Le service check-target.service (check_target.sh) demande une pose pour être
+# certains que targetcli soit totalement démarré.
+[ "$1" == -sleep ] && echo "# sleep 60" && sleep 60 || true
+
 # Si le vg n'existe pas c'est que le serveur d'infra ne sert pas de SAN.
 vgs $infra_vg_name_for_db_luns >/dev/null 2>&1
 [ $? -ne 0 ] && exit 0 || true
