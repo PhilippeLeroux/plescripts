@@ -37,29 +37,11 @@ done
 
 #ple_enable_log -params $PARAMS
 
-function sql_bounce
-{
-	set_sql_cmd "shutdown immediate;"
-	set_sql_cmd "startup;"
-}
+exec_cmd ~/plescripts/db/stop_db.sh
+LN
 
-if command_exists crsctl
-then
-	typeset -r db_name=$(srvctl config database)
-	exec_cmd srvctl stop database -db $db_name
-	LN
+TEST_HIGH_LAVG=enable
+wait_if_high_load_average
 
-	wait_if_high_load_average
-
-	exec_cmd srvctl start database -db $db_name
-	LN
-else
-	exit_if_ORACLE_SID_not_defined
-
-	sqlplus_cmd "$(sql_bounce)"
-	LN
-fi
-
-line_separator
-sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/lspdbs.sql")"
+exec_cmd ~/plescripts/db/start_db.sh
 LN
