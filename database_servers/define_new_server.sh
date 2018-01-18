@@ -327,6 +327,10 @@ function normalyse_disks
 	else
 		buffer="FRA:${size_lun_gb}:$i_lun:"
 	fi
+
+	# RAC 12cR2 : preco FRA == DATA * 3
+	[[ $db_type == rac && $oracle_release == 12.2* ]] && max_luns=max_luns*3 || true
+
 	last_lun=i_lun+max_luns-1
 	i_lun=last_lun+1
 	echo "$buffer$last_lun" >> $cfg_path/disks
