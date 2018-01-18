@@ -2,10 +2,14 @@
 
 typeset -r PLESTATS_PATH=$PLELOG_PATH/stats
 
-if [ ! -f $PLESTATS_PATH ]
+if [ ! -d $PLESTATS_PATH ]
 then
-	mkdir $PLESTATS_PATH >/dev/null 2>&1
-	chmod ug=rwx,o=rx $PLESTATS_PATH >/dev/null 2>&1
+	echo "# mkdir -p $PLESTATS_PATH"
+	mkdir -p $PLESTATS_PATH
+	echo "# chgrp -R users $PLELOG_PATH"
+	chgrp -R users $PLELOG_PATH
+	echo "# chmod -R ug=rwx,o=rx $PLELOG_PATH"
+	chmod -R ug=rwx,o=rx $PLELOG_PATH
 fi
 
 #	Permet d'indiquer les heures d'arrêt/démarrage d'un composant.
