@@ -339,6 +339,9 @@ fi
 
 update_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVER
 
+info "RAC : OCFS2 default FS for Oracle sofware"
+update_local_cfg "xfs" "ocfs2" RAC_ORCL_FS
+
 if [ "$disks_hosted_by" != "$disks_stored_on" ]
 then
 	update_variable "DISKS_HOSTED_BY" "$DISKS_HOSTED_BY" ~/plescripts/local.cfg
