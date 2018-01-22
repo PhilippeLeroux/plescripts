@@ -721,14 +721,10 @@ function sql_enable_flashback
 	set_sql_cmd "recover managed standby database disconnect;"
 }
 
-#	Vérifie :
-#		- si l'équivalence ssh entre les serveurs existe.
-#		- si la base sur serveur standby existe déjà.
+#	Test si l'équivalence ssh entre les serveurs existe.
 #	return 1 if error, else 0
-function check_ssh_prereq_and_if_stby_exist
+function check_ssh_prereq
 {
-	typeset errors=no
-
 	line_separator
 	exec_cmd -c "~/plescripts/shell/test_ssh_equi.sh		\
 					-user=oracle -server=$standby_host"
@@ -741,22 +737,53 @@ function check_ssh_prereq_and_if_stby_exist
 		info "$ cd ~/plescripts/ssh"
 		info "$ ./setup_ssh_equivalence.sh -user1=oracle -server1=$primary_host -server2=$standby_host"
 		LN
-		errors=yes
+		return 1
 	else
-		# L'equivalence existe, teste si la base standby existe sur le serveur.
-		line_separator
-		exec_cmd -c ssh $standby_host "ps -ef | grep -qE 'ora_pmon_[${standby:0:1}]${standby:1}'"
-		if [ $? -eq 0 ]
-		then
-			error "$standby exists on $standby_host"
-			errors=yes
-		else
-			info "$standby not exists on $standby_host : [$OK]"
-		fi
+		return 0
+	fi
+}
+
+#	A appeler uniquement si check_ssh_prereq retourne 0
+#	return 0 if stby db not exists, else 1
+function stby_db_not_exists
+{
+	line_separator
+	exec_cmd -c ssh $standby_host "ps -ef | grep -qE 'ora_pmon_[${standby:0:1}]${standby:1}'"
+	if [ $? -eq 0 ]
+	then
+		error "$standby exists on $standby_host"
 		LN
+		return 1
+	else
+		info "$standby not exists on $standby_host : [$OK]"
+		LN
+		return 0
+	fi
+}
+
+#	A appeler uniquement si check_ssh_prereq retourne 0
+#	Vérifie que le 'Tuned Profile' actif est le même sur les deux serveurs.
+#	return 1 if error, else 0
+function check_tuned_profile
+{
+	line_separator
+	typeset	-r	local_profile="$(tuned-adm active | awk '{ print $4 }')"
+	typeset		stby_profile=$(ssh $standby_host "/usr/sbin/tuned-adm active")
+	stby_profile=$(echo $stby_profile|awk '{ print $4 }')
+	info -n "Tuned profile $local_profile, on $standby_host $stby_profile : "
+	if [ "$local_profile" != "$stby_profile" ]
+	then
+		info -f "[$KO]"
+		info "To enable $local_profile on $standby_host"
+		info "$ scp /usr/lib/tuned/$local_profile/tuned.conf root@${standby_host}:/usr/lib/tuned/$local_profile/tuned.conf"
+		info "$ ssh root@$standby_host \"tuned-adm profile $local_profile\""
+		LN
+		return 1
 	fi
 
-	[ $errors == yes ] && return 1 || return 0
+	info -f "[$OK]"
+	LN
+	return 0
 }
 
 #	Valide les paramètres.
@@ -798,30 +825,6 @@ from
 	fi
 }
 
-#	Vérifie que le 'Tuned Profile' actif est le même sur les deux serveurs.
-#	return 1 if error, else 0
-function check_tuned_profile
-{
-	line_separator
-	typeset	-r	local_profile="$(tuned-adm active | awk '{ print $4 }')"
-	typeset		stby_profile=$(ssh $standby_host "/usr/sbin/tuned-adm active")
-	stby_profile=$(echo $stby_profile|awk '{ print $4 }')
-	info -n "Tuned profile $local_profile, on $standby_host $stby_profile : "
-	if [ "$local_profile" != "$stby_profile" ]
-	then
-		info -f "[$KO]"
-		info "To enable $local_profile on $standby_host"
-		info "$ scp /usr/lib/tuned/$local_profile/tuned.conf root@${standby_host}:/usr/lib/tuned/$local_profile/tuned.conf"
-		info "$ ssh root@$standby_host \"tuned-adm profile $local_profile\""
-		LN
-		return 1
-	fi
-
-	info -f "[$OK]"
-	LN
-	return 0
-}
-
 #	Vérifie l'ensemble des prés requis nécessaire pour créer un Dataguard
 #	return 1 if error, else 0
 function check_prereq
@@ -833,8 +836,18 @@ function check_prereq
 		errors=yes
 	fi
 
-	if ! check_tuned_profile
+	if check_ssh_prereq
 	then
+		if ! check_tuned_profile
+		then
+			errors=yes
+		fi
+
+		if ! stby_db_not_exists
+		then
+			errors=yes
+		fi
+	else
 		errors=yes
 	fi
 
