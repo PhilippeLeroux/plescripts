@@ -512,6 +512,8 @@ function update_rac_oratab
 	done
 }
 
+#	La fonction n'est plus utilisée, dbca ne créant plus de PDB ça ne pose pas
+#	de problème.
 #	Mon glogin fait planter la création de la PDB.
 function remove_glogin
 {
@@ -696,14 +698,27 @@ typeset prefixInstance=${db:0:8}
 case ${db:${#db}-2} in
 	01|02)
 		typeset	-r	dbid=$(to_lower ${db:0:${#db}-2})
-		cfg_exists $dbid
-		[ $? -eq 0 ] && cfg_load_node_info $dbid 1 || true
+		if cfg_exists $dbid use_return_code
+		then
+			cfg_load_node_info $dbid 1
+		fi
 		;;
+	*)
+		if cfg_exists $db use_return_code
+		then
+			cfg_load_node_info $db 1
+			if [[ "$cfg_dataguard" == yes && "${db:${#db}-2}" != "01" ]]
+			then
+				error "Dataguard db name invalid, must be like ${db}01"
+				LN
+				exit 1
+			fi
+		fi
 esac
 
 load_node_list_and_update_dbtype
 
-remove_glogin
+#remove_glogin
 
 if [ $crs_used == no ]
 then
@@ -757,7 +772,8 @@ then
 	LN
 fi
 
-copy_glogin
+# N'est plus nécessaire remove_glogin n'est plus appelée.
+#copy_glogin
 
 if [ $crs_used == yes ]
 then
