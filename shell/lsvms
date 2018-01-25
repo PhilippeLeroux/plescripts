@@ -148,7 +148,6 @@ function print_vm_database
 
 typeset	vm_printed_list="$infra_hostname"
 
-info "Infra :"
 info "Database master :"
 while read vm_name
 do
@@ -166,9 +165,15 @@ do
 	fi
 	vm_printed_list="$vm_printed_list $vm_name"
 done<<<"$(VBoxManage list vms | grep -E "*master*" | cut -d\" -f2)"
-
-info "Server infrastructure $(print_vm_running_status $infra_hostname)"
 LN
+
+# Tester l'existence permet d'éviter des messages d'erreurs lors de la création
+# des VM master et d'infra.
+if vm_exists $infra_hostname
+then
+	info "Infrastructure server : $(print_vm_running_status $infra_hostname)"
+	LN
+fi
 
 line_separator
 info "Databases :"
