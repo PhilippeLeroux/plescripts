@@ -19,9 +19,9 @@ typeset	-r	str_usage=\
 "
 
 typeset	-a	device_list=( "check" )
-typeset		disks=1
+typeset	-i	disks=1
 typeset		striped=no
-typeset		stripesize_kb=0
+typeset	-i	stripesize_kb=0
 typeset		suffix_vglv=undef
 
 while [ $# -ne 0 ]
@@ -144,10 +144,10 @@ LN
 
 if [ $striped == yes ]
 then
-	info "Create striped VG"
+	info "Create striped VG, strip size : $stripesize_kb Kb"
 	LN
 	options="-i${#partition_list[@]}"
-	[ "$stripesize_kb" -ne 0 ] && options="$options -I$stripesize_kb" || true
+	[ $stripesize_kb -ne 0 ] && options="$options -I$stripesize_kb" || true
 else
 	info "Create linear VG"
 	LN
