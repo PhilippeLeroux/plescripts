@@ -342,11 +342,8 @@ update_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVE
 info "RAC : OCFS2 default FS for Oracle sofware"
 update_local_cfg "xfs" "ocfs2" RAC_ORCL_FS
 
-if [ "$disks_hosted_by" != "$disks_stored_on" ]
-then
-	update_variable "DISKS_HOSTED_BY" "$DISKS_HOSTED_BY" ~/plescripts/local.cfg
-	update_variable "SAN_DISK" "$san_disk_n" ~/plescripts/local.cfg
-fi
+update_local_cfg "disks_hosted_by" "$disks_stored_on" "DISKS_HOSTED_BY"
+update_local_cfg "san_disk" "$san_disk_n" "SAN_DISK"
 
 update_local_cfg "$OL7_LABEL" "$OL7_LABEL_n" OL7_LABEL
 
