@@ -3,6 +3,7 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
+. ~/plescripts/vmlib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
@@ -18,10 +19,24 @@ fi
 
 if ! cfg_exists $db use_return_code
 then
-	warning "Try connection to : $db"
+	info -n "VM $db exists : "
+	if ! vm_exists $db
+	then
+		info -f "[$KO]"
+		LN
+		error "No identifier or VM $db"
+		LN
+		exit 1
+	fi
+	info -f "[$OK]"
+	LN
+	info "Connection to server : $db"
 	wait_server ${db}
+	set_terminal_title "$account@${db}"
 	[ $? -eq 0 ] && exec_cmd -ci ssh -Y $account@${db} || true
-	exit $?
+	ret=$?
+	set_terminal_title default
+	exit $ret
 fi
 
 typeset -ri max_nodes=$(cfg_max_nodes $db)
@@ -49,7 +64,9 @@ if [ $? -eq 0 ]
 then
 	set_terminal_title "$account@${server_name}"
 	exec_cmd -ci ssh -Y $account@${server_name}
+	ret=$?
 	set_terminal_title default
+	exit $ret
 else
 	exit 1
 fi
