@@ -7,9 +7,9 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+typeset	-r	str_usage=\
 "Usage : $ME"
 
 while [ $# -ne 0 ]
@@ -36,15 +36,33 @@ do
 	esac
 done
 
-exit_if_ORACLE_SID_not_defined
-
 script_start
+
+must_be_user oracle
 
 if command_exists crsctl
 then
 	typeset -r crs_used=yes
 else
 	typeset -r crs_used=no
+fi
+
+if [[ $crs_used == no ]]
+then
+	exit_if_ORACLE_SID_not_defined
+	typeset	-r	conn_str=sys/$oracle_password
+else
+	# Dans le cas d'un RAC le backup se fera sur l'instance la moins chargée.
+	db=$(crsctl stat res		|\
+				grep "\.db$"	|\
+				sed "s/NAME=ora\.\(.*\).db/\1/")
+	if ! tnsping $db >/dev/null 2>&1
+	then
+		error "Cannot ping tns service $db"
+		LN
+		exit 1
+	fi
+	typeset	-r	conn_str=sys/$oracle_password@$db
 fi
 
 exec_cmd cd ~/plescripts/db/rman
@@ -62,29 +80,29 @@ then
 	wait_if_high_load_average
 
 	line_separator
-	sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/show_corrupted_blocks.sql")"
+	sqlplus_cmd_with $conn_str as sysdba "$(set_sql_cmd "@$HOME/plescripts/db/sql/show_corrupted_blocks.sql")"
 	LN
 
-	exec_cmd "rman target sys/$oracle_password @recover_corruption_list.rman"
+	exec_cmd "rman target $conn_str @recover_corruption_list.rman"
 	LN
 fi
 
 wait_if_high_load_average
 
 line_separator
-exec_cmd "rman target sys/$oracle_password @image_copy.rman"
+exec_cmd "rman target $conn_str @image_copy.rman"
 LN
 
 wait_if_high_load_average
 
 line_separator
-exec_cmd "rman target sys/$oracle_password @backup_archive_log.rman"
+exec_cmd "rman target $conn_str @backup_archive_log.rman"
 LN
 
 wait_if_high_load_average 5
 
 line_separator
-exec_cmd "rman target sys/$oracle_password @crosscheck.rman"
+exec_cmd "rman target $conn_str @crosscheck.rman"
 LN
 
 exec_cmd "cd -"
