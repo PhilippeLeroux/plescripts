@@ -124,38 +124,12 @@ function remove_database_from_broker
 	LN
 }
 
-function remove_shared_memory_segment
-{
-	info "Oracle process running :"
-	exec_cmd "ps -ef|grep -E 'ora.*$ORACLE_SID'|grep -v grep|awk '{ print \$2 }'"
-	LN
-
-	typeset	-r	pid_orcl_process=$(ps -ef|grep -E "ora.*$ORACLE_SID"|grep -v grep|awk '{ print $2 }'|xargs)
-	if [ x"$pid_orcl_process" == x ]
-	then
-		info "no oracle process running."
-		LN
-	else
-		info "kill oracle process $pid_orcl_process"
-		exec_cmd -c "kill -9 $pid_orcl_process"
-		sleep 1
-		LN
-	fi
-
-	exec_cmd "srvctl start database -db $db"
-	sleep 2
-	LN
-}
-
 function convert_physical_to_primary
 {
 	function sql_convert_to_primary
 	{
 		set_sql_cmd "recover managed standby database finish;"
 		set_sql_cmd "alter database commit to switchover to primary with session shutdown;"
-
-		set_sql_cmd "whenever sqlerror exit 1;"
-		set_sql_cmd "alter database open;"
 	}
 
 	info "Restart database to mount state."
@@ -181,16 +155,24 @@ function convert_physical_to_primary
 	sqlplus_cmd "$(sql_convert_to_primary)"
 	ret=$?
 	LN
-	if [ $ret -ne 0 ]
+	[ $ret -ne 0 ] && exit 1 || true
+
+	timing 20 "Wait switchover to primary"
+	LN
+
+	if [ $crs_used == yes ]
 	then
-		if [ $crs_used == yes ]
-		then
-			# Depuis la mise à jour de OL7.4 de novembre le convert échoue
-			# si les disques sont gérés par iSCSI
-			remove_shared_memory_segment
-		else
-			exit 1
-		fi
+		exec_cmd srvctl stop database -db $db
+		exec_cmd srvctl start database -db $db
+		LN
+	else
+		function sql_bounce_db
+		{
+			set_sql_cmd "shu immediate;"
+			set_sql_cmd "startup;"
+		}
+		sqlplus_cmd "$(sql_bounce_db)"
+		LN
 	fi
 }
 
