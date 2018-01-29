@@ -47,7 +47,7 @@ else
 	typeset -r crs_used=no
 fi
 
-if [[ $crs_used == no ]]
+if [[ $crs_used == no || $gi_count_nodes -lt 2 ]]
 then
 	exit_if_ORACLE_SID_not_defined
 	typeset	-r	conn_str=sys/$oracle_password
