@@ -751,7 +751,10 @@ wait_if_high_load_average 5
 
 [ $orcl_release == 12.2 ] && rac12cR2_adjust_poolsize || true
 
+# Parfois l'arrêt de la base échoue si le Load Average est trop important.
+TEST_HIGH_LAVG=enable
 wait_if_high_load_average 5
+TEST_HIGH_LAVG=disable
 
 adjust_FRA_size
 
