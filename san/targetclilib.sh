@@ -10,7 +10,7 @@
 typeset -r	cache_dynamic_acls=${CACHE_DYNAMIC_ACLS:-0}
 typeset -r	demo_mode_write_protect=${DEMO_MODE_WRITE_PROTECT:-0}
 typeset -r	generate_node_acls=${GENERATE_NODE_ACLS:-0}
-typeset -r	default_cmdsn_depth=${DEFAULT_CMDSN_DEPTH:-128}
+typeset -r	default_cmdsn_depth=${DEFAULT_CMDSN_DEPTH:-8}
 typeset -r	backstore_type=${BACKSTORE_TYPE:-block}
 #	============================================================================
 
