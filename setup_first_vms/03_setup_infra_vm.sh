@@ -88,11 +88,14 @@ LN
 
 if [ $disks_hosted_by == san ]
 then
+	if [ 0 -eq 1 ]
+	then # Les tests ont montré plus d'erreurs avec cette préco appliquée.
 	line_separator
 	info "Update lvm conf (Datera preco)"
 	exec_cmd 'sed -i "s/write_cache_state =.*/write_cache_state = 0/" /etc/lvm/lvm.conf'
 	exec_cmd 'sed -i "s/readahead =.*/readahead = \"none\"/" /etc/lvm/lvm.conf'
 	LN
+	fi # [ 0 -eq 1 ]
 
 	line_separator
 	info "Create VG $infra_vg_name_for_db_luns on first unused disk :"
