@@ -52,7 +52,7 @@ Les scripts fonctionnent sous Linux uniquement, ils ont été testés sous openS
 
 ### LICENCE
 
-Copyright © 2016,2017 Philippe Leroux <philippe.lrx@gmail.com>
+Copyright © 2016,2017,2018 Philippe Leroux <philippe.lrx@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
