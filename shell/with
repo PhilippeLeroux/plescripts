@@ -19,8 +19,8 @@ fi
 
 if ! cfg_exists $db use_return_code
 then
-	info -n "VM $db exists : "
-	if ! vm_exists $db
+	info -n "VM $db running : "
+	if ! vm_running $db
 	then
 		info -f "[$KO]"
 		LN
@@ -58,6 +58,17 @@ fi
 info "$type node."
 
 typeset -r server_name=$(printf "srv%s%02d" $db $node)
+
+info -n "VM $server_name running : "
+if ! vm_running $server_name
+then
+	info -f "[$KO]"
+	LN
+	exit 1
+else
+	info -f "[OK]"
+	LN
+fi
 
 wait_server ${server_name}
 if [ $? -eq 0 ]
