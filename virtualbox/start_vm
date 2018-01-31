@@ -140,7 +140,7 @@ do
 	exec_cmd -c "VBoxManage startvm $vm --type headless"
 	if [ $? -eq 0 ]
 	then
-		sleep 2	# RAC 12.2 le premier nœud par tjrs en live.
+		sleep 5	# Atténua les erreurs sur eth1 (priv iscsi)
 		((++nr_vm_started))
 		vm_started_list+=( $vm )
 	else
