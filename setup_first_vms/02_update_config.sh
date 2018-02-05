@@ -63,6 +63,11 @@ then
 fi
 
 line_separator
+exec_cmd systemctl stop rhnsd.service
+exec_cmd systemctl disable rhnsd.service
+LN
+
+line_separator
 info "Create user $common_user_name"
 exec_cmd useradd -g users -M -N -u $common_uid $common_user_name
 LN

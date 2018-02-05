@@ -43,11 +43,14 @@ do
 	esac
 done
 
-# Sinon le serveur ne fonctionne pas correctement, beaucoup d'erreurs réseaux.
-# A ce niveau le serveur n'a pas encore son nom définitif, donc il faut
-# ajouter le flag : -skip_test_infra
-exec_cmd "~/plescripts/grub2/enable_redhat_kernel.sh -skip_test_infra"
-LN
+if [ "$infra_kernel_version" == redhat ]
+then
+	exec_cmd "~/plescripts/grub2/enable_redhat_kernel.sh -skip_test_infra"
+	LN
+else
+	exec_cmd "~/plescripts/grub2/enable_oracle_kernel.sh -version=$infra_kernel_version"
+	LN
+fi
 
 line_separator
 #	Le serveur sert de gateway sur internet.

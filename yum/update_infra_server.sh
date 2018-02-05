@@ -55,9 +55,12 @@ line_separator
 exec_cmd yum -y update
 LN
 
-line_separator
-exec_cmd $HOME/plescripts/grub2/enable_redhat_kernel.sh
-LN
+if [ "$infra_kernel_version" == redhat ]
+then
+	line_separator
+	exec_cmd $HOME/plescripts/grub2/enable_redhat_kernel.sh
+	LN
+fi
 
 line_separator
 warning "From $client_hostname execute : reboot_vm $infra_hostname"

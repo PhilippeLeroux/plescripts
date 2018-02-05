@@ -5,10 +5,14 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
-"Usage : $ME ...."
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+typeset	-r	str_usage=\
+"Usage :
+$ME
+	[-y] no confirmation."
+
+typeset		confirm=yes
 
 while [ $# -ne 0 ]
 do
@@ -16,6 +20,11 @@ do
 		-emul)
 			EXEC_CMD_ACTION=NOP
 			first_args=-emul
+			shift
+			;;
+
+		-y)
+			confirm=no
 			shift
 			;;
 
@@ -114,8 +123,11 @@ done
 exec_cmd -c "ps -ef|grep [V]Box"
 LN
 
-confirm_or_exit "Continue"
-LN
+if [ $confirm == yes ]
+then
+	confirm_or_exit "Continue"
+	LN
+fi
 
 exec_cmd "sudo systemctl start vboxdrv"
 exec_cmd "sudo systemctl start vboxes"
