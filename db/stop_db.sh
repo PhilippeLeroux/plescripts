@@ -42,11 +42,13 @@ exit_if_ORACLE_SID_not_defined
 
 if command_exists crsctl
 then
-	while read dbname 
+	while read dbname
 	do
 		[ x"$dbname" == x ] && continue || true
 
-		exec_cmd "srvctl stop database -db $dbname"
+		# Ajout de l'option -force à cause de DBFS, s'il est utilisé dans un PDB
+		# alors il empêche la fermeture d'une base sur un cluser RAC.
+		exec_cmd "srvctl stop database -db $dbname -force"
 		LN
 	done<<<"$(srvctl config database)"
 else
