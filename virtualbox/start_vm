@@ -8,12 +8,14 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
 typeset		server=undef
 typeset		wait_os=yes
 typeset		lsvms=yes
+typeset	-i	gap_between_start_sec=${GAP_BETWEEN_START_SEC:-8}
+typeset		randomize_start=${RANDOMIZE_START:-yes}
 
 if [[ x"$ID_DB" == x || "$ID_DB" == undef ]]
 then
@@ -23,6 +25,8 @@ else
 fi
 add_usage "[-wait_os=$wait_os]"		"yes|no, yes : attend le démarrage complet de l'OS avant de poursuivre."
 add_usage "[-lsvms=$lsvms]"			"yes|no, yes : affiche l'état des VM."
+add_usage "[-gap_between_start_sec=$gap_between_start_sec]" "Pause in sec between starts of VMs."
+add_usage "[-randomize_start=$randomize_start]" "yes|no : yes randomize start order."
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -50,6 +54,16 @@ do
 
 		-wait_os=*)
 			wait_os=${1##*=}
+			shift
+			;;
+
+		-gap_between_start_sec=*)
+			gap_between_start_sec=${1##*=}
+			shift
+			;;
+
+		-randomize_start=*)
+			randomize_start=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -94,25 +108,48 @@ then
 fi
 exit_if_param_undef		server	"$str_usage"
 
-exit_if_param_invalid	wait_os	"yes no" "$str_usage"
+exit_if_param_invalid	wait_os			"yes no" "$str_usage"
+
+exit_if_param_invalid	randomize_start	"yes no" "$str_usage"
 
 #	Load to vm_list all server who match $server
 #	exit 1 if no server found.
 function load_vm_list
 {
+	typeset	-a	list
 	while read vm_name
 	do
-		[ x"$vm_name" != x ] && vm_list+=( $vm_name )
+		[ x"$vm_name" != x ] && list+=( $vm_name )
 	done<<<"$(VBoxManage list vms | grep -E "$server" | cut -d\" -f2)"
+
+	if [ $randomize_start == yes ]
+	then
+		case ${#list[@]} in
+			0)
+				exit 1
+				;;
+			1)
+				vm_list=( ${list[*]} )
+				;;
+			2)	# Concerne les clusters Dataguard ou RAC, permet de démarrer les
+				# VMs aléatoirement.
+				typeset	-ri rand=$(( RANDOM % 2 ))
+				vm_list[0]=${list[$rand]}
+				[ $rand -eq 0 ] && vm_list[1]=${list[1]} || vm_list[1]=${list[0]}
+				;;
+			*)	# Je n'ai pas plus de 2 VMs par cluster, donc ne devrait jamais arriver.
+				vm_list=( ${list[*]} )
+				;;
+		esac
+	else
+		vm_list=( ${list[*]} )
+	fi
 
 	info "${#vm_list[@]} server(s) found for pattern $server : ${vm_list[*]}"
 	LN
-
-	[ ${#vm_list[@]} -eq 0 ] && exit 1 || true
 }
 
 typeset -a vm_list			# Nom de toutes les VMs.
-typeset -i nr_vm_started=0	# Nombre de VM démarré.
 typeset	-a vm_started_list	# Nom des VMs démarrées.
 
 if [ $server != $infra_hostname ] && ! vm_running $infra_hostname
@@ -140,8 +177,11 @@ do
 	exec_cmd -c "VBoxManage startvm $vm --type headless"
 	if [ $? -eq 0 ]
 	then
-		sleep 5	# Atténua les erreurs sur eth1 (priv iscsi)
-		((++nr_vm_started))
+		if [[ $gap_between_start_sec -ne 0 && $vm != ${vm_list[ ${#vm_list[*]}-1 ]} ]]
+		then
+			# Atténue les erreurs sur eth1 (priv iscsi) et évite de saturer les CPU.
+			timing $gap_between_start_sec
+		fi
 		vm_started_list+=( $vm )
 	else
 		error "Failed to start $vm"
@@ -150,7 +190,7 @@ do
 done
 
 #	============================================================================
-if [[ $EXEC_CMD_ACTION == EXEC && $wait_os == yes ]]
+if [[ $EXEC_CMD_ACTION == EXEC && $wait_os == yes && ${#vm_started_list[*]} -ne 0 ]]
 then
 	line_separator
 	for vm in ${vm_started_list[*]}
@@ -168,7 +208,7 @@ then
 fi
 
 #	============================================================================
-if [ $nr_vm_started -eq ${#vm_list[@]} ]
+if [ ${#vm_started_list[@]} -eq ${#vm_list[@]} ]
 then
 	exit 0	# Toutes les VMs ont démarrés.
 else
