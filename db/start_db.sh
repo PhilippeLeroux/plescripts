@@ -58,7 +58,7 @@ else
 	ORAENV_ASK=NO . oraenv
 fi
 
-typeset	-r	instance=$ORACLE_SID
+typeset	-r	OSID_at_startup=$ORACLE_SID
 
 if [ $crs_used == yes ]
 then
@@ -80,15 +80,15 @@ else
 fi
 
 typeset		warning_msg
-if [[ x"$ORACLE_SID" != x && "$ORACLE_SID" != NOSID && x"$instance" != x && "$instance" != NOSID ]]
+if [[ x"$ORACLE_SID" != x && "$ORACLE_SID" != NOSID && x"$OSID_at_startup" != x && "$OSID_at_startup" != NOSID ]]
 then
 	ORACLE_SID=$(~/plescripts/db/get_active_instance.sh)
 	# Dans le cas d'un RAC Policy Managed l'instance peut changer.
-	if [[ "$instance" != "$ORACLE_SID" ]]
+	if [[ "$OSID_at_startup" != "$ORACLE_SID" ]]
 	then
-		warning_msg="${BLINK}Instance${NORM} has been changed $ORACLE_SID became $instance"
+		warning_msg="${BLINK}Instance${NORM} has been changed $OSID_at_startup became $ORACLE_SID"
 		# Permet au script lspdbs de fonctionner.
-		export ORACLE_SID=$instance
+		export ORACLE_SID
 		ORAENV_ASK=NO . oraenv
 	fi
 fi
