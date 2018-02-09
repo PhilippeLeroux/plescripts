@@ -1,0 +1,5 @@
+run {
+	allocate channel c1 type disk;
+	allocate channel c2 type disk;
+	validate archivelog all;
+}

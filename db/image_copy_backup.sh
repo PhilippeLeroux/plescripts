@@ -109,6 +109,18 @@ exec_cmd "cd -"
 LN
 
 line_separator
+exec_cmd -c "~/plescripts/db/validate_backup.sh"
+if [ $? -ne 0 ]
+then
+	error "Bakup invalid !"
+	LN
+	exit 1
+else
+	info "Bakup valid !"
+	LN
+fi
+
+line_separator
 info "Espace disque avant backup :"
 echo "$disk_space_before"
 

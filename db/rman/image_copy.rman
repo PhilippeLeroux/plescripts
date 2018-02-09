@@ -1,2 +1,6 @@
-backup incremental level 1 for recover of copy database tag 'incr_for_img_copy';
-recover copy of database with tag 'reco_img_copy';
+run {
+	allocate channel c1 type disk;
+	allocate channel c2 type disk;
+	backup incremental level 1 for recover of copy database tag 'incr_for_img_copy';
+	recover copy of database with tag 'reco_img_copy';
+}

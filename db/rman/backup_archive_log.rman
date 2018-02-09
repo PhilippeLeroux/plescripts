@@ -1,3 +1,7 @@
 # Evite des erreurs si des archive logs ont été effacées manuellement.
-crosscheck archivelog all;
-backup tag 'backup_archlog' archivelog all not backed up delete all input;
+run {
+	allocate channel c1 type disk;
+	allocate channel c2 type disk;
+	crosscheck archivelog all;
+	backup tag 'backup_archlog' archivelog all not backed up delete all input;
+}
