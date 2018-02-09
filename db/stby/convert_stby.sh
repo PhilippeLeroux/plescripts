@@ -103,12 +103,22 @@ function remove_broker_cfg
 	LN
 
 	line_separator
-	exec_cmd -c sudo -iu grid "asmcmd rm -f DATA/$db/dr1db_*.dat"
-	LN
-	exec_cmd -c sudo -iu grid "asmcmd rm -f FRA/$db/dr2db_*.dat"
-	LN
+	if [ $crs_used == yes ]
+	then
+		exec_cmd -c sudo -iu grid "asmcmd rm -f DATA/$db/dr1db_*.dat"
+		LN
+		exec_cmd -c sudo -iu grid "asmcmd rm -f FRA/$db/dr2db_*.dat"
+		LN
+	else
+		typeset	-r	data_cfg=$(orcl_parameter_value db_create_file_dest)
+		typeset	-r	fra_cfg=$(orcl_parameter_value db_recovery_file_dest)
+		exec_cmd "rm -f $data_cfg/$db/dr1db_*.dat  $fra_cfg/$db/dr2db_*.dat"
+		LN
+	fi
 }
 
+# Remarque : avec un dataguard passif le remove de la standby du broker échoue,
+# mais fonctionne correctement avec un dataguard actif...
 function remove_database_from_broker
 {
 	line_separator
@@ -119,9 +129,17 @@ function remove_database_from_broker
 	EOS
 	LN
 
-	exec_cmd -c sudo -iu grid "asmcmd rm -f DATA/$db/dr1db_*.dat"
-	exec_cmd -c sudo -iu grid "asmcmd rm -f FRA/$db/dr2db_*.dat"
-	LN
+	if [ $crs_used == yes ]
+	then
+		exec_cmd -c sudo -iu grid "asmcmd rm -f DATA/$db/dr1db_*.dat"
+		exec_cmd -c sudo -iu grid "asmcmd rm -f FRA/$db/dr2db_*.dat"
+		LN
+	else
+		typeset	-r	data_cfg=$(orcl_parameter_value db_create_file_dest)
+		typeset	-r	fra_cfg=$(orcl_parameter_value db_recovery_file_dest)
+		exec_cmd "rm -f $data_cfg/$db/dr1db_*.dat  $fra_cfg/$db/dr2db_*.dat"
+		LN
+	fi
 }
 
 function convert_physical_to_primary
@@ -132,22 +150,25 @@ function convert_physical_to_primary
 		set_sql_cmd "alter database commit to switchover to primary with session shutdown;"
 	}
 
-	info "Restart database to mount state."
-	LN
-
-	if [ $crs_used == yes ]
+	if [ $start_option != mount ]
 	then
-		exec_cmd srvctl stop database -db $db
-		exec_cmd srvctl start database -db $db -startoption mount
+		info "Restart database to mount state."
 		LN
-	else
-		function sql_mount_db
-		{
-			set_sql_cmd "shu immediate;"
-			set_sql_cmd "startup mount;"
-		}
-		sqlplus_cmd "$(sql_mount_db)"
-		LN
+
+		if [ $crs_used == yes ]
+		then
+			exec_cmd srvctl stop database -db $db
+			exec_cmd srvctl start database -db $db -startoption mount
+			LN
+		else
+			function sql_mount_db
+			{
+				set_sql_cmd "shu immediate;"
+				set_sql_cmd "startup mount;"
+			}
+			sqlplus_cmd "$(sql_mount_db)"
+			LN
+		fi
 	fi
 
 	info "Convert Physical database to Primary database."
@@ -192,16 +213,33 @@ function drop_all_services
 		exec_cmd -c ~/plescripts/db/drop_all_services.sh -db=$db
 		LN
 	else
-		exec_cmd -c ~/plescripts/db/fsdb_drop_all_services.sh -db=$db
+		exec_cmd -c ~/plescripts/db/fsdb_drop_all_stby_services.sh -db=$db
 		LN
 	fi
 }
 
 function create_services_for_single_db
 {
+	case $start_option in
+		mount)
+			line_separator
+			info "Open database RW."
+			sqlplus_cmd "$(set_sql_cmd "alter database open;")"
+			LN
+
+			info "Open all PDB RW"
+			sqlplus_cmd "$(set_sql_cmd "alter pluggable database all open;")"
+			LN
+
+			info "PDBs :"
+			sqlplus_cmd "$(set_sql_cmd @lspdbs)"
+			LN
+			;;
+	esac
+
 	while read pdb
 	do
-		[ x"$pdb" == x ] && continue
+		[ x"$pdb" == x ] && continue || true
 
 		line_separator
 		exec_cmd "~/plescripts/db/create_srv_for_single_db.sh -db=$db -pdb=$pdb"
@@ -236,10 +274,22 @@ fi
 
 if [ $role == physical ]
 then
+	if dgmgrl -silent sys/$oracle_password "show database $db"|grep -qE "Real Time Query: *OFF"
+	then
+		typeset	-r start_option=mount
+		info "Passive Dataguard"
+		LN
+	else
+		typeset	-r start_option=ro
+		info "Active Dataguard"
+		LN
+	fi
+
 	convert_physical_to_primary
 
 	remove_database_from_broker
 else
+	typeset	-r start_option=rw
 	remove_broker_cfg
 fi
 
@@ -247,19 +297,24 @@ remove_SRLs
 
 drop_all_services
 
+if [[ $role == physical ]]
+then
+	if [ $crs_used == yes ]
+	then
+		line_separator
+		exec_cmd srvctl modify database -db $db -startoption open
+		exec_cmd srvctl modify database -db $db -role primary
+		LN
+	fi
+fi
+
 create_services_for_single_db
 
 line_separator
 sqlplus_cmd "$(sqlcmd_reset_dataguard_cfg)"
 LN
 
-if [[ $role == physical && $crs_used == yes ]]
-then
-	exec_cmd srvctl modify database -db $db -startoption open
-	exec_cmd srvctl modify database -db $db -role primary
-	LN
-fi
-
+line_separator
 if [ $crs_used == yes ]
 then # startup avec sqlplus ne fonctionne pas avec le wallet.
 	exec_cmd srvctl start database -db $db
@@ -268,3 +323,7 @@ else
 	sqlplus_cmd "$(set_sql_cmd startup)"
 	LN
 fi
+
+line_separator
+exec_cmd rman target=sys/$oracle_password<<<"configure archivelog deletion policy clear;"
+LN

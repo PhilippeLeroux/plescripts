@@ -6,25 +6,27 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
-typeset -r str_usage=\
+typeset	-r	str_usage=\
 "Usage : $ME
 	-db=name
 	-pdb=name
 	-standby=name
 	-standby_host=name
+	[-no_adg]
 
 	Must be run from primary server !
 
 	* RAC non pris en compte.
 "
 
-typeset	db=undef
-typeset	pdb=undef
-typeset	standby=undef
-typeset	standby_host=undef
+typeset		db=undef
+typeset		pdb=undef
+typeset		standby=undef
+typeset		standby_host=undef
+typeset		active_dataguard=yes
 
 while [ $# -ne 0 ]
 do
@@ -52,6 +54,11 @@ do
 
 		-standby_host=*)
 			standby_host=${1##*=}
+			shift
+			;;
+
+		-no_adg)
+			active_dataguard=no
 			shift
 			;;
 
@@ -112,39 +119,45 @@ function create_or_update_primary_services
 								-role=primary				\
 								-start=yes
 
-	#	Il faut démarrer les services stby, puis les stopper sinon la création
-	#	des services échouera sur la stby.
-	exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
-								-db=$db						\
-								-pdb=$pdb					\
-								-role=physical_standby		\
-								-start=yes
+	if [ $active_dataguard == yes ]
+	then
+		#	Il faut démarrer les services stby, puis les stopper sinon la création
+		#	des services échouera sur la stby.
+		exec_cmd ~/plescripts/db/create_srv_for_single_db.sh	\
+									-db=$db						\
+									-pdb=$pdb					\
+									-role=physical_standby		\
+									-start=yes
+	fi
 }
 
 function create_standby_services
 {
-	line_separator
-	info "$db[$pdb] : stop all standby services."
-	LN
-
-	typeset -r oci_stby_service=$(mk_oci_stby_service $pdb)
-	if service_running $db $oci_stby_service
+	if [ $active_dataguard == yes ]
 	then
-		exec_cmd srvctl stop service -db $db -service $oci_stby_service
+		line_separator
+		info "$db[$pdb] : stop all standby services."
 		LN
-	else
-		info "Service $oci_stby_service not running."
-		LN
-	fi
 
-	typeset -r java_stby_service=$(mk_java_stby_service $pdb)
-	if service_running $db $java_stby_service
-	then
-		exec_cmd srvctl stop service -db $db -service $java_stby_service
-		LN
-	else
-		info "Service $java_stby_service not running."
-		LN
+		typeset -r oci_stby_service=$(mk_oci_stby_service $pdb)
+		if service_running $db $oci_stby_service
+		then
+			exec_cmd srvctl stop service -db $db -service $oci_stby_service
+			LN
+		else
+			info "Service $oci_stby_service not running."
+			LN
+		fi
+
+		typeset -r java_stby_service=$(mk_java_stby_service $pdb)
+		if service_running $db $java_stby_service
+		then
+			exec_cmd srvctl stop service -db $db -service $java_stby_service
+			LN
+		else
+			info "Service $java_stby_service not running."
+			LN
+		fi
 	fi
 
 	line_separator
@@ -154,8 +167,11 @@ function create_standby_services
 	ssh_stby ~/plescripts/db/create_srv_for_single_db.sh	\
 				-db=$standby -pdb=$pdb -role=primary -start=no
 
-	ssh_stby ~/plescripts/db/create_srv_for_single_db.sh	\
-				-db=$standby -pdb=$pdb -role=physical_standby -start=yes
+	if [ $active_dataguard == yes ]
+	then
+		ssh_stby ~/plescripts/db/create_srv_for_single_db.sh	\
+					-db=$standby -pdb=$pdb -role=physical_standby -start=yes
+	fi
 }
 
 function create_standby_services_no_crs
@@ -215,11 +231,17 @@ create_or_update_primary_services
 if [ $crs_used == yes ]
 then
 	create_standby_services
-else
+elif [ $active_dataguard == yes ]
+then
 	create_standby_services_no_crs
+fi
+
+if [ $active_dataguard == no ]
+then
+	typeset	-r	params=" -no_adg"
 fi
 
 line_separator
 exec_cmd "~/plescripts/db/update_tns_alias_for_dataguard.sh	\
-								-pdb=$pdb -dataguard_list=$standby_host"
+							-pdb=$pdb -dataguard_list=$standby_host$params"
 

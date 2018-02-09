@@ -47,7 +47,7 @@ do
 		"Primary")
 			primary=$dbname
 			;;
-		"Physical")
+		"Physical"|"Snapshot")
 			((++nr_stby))
 			standby_list="$standby_list$dbname "
 			;;
@@ -55,7 +55,7 @@ do
 			exit 1
 	esac
 done<<<"$(dgmgrl -silent -echo sys/$oracle_password "show configuration" |\
-			grep -E "Primary|Physical")"
+			grep -E "Primary|Physical|Snapshot")"
 
 info "Primary $primary"
 fake_exec_cmd "dgmgrl -silent -echo sys/$oracle_password<<EO_CMD"

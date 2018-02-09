@@ -168,16 +168,26 @@ function stby_read_current_scn
 
 function stby_restart_nomount
 {
-	function sql_cmd_restart
-	{
-		set_sql_cmd shutdown immediate;
-		set_sql_cmd startup nomount;
-	}
+	if command_exists crsctl
+	then # Avec sqlplus le nomount n'utilise pas le bon spfile (en tout cas avec la 12cR1).
+		exec_cmd srvctl stop database -db $stby_db_name -stopoption immediate
+		sleep 1
+		LN
+		exec_cmd srvctl start database -db $stby_db_name -startoption nomount
+		sleep 1
+		LN
+	else
+		function sql_restart_nomount
+		{
+			set_sql_cmd shutdown immediate;
+			set_sql_cmd startup nomount;
+		}
 
-	line_separator
-	info "Start $stby_db_name to nomount"
-	sqlplus_cmd "$(sql_cmd_restart)"
-	LN
+		line_separator
+		info "Start $stby_db_name to nomount"
+		sqlplus_cmd "$(sql_restart_nomount)"
+		LN
+	fi
 }
 
 # $1 nom du service pour communiquer avec la Primary Database
@@ -329,7 +339,7 @@ function stby_crosscheck_FRA
 {
 	line_separator
 	info "Crosscheck FRA"
-	exec_cmd "rman target sys/Oracle12 @$HOME/plescripts/db/rman/crosscheck.rman"
+	exec_cmd "rman target sys/$oracle_password @$HOME/plescripts/db/rman/crosscheck.rman"
 	LN
 }
 
@@ -409,8 +419,8 @@ test_pause
 stby_crosscheck_FRA
 
 line_separator
-exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show configuration'"
-exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show database $stby_db_name'"
+exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'show configuration'"
+exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'show database $stby_db_name'"
 LN
 
 script_stop $ME

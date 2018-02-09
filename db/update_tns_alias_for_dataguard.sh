@@ -6,13 +6,14 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+typeset	-r	str_usage=\
 "Usage :
 $ME
 	-pdb=name  PDB name or all to create alias on all pdbs
 	[-db=name] Only if -pdb=all
+	[-no_adg]
 	-dataguard_list=\"server1 server2\" except primary server.
 
 Add or update allias for dataguard :
@@ -24,9 +25,10 @@ Add or update allias for dataguard :
 tnsname.ora is updated on all servers.
 "
 
-typeset db=undef
-typeset pdb=undef
-typeset dataguard_list=undef
+typeset		db=undef
+typeset		pdb=undef
+typeset		dataguard_list=undef
+typeset		active_dataguard=yes
 
 while [ $# -ne 0 ]
 do
@@ -48,6 +50,11 @@ do
 
 		-dataguard_list=*)
 			dataguard_list=${1##*=}
+			shift
+			;;
+
+		-no_adg)
+			active_dataguard=no
 			shift
 			;;
 
@@ -103,9 +110,16 @@ function add_or_update_tns_alias_for_pdb
 {
 	line_separator
 	add_or_update_tns_alias $(mk_oci_service $1)
-	add_or_update_tns_alias $(mk_oci_stby_service $1)
+	if [ $active_dataguard == yes ]
+	then
+		add_or_update_tns_alias $(mk_oci_stby_service $1)
+	fi
+
 	add_or_update_tns_alias $(mk_java_service $1)
-	add_or_update_tns_alias $(mk_java_stby_service $1)
+	if [ $active_dataguard == yes ]
+	then
+		add_or_update_tns_alias $(mk_java_stby_service $1)
+	fi
 }
 
 function add_or_update_tns_alias_for_all_pdbs
