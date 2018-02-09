@@ -2,7 +2,7 @@
 
 set lines 120
 col	username				for a26	head "User name"
-col	user_id							head "Used ID"
+col	user_id							head "User ID"
 col default_tablespace		for a20 head "(*)tablespace"
 col temporary_tablespace	for a20	head "Temporary"
 col	account_status			for a10	head "Status"
