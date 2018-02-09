@@ -10,11 +10,9 @@ typeset -r ME=$0
 typeset -r PARAMS="$*"
 
 typeset		defrag=no
-typeset		ask=no
 typeset	-i	max_ext=40
 typeset -i	skip_gt=0
 
-add_usage "[-ask]"					"Demander s'il faut défragmenter."
 add_usage "[-defrag]"				"Lance la réorganisation si elle est nécessaire."
 add_usage "[-max_ext=$max_ext]"		"Nombre d'extents maximum par disque."
 add_usage "[-skip_gt=$skip_gt]"		"Ne pas défragmenter les fichiers de plus de #extents."
@@ -35,11 +33,6 @@ do
 
 		-defrag)
 			defrag=yes
-			shift
-			;;
-
-		-ask)
-			ask=yes
 			shift
 			;;
 
@@ -94,31 +87,10 @@ function defrag_file
 {
 	typeset	-r	vdi_file="$1"
 
-	typeset		reorg_this_file=yes
-	if [ $ask == yes ]
-	then
-		ask_for -reply_list="o n a" -print="o/n/a ?" \
-				"Défragmenter le fichier (a : oui toujours)"
-		case $? in
-			0)	: # OK
-				;;
-
-			1)	reorg_this_file=no
-				;;
-
-			3)	ask=no
-				;;
-		esac
-		LN
-	fi
-
-	if [ $reorg_this_file == yes ]
-	then
-		info "Démarrage..."
-		exec_cmd sudo xfs_fsr -v \"$vdi_file\"
-		file_nr_extends_ok "$vdi_file"
-		LN
-	fi
+	info "Démarrage..."
+	exec_cmd sudo xfs_fsr -v \"$vdi_file\"
+	file_nr_extends_ok "$vdi_file"
+	LN
 }
 
 function check_all_vdi_files
@@ -168,9 +140,7 @@ function check_all_vdi_files
 	LN
 }
 
-[ $ask == yes ] && defrag=yes || true
-
-if [[ $defrag == yes && $ask == no ]]
+if [[ $defrag == yes ]]
 then
 	LN
 	info "La défragmentation sera faite si le fichier vdi a plus de $max_ext extents."
@@ -178,9 +148,6 @@ then
 	then
 		info "    - Si le nombre d'extents à défragmenter est inférieur à $skip_gt"
 	fi
-	LN
-
-	confirm_or_exit "Continuer"
 	LN
 fi
 
