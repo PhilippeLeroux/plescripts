@@ -5,6 +5,8 @@ col	db_unique_name	for a10		head 'UQ name'
 col	open_mode		for a10		head 'Open mode'
 col	database_role				head 'DB role'
 col	dataguard_broker			head 'Broker'
+col	guard_status				head 'Guard'
+col	force_logging	for a7		head 'Logging'
 col	flashback_on	for a10		head 'Flashback'
 select
 	d.name
@@ -12,6 +14,8 @@ select
 ,	d.open_mode
 ,	d.database_role
 ,	d.dataguard_broker
+,	d.guard_status
+,	d.force_logging
 ,	d.cdb
 ,	d.flashback_on
 from
