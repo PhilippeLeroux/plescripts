@@ -33,10 +33,9 @@ then
 	info "Connection to server : $db"
 	wait_server ${db}
 	set_terminal_title "$account@${db}"
-	[ $? -eq 0 ] && exec_cmd -ci ssh -Y $account@${db} || true
-	ret=$?
-	set_terminal_title default
-	exit $ret
+	trap 'set_terminal_title default' EXIT
+	exec_cmd ssh -Y $account@${db} || true
+	exit 0
 fi
 
 typeset -ri max_nodes=$(cfg_max_nodes $db)
@@ -74,10 +73,8 @@ wait_server ${server_name}
 if [ $? -eq 0 ]
 then
 	set_terminal_title "$account@${server_name}"
+	trap 'set_terminal_title default' EXIT
 	exec_cmd -ci ssh -Y $account@${server_name}
-	ret=$?
-	set_terminal_title default
-	exit $ret
 else
 	exit 1
 fi
