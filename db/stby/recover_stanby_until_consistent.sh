@@ -97,5 +97,5 @@ primary_archive_log_current $primary_db_name
 
 stby_recover_database_until_consistent
 
-exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show database $db'"
+exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'show database $db'"
 LN

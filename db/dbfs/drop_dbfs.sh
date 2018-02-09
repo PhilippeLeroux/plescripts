@@ -107,7 +107,7 @@ then
 	EOSQL
 	LN
 
-	sqlplus -s sys/Oracle12@$service as sysdba<<-EOSQL
+	sqlplus -s sys/$oracle_password@$service as sysdba<<-EOSQL
 	prompt drop user $dbfs_user
 	drop user $dbfs_user cascade;
 	prompt drop tbs $dbfs_tbs

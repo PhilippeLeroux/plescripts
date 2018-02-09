@@ -139,6 +139,6 @@ LN
 timing 25
 LN
 
-exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show configuration'"
-exec_cmd "dgmgrl -silent -echo sys/Oracle12 'show database $dbstby'"
+exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'show configuration'"
+exec_cmd "dgmgrl -silent -echo sys/$oracle_password 'show database $dbstby'"
 LN

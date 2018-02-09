@@ -72,7 +72,7 @@ alias sugrid='sudo -u grid -i'
 
 export SQLPATH=~/plescripts/db/sql
 
-alias sp2='sqlplus -s sys/Oracle12 as sysdba'
+alias sp2='sqlplus -s sys/ORACLE_PASSWORD as sysdba'
 alias lsdiag="sp2 @\"$HOME/db/sql/lsdiag\"<<<exit"
 alias lspdbs="sp2 @\"$HOME/db/sql/lspdbs\"<<<exit"
 alias lsconn="sp2 @\"$HOME/db/sql/lsconn\"<<<exit"
