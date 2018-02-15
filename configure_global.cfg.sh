@@ -189,7 +189,7 @@ function configure_gateway
 function LUNs_storage
 {
 	disks_stored_on=$disks_hosted_by
-	info "On a computer with low power choose vbox."
+	info "On a computer with low power (less than 128Gb of RAM and 16 cores) choose vbox."
 	ask_for_variable disks_stored_on "Disks managed by san or vbox (vbox = VirtualBox) :"
 	LN
 	disks_stored_on=$(to_lower $disks_stored_on)
@@ -334,7 +334,7 @@ update_local_cfg "$if_net_bridgeadapter" "$if_net_bridgeadapter_n" IF_NET_BRIDGE
 if [ "$vm_p" != "No VMs folder" ]
 then
 	# Le premier paramètre permet de forcer la mise à jour de la variable.
-	update_local_cfg "forcer_maj" "\"$vm_p\"" "VM_PATH"
+	update_local_cfg "forcer_maj" "'$vm_p'" "VM_PATH"
 fi
 
 update_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVER
