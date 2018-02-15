@@ -133,41 +133,13 @@ exit_if_ORACLE_SID_not_defined
 
 [ $log == yes ] && ple_enable_log -params $PARAMS || true
 
-function sql_lspdbs
-{
-typeset query=\
-"select
-	i.instance_name
-,	case when c.name = upper( '$pdb' ) then '*'||c.name||'*' else c.name end name
-,	c.open_mode
-,	round( c.total_size / 1024 / 1024, 0 ) \"Size (Mb)\"
-,	c.recovery_status
-,	nvl(pss.state,'NOT SAVED') \"State\"
-from
-	gv\$containers c
-	inner join gv\$instance i
-		on  c.inst_id = i.inst_id
-	left join dba_pdb_saved_states pss
-		on	c.con_uid = pss.con_uid
-		and	c.guid = pss.guid
-order by
-	c.name
-,	i.instance_name;"
-
-	echo "set lines 150"
-	echo "col instance_name	for	a10		head \"Instance\""
-	echo "col name			for	a12		head \"PDB name\""
-	echo "col open_mode					head \"Open mode\""
-	echo "$query"
-}
-
 function print_pdbs_status
 {
 	info "Primary $db status :"
-	sqlplus_cmd "$(sql_lspdbs)"
+	sqlplus_cmd "$(set_sql_cmd @lspdbs)"
 	LN
 
-	if [ $dataguard == yes ]
+	if [[ $dataguard == yes && $adg == yes ]]
 	then
 		if [ $count_stby_error -ne 0 ]
 		then
@@ -178,7 +150,7 @@ function print_pdbs_status
 			do
 				info "Standby $stby_name status :"
 				typeset conn_string="sys/$oracle_password@$stby_name as sysdba"
-				sqlplus_cmd_with $conn_string "$(sql_lspdbs)"
+				sqlplus_cmd_with $conn_string "$(set_sql_cmd @lspdbs)"
 				LN
 			done
 		fi
@@ -263,6 +235,12 @@ function create_database_trigger_start_pdb_services
 	LN
 }
 
+# Print to stdout OFF or ON
+function real_time_apply_is
+{
+	dgmgrl -silent -echo sys/$oracle_password<<<"show database ${physical_list[0]}"|grep -E "Real Time Query:"|awk '{ print $4 }'
+}
+
 # TODO : utiliser 'service_name_convert' de 'create pluggable ....' ??  et avec
 # le CRS sa donne quoi ??
 function create_pdb_services
@@ -320,6 +298,7 @@ function create_pdb_services
 				add_dynamic_cmd_param "-pdb=$pdb"
 				add_dynamic_cmd_param "-standby=${physical_list[i]}"
 				add_dynamic_cmd_param "-standby_host=${stby_server_list[i]}"
+				[ $adg == no ] && add_dynamic_cmd_param "-no_adg" || true
 				exec_dynamic_cmd "./create_srv_for_dataguard.sh"
 				LN
 			done
@@ -416,6 +395,15 @@ function stby_create_temporary_file
 
 	line_separator
 	info "12c : temporary tablespace not created on standby."
+	if [ $adg == no ]
+	then
+		warning "  Real Time Apply is OFF"
+		warning "  Temporary file cannot be created for standby $pdb."
+		LN
+		warning "  Create temp file after swichtover or failover manually."
+		LN
+		return 0
+	fi
 	# - Parfois la syncho Dataguard n'est pas terminée et dans ce cas l'ouverture
 	#   du PDB échoura.
 	# - Parfois le PDB n'est pas visible sur la standby, il un stop & go pour
@@ -483,6 +471,16 @@ if [ $dataguard == yes ]
 then
 	info "Physical standby : ${physical_list[*]}"
 	info "Servers          : ${stby_server_list[*]}"
+	if [ $(real_time_apply_is) == OFF ]
+	then
+		typeset	-r	adg=no
+		info "Passive Data Guard."
+		LN
+	else
+		typeset	-r	adg=yes
+		info "Active Data Guard."
+		LN
+	fi
 fi
 LN
 
@@ -509,11 +507,14 @@ fi
 
 wait_if_high_load_average
 
-info "Open RW $db[$pdb] and save state."
-# Pour ouvrir un PDB RO il faut d'abord l'ouvrir en RW, sinon l'ouverture échoue.
-# si $is_seed == yes l'ouverture de la base en RO ne posera pas de problème.
-sqlplus_cmd "$(open_pdb_and_save_state $pdb)"
-LN
+if [ $adg == yes ]
+then
+	info "Open RW $db[$pdb] and save state."
+	# Pour ouvrir un PDB RO il faut d'abord l'ouvrir en RW, sinon l'ouverture échoue.
+	# si $is_seed == yes l'ouverture de la base en RO ne posera pas de problème.
+	sqlplus_cmd "$(open_pdb_and_save_state $pdb)"
+	LN
+fi
 
 if [[ $dataguard == yes && $count_stby_error -eq 0 && ${#physical_list[*]} -ne 0 ]]
 then
