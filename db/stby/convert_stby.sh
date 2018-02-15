@@ -87,8 +87,6 @@ function sqlcmd_reset_dataguard_cfg
 	set_sql_cmd "alter system reset dg_broker_start scope=spfile sid='*';"
 
 	set_sql_cmd "alter database no force logging;"
-
-	set_sql_cmd "shutdown immediate"
 }
 
 function remove_broker_cfg
@@ -262,7 +260,7 @@ fi
 
 typeset -r role_cfg=$(read_database_role $(to_lower $db))
 
-info "$db role=$role, role read from configuration : $role_cfg"
+info "$db role=$role, role read from configuration : ${role_cfg:-undef}"
 LN
 
 if [[ x"$role_cfg" != x && "$role" != "$role_cfg" ]]
@@ -311,18 +309,17 @@ fi
 create_services_for_single_db
 
 line_separator
+info "Reset dataguard configuration."
 sqlplus_cmd "$(sqlcmd_reset_dataguard_cfg)"
 LN
 
 line_separator
-if [ $crs_used == yes ]
-then # startup avec sqlplus ne fonctionne pas avec le wallet.
-	exec_cmd srvctl start database -db $db
-	LN
-else
-	sqlplus_cmd "$(set_sql_cmd startup)"
-	LN
-fi
+info "Optionnal, not necessary on a production server."
+exec_cmd "~/plescripts/db/bounce_db.sh"
+LN
+
+exec_cmd -c "rm $ORACLE_BASE/diag/rdbms/$(to_lower $db)/$db/trace/drc$db.log"
+LN
 
 line_separator
 exec_cmd rman target=sys/$oracle_password<<<"configure archivelog deletion policy clear;"

@@ -34,14 +34,13 @@ Flags de debug :
 	duplicate     : duplication de la base primaire.
 		-skip_duplicate passe cette étape.
 
-	register_stby_to_GI : finalise la configuration de la standby
-		-skip_register_stby_to_GI passe cette étape.
-
-	configure_dataguard : configure le broker et le dataguard.
-		-skip_configure_dataguard passe cette étape.
+	sync_physical_stby : ajoute la physical au broker et synchronisation
+		-skip_sync_physical_stby passe cette étape.
 
 	create_dataguard_services : crée les services.
 		-skip_create_dataguard_services passe cette étape
+
+	activer les pauses : -pause
 "
 
 typeset	create_primary_cfg=to_defined
@@ -51,15 +50,19 @@ typeset	_check_prereq=yes
 typeset	_setup_primary=yes
 typeset	_setup_network=yes
 typeset	_duplicate=yes
-typeset	_register_stby_to_GI=yes
 typeset	_create_dataguard_services=yes
-typeset	_configure_dataguard=yes
+typeset	_sync_physical_stby=yes
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
+			shift
+			;;
+
+		-pause)
+			PAUSE=ON
 			shift
 			;;
 
@@ -93,18 +96,13 @@ do
 			shift
 			;;
 
-		-skip_register_stby_to_GI)
-			_register_stby_to_GI=no
-			shift
-			;;
-
 		-skip_create_dataguard_services)
 			_create_dataguard_services=no
 			shift
 			;;
 
-		-skip_configure_dataguard)
-			_configure_dataguard=no
+		-skip_sync_physical_stby)
+			_sync_physical_stby=no
 			shift
 			;;
 
@@ -499,10 +497,6 @@ EOR
 #	EST INUTILE : log_archive_dest_2='service=$standby async valid_for=(online_logfiles,primary_role) db_unique_name=$standby'
 function sql_setup_primary_database
 {
-	set_sql_cmd "alter system set dg_broker_config_file1 = '$data/$primary/dr1db_$primary.dat' scope=both sid='*';"
-
-	set_sql_cmd "alter system set dg_broker_config_file2 = '$fra/$primary/dr2db_$primary.dat' scope=both sid='*';"
-
 	if [ $create_primary_cfg == yes ]
 	then
 		set_sql_cmd "alter database force logging;"
@@ -531,6 +525,18 @@ function remove_stby_database_from_dataguard_config
 	LN
 }
 
+function create_dataguard_config
+{
+	line_separator
+	info "Create Dataguard configuration."
+	fake_exec_cmd "dgmgrl -silent -echo sys/$oracle_password"
+	dgmgrl -silent -echo sys/$oracle_password<<-EOS | tee -a $PLELIB_LOG_FILE
+	create configuration 'DGCONF' as primary database is $primary connect identifier is $primary;
+	enable configuration;
+	EOS
+	LN
+}
+
 #	Applique l'ensemble des paramètres nécessaires pour une base primaire et pour
 #	le duplicate RMAN.
 function setup_primary
@@ -544,6 +550,18 @@ function setup_primary
 		info "Setup primary database $primary for duplicate & dataguard."
 		sqlplus_cmd "$(sql_setup_primary_database)"
 		LN
+
+		line_separator
+		info "Start broker."
+		sqlplus_cmd "$(sql_set_file_management_and_start_broker)"
+		LN
+
+		timing 10 "Waiting broker initialisation"
+		LN
+
+		create_dataguard_config
+
+		test_pause
 	else
 		remove_stby_database_from_dataguard_config
 		LN
@@ -602,49 +620,31 @@ function stdby_update_oratab
 	fi
 }
 
-#	Après que la duplication ait été faite, finalise la configuration.
-#	Actions :
-#		- démarre la synchro
-#		- enregistre la standby dans le GI.
+#	enregistre la standby dans le GI.
 function register_stby_to_GI
 {
 	line_separator
 	info "GI : register standby database on $standby_host :"
-	exec_cmd "ssh -t $standby_host \". .profile;					\
-				srvctl add database									\
-					-db $standby									\
-					-oraclehome $ORACLE_HOME						\
-					-spfile $ORACLE_HOME/dbs/spfile${standby}.ora	\
-					-role physical_standby							\
-					-dbname $primary								\
-					-diskgroup DATA,FRA								\
-					-verbose\""
+	ssh_stby oracle "srvctl add database								\
+						-db $standby									\
+						-oraclehome $ORACLE_HOME						\
+						-spfile $ORACLE_HOME/dbs/spfile${standby}.ora	\
+						-role physical_standby							\
+						-dbname $primary								\
+						-diskgroup DATA,FRA								\
+						-verbose"
 	LN
 
 	if [ $active_dataguard == no ]
 	then
-		exec_cmd "ssh -t $standby_host \". .profile;					\
-								srvctl modify database -db $standby		\
-													-startoption mount	\""
+		ssh_stby oracle "srvctl modify database -db $standby -startoption mount"
 		LN
 	fi
-
-	#	Workaround 12cR2
-	stdby_update_oratab N
-}
-
-function create_dataguard_config
-{
-	fake_exec_cmd "dgmgrl -silent -echo sys/$oracle_password"
-	dgmgrl -silent -echo sys/$oracle_password<<-EOS | tee -a $PLELIB_LOG_FILE
-	create configuration 'DGCONF' as primary database is $primary connect identifier is $primary;
-	enable configuration;
-	EOS
-	LN
 }
 
 function add_stby_to_dataguard_config
 {
+	line_separator
 	info "Add standby $standby to data guard configuration."
 	dgmgrl -silent -echo sys/$oracle_password<<-EOS | tee -a $PLELIB_LOG_FILE
 	add database $standby as connect identifier is $standby maintained as physical;
@@ -655,51 +655,58 @@ function add_stby_to_dataguard_config
 
 function sql_set_file_management_and_start_broker
 {
+	set_sql_cmd "alter system set dg_broker_config_file1 = '$data/$primary/dr1db_$primary.dat' scope=both sid='*';"
+	set_sql_cmd "alter system set dg_broker_config_file2 = '$fra/$primary/dr2db_$primary.dat' scope=both sid='*';"
 	set_sql_cmd "alter system set standby_file_management='AUTO' scope=both sid='*';"
 	set_sql_cmd "alter system set dg_broker_start=true scope=both sid='*';"
 }
 
-function start_dg_broker
-{
-	sqlplus_cmd "$(sql_set_file_management_and_start_broker)"
-	sqlplus_cmd_on_stby "$(sql_set_file_management_and_start_broker)"
-}
-
-function sql_open_stby_ro
-{
-	set_sql_cmd "alter database open read only;"
-	set_sql_cmd "alter pluggable database all open;"
-	set_sql_cmd "@lspdbs"
-}
-
-function sql_mount_db_and_start_recover
+function sql_config_and_start_recover
 {
 	# Remarque : si la base n'est pas en 'Real Time Query' relancer la base
 	# pour que le 'temporary file' soit crée.
 	set_sql_cmd "recover managed standby database cancel;"
 	set_sql_cmd "recover managed standby database until consistent;"
+	set_sql_cmd "alter database enable block change tracking;"
+	if [ "$(read_flashback_value)" == YES ]
+	then
+		set_sql_cmd "alter database flashback on;"
+	fi
 	set_sql_cmd "recover managed standby database disconnect;"
 }
 
-#	Configure et démarre le broker dataguard.
 #	Actions :
-#		- Configuration des 2 bases
-#		- Configuration de la dataguard et démarrage du broker.
-function configure_dataguard
+#		- Ajoute la physical au broker
+#		- Synchronise les bases.
+function sync_physical_stby
 {
-	line_separator
-
-	start_dg_broker
-	timing 20 "Wait dg broker"
-	LN
-
-	[ $create_primary_cfg == yes ] && create_dataguard_config || true
-
 	add_stby_to_dataguard_config
 
+	line_separator
 	info "$standby : recover standby database & start recover."
-	sqlplus_cmd_on_stby "$(sql_mount_db_and_start_recover)"
+	sqlplus_cmd_on_stby "$(sql_config_and_start_recover)"
 	timing 10 "Wait recover"
+	LN
+
+	if [ $crs_used == yes ]
+	then # Prise en compte par le crs de la base :
+		line_separator
+		info "Start with CRS, oracle will be create PDB tempory file."
+		LN
+		sqlplus_cmd_on_stby "$(set_sql_cmd shu immediate;)"
+		LN
+		sleep 1
+		register_stby_to_GI
+		ssh_stby oracle "srvctl start database -db $standby"
+		LN
+	else # Nécessaire pour créer les temp files des PDBs
+		info "Bounce database to create PDB tempory file)"
+		ssh_stby oracle "~/plescripts/db/bounce_db.sh"
+		LN
+	fi
+
+	line_separator
+	sqlplus_cmd_on_stby "$(set_sql_cmd @lspdbs)"
 	LN
 }
 
@@ -873,36 +880,12 @@ function check_prereq
 	fi
 }
 
-function stby_enable_block_change_traking
-{
-	# Doit être activé sur la stby, ce paramètre est ignoré par le duplicate.
-	line_separator
-	info "Enable block change tracking."
-	sqlplus_cmd_on_stby "$(set_sql_cmd "alter database enable block change tracking;")"
-	LN
-}
-
-function stby_enable_flashback
-{
-	function sql_flashback_on
-	{
-		set_sql_cmd "recover managed standby database cancel;"
-		set_sql_cmd "alter database flashback on;"
-		set_sql_cmd "recover managed standby database disconnect;"
-	}
-
-	line_separator
-	info "Enable flashback."
-	sqlplus_cmd_on_stby "$(sql_flashback_on)"
-	LN
-}
-
 function stby_create_oracle_home_links
 {
 	info "Create links for user oracle."
 	LN
 
-	exec_cmd "ssh $standby_host '. .bash_profile && plescripts/db/create_links.sh -db=$standby'"
+	ssh_stby oracle "plescripts/db/create_links.sh -db=$standby"
 	LN
 }
 
@@ -985,7 +968,6 @@ then
 	typeset	-r crs_used=yes
 else
 	typeset	-r crs_used=no
-	_register_stby_to_GI=no
 fi
 
 typeset	-r	data=$(orcl_parameter_value db_create_file_dest)
@@ -1006,43 +988,21 @@ test_if_dataguard_configuration_exists
 
 [ $_duplicate == yes ] && duplicate || true
 
+#	Workaround 12cR2 en 12cR1 le Grid ajoutait le nom de la base.
+#	Sinon la fonction ssh_stby ne fonctionne pas.
+stdby_update_oratab N
+
 stby_create_oracle_home_links
 
-[ $_register_stby_to_GI == yes ] && register_stby_to_GI || true
+[ $_sync_physical_stby == yes ] && sync_physical_stby || true
 
-[ $_configure_dataguard == yes ] && configure_dataguard || true
-
-stby_enable_block_change_traking
-
-[ "$(read_flashback_value)" == YES ] && stby_enable_flashback || true
+[ $_create_dataguard_services == yes ] && create_dataguard_services || true
 
 line_separator
 info "Copy glogin.sql"
 exec_cmd -c "scp	$ORACLE_HOME/sqlplus/admin/glogin.sql	\
 					$standby_host:$ORACLE_HOME/sqlplus/admin/glogin.sql"
 LN
-
-line_separator
-if [ $active_dataguard == yes ]
-then
-	info "Active dataguard : open Physical standby RO :"
-	sqlplus_cmd_on_stby "$(sql_open_stby_ro)"
-	LN
-else
-	info "Not active dataguard."
-	sqlplus_cmd_on_stby "$(set_sql_cmd shu immediate;)"
-	LN
-	if [ $crs_used == yes ]
-	then
-		ssh_stby oracle "srvctl start database -db $standby"
-		LN
-	else
-		sqlplus_cmd_on_stby "$(set_sql_cmd startup mount;)"
-		LN
-	fi
-fi
-
-[ $_create_dataguard_services == yes ] && create_dataguard_services || true
 
 line_separator
 info "Adjust rman config for dataguard."
@@ -1052,12 +1012,21 @@ LN
 
 stby_backup
 
-if [ $backup == no ]
-then # Sans backup les bases n'ont pas le temps de se sync."
-	timing 20 "Waiting recover"
-fi
+# Sans backup les bases n'ont pas le temps de se sync.
+[ $backup == no ] && timing 20 "Waiting recover" || true
 
 exec_cmd "~/plescripts/db/stby/show_dataguard_cfg.sh"
+
+line_separator
+function sql_show_db_names
+{
+	set_sql_cmd "sho parameter db_name;"
+	set_sql_cmd "sho parameter db_unique_name;"
+}
+sqlplus_cmd "$(sql_show_db_names)"
+LN
+sqlplus_cmd_on_stby "$(sql_show_db_names)"
+LN
 
 if [[ $active_dataguard == no && $crs_used == no ]]
 then
