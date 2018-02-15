@@ -133,9 +133,18 @@ function get_os_disk_used_by_oracleasm
 #*>	return unused disks without partitions.
 function get_unused_disks_without_partitions
 {
-	typeset	device
-	while read device
-	do
-		[ "$(disk_type $device)" == unused ] && echo $device
-	done<<<"$(find /dev -regex "/dev/sd.*[^0-9]")" | sort
+	function read_all
+	{
+		typeset	device
+		while read device
+		do
+			[ "$(disk_type $device)" == unused ] && echo $device
+		done<<<"$(find /dev -regex "/dev/sd.*[^0-9]")" | sort
+	}
+
+	typeset	list=$(read_all)
+	# En premier les devices sdX
+	typeset	list2=$(grep -E "/dev/...$"<<<"$list")
+	# puis les devices sdXX
+	echo "$list2 $(grep -E "/dev/....$"<<<"$list")"
 }
