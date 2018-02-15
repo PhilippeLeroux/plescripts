@@ -44,8 +44,10 @@ exit_if_ORACLE_SID_not_defined
 info "Validate backup."
 LN
 
+info "Validate copy of database."
 exec_cmd "rman target=sys/$oracle_password @$HOME/plescripts/db/rman/validate_copy_of_database.rman"
 LN
 
+info "Validate archivelogs."
 exec_cmd "rman target=sys/$oracle_password @$HOME/plescripts/db/rman/validate_archivelog.rman"
 LN
