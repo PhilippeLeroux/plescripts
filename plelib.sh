@@ -574,6 +574,13 @@ function simplify_cmd
 	echo "$*" | tr -s '\t' ' ' | tr -s [:space:]
 }
 
+# Affiche sur stdout le timestamp à utiliser pour l'exécution d'une commande.
+# Si la longueur d'affichage change adapter la variable ple_param_margin
+function exec_tt
+{
+	date +"%H:%M:%S"
+}
+
 #*> Fake exec_cmd command
 #*> Command printed but not executed.
 #*> return :
@@ -589,7 +596,7 @@ function fake_exec_cmd
 			;;
 
 		EXEC)
-			my_echo "${YELLOW}" "${STRIKE}$(date +"%Hh%M")>${NORM} " "$simplified_cmd"
+			my_echo "${YELLOW}" "${STRIKE}$(exec_tt)>${NORM} " "$simplified_cmd"
 			return 0
 	esac
 }
@@ -855,7 +862,7 @@ function exec_cmd
 
 		EXEC)
 			[ $force == YES ] && typeset -r COL=$RED || typeset -r COL=$YELLOW
-			[ $hide_command == NO ] && my_echo "$COL" "$(date +"%Hh%M")> " "$simplified_cmd" || true
+			[ $hide_command == NO ] && my_echo "$COL" "$(exec_tt)> " "$simplified_cmd" || true
 
 			typeset -ri eval_start_at=$SECONDS
 			if [ x"$PLELIB_LOG_FILE" == x ]
@@ -874,7 +881,7 @@ function exec_cmd
 			if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 			then
 				typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
-				my_echo "${YELLOW}" "$(date +"%Hh%M")< " "$shortened_cmd running time : $(fmt_seconds $eval_duration)"
+				my_echo "${YELLOW}" "$(exec_tt)< " "$shortened_cmd running time : $(fmt_seconds $eval_duration)"
 			fi
 
 			if [ $eval_return -ne 0 ]
@@ -884,7 +891,7 @@ function exec_cmd
 					# Si la commande a durée plus de PLE_SHOW_EXECUTION_TIME_AFTER
 					# la commande simplifiée a été affichée, sur une erreur affichage
 					# de la commande complète.
-					my_echo "$COL" "$(date +"%Hh%M")> " "$simplified_cmd" || true
+					my_echo "$COL" "$(exec_tt)> " "$simplified_cmd" || true
 				fi
 
 				if [ x"$shortened_cmd" == x ]
@@ -918,10 +925,10 @@ function exec_cmd
 
 typeset -a	ple_dyn_param_cmd
 typeset -i	ple_dyn_param_max_len=0
-#	7	correspond à la largeur de l'horodatage devant les commandes exécutées,
-#		exemple : '10h44 >'
+#	10	correspond à la largeur de l'horodatage devant les commandes exécutées,
+#		exemple : '10:44:01>'
 #	4	les paramètres seront 'tabulés' de 4 espaces par rapport à la commande.
-typeset -ri	ple_param_margin=$((4+7))
+typeset -ri	ple_param_margin=$((4+10))
 
 #*>	[-nvsr]	No Var Shell Replacement
 #*> $@ parameter to add.
@@ -1387,7 +1394,8 @@ function script_stop
 	fi
 }
 
-PAUSE=OFF
+# La variable peut être exportée depuis le shell.
+PAUSE=${PAUSE:-OFF}
 #*< Sert pour le debuggage.
 #*< Si des paramètres sont passés il sont affiché comme un message.
 #*< Pour que la fonction soit active il faut positionner la variable PAUSE à ON
