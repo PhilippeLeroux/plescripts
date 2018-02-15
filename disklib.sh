@@ -146,5 +146,5 @@ function get_unused_disks_without_partitions
 	# En premier les devices sdX
 	typeset	list2=$(grep -E "/dev/...$"<<<"$list")
 	# puis les devices sdXX
-	echo "$list2 $(grep -E "/dev/....$"<<<"$list")"
+	printf "$list2\n$(grep -E "/dev/....$"<<<"$list")"
 }
