@@ -20,8 +20,8 @@ typeset	-r	str_usage=\
 $ME
 	-db=id|-server=name
 	[-take=desc]    take snapshot with current timestamp and description 'desc'.
-	[-restore=name] restore snapshot named 'name'.
-	[-delete=name]  delete snapshot named 'name'.
+	[-restore=name] restore snapshot named 'name', rollback all modifications.
+	[-delete=name]  delete snapshot named 'name', apply all modifications.
 	[-list]         list snapshot names.
 "
 
