@@ -28,9 +28,6 @@
 [submodule "bundle/sourcerer.vim"]
 	path = bundle/sourcerer.vim
 	url = git://github.com/xero/sourcerer.vim.git
-[submodule "bundle/vim-togglemouse"]
-	path = bundle/vim-togglemouse
-	url = git://github.com/nvie/vim-togglemouse.git
 [submodule "bundle/vim-instant-markdown"]
 	path = bundle/vim-instant-markdown
 	url = git://github.com/suan/vim-instant-markdown.git
@@ -46,9 +43,6 @@
 [submodule "bundle/vim-session"]
 	path = bundle/vim-session
 	url = git://github.com/xolox/vim-session.git
-[submodule "bundle/vim-markdown"]
-	path = bundle/vim-markdown
-	url = git://github.com/tpope/vim-markdown.git
 [submodule "bundle/vim-grammarous"]
 	path = bundle/vim-grammarous
 	url = git://github.com/rhysd/vim-grammarous.git

@@ -16,6 +16,8 @@ if  ! has("compatible")
 " git ne fonctionne plus avec :
 " autocmd BufEnter * silent! lcd %:p:h
 
+set history=10000
+
 if ! exists( "g:first_load" )
 	" Permet d'éviter certaines actions sur
 	" un rechargement du fichier
@@ -166,11 +168,11 @@ augroup END
 if ! has("gui_running")
 	noremap <silent><F12> :let &mouse=(&mouse == "a"?"":"a")<CR>:call ShowMouseMode()<CR>
 	function ShowMouseMode()
-	if (&mouse == 'a')
-		echo "vim handle mouse."
-	else
-		echo "Terminal handle mouse."
-	endif
+		if (&mouse == 'a')
+			echo "vim handle mouse."
+		else
+			echo "Terminal handle mouse."
+		endif
 	endfunction
 endif
 
