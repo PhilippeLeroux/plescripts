@@ -112,6 +112,8 @@ line_separator
 info "$(hostname -s) : mount $device"
 exec_cmd mount $device
 LN
+exec_cmd rm -rf $device/lost+found/*
+LN
 
 for srv in $gi_node_list
 do
