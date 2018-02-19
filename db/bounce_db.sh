@@ -40,8 +40,13 @@ done
 exec_cmd ~/plescripts/db/stop_db.sh
 LN
 
-TEST_HIGH_LAVG=enable
-wait_if_high_load_average
+if command_exists crsctl
+then
+	TEST_HIGH_LAVG=enable
+	wait_if_high_load_average
+else
+	wait_if_high_load_average
+fi
 
 exec_cmd ~/plescripts/db/start_db.sh
 LN
