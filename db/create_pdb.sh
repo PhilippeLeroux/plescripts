@@ -481,6 +481,9 @@ then
 		info "Active Data Guard."
 		LN
 	fi
+elif [ $crs_used == no ]
+then # Sans ASM il est nécessaire d'ouvrir la base en RW.
+	typeset	-r	adg=yes
 fi
 LN
 
@@ -507,7 +510,7 @@ fi
 
 wait_if_high_load_average
 
-if [ $adg == yes ]
+if [ $adg == yes ] # ou sans dataguard.
 then
 	info "Open RW $db[$pdb] and save state."
 	# Pour ouvrir un PDB RO il faut d'abord l'ouvrir en RW, sinon l'ouverture échoue.
