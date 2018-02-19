@@ -13,7 +13,7 @@ typeset	-r	str_usage=\
 $ME
 	[-d=0]     default 0 is today.
 	[-all]     print all chronos.
-	[-db=name] db name print all chronos & skipping date
+	[-db=name] db name print all chronos and ignore date
 "
 
 typeset	-i	d=0
@@ -63,6 +63,12 @@ done
 
 typeset	-r	chrono_file=~/plescripts/tmp/scripts_chrono.txt
 
+# $1 time seconds
+function print_total_time
+{
+	info "Total cloning + software + create db : $(fmt_seconds $1)"
+}
+
 if [ ! -f $chrono_file ]
 then
 	error "$chrono_file not exists."
@@ -81,7 +87,7 @@ fi
 
 if [ $d -eq -1 ]
 then
-	filter_cmd="grep -E \"${db}.*\" $chrono_file"
+	filter_cmd="grep -E \".*:${db}[0-9]{0,2}.*\" $chrono_file"
 elif [ $d -ne 99 ]
 then # Filtre sur la date.
 	filter_cmd="grep -E \"^$today\" $chrono_file"
@@ -91,7 +97,8 @@ fi
 
 debug "filter_cmd = '$filter_cmd'"
 
-typeset	prev_id=undef
+typeset		prev_id=undef
+typeset	-i	total_time_s=0
 while IFS=: read timestamp script_name id time_s time_f rem
 do
 	[ x"$timestamp" == x ] && continue || true
@@ -99,6 +106,11 @@ do
 	id=$(to_lower $id)
 	if [[ "$prev_id" != "$id" ]]
 	then
+		if [[ "$prev_id" != "${id:0:${#prev_id}}" ]]
+		then
+			[ $total_time_s -ne 0 ] && print_total_time $total_time_s || true
+			total_time_s=0
+		fi
 		LN
 		year=$(cut -c1-4<<<"$timestamp")
 		month=$(cut -c5-6<<<"$timestamp")
@@ -109,5 +121,11 @@ do
 		info "    $(fill - 30) | $(fill - 10)"
 	fi
 	info "    $(printf "%-30s" $script_name) | $(printf "%10s" "$time_f")"
+	case "$script_name" in
+		create_database_servers.sh|install_*|create_db.sh)
+			total_time_s=total_time_s+time_s
+			;;
+	esac
 done<<<"$(eval $filter_cmd)"
+[ $total_time_s -ne 0 ] && print_total_time $total_time_s || true
 LN
