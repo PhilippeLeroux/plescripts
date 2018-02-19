@@ -556,7 +556,9 @@ function setup_primary
 		sqlplus_cmd "$(sql_set_file_management_and_start_broker)"
 		LN
 
-		timing 10 "Waiting broker initialisation"
+		# Il faut attendre longtemps si les disques sont managés par vbox.
+		# Si utilisation du SAN iSCSI 10s suffisent.
+		timing 30 "Waiting broker initialisation"
 		LN
 
 		create_dataguard_config
@@ -700,7 +702,7 @@ function sync_physical_stby
 		ssh_stby oracle "srvctl start database -db $standby"
 		LN
 	else # Nécessaire pour créer les temp files des PDBs
-		info "Bounce database to create PDB tempory file)"
+		info "Bounce database to create PDB tempory file."
 		ssh_stby oracle "~/plescripts/db/bounce_db.sh"
 		LN
 	fi
