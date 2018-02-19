@@ -69,10 +69,6 @@ function sqlcmd_enable_archivelog_full_sqlplus
 	set_sql_cmd "startup mount"
 
 	sqlcmd_enable_archivelog
-
-	set_sql_cmd "shutdown immediate"
-
-	set_sql_cmd "startup"
 }
 
 #	Active les archivelogs avec la commande sqlplus.
@@ -104,9 +100,8 @@ function enable_archivelog_with_GI
 
 	wait_if_high_load_average
 
-	info "Start instance $ORACLE_SID"
-	# Attention si le GI est installé est que le wallet est utilisé, la commande
-	# va échouer.
+	# Si utlisation de srvctl les instances sont démarrées sur tous les noeuds,
+	# il faudrait utiliser 'start instance' plutôt uque 'start database'.
 	sqlplus_cmd "$(set_sql_cmd "startup mount")"
 	LN
 
@@ -118,6 +113,7 @@ function enable_archivelog_with_GI
 
 	wait_if_high_load_average
 
+	# La base est stoppée après l'activation des archivelogs, util pour les RAC.
 	info "Start database :"
 	exec_cmd "srvctl start database -db $db"
 	LN
