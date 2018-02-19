@@ -64,14 +64,17 @@ function print_node
 				;;
 		esac
 
-		info -n "ORACLE_HOME FS : $cfg_oracle_home"
-		case $cfg_oracle_home in
-			ocfs2)
-				info -f " : heartbeat on $if_iscsi_name/$cfg_iscsi_ip"
-				;;
-			*)
-				LN
-		esac
+		if [ $cfg_db_type == rac ]
+		then
+			info -n "ORACLE_HOME FS : $cfg_oracle_home"
+			case $cfg_oracle_home in
+				ocfs2)
+					info -f " : heartbeat on $if_iscsi_name/$cfg_iscsi_ip"
+					;;
+				*)
+					LN
+			esac
+		fi
 		LN
 	fi
 
