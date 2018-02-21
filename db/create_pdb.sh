@@ -18,7 +18,8 @@ typeset		pdb=undef
 typeset		from_pdb=default
 typeset		wallet=${WALLET:-$(enable_wallet $orcl_release)}
 typeset		sampleSchema=no
-typeset		is_seed=no
+typeset		as_seed=no
+typeset		ro=no
 typeset		admin_user=pdbadmin
 typeset		admin_pass=$oracle_password
 
@@ -27,7 +28,8 @@ typeset		log=yes
 add_usage "-db=name"			"Database name."
 add_usage "-pdb=name"			"PDB name."
 add_usage "[-sampleSchema=$sampleSchema]"	"yes|no"
-add_usage "[-is_seed]"			"Create seed pdb."
+add_usage "[-as_seed]"			"Create a seed pdb 12cR2."
+add_usage "[-ro]"				"Fake a seed pdb 12cR1."
 add_usage "[-from_pdb=name]"	"Clone from pdb 'name'"
 add_usage "[-wallet=$wallet]"	"yes|no yes : Use Wallet Manager for pdb connection."
 add_usage "[-admin_user=$admin_user]"
@@ -70,8 +72,13 @@ do
 			shift
 			;;
 
-		-is_seed)
-			is_seed=yes
+		-ro)
+			ro=yes
+			shift
+			;;
+
+		-as_seed)
+			as_seed=yes
 			shift
 			;;
 
@@ -157,7 +164,86 @@ function print_pdbs_status
 	fi
 }
 
-function clone_pdb_pdbseed
+# $1 seed name
+# At the end pdb is open RW.
+function create_pdb_as_application
+{
+	set_sql_cmd "create pluggable database $1 as application container admin user $admin_user identified by $admin_pass;"
+	set_sql_cmd "alter session set container=$1;"
+	set_sql_cmd "alter pluggable database open instances=all;"
+}
+
+# $1 seed name
+# At the end pdb is open RW.
+function sql_create_seed_pdb
+{
+	set_sql_cmd "alter session set container=$1;"
+	set_sql_cmd "create pluggable database as seed from $1;"
+	set_sql_cmd "alter pluggable database $1\$seed open;"
+}
+
+# $1 seed name
+# At the end pdb is close.
+function sql_run_pdb_to_apppdb
+{
+	set_sql_cmd "alter session set container=$1\$seed;"
+	set_sql_cmd "@?/rdbms/admin/pdb_to_apppdb.sql"
+	set_sql_cmd "alter pluggable database application all sync;"
+	set_sql_cmd "alter pluggable database close immediate instances=all;"
+}
+
+# $1 full pdb name : foo or foo\$seed
+# Action on $1 and $1\$seed
+function sql_open_seed_ro_and_save_state
+{
+	set_sql_cmd "alter session set container=$1;"
+	set_sql_cmd "alter pluggable database close immediate instances=all;"
+	set_sql_cmd "alter pluggable database open read only instances=all;"
+	set_sql_cmd "alter pluggable database save state;"
+}
+
+function print_warning_seed_and_dg
+{
+	warning "*********************************************************"
+	warning "Dataguard bug :"
+	warning "Créer un PDB seed ou cloner depuis un PDB seed perso va"
+	warning "désynchroniser la standby. Il faudra recréer la standby !"
+	warning "*********************************************************"
+	LN
+	confirm_or_exit "Continuer"
+}
+
+function clone_pdb_as_seed
+{
+	[ $dataguard == yes ] && print_warning_seed_and_dg || true
+
+	line_separator
+	info "Create PDB $pdb as application container."
+	sqlplus_cmd "$(create_pdb_as_application $pdb)"
+	LN
+
+	line_separator
+	info "Create seed $pdb\$seed RW"
+	sqlplus_cmd "$(sql_create_seed_pdb $pdb)"
+	LN
+
+	line_separator
+	info "Run pdb_to_apppdb.sql on $pdb"
+	sqlplus_cmd "$(sql_run_pdb_to_apppdb $pdb)"
+	LN
+
+	line_separator
+	info "Open seed $pdb RO and save state."
+	sqlplus_cmd "$(sql_open_seed_ro_and_save_state $pdb)"
+	LN
+
+	line_separator
+	info "Open seed $pdb\$seed RO and save state."
+	sqlplus_cmd "$(sql_open_seed_ro_and_save_state $pdb\$seed)"
+	LN
+}
+
+function clone_pdb_from_seed
 {
 	function ddl_create_pdb
 	{
@@ -169,13 +255,45 @@ function clone_pdb_pdbseed
 }
 
 # $1 pdb name
+# print to stdout yes or no
+function is_application_seed
+{
+	typeset	-r	pdbseed_name=$(to_upper $1)
+typeset	-r	query=\
+"select
+	application_pdb
+from
+	v\$containers
+where
+	name='$pdbseed_name\$SEED'
+;"
+	typeset val=$(sqlplus_exec_query "$query")
+	[ x"$val" == x ] && echo no || echo yes
+}
+
+# $1 pdb name
 function clone_from_pdb
 {
+	typeset	-r	from_pdb=$1
+	line_separator
+	info "Clone $pdb from $from_pdb"
+	if [ $from_pdb_is_a_seed == yes ]
+	then
+		info "    cloning from a seed."
+		LN
+	fi
+
+	if [[ $dataguard == yes && $from_pdb_is_a_seed == no ]]
+	then
+		warning "Dataguard bug : $from_pdb must be reopen RO"
+		LN
+	fi
+
 	# $1 pdb name
 	function ddl_clone_from_pdb
 	{
 		set_sql_cmd "whenever sqlerror exit 1;"
-		if [ $dataguard == yes ]
+		if [[ $dataguard == yes && $from_pdb_is_a_seed == no ]]
 		then
 			# Sur un Dataguard si le PDB est RW alors la synchro est HS
 			# Il faut que le PDB soit RO pour être clonable : BUG or not BUG ??
@@ -184,26 +302,21 @@ function clone_from_pdb
 			set_sql_cmd "alter pluggable database $1 open read only instances=all;"
 		fi
 		set_sql_cmd "create pluggable database $pdb from $1 standbys=all;"
-		if [ $dataguard == yes ]
+		if [[ $dataguard == yes && $from_pdb_is_a_seed == no ]]
 		then
 			set_sql_cmd "alter pluggable database $1 close immediate instances=all;"
-			set_sql_cmd "alter pluggable database $1 open instances=all;"
+			set_sql_cmd "alter pluggable database $1 open read only instances=all;"
 		fi
 	}
-	info "Clone $pdb from $1"
-	if [ $dataguard == yes ]
-	then
-		warning "Dataguard bug : $1 must be reopen RO"
-		LN
-	fi
-	sqlplus_cmd "$(ddl_clone_from_pdb $1)"
+
+	sqlplus_cmd "$(ddl_clone_from_pdb $from_pdb)"
 	[ $? -ne 0 ] && exit 1 || true
 }
 
 # $1 pdb name
 # Attention pour pouvoir ouvrir en RO un pdb, il doit d'abord avoir été ouvert
 # en RW.
-function pdb_seed_open_read_only
+function sql_pdb_open_ro_and_save_state
 {
 	typeset pdb_name=$1
 	#	Sur un dataguard le PDB doit être ouvert pour être clonable.
@@ -213,6 +326,7 @@ function pdb_seed_open_read_only
 
 	set_sql_prompt "Open seed pdb $pdb_name RO"
 	set_sql_cmd "alter pluggable database $pdb_name open read only instances=all;"
+	set_sql_cmd "alter pluggable database $pdb_name save state;"
 }
 
 function create_database_trigger_open_stby_pdb
@@ -424,7 +538,7 @@ function stby_create_temporary_file
 	done
 }
 
-[ $is_seed == yes ] && wallet=no || true
+[[ $ro == yes || $as_seed == yes ]] && wallet=no || true
 
 typeset	-r	dataguard=$(dataguard_config_available)
 typeset	-i	count_stby_error=0
@@ -489,8 +603,29 @@ LN
 
 wait_if_high_load_average
 
-line_separator
-[ $from_pdb == default ] && clone_pdb_pdbseed || clone_from_pdb $from_pdb
+if [ $from_pdb == default ]
+then
+	typeset	-r	from_pdb_is_a_seed=no
+	[ $as_seed == yes ] && clone_pdb_as_seed || clone_pdb_from_seed
+else
+	if [ $as_seed == yes ]
+	then
+		error "not implemented."
+		LN
+		exit 1
+	fi
+	# Oracle BUG :
+	#	Si le PDB est cloné depuis un PDB 'application' alors les scripts lssrv.sql
+	#	n'affichera pas les noms des services.
+	#	Les services existent mais ne sont pas visible depuis la vue cdb_services,
+	#	il faut se connecter sur le PDB et utilser la vue all_services.
+	typeset	-r	from_pdb_is_a_seed=$(is_application_seed $from_pdb)
+	[ $from_pdb_is_a_seed == yes ] && print_warning_seed_and_dg || true
+	clone_from_pdb $from_pdb
+	# Le pdb $from_pdb s'il est seed mettra en peu de temps à passer en RO.
+	# Sur la standby il restera 'mounted' mais ce n'est pas grave, sur un
+	# switch il passera RO.
+fi
 LN
 
 wait_if_high_load_average
@@ -501,7 +636,7 @@ do
 	LN
 done
 
-if [ $from_pdb != default ]
+if [[ $from_pdb != default && $from_pdb_is_a_seed == no ]]
 then
 	info "Remove services cloned from $from_pdb on $pdb"
 	sqlplus_cmd "$(sqlcmd_remove_services_from_cloned_pdb)"
@@ -510,24 +645,37 @@ fi
 
 wait_if_high_load_average
 
-if [ $adg == yes ] # ou sans dataguard.
+if [[ $adg == yes && $ro == no && $as_seed == no ]] # ou sans dataguard.
 then
 	info "Open RW $db[$pdb] and save state."
 	# Pour ouvrir un PDB RO il faut d'abord l'ouvrir en RW, sinon l'ouverture échoue.
-	# si $is_seed == yes l'ouverture de la base en RO ne posera pas de problème.
+	# si $ro == yes l'ouverture de la base en RO ne posera pas de problème.
 	sqlplus_cmd "$(open_pdb_and_save_state $pdb)"
 	LN
 fi
 
 if [[ $dataguard == yes && $count_stby_error -eq 0 && ${#physical_list[*]} -ne 0 ]]
 then
-	stby_create_temporary_file
+	[ $as_seed == no ] && stby_create_temporary_file || true
 fi
 
-if [ $is_seed == yes ]
+if [[ $from_pdb != default && $from_pdb_is_a_seed == yes ]]
 then
-	info "Open read only seed : $db[$pdb]"
-	sqlplus_cmd "$(pdb_seed_open_read_only $pdb)"
+	function sql_run_approot_to_pdb
+	{
+		set_sql_cmd "alter session set container=$pdb;"
+		set_sql_cmd "@?/rdbms/admin/approot_to_pdb.sql"
+	}
+	line_separator
+	info "Run approot_to_pdb.sql on $pdb."
+	sqlplus_cmd "$(sql_run_approot_to_pdb)"
+	LN
+fi
+
+if [[ $ro == yes ]]
+then
+	info "Open read only : $db[$pdb]"
+	sqlplus_cmd "$(sql_pdb_open_ro_and_save_state $pdb)"
 	LN
 fi
 
@@ -535,7 +683,7 @@ print_pdbs_status
 
 wait_if_high_load_average
 
-[ $is_seed == no ] && create_pdb_services || true
+[[ $ro == no && $as_seed == no ]] && create_pdb_services || true
 
 [ $wallet == yes ] && create_wallet || true
 
@@ -564,7 +712,7 @@ info "$db[$pdb] violations"
 sqlplus_print_query "$violations"
 LN
 
-[ $is_seed == no ] && print_pdbs_status || true
+[[ $ro == no && $as_seed == no ]] && print_pdbs_status || true
 
 if [[ $dataguard == yes && $count_stby_error -ne 0 ]]
 then
