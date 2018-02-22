@@ -66,6 +66,12 @@ function swap_instance_number
 
 typeset -r	upper_db=$(to_upper $db)
 
+typeset	db2=none
+if grep -qE ","<<<"$db"
+then
+	IFS=',' read db db2<<<"$db"
+fi
+
 cfg_exists $db
 
 typeset -r	max_nodes=$(cfg_max_nodes $db)
@@ -177,6 +183,22 @@ else	#	Mono Instance.
 		else
 			error "ping of $cfg_server_name failed."
 		fi
+	elif [ $db2 != none ]
+	then
+		cfg_exists $db2
+		cfg_load_node_info $db2 1
+		typeset	-r	server2=$cfg_server_name
+		typeset -r	session_name="ORCL $server1 / $server2"
+		exec_cmd -c tmux kill-session -t \"$session_name\"
+		typeset 	inst2=$(ssh oracle@$server2 plescripts/db/get_active_instance.sh)
+		alert1=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $(to_lower $inst1) $inst1 $inst1)
+		alert2=$(printf "\$ORACLE_BASE/diag/rdbms/%s/%s/trace/alert_%s.log" $(to_lower $inst2) $inst2 $inst2)
+
+		tmux new -s "$session_name"	\
+			"ssh oracle@${server1} '. .profile; tail -1000f $alert1'"	\;\
+		split-window -v				\
+			"ssh oracle@${server2} '. .profile; tail -1000f $alert2'"	\;\
+		selectp -t 0
 	fi
 
 	typeset -r	session_name="ORCL $server1"

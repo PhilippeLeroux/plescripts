@@ -3,6 +3,7 @@
 
 . ~/plescripts/plelib.sh
 . ~/plescripts/cfglib.sh
+. ~/plescripts/usagelib.sh
 . ~/plescripts/stats/statslib.sh
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
@@ -15,15 +16,16 @@ typeset		loop=yes
 typeset		date=undef
 typeset	-i	window_range_mn=20
 
+add_usage "[-db=name[,name2]]" "or use $ID_DB (set_db)"
+add_usage "[-window_range_mn=$window_range_mn]"
+add_usage "[-no_loop]"
+add_usage "[-date=YYYY-MM-DD]" "default last log."
+
 typeset -r str_usage=\
 "Usage : $ME
-		[-db=name]
-		[-window_range_mn=$window_range_mn]
-		[-no_loop]
-		[-date=YYYY-MM-DD]  default last log.
+$(print_usage)
 
 Display files produced by watch_uptime.sh with gnuplot"
-
 
 while [ $# -ne 0 ]
 do
@@ -99,18 +101,30 @@ then
 	exit 1
 fi
 
-cfg_exists $db
+typeset	db2=none
+if grep -qE ","<<<"$db"
+then
+	IFS=',' read db db2<<<"$db"
+fi
 
+cfg_exists $db
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
+
 cfg_load_node_info $db 1
 
 [ $date == undef ] && set_to_last_date || true
 typeset	-a	server_list=( $cfg_server_name )
 typeset	-r	log_name01=${PLELOG_ROOT}/$date/stats/uptime_${cfg_server_name}.log
 typeset	-a	boot_time_list=( $(head -1 "$log_name01"|awk '{print $3}') )
-if [ $max_nodes -eq 2 ]
+if [[ $max_nodes -eq 2 || $db != none ]]
 then
-	cfg_load_node_info $db 2
+	if [ $db2 != none ]
+	then
+		cfg_exists $db2
+		cfg_load_node_info $db2 1
+	else
+		cfg_load_node_info $db 2
+	fi
 	typeset	-r	log_name02=${PLELOG_ROOT}/$date/stats/uptime_${cfg_server_name}.log
 	server_list+=( $cfg_server_name )
 	boot_time_list+=( $(head -1 "$log_name02"|awk '{print $3}') )
