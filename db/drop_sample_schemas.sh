@@ -77,9 +77,3 @@ do
 	sqlplus_cmd_with "$conn_str" "$(sql_drop_user_cascade $user)"
 	LN
 done
-
-sqlplus_cmd "$(sql_close_pdb $pdb)"
-LN
-sleep 2
-sqlplus_cmd "$(sql_open_pdb $pdb)"
-LN
