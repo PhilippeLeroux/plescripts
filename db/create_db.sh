@@ -781,8 +781,7 @@ then
 	LN
 fi
 
-# N'est plus nécessaire remove_glogin n'est plus appelée.
-#copy_glogin
+copy_glogin
 
 if [ $crs_used == yes ]
 then
