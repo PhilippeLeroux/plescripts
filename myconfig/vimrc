@@ -16,8 +16,10 @@ if  ! has("compatible")
 " git ne fonctionne plus avec :
 " autocmd BufEnter * silent! lcd %:p:h
 
+"	============================================================================
 set history=10000
 
+"	============================================================================
 if ! exists( "g:first_load" )
 	" Permet d'éviter certaines actions sur
 	" un rechargement du fichier
@@ -26,102 +28,78 @@ else
 	let g:first_load=0
 endif
 
+"	============================================================================
 set modeline
 
-"	Pathogen
-let g:pathogen_disabled = []
-"if has("gui_running")
-"	call add(g:pathogen_disabled, 'vim-togglemouse')
-"else
-	"	Par défaut c'est le terminal qui à la sourie.
-	"	togglemouse map la touche F12 pour switcher entre le terminal et vim.
-"	let &mouse=""
-"endif
-
-if v:version <= 704
-	call add(g:pathogen_disabled, 'vim-Grammalecte')
-endif
-
-call pathogen#infect()
-call pathogen#helptags()
-
+"	============================================================================
 if match( getcwd(), $HOME.'/plewiki' ) == 0
 	let plewiki_directory='yes'
 else
 	let plewiki_directory='no'
 endif
 
+"	============================================================================
 if g:first_load == 1
 	if has("gui_running")
 		set columns=115
 		set lines=49
 		if plewiki_directory == 'yes'
-			winpos 847 36
+			winpos 847 36	" Positionne la fenêtre à droite de l'écran
 		else
-			winpos 0 36
+			winpos 0 36		" Positionne la fenêtre à gauche de l'écran
 		endif
 	endif
 endif
 
+"	============================================================================
 "	Pour vim-instant-markdown
+"	============================================================================
 let g:vim_markdown_folding_disabled = 1
 let g:vim_markdown_toc_autofit = 1
 set conceallevel=2
 
+"	============================================================================
 "	Pour vim-markdown
+"	============================================================================
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 
-"	vim-session & vim-misc
-if plewiki_directory == 'yes'
-	" Il est nécessaire de sauvegarder la session manuellement la première
-	" fois.
-	let g:session_default_name='plewiki'
-	let g:session_autoload='yes'
-	let g:session_autosave='yes'
-else
-	let g:session_autoload='yes'
-	let g:session_autosave='yes'
-endif
-"	Ne fonctionne pas.
-"	il faut supprimer default.vim
-"	g:session_default_name est buggé. pour pouvoir réutiliser le nom par
-"	défaut : supprimer les fichiers sessions existant, définir :
-"	let g:session_default_name=bidon qui provoque une erreur au démarrage, il
-"	suffit ensuite de supprimer la varaible et c'est bon.
-"if has("gui_running")
-"	let g:session_default_name='vim_gui'
-"else
-"	let g:session_default_name='vim_term'
-"endif
-
-" Pour mes fichiers template et .md je désactive la syntaxe
+"	============================================================================
+"	Pour mes fichiers template et .md je désactive la syntaxe
+"	============================================================================
 autocmd BufRead *.template,*.doc.sh,*.md set syn=off
 
 "	Activé pour le plugin markdown
 syntax enable
 filetype plugin indent on
 
-" Change the mapleader from \ to ,
+"	============================================================================
+"	Change the mapleader from \ to ,
 let mapleader=","
 let maplocalleader=","
 
+"	============================================================================
 "	Recharge automatiquement les fichiers modifiés.
 set autoread
 
+"	============================================================================
 "   Ne charge pas le driver noshowmatch qui est trop lent.
 let loaded_matchparen = 1
 
-"Pour que airline soit visible tout le temps
+"	============================================================================
+"	Pour que airline soit visible tout le temps
 set laststatus=2
 
-"Search
+"	============================================================================
+"	Search
 set hlsearch
 set incsearch
 
-" Don't redraw while executing macros (good performance config)
+"	============================================================================
+"	Don't redraw while executing macros (good performance config)
 set lazyredraw
 
-" For regular expressions turn magic on
+"	============================================================================
+"	For regular expressions turn magic on
 set magic
 
 "	============================================================================
@@ -140,16 +118,12 @@ let g:syntastic_check_on_wq = 1
 
 autocmd BufRead *.template,*.doc.sh let g:syntastic_check_on_open = 0
 
-
-"	============================================================================
-"	Contournement bug colorisation syntaxique
-nnoremap <C-s> :syntax on<CR>
-
 "	============================================================================
 "	Sauver la position du curseur
 "	http://vim.wikia.com/wiki/Restore_cursor_to_file_position_in_previous_editing_session
 "	Sous windows il faut une adaptation
 "	'100,<50,s10,h
+"	============================================================================
 set viminfo='10,\"100,:20,%,n~/.viminfo
 function! RestoreCursor()
 	if line("'\"") <= line("$")
@@ -162,9 +136,10 @@ augroup restoreCursor
 	autocmd!
 	autocmd BufWinEnter * call RestoreCursor()
 augroup END
-	
+
 "	============================================================================
 "	toggle between terminal and vim mouse
+"	============================================================================
 if ! has("gui_running")
 	noremap <silent><F12> :let &mouse=(&mouse == "a"?"":"a")<CR>:call ShowMouseMode()<CR>
 	function ShowMouseMode()
@@ -210,6 +185,46 @@ nnoremap <silent> <C-e> :call Goto_plescripts()<CR>
 nnoremap <silent> <C-h> :call Goto_home()<CR>
 
 "	============================================================================
+"	vim-session & vim-misc
+"	============================================================================
+let g:session_autoload='yes'
+let g:session_autosave='yes'
+
+"	Bug : si une session existe déja la secon
+if has("gui_running")
+	let g:session_default_name='gui'
+else
+	let g:session_default_name='terminal'
+endif
+
+"	Workaround bug vim ou commande NERDTree ?
+"	La commande autocmd bufenter * if (winnr("$") == 1 [skipped] | q | endif
+"	fait planter le plugin vim-session et certainnement tous les autres qui
+"	comme lui enregistre des fonctions devant s'exécuter quand vim se termine.
+function! RemoveSessionLock()
+	let l:lock=expand( g:session_directory . '/' . g:session_default_name . '.vim.lock' )
+	call delete(lock)
+endfunction
+
+"	Si NERDTree est la dernière fenêtre supprime le lock et quitte.
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | call RemoveSessionLock() | qa | endif
+
+"	Workaround :
+"	Si une session avec un nom différent existe et que la session courante n'a
+"	pas encore de fichier de session, alors il n'est jamais crée.
+function SaveSessionIfNotExists()
+	let l:curfilename=expand('%:t')
+	if expand('%:t') !~ "NERD_tree*" && l:curfilename != ''
+		let l:file=expand( g:session_directory . '/' . g:session_default_name . '.vim' )
+		if ! filereadable( file )
+			SaveSession
+		endif
+	endif
+endfunction
+
+autocmd bufenter * call SaveSessionIfNotExists()
+
+"	============================================================================
 "	NERDTree
 "	============================================================================
 let NERDTreeIgnore=['\.swp$', '\~$']
@@ -226,20 +241,8 @@ else
 endif
 map <silent> <F5> :NERDTreeToggle<CR>
 
-"Si NERDTree est la dernière fenêtre ouverte alors quitter [G]vim
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 " Go to previous (last accessed) window.
 autocmd VimEnter * wincmd p
- 
-"	============================================================================
-source $HOME/vimfunc/ToggleColorscheme.vim
-map <silent> <F6> :call ToggleColorscheme()<CR>
-
-"	============================================================================
-"	UndoTree
-"	============================================================================
-"let g:undotree_WindowLayout=3
-"nnoremap <silent> <F7> :UndotreeToggle<CR>
 
 "	============================================================================
 "	clean_log
@@ -285,5 +288,23 @@ nnoremap <silent> <C-t> :call TocMarkdown()<CR>
 "	Recherche de la fonction correspondante ou mot sous le curseur.
 source $HOME/vimfunc/SearchFunction.vim
 nnoremap <leader>f :call SearchFunction()<CR>
+
+"	============================================================================
+"	Pathogen
+"	Positionné à la fin pour que les variables soient initialisées avant le
+"	chargement des plugins.
+"	============================================================================
+let g:pathogen_disabled = []
+if v:version <= 704
+	call add(g:pathogen_disabled, 'vim-Grammalecte')
+endif
+
+call pathogen#infect()
+call pathogen#helptags()
+
+"	============================================================================
+"	Positionné après Pathogen pour que les pluggins 'colorscheme' soient chargés.
+source $HOME/vimfunc/ToggleColorscheme.vim
+map <silent> <F6> :call ToggleColorscheme()<CR>
 
 endif "!has("compatible")
