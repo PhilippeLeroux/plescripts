@@ -54,7 +54,12 @@ add_usage "KERNEL_KPTI=${KERNEL_KPTI:-disable}"	"enable|*disable* kpti"
 typeset	-r	vm_kernel_params="$(print_usage)"
 reset_usage
 
-add_usage "VM_PATH=\"${VM_PATH:-$vm_path}\"" "Where to create VM"
+BVP="$VM_PATH"
+VM_PATH=${VM_PATH:-$vm_path}
+add_usage "VM_PATH=\"$VM_PATH\"" "Where to create VM"
+add_usage "DB_DISK_PATH=\"${DB_DISK_PATH:-$VM_PATH}\"" "Alternate path for database disks."
+VM_PATH="$BVP"
+unset BVP
 typeset -r vm_params="$(print_usage)"
 reset_usage
 
@@ -69,7 +74,6 @@ typeset -r installation="$(print_usage)"
 reset_usage
 
 add_usage "INSTALL_GUESTADDITIONS=${INSTALL_GUESTADDITIONS:-$install_guestadditions}"	"yes|*no*"
-add_usage "TIMEKEEPING=${TIMEKEEPING:-$timekeeping}"									"*ntp_with_kvmclock*|ntp_without_kvmclock"
 typeset -r internals="$(print_usage)"
 
 typeset -r str_usage=\
@@ -119,14 +123,13 @@ function variable_is_valid
 		KERNEL_KPTI) return 0 ;;
 
 		VM_PATH) return 0 ;;
+		DB_DISK_PATH) return 0 ;;
 
 		INSTALL_GUESTADDITIONS) return 0 ;;
 
 		DISKS_HOSTED_BY) return 0 ;;
 		SAN_DISK) return 0 ;;
 		SAN_DISK_SIZE_G) return 0 ;;
-
-		TIMEKEEPING) return 0 ;;
 
 		IOSTAT_ON) return 0 ;;
 
@@ -184,7 +187,6 @@ do
 	esac
 done
 
-
 typeset -r local_cfg=~/plescripts/local.cfg
 
 [ ! -f $local_cfg ] && touch $local_cfg || true
@@ -195,13 +197,13 @@ then
 	LN
 else
 
-	if [ $var == VM_PATH ]
+	if [[ $var == VM_PATH || $var == DB_DISK_PATH ]]
 	then
 		# Remplace ~ par HOME
 		value="${value/\~/$HOME}"
 		if [ ! -d "$value" ]
 		then
-			error "Directory '$value' not exists"
+			error "Path '$value' not exists"
 			LN
 			exit 1
 		fi

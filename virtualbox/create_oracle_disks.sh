@@ -6,9 +6,10 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+
+typeset	-r	str_usage=\
 "Usage : $ME
 	-db=name       Identifier.
 	[-dg_node=#]   Dataguard node
@@ -75,7 +76,7 @@ else
 	cfg_load_node_info $db $dg_node
 fi
 
-first_vm=$cfg_server_name
+typeset	-r	first_vm=$cfg_server_name
 
 if [ $cfg_db_type == rac ]
 then
@@ -88,14 +89,28 @@ else
 	typeset	-r	attach_to=no_attach
 fi
 
-typeset -r	cfg_disk=$cfg_path_prefix/$db/disks
+if [ "$vm_path" == "$db_disk_path" ]
+then
+	typeset	-r	disk_path=default
+else
+	if [ $cfg_dataguard == no ]
+	then
+		typeset	-r	disk_path="$db_disk_path/$db"
+	else
+		typeset	-r	disk_path="$(printf "%s%02d" "$db_disk_path/$db" $dg_node)"
+	fi
+	exec_cmd "mkdir -p '$disk_path'"
+	LN
+fi
+
+typeset	-r	cfg_disk=$cfg_path_prefix/$db/disks
 typeset	-i	ilun=1
 while IFS=: read dg_name size_gb first_no last_no
 do
-	count=$(( last_no - first_no + 1 ))
 	line_separator
+	typeset	-i	count=last_no-first_no+1
 	info "Add $count disks for DG $dg_name"
-	typeset -i	size_mb=$(( size_gb * 1024 ))
+	typeset	-i	size_mb=size_gb*1024
 	for (( idisk=1; idisk <= count; ++idisk ))
 	do
 		exec_cmd ~/plescripts/virtualbox/add_disk.sh					\
@@ -103,6 +118,7 @@ do
 							-disk_name=$(printf "%s_lun%02d" $db $ilun)	\
 							-disk_mb=$size_mb							\
 							-attach_to="'$attach_to'"					\
+							-disk_path="$disk_path"						\
 							-fixed_size
 		((++ilun))
 	done

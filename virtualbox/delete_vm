@@ -71,6 +71,25 @@ function read_vm_path_folder
 	sed "s/^ *//"<<<${config_file%/*}
 }
 
+#	$1 VM name
+#	$2 Répertoire retourné par read_vm_path_folder
+#	Création du tableau vm_alt_path_list contenant tous les répertoires contenant
+#	des	disques vdi sauf $2
+#
+#	Note : la fonction read_vm_path_folder est plus fiable pour trouver
+function read_alternate_vm_paths
+{
+	typeset	-ga	vm_alt_path_list
+	typeset		the_path
+	while read the_path
+	do
+		[ "$the_path" != "$2" ] && vm_alt_path_list+=( "$the_path" ) || true
+	done<<<"$(VBoxManage showvminfo $1 | grep "^SATA"	|\
+								cut -d: -f2 | rev		|\
+								cut -d/ -f2- | rev		|\
+								uniq)"
+}
+
 #	Lecture de toutes les VMs correspondantes au pattern $server.
 typeset -a vm_list
 while read vm_name
@@ -104,13 +123,32 @@ do
 		exit 1
 	fi
 
-	dir_to_delete_list+=( $vm_path_folder )
+	# Le tableau vm_alt_path_list contiendra les répertoires.
+	read_alternate_vm_paths ${vm} "$vm_path_folder"
+
+	dir_to_delete_list+=( "$vm_path_folder" )
 	exec_cmd -c "VBoxManage unregistervm $vm --delete"
 	LN
 done
 
-for dir in ${dir_to_delete_list}
+line_separator
+info "Remove paths ${dir_to_delete_list[*]}"
+# Il faut utiliser les indices, les chemins pouvant contenir des espaces, la
+# syntaxe for x in ${array} ne fonctionne pas.
+for (( i = 0; i < ${#dir_to_delete_list[*]}; ++i ))
 do
-	exec_cmd rm -rf \"$dir\"
+	exec_cmd "rm -rf \"${dir_to_delete_list[i]}\""
 	LN
 done
+
+if [ ${#vm_alt_path_list[*]} -ne 0 ]
+then
+	line_separator
+	info "Remove directories ${vm_alt_path_list[*]}"
+	for (( i = 0; i < ${#vm_alt_path_list[*]}; ++i ))
+	do
+		# Si le répertoire n'est pas vide, alors la commande échoue.
+		exec_cmd -c "rmdir \"${vm_alt_path_list[i]}\""
+		LN
+	done
+fi
