@@ -359,9 +359,11 @@ function real_time_apply_is
 # le CRS sa donne quoi ??
 function create_pdb_services
 {
-	[[ $crs_used == no ]] && create_database_trigger_open_stby_pdb || true
-
-	create_database_trigger_start_pdb_services
+	if [[ $crs_used == no ]]
+	then
+		create_database_trigger_open_stby_pdb
+		create_database_trigger_start_pdb_services
+	fi
 
 	if [ $wallet == no ]
 	then
