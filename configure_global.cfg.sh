@@ -286,7 +286,7 @@ function sync_time_source
 # $3 parameter name to write to local cfg
 function update_local_cfg
 {
-	if [ "$1" != "$2" ]
+	if [[ "$1" != "$2" && x"$2" != x ]]
 	then
 		update_variable "$3" "$2" $HOME/plescripts/local.cfg
 	fi
@@ -351,8 +351,14 @@ info "Configure repository OL7"
 if	[[ $ol7_repository_release != $orcl_yum_repository_release ||	\
 					$OL7_LABEL_n == 7.3 || $OL7_LABEL_n == 7.2  ]]
 then
-	update_variable "INFRA_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
-	update_variable "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
+	if [ x"$INFRA_YUM_REPOSITORY_RELEASE" != x ]
+	then
+		update_variable "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
+	fi
+	if [ x"$INFRA_YUM_REPOSITORY_RELEASE" != x ]
+	then
+		update_variable "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
+	fi
 fi
 
 if [ $count_errors -ne 0 ]
