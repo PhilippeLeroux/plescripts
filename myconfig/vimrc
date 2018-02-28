@@ -17,6 +17,18 @@ if  ! has("compatible")
 " autocmd BufEnter * silent! lcd %:p:h
 
 "	============================================================================
+"	Pathogen
+"	Doit être appelé au début.
+"	============================================================================
+let g:pathogen_disabled = []
+if v:version <= 704
+	call add(g:pathogen_disabled, 'vim-Grammalecte')
+endif
+
+call pathogen#infect()
+call pathogen#helptags()
+
+"	============================================================================
 set history=10000
 
 "	============================================================================
@@ -214,7 +226,7 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 "	pas encore de fichier de session, alors il n'est jamais crée.
 function SaveSessionIfNotExists()
 	let l:curfilename=expand('%:t')
-	if expand('%:t') !~ "NERD_tree*" && l:curfilename != ''
+	if expand(l:curfilename) !~ "NERD_tree*" && l:curfilename != ''
 		let l:file=expand( g:session_directory . '/' . g:session_default_name . '.vim' )
 		if ! filereadable( file )
 			SaveSession
@@ -288,19 +300,6 @@ nnoremap <silent> <C-t> :call TocMarkdown()<CR>
 "	Recherche de la fonction correspondante ou mot sous le curseur.
 source $HOME/vimfunc/SearchFunction.vim
 nnoremap <leader>f :call SearchFunction()<CR>
-
-"	============================================================================
-"	Pathogen
-"	Positionné à la fin pour que les variables soient initialisées avant le
-"	chargement des plugins.
-"	============================================================================
-let g:pathogen_disabled = []
-if v:version <= 704
-	call add(g:pathogen_disabled, 'vim-Grammalecte')
-endif
-
-call pathogen#infect()
-call pathogen#helptags()
 
 "	============================================================================
 "	Positionné après Pathogen pour que les pluggins 'colorscheme' soient chargés.
