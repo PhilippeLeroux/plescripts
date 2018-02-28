@@ -99,7 +99,11 @@ LN
 
 line_separator
 info "Add Iface 2: Interco iSCSI"
-exec_cmd VBoxManage modifyvm $master_hostname --nic2 intnet
+exec_cmd VBoxManage modifyvm $master_hostname --nic2 $if_iscsi_nic
+if [ $if_iscsi_nic == bridged ]
+then
+	exec_cmd VBoxManage modifyvm $master_hostname --bridgeadapter2 "$if_net_bridgeadapter"
+fi
 exec_cmd VBoxManage modifyvm $master_hostname --nictype2 virtio
 exec_cmd VBoxManage modifyvm $master_hostname --cableconnected2 on
 LN

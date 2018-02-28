@@ -55,10 +55,13 @@ line_separator
 exec_cmd yum -y update
 LN
 
+line_separator
 if [ "$infra_kernel_version" == redhat ]
 then
-	line_separator
-	exec_cmd $HOME/plescripts/grub2/enable_redhat_kernel.sh
+	exec_cmd "~/plescripts/grub2/enable_kernel.sh -version=redhat"
+	LN
+else
+	exec_cmd "~/plescripts/grub2/setup_or_remove_elevator.sh -kernel=UEK"
 	LN
 fi
 

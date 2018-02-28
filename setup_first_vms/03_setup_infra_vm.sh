@@ -43,12 +43,12 @@ do
 	esac
 done
 
-if [ "$infra_kernel_version" == redhat ]
+exec_cmd "$HOME/plescripts/grub2/enable_kernel.sh -version=$infra_kernel_version"
+
+if [ $kernel_kpti == disable ]
 then
-	exec_cmd "~/plescripts/grub2/enable_redhat_kernel.sh -skip_test_infra"
-	LN
-else
-	exec_cmd "~/plescripts/grub2/enable_oracle_kernel.sh -version=$infra_kernel_version"
+	info "Disable KPTI"
+	exec_cmd '~/plescripts/grub2/setup_kernel_boot_options.sh -add="nopti"'
 	LN
 fi
 

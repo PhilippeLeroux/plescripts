@@ -580,18 +580,8 @@ function disable_cgroup_memory
 
 function enable_kernel
 {
-	line_separator
-	info "Enable kernel $ol7_kernel_version"
+	ssh_server "~/plescripts/grub2/enable_kernel.sh -version=redhat"
 	LN
-
-	if [ "$ol7_kernel_version" == redhat ]
-	then
-		ssh_server "~/plescripts/grub2/enable_redhat_kernel.sh -skip_test_infra"
-		LN
-	else
-		ssh_server "~/plescripts/grub2/enable_oracle_kernel.sh -version=$ol7_kernel_version"
-		LN
-	fi
 }
 
 # Cette action est faite sur le master, elle n'est plus activée probablement

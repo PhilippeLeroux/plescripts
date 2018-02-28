@@ -27,12 +27,6 @@
 
 	Avec le paramètre -use_tar=name.tar.gz, extrait le dépôt contenu dans l'archive.
 
-* Mise à jour du serveur d'infra
-
-	Après un `yum update` exécuter le scripts `~/plescripts/grub2/enable_redhat_kernel.sh`.
-
-	Le noyau doit être celui de RedHat, sinon il y a pas mal de dysfonctionnements.
-
 * Tester si un reboot est nécessaire après un `yum update`
 
 	Si la commande `lsof | awk '$5 == "DEL" { print }'` affiche des lignes il faut
