@@ -29,7 +29,7 @@ call pathogen#infect()
 call pathogen#helptags()
 
 "	============================================================================
-set history=10000
+set history=90000
 
 "	============================================================================
 if ! exists( "g:first_load" )
@@ -201,12 +201,10 @@ nnoremap <silent> <C-h> :call Goto_home()<CR>
 "	============================================================================
 let g:session_autoload='yes'
 let g:session_autosave='yes'
-
-"	Bug : si une session existe déja la secon
 if has("gui_running")
-	let g:session_default_name='gui'
+	let g:session_default_name='gui'		"	Une session pour gvim
 else
-	let g:session_default_name='terminal'
+	let g:session_default_name='terminal'	"	Une session pour vim
 endif
 
 "	Workaround bug vim ou commande NERDTree ?
@@ -226,7 +224,7 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 "	pas encore de fichier de session, alors il n'est jamais crée.
 function SaveSessionIfNotExists()
 	let l:curfilename=expand('%:t')
-	if expand(l:curfilename) !~ "NERD_tree*" && l:curfilename != ''
+	if l:curfilename !~ "NERD_tree*" && l:curfilename != ''
 		let l:file=expand( g:session_directory . '/' . g:session_default_name . '.vim' )
 		if ! filereadable( file )
 			SaveSession
@@ -242,7 +240,8 @@ autocmd bufenter * call SaveSessionIfNotExists()
 let NERDTreeIgnore=['\.swp$', '\~$']
 
 if has( "gui_running" )
-	if plewiki_directory == 'no'
+	let b:fileext=expand( '%:e' )
+	if plewiki_directory == 'no' && b:fileext != 'txt' && b:fileext != 'log'
 		" NERDTree ouvert automatiquement
 		autocmd VimEnter * NERDTree %:p:h
 	endif
