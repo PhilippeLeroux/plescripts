@@ -216,8 +216,10 @@ function! RemoveSessionLock()
 	call delete(lock)
 endfunction
 
+"	Commenter, avec cette version de vim fonctionne très mal.
+"	J'utilise 'qa' pour quitter et ma session est sauvée.
 "	Si NERDTree est la dernière fenêtre supprime le lock et quitte.
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | call RemoveSessionLock() | qa | endif
+"autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | call RemoveSessionLock() | qa | endif
 
 "	Workaround :
 "	Si une session avec un nom différent existe et que la session courante n'a
@@ -233,21 +235,6 @@ function! SaveSessionIfNotExists()
 endfunction
 
 autocmd bufenter * call SaveSessionIfNotExists()
-
-"	Workaround :
-"	Si la dernière fenêtre est fermée par q, alors la session n'est pas
-"	sauvée cf commantaire de la fonction RemoveSessionLock()
-function! SaveSessionOnBufLeave()
-	let l:curfilename=expand('%:t')
-	if l:curfilename !~ "NERD_tree*" && l:curfilename != ''
-		let l:file=expand( g:session_directory . '/' . g:session_default_name . '.vim' )
-		if ! filereadable( file )
-			SaveSession
-		endif
-	endif
-endfunction
-
-autocmd bufleave * call SaveSessionOnBufLeave()
 
 "	============================================================================
 "	NERDTree
