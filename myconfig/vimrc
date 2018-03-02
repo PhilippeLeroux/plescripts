@@ -222,7 +222,7 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 "	Workaround :
 "	Si une session avec un nom différent existe et que la session courante n'a
 "	pas encore de fichier de session, alors il n'est jamais crée.
-function SaveSessionIfNotExists()
+function! SaveSessionIfNotExists()
 	let l:curfilename=expand('%:t')
 	if l:curfilename !~ "NERD_tree*" && l:curfilename != ''
 		let l:file=expand( g:session_directory . '/' . g:session_default_name . '.vim' )
@@ -233,6 +233,21 @@ function SaveSessionIfNotExists()
 endfunction
 
 autocmd bufenter * call SaveSessionIfNotExists()
+
+"	Workaround :
+"	Si la dernière fenêtre est fermée par q, alors la session n'est pas
+"	sauvée cf commantaire de la fonction RemoveSessionLock()
+function! SaveSessionOnBufLeave()
+	let l:curfilename=expand('%:t')
+	if l:curfilename !~ "NERD_tree*" && l:curfilename != ''
+		let l:file=expand( g:session_directory . '/' . g:session_default_name . '.vim' )
+		if ! filereadable( file )
+			SaveSession
+		endif
+	endif
+endfunction
+
+autocmd bufleave * call SaveSessionOnBufLeave()
 
 "	============================================================================
 "	NERDTree
