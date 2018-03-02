@@ -700,8 +700,8 @@ then
 	ORACLE_HOME=$(ssh grid@${node_names[0]} ". .bash_profile; env|grep ORACLE_HOME"|cut -d= -f2)
 	ORACLE_BASE=$(ssh grid@${node_names[0]} ". .bash_profile; env|grep ORACLE_BASE"|cut -d= -f2)
 else
-	ORACLE_HOME=/$GRID_DISK/oracle_home/bidon
-	ORACLE_BASE=/$GRID_DISK/oracle_base/bidon
+	ORACLE_HOME=/$grid_disk/oracle_home/bidon
+	ORACLE_BASE=/$grid_disk/oracle_base/bidon
 fi
 
 info "ORACLE_HOME = '$ORACLE_HOME'"

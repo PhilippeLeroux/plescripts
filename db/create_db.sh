@@ -43,8 +43,8 @@ then
 	typeset	fra=FRA
 else
 	typeset	automaticMemoryManagement=true
-	typeset	data=$ORCL_FS_DATA
-	typeset	fra=$ORCL_FS_FRA
+	typeset	data=$orcl_fs_data
+	typeset	fra=$orcl_fs_fra
 fi
 
 typeset	-i	totalMemory=0
@@ -617,7 +617,7 @@ function adjust_FRA_size
 		sqlplus_cmd "$(set_sql_cmd "@$HOME/plescripts/db/sql/adjust_recovery_size.sql")"
 		LN
 	else
-		typeset -i disk_size=$(df --block-size=$((1024*1024)) /$ORCL_FRA_FS_DISK | tail -1 | awk '{ print $2 }')
+		typeset -i disk_size=$(df --block-size=$((1024*1024)) /$orcl_fra_fs_disk | tail -1 | awk '{ print $2 }')
 		typeset -i fra_size=$(compute -i "$disk_size * 0.9")
 		sqlplus_cmd "$(set_sql_cmd "alter system set db_recovery_file_dest_size=${fra_size}M scope=both sid='*';")"
 		LN

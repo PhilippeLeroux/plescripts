@@ -50,4 +50,4 @@ cfg_exists $db
 cfg_load_node_info $db 1
 
 info "Check log on node $cfg_server_name"
-exec_cmd "ssh oracle@${cfg_server_name} 'grep -n \"Error Message\" /$GRID_DISK/app/oraInventory/logs/installActions*'"
+exec_cmd "ssh oracle@${cfg_server_name} 'grep -n \"Error Message\" /$grid_disk/app/oraInventory/logs/installActions*'"

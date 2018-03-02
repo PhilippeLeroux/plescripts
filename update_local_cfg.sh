@@ -6,14 +6,14 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
 add_usage "[-nocheck] variable=value"
 add_usage new_line
 add_usage "Ex to update variable VM_PATH with value ~/VBoxVMs :"
 add_usage "$ ./update_local_cfg.sh VM_PATH=~/VBoxVMs"
-typeset -r parameters_usage="$(print_usage)"
+typeset	-r	parameters_usage="$(print_usage)"
 reset_usage
 
 ORACLE_RELEASE=${ORACLE_RELEASE:-$oracle_release}
@@ -34,6 +34,9 @@ case "$ORACLE_RELEASE" in
 		add_usage "ORCL_YUM_REPOSITORY_RELEASE121=${ORCL_YUM_REPOSITORY_RELEASE121:-$orcl_yum_repository_release}"	"DVD_R2|DVD_R3|latest|R3|R4 Oracle Linux 7 repository"
 		add_usage new_line
 		add_usage "MGMTDB_AUTOSTART121=${MGMTDB_AUTOSTART121:-$mgmtdb_autostart}"									"*disable*|enable database mgmtdb"
+		add_usage new_line
+		add_usage "GRID_DISK_SIZE_GB_121=${GRID_DISK_SIZE_GB_121:-$grid_disk_size_gb}"								"Disk size for Grid Software"
+		add_usage "ORCL_DISK_SIZE_GB_121=${ORCL_DISK_SIZE_GB_121:-$orcl_disk_size_gb}"								"Disk size for Oracle software"
 		;;
 	12.2*)
 		add_usage "VM_MEMORY_MB_FOR_SINGLE_DB_122=${VM_MEMORY_MB_FOR_SINGLE_DB_122:-$vm_memory_mb_for_single_db}"	"VM memory for SINGLE DB 12.2"
@@ -45,9 +48,12 @@ case "$ORACLE_RELEASE" in
 		add_usage "ORCL_YUM_REPOSITORY_RELEASE122=${ORCL_YUM_REPOSITORY_RELEASE122:-$orcl_yum_repository_release}"	"DVD_R2|DVD_R3|latest|R3|R4 Oracle Linux 7 repository"
 		add_usage new_line
 		add_usage "MGMTDB_AUTOSTART122=${MGMTDB_AUTOSTART122:-$mgmtdb_autostart}"									"*disable*|enable database mgmtdb"
+		add_usage new_line
+		add_usage "GRID_DISK_SIZE_GB_122=${GRID_DISK_SIZE_GB_122:-$grid_disk_size_gb}"								"Disk size for Grid Software"
+		add_usage "ORCL_DISK_SIZE_GB_122=${ORCL_DISK_SIZE_GB_122:-$orcl_disk_size_gb}"								"Disk size for Oracle software"
 		;;
 esac
-typeset	-t main_params="$(print_usage)"
+typeset	-t	main_params="$(print_usage)"
 reset_usage
 
 add_usage "KERNEL_KPTI=${KERNEL_KPTI:-disable}"	"enable|*disable* kpti"
@@ -60,23 +66,23 @@ add_usage "VM_PATH=\"$VM_PATH\"" "Where to create VM"
 add_usage "DB_DISK_PATH=\"${DB_DISK_PATH:-$VM_PATH}\"" "Alternate path for database disks."
 VM_PATH="$BVP"
 unset BVP
-typeset -r vm_params="$(print_usage)"
+typeset	-r	vm_params="$(print_usage)"
 reset_usage
 
 add_usage "IOSTAT_ON=${IOSTAT_ON:-$iostat_on}" "*BDD*|ALL for script iostat_on_bdd_disks.sh"
-typeset -r miscs_params="$(print_usage)"
+typeset	-r	miscs_params="$(print_usage)"
 reset_usage
 
-add_usage "DISKS_HOSTED_BY=${DISKS_HOSTED_BY:-$disks_hosted_by}"	"vbox|*san*"
+add_usage "DISKS_HOSTED_BY=${DISKS_HOSTED_BY:-$disks_hosted_by}"	"*vbox*|san"
 add_usage "SAN_DISK=${SAN_DISK:-$san_disk}"							"device path for SAN disk|*vdi*"
 add_usage "SAN_DISK_SIZE_G=${SAN_DISK_SIZE_G:-$san_disk_size_g}"	"Size SAN disk if SAN_DISK=vdi"
-typeset -r installation="$(print_usage)"
+typeset	-r	installation="$(print_usage)"
 reset_usage
 
 add_usage "INSTALL_GUESTADDITIONS=${INSTALL_GUESTADDITIONS:-$install_guestadditions}"	"yes|*no*"
-typeset -r internals="$(print_usage)"
+typeset	-r	internals="$(print_usage)"
 
-typeset -r str_usage=\
+typeset	-r	str_usage=\
 "Usage :
 $ME
 $parameters_usage
@@ -114,11 +120,15 @@ function variable_is_valid
 		VM_MEMORY_MB_FOR_RAC_DB_121) return 0 ;;
 		VM_NR_CPUS_FOR_SINGLE_DB_121) return 0 ;;
 		VM_NR_CPUS_FOR_RAC_DB_121) return 0 ;;
+		GRID_DISK_SIZE_GB_121) return 0 ;;
+		ORCL_DISK_SIZE_GB_121) return 0 ;;
 
 		VM_MEMORY_MB_FOR_SINGLE_DB_122) return 0 ;;
 		VM_MEMORY_MB_FOR_RAC_DB_122) return 0 ;;
 		VM_NR_CPUS_FOR_SINGLE_DB_122) return 0 ;;
 		VM_NR_CPUS_FOR_RAC_DB_122) return 0 ;;
+		GRID_DISK_SIZE_GB_122) return 0 ;;
+		ORCL_DISK_SIZE_GB_122) return 0 ;;
 
 		KERNEL_KPTI) return 0 ;;
 
@@ -138,8 +148,8 @@ function variable_is_valid
 	esac
 }
 
-typeset	var=undef
-typeset value=undef
+typeset		var=undef
+typeset		value=undef
 
 if [ $# -eq 0 ]
 then
@@ -148,7 +158,7 @@ then
 	exit 1
 fi
 
-typeset check_variable=yes
+typeset		check_variable=yes
 
 while [ $# -ne 0 ]
 do
@@ -187,7 +197,7 @@ do
 	esac
 done
 
-typeset -r local_cfg=~/plescripts/local.cfg
+typeset	-r	local_cfg=~/plescripts/local.cfg
 
 [ ! -f $local_cfg ] && touch $local_cfg || true
 

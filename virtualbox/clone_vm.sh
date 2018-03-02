@@ -124,32 +124,32 @@ do
 
 	if [ $cfg_db_type != fs ]
 	then
-		info "Create disk ${vm_name}_$GRID_DISK for mount point /$GRID_DISK for grid"
+		info "Create disk ${vm_name}_$grid_disk for mount point /$grid_disk for grid"
 		exec_cmd $vm_scripts_path/add_disk.sh								\
 								-vm_name="$vm_name"							\
-								-disk_name=${vm_name}_$GRID_DISK			\
-								-disk_mb=$(( GRID_DISK_SIZE_GB * 1024 ))	\
+								-disk_name=${vm_name}_$grid_disk			\
+								-disk_mb=$(( grid_disk_size_gb * 1024 ))	\
 								-fixed_size
 		LN
 
 		if [[ $cfg_db_type != rac || $cfg_oracle_home != ocfs2 ]]
 		then	# Si utilisation de ocfs2 les disques sont crées après la création
 				# de tous les serveurs.
-			info "Create disk ${vm_name}_$ORCL_DISK for mount point /$ORCL_DISK for Oracle"
+			info "Create disk ${vm_name}_$orcl_disk for mount point /$orcl_disk for Oracle"
 			exec_cmd $vm_scripts_path/add_disk.sh							\
 								-vm_name="$vm_name"							\
-								-disk_name=${vm_name}_$ORCL_DISK			\
-								-disk_mb=$(( ORCL_DISK_SIZE_GB * 1024 ))	\
+								-disk_name=${vm_name}_$orcl_disk			\
+								-disk_mb=$(( orcl_disk_size_gb * 1024 ))	\
 								-fixed_size
 			LN
 		fi
 	else
 		# Si le Grid n'est pas installé il n'y a besoin que d'un seul disque.
-		info "Create disk ${vm_name}_$ORCL_SW_FS_DISK for mount point /$ORCL_SW_FS_DISK for Oracle"
+		info "Create disk ${vm_name}_$orcl_sw_fs_disk for mount point /$orcl_sw_fs_disk for Oracle"
 		exec_cmd $vm_scripts_path/add_disk.sh								\
 								-vm_name="$vm_name"							\
-								-disk_name=${vm_name}_$ORCL_SW_FS_DISK		\
-								-disk_mb=$(( ORCL_SW_FS_SIZE_GB * 1024 ))	\
+								-disk_name=${vm_name}_$orcl_sw_fs_disk		\
+								-disk_mb=$(( orcl_sw_fs_size_gb * 1024 ))	\
 								-fixed_size
 		LN
 	fi
@@ -164,11 +164,11 @@ if [[ $cfg_db_type == rac && $cfg_oracle_home == ocfs2 ]]
 then # Avec ocfs2 le disque Oracle est partagé par tous les nœuds.
 	cfg_load_node_info $db 1
 
-	info "Create shared disk ${cfg_server_name}_$ORCL_DISK for mount point /$ORCL_DISK for oracle"
+	info "Create shared disk ${cfg_server_name}_$orcl_disk for mount point /$orcl_disk for oracle"
 	exec_cmd $vm_scripts_path/add_disk.sh									\
 								-vm_name="$cfg_server_name"					\
-								-disk_name=${cfg_server_name}_$ORCL_DISK	\
-								-disk_mb=$(( ORCL_DISK_SIZE_GB * 1024 ))	\
+								-disk_name=${cfg_server_name}_$orcl_disk	\
+								-disk_mb=$(( orcl_disk_size_gb * 1024 ))	\
 								-attach_to="'$node_list'"					\
 								-fixed_size
 	LN

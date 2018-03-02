@@ -145,9 +145,9 @@ function print_disks
 		then # Base single sur FS.
 			if [ ${dg_name:2} == "DATA" ]
 			then
-				info -n "DATA : $ORCL_FS_DATA"
+				info -n "DATA : $orcl_fs_data"
 			else
-				info -n "FRA  : $ORCL_FS_FRA"
+				info -n "FRA  : $orcl_fs_fra"
 			fi
 			info -f " size $(( total_disks * disk_size ))Gb ($total_disks disks)."
 		else

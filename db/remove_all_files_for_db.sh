@@ -181,8 +181,8 @@ then
 else
 	line_separator
 	info "Clean up directories"
-	exec_cmd rm -rf $ORCL_FS_DATA/$db
-	exec_cmd rm -rf $ORCL_FS_FRA/$db
+	exec_cmd rm -rf $orcl_fs_data/$db
+	exec_cmd rm -rf $orcl_fs_fra/$db
 	LN
 fi
 

@@ -332,30 +332,39 @@ function create_database_fs_on_new_disks
 	info "Create FS for DATA"
 	ssh_server plescripts/disk/create_fs.sh						\
 							-disks=$(( last - first + 1 ))		\
-							-mount_point=/$ORCL_DATA_FS_DISK	\
+							-mount_point=/$orcl_data_fs_disk	\
 							-suffix_vglv=oradata				\
 							-type_fs=$rdbms_fs_type				\
 							-striped=yes						\
 							-stripesize=$stripesize_kb			\
 							-netdev
 
-	ssh_server "chown oracle:oinstall /$ORCL_DATA_FS_DISK"
-	ssh_server "chmod 775 /$ORCL_DATA_FS_DISK"
+	ssh_server "chown oracle:oinstall /$orcl_data_fs_disk"
+	ssh_server "chmod 775 /$orcl_data_fs_disk"
 	LN
 
 	IFS=':' read name size_disk first last<<<"$(grep FSFRA $cfg_disks)"
 	info "Create FS for FRA"
 	ssh_server plescripts/disk/create_fs.sh						\
 							-disks=$(( last - first + 1 ))		\
-							-mount_point=/$ORCL_FRA_FS_DISK		\
+							-mount_point=/$orcl_fra_fs_disk		\
 							-suffix_vglv=orafra					\
 							-type_fs=$rdbms_fs_type				\
 							-striped=yes						\
 							-stripesize=$stripesize_kb			\
 							-netdev
 
-	ssh_server "chown oracle:oinstall /$ORCL_FRA_FS_DISK"
-	ssh_server "chmod 775 /$ORCL_FRA_FS_DISK"
+	ssh_server "chown oracle:oinstall /$orcl_fra_fs_disk"
+	ssh_server "chmod 775 /$orcl_fra_fs_disk"
+	LN
+}
+
+function install_perl_digest_md5
+{
+	line_separator
+	#	Utile pour la 12cR2, mais je l'installe même en 12cR1
+	info "For TFA install perl-Digest-MD5"
+	ssh_server "yum -y -q install perl-Digest-MD5"
 	LN
 }
 
@@ -391,15 +400,15 @@ function create_disks_for_oracle_and_grid_softwares
 		ssh_server plescripts/disk/create_fs.sh		\
 					-type_fs=$rdbms_fs_type			\
 					-suffix_vglv=orcl				\
-					-mount_point=/$ORCL_SW_FS_DISK	\
+					-mount_point=/$orcl_sw_fs_disk	\
 					-noatime
 		LN
 		return 0
 	fi
 
-	info "Create mount point /$GRID_DISK for Grid"
+	info "Create mount point /$grid_disk for Grid"
 	ssh_server plescripts/disk/create_fs.sh		\
-					-mount_point=/$GRID_DISK	\
+					-mount_point=/$grid_disk	\
 					-suffix_vglv=grid			\
 					-type_fs=$rdbms_fs_type		\
 					-noatime
@@ -422,14 +431,14 @@ function create_disks_for_oracle_and_grid_softwares
 		[ $node -ne 1 ] && action=add || true
 		ssh_server	plescripts/disk/create_fs_ocfs2.sh	\
 							-cluster_name=$db			\
-							-mount_point=/$ORCL_DISK	\
+							-mount_point=/$orcl_disk	\
 							-suffix_vglv=orcl			\
 							-action=$action
 		LN
 	else # single + Grid Infra.
-		info "Create mount point /$ORCL_DISK for Oracle"
+		info "Create mount point /$orcl_disk for Oracle"
 		ssh_server	plescripts/disk/create_fs.sh		\
-							-mount_point=/$ORCL_DISK	\
+							-mount_point=/$orcl_disk	\
 							-suffix_vglv=orcl			\
 							-type_fs=$rdbms_fs_type		\
 							-noatime
@@ -666,6 +675,7 @@ function install_vim_plugin
 
 function create_stats_services
 {
+	line_separator
 	info -n "Create services stats"
 	case $PLESTATISTICS in
 		*)
@@ -784,6 +794,8 @@ install_vim_plugin
 copy_color_file
 
 bug_rac122_workaround
+
+install_perl_digest_md5
 
 if [[ $node -eq 1 || $cfg_dataguard == yes ]]
 then

@@ -65,8 +65,8 @@ LN
 
 case $db_type in
 	rac|single)
-		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=/$GRID_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
-		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=/$grid_disk!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$orcl_disk!\" ~/plescripts/oracle_preinstall/grid_env"
 		LN
 		if [ $db_type == rac ]
 		then
@@ -79,7 +79,7 @@ case $db_type in
 
 	single_fs)
 		exec_cmd "sed -i \"s!GRID_ROOT=.*!GRID_ROOT=undef!\" ~/plescripts/oracle_preinstall/grid_env"
-		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$ORCL_SW_FS_DISK!\" ~/plescripts/oracle_preinstall/grid_env"
+		exec_cmd "sed -i \"s!ORCL_ROOT=.*!ORCL_ROOT=/$orcl_sw_fs_disk!\" ~/plescripts/oracle_preinstall/grid_env"
 		LN
 esac
 

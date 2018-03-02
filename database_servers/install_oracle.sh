@@ -178,9 +178,9 @@ function create_response_file_12cR1
 
 	if [ $cfg_db_type == fs ]
 	then
-		typeset	-r	O_BASE=/$ORCL_SW_FS_DISK/app/oracle
+		typeset	-r	O_BASE=/$orcl_sw_fs_disk/app/oracle
 	else
-		typeset	-r	O_BASE=/$ORCL_DISK/app/oracle
+		typeset	-r	O_BASE=/$orcl_disk/app/oracle
 	fi
 
 	typeset	-r	O_HOME=$O_BASE/$cfg_orarel/dbhome_1
@@ -222,9 +222,9 @@ function create_response_file_12cR2
 
 	if [ $cfg_db_type == fs ]
 	then
-		typeset	-r	O_BASE=/$ORCL_SW_FS_DISK/app/oracle
+		typeset	-r	O_BASE=/$orcl_sw_fs_disk/app/oracle
 	else
-		typeset	-r	O_BASE=/$ORCL_DISK/app/oracle
+		typeset	-r	O_BASE=/$orcl_disk/app/oracle
 	fi
 
 	typeset	-r	O_HOME=$O_BASE/$cfg_orarel/dbhome_1
@@ -422,9 +422,9 @@ function exec_post_install_root_scripts_on_node
 
 	if [ $cfg_db_type == fs ]
 	then
-		typeset -r script_root_sh="/$ORCL_SW_FS_DISK/app/oracle/$cfg_orarel/dbhome_1/root.sh"
+		typeset -r script_root_sh="/$orcl_sw_fs_disk/app/oracle/$cfg_orarel/dbhome_1/root.sh"
 	else
-		typeset -r script_root_sh="/$ORCL_DISK/app/oracle/$cfg_orarel/dbhome_1/root.sh"
+		typeset -r script_root_sh="/$orcl_disk/app/oracle/$cfg_orarel/dbhome_1/root.sh"
 	fi
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
@@ -532,18 +532,18 @@ case $cfg_db_type in
 		info "==> clusterNodes  = $clusterNodes"
 		if [ $cfg_oracle_home == ocfs2 ]
 		then	#	oraInventory ne peut pas être sur un CFS.
-			ORA_INVENTORY=/$GRID_DISK/app/oraInventory
+			ORA_INVENTORY=/$grid_disk/app/oraInventory
 		else
-			ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
+			ORA_INVENTORY=/$orcl_disk/app/oraInventory
 		fi
 		;;
 	fs)	# Base sur FS
 		info "Database on FS"
-		ORA_INVENTORY=/$ORCL_SW_FS_DISK/app/oraInventory
+		ORA_INVENTORY=/$orcl_sw_fs_disk/app/oraInventory
 		;;
 	std)  # Base sur ASM 
 		info "Database on ASM"
-		ORA_INVENTORY=/$ORCL_DISK/app/oraInventory
+		ORA_INVENTORY=/$orcl_disk/app/oraInventory
 		;;
 esac
 LN

@@ -115,7 +115,7 @@ function deinstall_oracle
 	suoracle -f "~/plescripts/database_servers/oracle_uninstall.sh $arg1"
 
 	execute_on_all_nodes "rm -fr /opt/ORCLfmap"
-	execute_on_all_nodes "rm -fr /$ORCL_DISK/app/oracle/audit"
+	execute_on_all_nodes "rm -fr /$orcl_disk/app/oracle/audit"
 	LN
 
 	typeset -r service_file=/usr/lib/systemd/system/oracledb.service
@@ -165,7 +165,7 @@ function deinstall_grid_12cR1
 	execute_on_all_nodes "rm -fr /etc/oratab"
 	LN
 
-	execute_on_all_nodes "rm -fr /$GRID_DISK/app/grid/log"
+	execute_on_all_nodes "rm -fr /$grid_disk/app/grid/log"
 	LN
 
 	execute_on_all_nodes "rm -fr $GRID_HOME/*"
@@ -174,7 +174,7 @@ function deinstall_grid_12cR1
 	execute_on_all_nodes "rm -fr $GRID_BASE/*"
 	LN
 
-	execute_on_all_nodes "rm -fr /$GRID_DISK/app/oraInventory"
+	execute_on_all_nodes "rm -fr /$grid_disk/app/oraInventory"
 	LN
 }
 

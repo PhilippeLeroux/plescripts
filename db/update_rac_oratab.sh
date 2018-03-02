@@ -53,7 +53,7 @@ do
 	then
 		info "$INSTANCE present in /etc/oratab"
 	else
-		exec_cmd "echo \"${INSTANCE}:/$ORCL_DISK/app/oracle/$orcl_version/dbhome_1:N	#added by bibi\" >> /etc/oratab"
+		exec_cmd "echo \"${INSTANCE}:/$orcl_disk/app/oracle/$orcl_version/dbhome_1:N	#added by bibi\" >> /etc/oratab"
 	fi
 done
 

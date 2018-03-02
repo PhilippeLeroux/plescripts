@@ -71,7 +71,7 @@ then
 
 	if [ $cfg_oracle_home == ocfs2 ]
 	then
-		run_cluvfy "checks CFS integrity" comp cfs -n all -f /$ORCL_DISK
+		run_cluvfy "checks CFS integrity" comp cfs -n all -f /$orcl_disk
 	fi
 
 	#run_cluvfy "checks shared storage accessibility" comp ssa
