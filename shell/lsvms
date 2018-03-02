@@ -7,13 +7,13 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
-typeset -r str_usage=\
+typeset	-r	str_usage=\
 "Usage : $ME"
 
-typeset db=undef
+typeset		db=undef
 
 while [ $# -ne 0 ]
 do
@@ -102,7 +102,7 @@ function print_vm_database
 		then
 			print_vm_running_status $cfg_server_name
 		else
-			info -n -f ", server not exists"
+			info -n -f "server not exist"
 		fi
 		vm_printed_list="$vm_printed_list $cfg_server_name"
 	elif [ $cfg_dataguard == yes ]
@@ -119,7 +119,7 @@ function print_vm_database
 		then
 			print_vm_running_status $cfg_server_name
 		else
-			info -n -f ", server not exist"
+			info -n -f "server not exist"
 		fi
 		vm_printed_list="$vm_printed_list $cfg_server_name"
 	else
@@ -128,7 +128,7 @@ function print_vm_database
 		then
 			info -f -n "  $(print_oracle_release $cfg_orarel) Single    : $(print_vm_running_status $cfg_server_name)"
 		else
-			info -f -n "  $(print_oracle_release $cfg_orarel) Single    : server not exists"
+			info -f -n "  $(print_oracle_release $cfg_orarel) Single    : server not exist"
 		fi
 	fi
 	info -n -f ", $cfg_luns_hosted_by"
@@ -155,7 +155,7 @@ do
 	then
 		info -n "    - $(print_vm_running_status $vm_name)"
 	else
-		info -n "    - server not exists for $vm_name"
+		info -n "    - server not exist for $vm_name"
 	fi
 	if [ $vm_name == $master_hostname ]
 	then
