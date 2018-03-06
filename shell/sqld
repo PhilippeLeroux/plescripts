@@ -5,20 +5,25 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
 if [ x"$SQLDEVELOPER_PATH" == x ]
 then
-	SQLDEVELOPER_PATH=$HOME/sqldeveloper
+	if command_exists sqldeveloper
+	then
+		# Lors d'une installation via rpm sqldevelopper est dans le PATH.
+		# sqldevelopper est un script appelant un script..
+		typeset	-r	real_fullpath=$(cat $(which sqldeveloper))
+		SQLDEVELOPER_PATH=${real_fullpath%/*}
+	else
+		SQLDEVELOPER_PATH=$HOME/sqldeveloper
+	fi
 fi
 
-if [ x"$SQLCL_PATH" == x ]
-then
-	SQLCL_PATH=$SQLDEVELOPER_PATH/sqldeveloper/bin
-fi
+[ x"$SQLCL_PATH" == x ] && SQLCL_PATH=$SQLDEVELOPER_PATH/sqldeveloper/bin || true
 
-typeset -r str_usage=\
+typeset	-r	str_usage=\
 "Usage : $ME
 Execute sqldeveloper or sqlcl.
 
@@ -73,12 +78,22 @@ if [ x"$TNS_ADMIN" == x ]
 then
 	if [ -d ~/plescripts/tnsadmin ]
 	then
-		info "export TNS_ADMIN=~/plescripts/tnsadmin"
+		info "TNS_ADMIN not defined."
+		fake_exec_cmd "export TNS_ADMIN=~/plescripts/tnsadmin"
+		LN
 		export TNS_ADMIN=~/plescripts/tnsadmin
 	else
-		warning "no TNS_ADMIN, run tnssqldev.sh"
+		warning "no TNS_ADMIN, execute tnssqldev.sh to create it."
 		LN
 	fi
+fi
+
+if [ x"$SQLPATH" == x ]
+then
+	info "SQLPATH not defined."
+	fake_exec_cmd "export SQLPATH=~/plescripts/db/sql"
+	LN
+	export SQLPATH=~/plescripts/db/sql
 fi
 
 if [ $disable_dns_cache == yes ]
