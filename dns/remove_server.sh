@@ -58,7 +58,7 @@ IFS='.' read server_name server_domain<<<$(echo $name)
 exec_cmd "sed -i '/${server_name} /d' $named_file"
 LN
 
-exec_cmd "sed -i '/${server_name}.orcl/d' $reverse_file"
+exec_cmd "sed -i '/${server_name}.${DOMAIN_NAME}/d' $reverse_file"
 LN
 
 if [ $restart = yes ]
