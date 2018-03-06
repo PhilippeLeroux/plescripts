@@ -11,9 +11,13 @@ typeset	-r	PARAMS="$*"
 
 typeset	-r	str_usage=\
 "Usage :
-$ME -db=name"
+$ME
+	-db=name
+	[-edition=SE2] default is EE.
+"
 
-typeset	db=undef
+typeset		db=undef
+typeset		edition=EE
 
 while [ $# -ne 0 ]
 do
@@ -28,8 +32,13 @@ do
 			shift
 			;;
 
+		-edition=*)
+			edition=$(to_upper ${1##*=})
+			shift
+			;;
+
 		-h|-help|help)
-			fake_exec_cmd "$str_usage"
+			exec_cmd "$str_usage"
 			LN
 			exit 1
 			;;
@@ -37,7 +46,7 @@ do
 		*)
 			error "Arg '$1' invalid."
 			LN
-			fake_exec_cmd "$str_usage"
+			exec_cmd "$str_usage"
 			exit 1
 			;;
 	esac
@@ -50,18 +59,12 @@ cfg_exists $db
 
 typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
-# Note : utilisation de fake_exec_cmd car erreurs ssh avec exec_cmd et les scripts
-# root du Grid Infra 12cR2
 line_separator
 if [[ $max_nodes -eq 1 ]]
 then
-	fake_exec_cmd ./clone_master.sh -db=$db
-	./clone_master.sh -db=$db
-	[ $? -ne 0 ] && exit 1 || true
+	exec_cmd "~/plescripts/database_servers/clone_master.sh -db=$db"
 else
-	fake_exec_cmd ./create_database_servers.sh -db=$db
-	./create_database_servers.sh -db=$db
-	[ $? -ne 0 ] && exit 1 || true
+	exec_cmd "~/plescripts/database_servers/create_database_servers.sh -db=$db"
 fi
 LN
 
@@ -76,29 +79,29 @@ case $cfg_db_type in
 		line_separator
 		if [ $cfg_dataguard == yes ]
 		then
-			fake_exec_cmd ./install_grid${O_VER}.sh -db=$db -dg_node=1
-			./install_grid${O_VER}.sh -db=$db -dg_node=1
-			[ $? -ne 0 ] && exit 1 || true
+			exec_cmd "~/plescripts/database_servers/install_grid${O_VER}.sh	\
+															-db=$db -dg_node=1"
 
 			timing 20
 			LN
 
-			fake_exec_cmd ./install_grid${O_VER}.sh -db=$db -dg_node=2
-			./install_grid${O_VER}.sh -db=$db -dg_node=2
-			[ $? -ne 0 ] && exit 1 || true
+			exec_cmd "~/plescripts/database_servers/install_grid${O_VER}.sh	\
+															-db=$db -dg_node=2"
 		else
-			fake_exec_cmd ./install_grid${O_VER}.sh -db=$db
-			./install_grid${O_VER}.sh -db=$db
-			[ $? -ne 0 ] && exit 1 || true
+			exec_cmd "~/plescripts/database_servers/install_grid${O_VER}.sh -db=$db"
 		fi
 		timing 20
 		LN
 		;;
 	rac)
+		# ======================================================================
+		# Note : utilisation de fake_exec_cmd car erreurs ssh avec exec_cmd lors
+		# de l'exécution des scripts root du Grid Infra ou d'Oracle pour les RAC.
+		# ======================================================================
 		line_separator
-		fake_exec_cmd ./install_grid${O_VER}.sh -db=$db
-		./install_grid${O_VER}.sh -db=$db
-		[ $? -ne 0 ] && exit 1 || true
+		fake_exec_cmd "~/plescripts/database_servers/install_grid${O_VER}.sh	\
+																	-db=$db"	\
+			&& ~/plescripts/database_servers/install_grid${O_VER}.sh -db=$db
 		timing 20
 		LN
 		;;
@@ -112,25 +115,27 @@ case $cfg_db_type in
 	std|fs)
 		if [ $cfg_dataguard == yes ]
 		then
-			fake_exec_cmd ./install_oracle.sh -db=$db -dg_node=1
-			./install_oracle.sh -db=$db -dg_node=1
-			[ $? -ne 0 ] && exit 1 || true
+			exec_cmd "~/plescripts/database_servers/install_oracle.sh	\
+															-db=$db -dg_node=1"
 
 			timing 20
 			LN
 
-			fake_exec_cmd ./install_oracle.sh -db=$db -dg_node=2
-			./install_oracle.sh -db=$db -dg_node=2
-			[ $? -ne 0 ] && exit 1 || true
+			exec_cmd "~/plescripts/database_servers/install_oracle.sh	\
+															-db=$db -dg_node=2"
 		else
-			fake_exec_cmd ./install_oracle.sh -db=$db
-			./install_oracle.sh -db=$db
-			[ $? -ne 0 ] && exit 1 || true
+			exec_cmd "~/plescripts/database_servers/install_oracle.sh	\
+													-db=$db -edition=$edition"
 		fi
 		;;
 	rac)
-		fake_exec_cmd ./install_oracle.sh -db=$db
-		./install_oracle.sh -db=$db
-		[ $? -ne 0 ] && exit 1 || true
+		# ======================================================================
+		# Note : utilisation de fake_exec_cmd car erreurs ssh avec exec_cmd lors
+		# de l'exécution des scripts root du Grid Infra ou d'Oracle pour les RAC.
+		# ======================================================================
+		fake_exec_cmd "~/plescripts/database_servers/install_oracle.sh		\
+												-db=$db -edition=$edition"	\
+			&& ~/plescripts/database_servers/install_oracle.sh				\
+												-db=$db -edition=$edition
 		;;
 esac
