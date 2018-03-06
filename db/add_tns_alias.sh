@@ -5,9 +5,10 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+
+typeset	-r	str_usage=\
 "Usage : $ME
 	-service=name    Nom du service qui sera aussi le nom de l'alias
 	-host_name=name  Nom de l'hôte.
@@ -15,17 +16,16 @@ typeset -r str_usage=\
 	[-dataguard_list=server list] Nom des autres serveurs du dataguard.
 "
 
-typeset service=undef
-typeset host_name=undef
-typeset tnsalias=undef
-typeset dataguard_list=undef
+typeset		service=undef
+typeset		host_name=undef
+typeset		tnsalias=undef
+typeset		dataguard_list=undef
 
 while [ $# -ne 0 ]
 do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -78,23 +78,24 @@ fi
 [ $tnsalias == undef ] && tnsalias=$service || true
 
 typeset	-r	hostn=$(hostname -s)
+typeset	-ri	padding=${#hostn}
 
-info "$hostn : Delete TNS alias $tnsalias if exists."
-exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias"
+info "$hostn : delete alias $tnsalias if exists."
+~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias >/dev/null 2>&1
 
-info "$hostn : Append new alias : $tnsalias"
+info "$(printf "%${padding}s" ' ')   append new alias $tnsalias."
 if [ "$dataguard_list" == undef ]
 then
-	exec_cmd "~/plescripts/shell/gen_tns_alias.sh			\
+	~/plescripts/shell/gen_tns_alias.sh						\
 						-service=$service					\
 						-alias_name=$tnsalias				\
-						-server_list=$host_name >> $tnsnames_file"
+						-server_list=$host_name >> $tnsnames_file
 else
-	exec_cmd "~/plescripts/shell/gen_tns_alias.sh			\
+	~/plescripts/shell/gen_tns_alias.sh						\
 				-service=$service							\
 				-alias_name=$tnsalias						\
-				-server_list=\"$host_name $dataguard_list\" >> $tnsnames_file"
+				-server_list=\"$host_name $dataguard_list\" >> $tnsnames_file
 fi
 
-info "$hostn : \$TNS_ADMIN/tnsnames.ora updated."
+info "$(printf "%${padding}s" ' ')   \$TNS_ADMIN/tnsnames.ora updated."
 LN
