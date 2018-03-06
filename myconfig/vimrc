@@ -44,7 +44,7 @@ endif
 set modeline
 
 "	============================================================================
-if match( getcwd(), $HOME.'/plewiki' ) == 0
+if match( getcwd(), $HOME.'/plewiki.*' ) == 0
 	let plewiki_directory='yes'
 else
 	let plewiki_directory='no'
