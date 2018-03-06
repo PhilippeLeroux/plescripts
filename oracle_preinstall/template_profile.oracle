@@ -73,21 +73,23 @@ alias sugrid='sudo -u grid -i'
 export SQLPATH=~/plescripts/db/sql
 
 alias sp2='sqlplus -s sys/ORACLE_PASSWORD as sysdba'
-alias lsdiag="sp2 @\"$HOME/db/sql/lsdiag\"<<<exit"
-alias lspdbs="sp2 @\"$HOME/db/sql/lspdbs\"<<<exit"
-alias lsconn="sp2 @\"$HOME/db/sql/lsconn\"<<<exit"
-alias lsdbrole="sp2 @\"$HOME/db/sql/lsdbrole\"<<<exit"
-alias lstbs="sp2 @\"$HOME/db/sql/lstbs\"<<<exit"
-alias lstemp="sp2 @\"$HOME/db/sql/lstemp\"<<<exit"
-alias lspga="sp2 @\"$HOME/db/sql/lspga\"<<<exit"
-alias lsfra="sp2 @\"$HOME/db/sql/lsfra\"<<<exit"
-alias lssrv="sp2 @\"$HOME/db/sql/lssrv\"<<<exit"
-alias lsasync="sp2 @\"$HOME/db/sql/lsasync\"<<<exit"
-alias lspdbhist="sp2 @\"$HOME/db/sql/lspdbhist\"<<<exit"
+alias lsdiag="sp2 @lsdiag<<<exit"
+alias lspdbs="sp2 @lspdbs<<<exit"
+alias lspdbshist="sp2 @lspdbshist<<<exit"
+alias lspdbsrefresh="sp2 @lspdbsrefresh<<<exit"
+alias lsconn="sp2 @lsconn<<<exit"
+alias lsdbrole="sp2 @lsdbrole<<<exit"
+alias lstbs="sp2 @lstbs<<<exit"
+alias lstemp="sp2 @lstemp<<<exit"
+alias lspga="sp2 @lspga<<<exit"
+alias lsfra="sp2 @lsfra<<<exit"
+alias lssrv="sp2 @lssrv<<<exit"
+alias lsasync="sp2 @lsasync<<<exit"
+alias lslink="sp2 @lslink<<<exit"
 
 alias lsstby="$HOME/db/stby/show_dataguard_cfg.sh"
 alias lsstbyconf="dgmgrl -silent -echo sys/ORACLE_PASSWORD 'show configuration'"
-alias lsstbyconf="dgmgrl -silent -echo sys/ORACLE_PASSWORD \"show database verbose \$ORACLE_SID\""
+alias lsstbydb="dgmgrl -silent -echo sys/ORACLE_PASSWORD \"show database verbose \$ORACLE_SID\""
 alias lsstbyapply="$HOME/db/stby/lsstbyapply.sh"
 
 # Ne fonctionne pas avec un RAC
