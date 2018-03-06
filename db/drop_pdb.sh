@@ -14,7 +14,7 @@ typeset -r str_usage=\
 $ME
 	-db=name
 	-pdb=name
-	[-physical]  Physical Standby : close all PDBs and remove all services & co 
+	[-physical]  Physical Standby : close all PDBs and remove all services & co
 	[-force]     don't stop on error
 	[-nolog]
 "
@@ -135,6 +135,32 @@ function stop_and_remove_dbfs
 	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb -skip_drop_user"
 }
 
+# $1 pdb name
+function drop_db_link_for_refresh_and_update_tnsnames
+{
+typeset	-r	query=\
+"select
+	db_link
+from
+	all_db_links
+where
+	db_link like '%$(to_upper $(mk_oci_service $1))'
+;"
+	typeset	-r	db_link_name="$(sqlplus_exec_query "$query" | tail -1)"
+	if [ x"$db_link_name" == x ]
+	then
+		warning "No db link found for pdb $1"
+		LN
+	else
+		info "Drop database link $db_link_name"
+		sqlplus_cmd "$(set_sql_cmd "drop database link $db_link_name;")"
+		LN
+		info "Delete $db_link_name from tnsnames.ora"
+		exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$db_link_name"
+		LN
+	fi
+}
+
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
@@ -182,6 +208,7 @@ do
 		LN
 	fi
 done
+
 if [ $count_stby_error -ne 0 ]
 then
 	confirm_or_exit "Continue"
@@ -213,6 +240,14 @@ fi
 
 wait_if_high_load_average
 
+if [ $(is_application_seed $pdb) == yes ]
+then
+	info "Drop a seed."
+	sqlplus_cmd "$(set_sql_cmd "@drop_pdbseed $pdb")"
+	LN
+	exit 0
+fi
+
 if [ $crs_used == yes ]
 then
 	stop_and_remove_dbfs
@@ -223,21 +258,29 @@ fi
 
 wait_if_high_load_average
 
-line_separator
-info "Delete credential for sys"
-exec_cmd "~/plescripts/db/wallet/delete_credential.sh -tnsalias=sys${pdb}"
-LN
-
-wait_if_high_load_average
-
-if [ $crs_used == yes ]
+if [ $(is_refreshable_pdb $pdb) == no ]
 then
-	exec_cmd "~/plescripts/db/drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
-else
-	exec_cmd "~/plescripts/db/fsdb_drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
-fi
+	line_separator
+	info "Delete credential for sys"
+	exec_cmd "~/plescripts/db/wallet/delete_credential.sh -tnsalias=sys${pdb}"
+	LN
 
-wait_if_high_load_average
+	wait_if_high_load_average
+
+	if [ $crs_used == yes ]
+	then
+		exec_cmd "~/plescripts/db/drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
+	else
+		exec_cmd "~/plescripts/db/fsdb_drop_all_services_for_pdb.sh -db=$db -pdb=$pdb"
+	fi
+
+	wait_if_high_load_average
+else
+	line_separator
+	info "Refreshable PDB no service to delete."
+	LN
+	drop_db_link_for_refresh_and_update_tnsnames $pdb
+fi
 
 if [[ $dataguard == no || $role == primary ]]
 then

@@ -255,23 +255,6 @@ function clone_pdb_from_seed
 }
 
 # $1 pdb name
-# print to stdout yes or no
-function is_application_seed
-{
-	typeset	-r	pdbseed_name=$(to_upper $1)
-typeset	-r	query=\
-"select
-	application_pdb
-from
-	v\$containers
-where
-	name='$pdbseed_name\$SEED'
-;"
-	typeset val=$(sqlplus_exec_query "$query")
-	[ x"$val" == x ] && echo no || echo yes
-}
-
-# $1 pdb name
 function clone_from_pdb
 {
 	typeset	-r	from_pdb=$1

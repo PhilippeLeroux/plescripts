@@ -433,3 +433,37 @@ function is_oracle_enterprise_edition
 		<<<"select banner from v\$version where banner like '%Edition Release%';"	\
 		|grep -q "Enterprise"
 }
+
+# $1 pdb name
+# print to stdout yes or no
+function is_application_seed
+{
+	typeset	-r	pdbseed_name=$(to_upper $1)
+typeset	-r	query=\
+"select
+	application_pdb
+from
+	v\$containers
+where
+	name='$pdbseed_name\$SEED'
+;"
+	typeset val=$(sqlplus_exec_query "$query")
+	[ x"$val" == x ] && echo no || echo yes
+}
+
+# $1 pdb name
+# print to stdout yes or no
+function is_refreshable_pdb
+{
+	typeset	-r	pdb=$(to_upper $1)
+typeset	-r	query=\
+"select
+	refresh_mode
+from
+	cdb_pdbs
+where
+	name='$pdb'
+;"
+	typeset val=$(sqlplus_exec_query "$query")
+	[ "$val" == NONE ] && echo no || echo yes
+}
