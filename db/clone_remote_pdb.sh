@@ -19,6 +19,11 @@ typeset	-r	PARAMS="$*"
 #	Sur un PDB en refresh, les alias TNS et les services ne sont pas crée, si
 #	le CRS est utilisé il ouvrira le PDB au démarrage, il n'est pas possible
 #	d'enregistrer le paramètre -startoption.
+#
+#	RMAN :
+#	Si les archivelogs de la base source sont effacées alors le PDB ne pourra
+#	plus être mis à jour, je n'ai pas trouvé de close de type 'configure archivelog
+#	deletion policy to applied on all standby;' et cette clause n'a aucun effet.
 
 typeset		db=undef
 typeset		pdb=undef
