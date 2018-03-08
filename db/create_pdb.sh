@@ -16,6 +16,7 @@ typeset	-r	orcl_release="$(read_orcl_release)"
 typeset		db=undef
 typeset		pdb=undef
 typeset		from_pdb=default
+typeset		no_data=no
 typeset		wallet=${WALLET:-$(enable_wallet $orcl_release)}
 typeset		sampleSchema=no
 typeset		as_seed=no
@@ -31,6 +32,7 @@ add_usage "[-sampleSchema=$sampleSchema]"	"yes|no"
 add_usage "[-as_seed]"			"Create a seed pdb 12cR2."
 add_usage "[-ro]"				"Fake a seed pdb 12cR1."
 add_usage "[-from_pdb=name]"	"Clone from pdb 'name'"
+add_usage "[-no_data]"			"Clone without data."
 add_usage "[-wallet=$wallet]"	"yes|no yes : Use Wallet Manager for pdb connection."
 add_usage "[-admin_user=$admin_user]"
 add_usage "[-admin_pass=$admin_pass]"
@@ -69,6 +71,11 @@ do
 
 		-from_pdb=*)
 			from_pdb=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-no_data)
+			no_data=yes
 			shift
 			;;
 
@@ -284,7 +291,12 @@ function clone_from_pdb
 			set_sql_cmd "alter pluggable database $1 close immediate instances=all;"
 			set_sql_cmd "alter pluggable database $1 open read only instances=all;"
 		fi
-		set_sql_cmd "create pluggable database $pdb from $1 standbys=all;"
+		if [ $no_data == yes ]
+		then
+			set_sql_cmd "create pluggable database $pdb from $1 no data standbys=all;"
+		else
+			set_sql_cmd "create pluggable database $pdb from $1 standbys=all;"
+		fi
 		if [[ $dataguard == yes && $from_pdb_is_a_seed == no ]]
 		then
 			set_sql_cmd "alter pluggable database $1 close immediate instances=all;"
@@ -304,10 +316,9 @@ function sql_pdb_open_ro_and_save_state
 	typeset pdb_name=$1
 	#	Sur un dataguard le PDB doit être ouvert pour être clonable.
 	#	Il sera donc un RO comme PDB$SEED.
-	set_sql_cmd "alter pluggable database $pdb_name close instances=all;"
 	set_sql_cmd "whenever sqlerror exit 1;"
 
-	set_sql_prompt "Open seed pdb $pdb_name RO"
+	set_sql_prompt "Open pdb $pdb_name RO"
 	set_sql_cmd "alter pluggable database $pdb_name open read only instances=all;"
 	set_sql_cmd "alter pluggable database $pdb_name save state;"
 }
@@ -525,6 +536,13 @@ function stby_create_temporary_file
 
 [[ $ro == yes || $as_seed == yes ]] && wallet=no || true
 
+if [[ $as_seed == yes && $(read_orcl_release) == 12.1 ]]
+then
+	error "Oracle 12.1 : flag -as_seed not valid, used -ro instead (to fake a seed)."
+	LN
+	exit 1
+fi
+
 typeset	-r	dataguard=$(dataguard_config_available)
 typeset	-i	count_stby_error=0
 
@@ -590,6 +608,11 @@ wait_if_high_load_average
 
 if [ $from_pdb == default ]
 then
+	if [ $no_data == yes ]
+	then
+		warning "flag -no_data ignored."
+		LN
+	fi
 	typeset	-r	from_pdb_is_a_seed=no
 	[ $as_seed == yes ] && clone_pdb_as_seed || clone_pdb_from_seed
 else
@@ -623,7 +646,7 @@ done
 
 if [[ $from_pdb != default && $from_pdb_is_a_seed == no ]]
 then
-	info "Remove services cloned from $from_pdb on $pdb"
+	info "Remove services cloned from $from_pdb on $db[$pdb]"
 	sqlplus_cmd "$(sqlcmd_remove_services_from_cloned_pdb)"
 	LN
 fi
@@ -636,6 +659,17 @@ then
 	# Pour ouvrir un PDB RO il faut d'abord l'ouvrir en RW, sinon l'ouverture échoue.
 	# si $ro == yes l'ouverture de la base en RO ne posera pas de problème.
 	sqlplus_cmd "$(open_pdb_and_save_state $pdb)"
+	LN
+elif [[ $ro == yes ]]
+then
+	#	La base est ouverte RW pour 2 raisons :
+	#	- Elle ne peut pas être ouvert RO directement après sa création, l'ouvrir
+	#	  permet de finir son intégration dans le CDB.
+	#	- Pour pouvoir ouvrir le PDB sur la standby il faut qu'elle soit ouverte RW
+	#	  sur la primaire.
+	line_separator
+	info "Open $db[$pdb] RW temporary."
+	sqlplus_cmd "$(set_sql_cmd "alter pluggable database $pdb open instances=all;")"
 	LN
 fi
 
@@ -652,13 +686,23 @@ then
 		set_sql_cmd "@?/rdbms/admin/approot_to_pdb.sql"
 	}
 	line_separator
-	info "Run approot_to_pdb.sql on $pdb."
+	info "Run approot_to_pdb.sql on $db[$pdb]."
 	sqlplus_cmd "$(sql_run_approot_to_pdb)"
 	LN
 fi
 
 if [[ $ro == yes ]]
 then
+	line_separator
+	info "Close $db[$pdb]"
+	sqlplus_cmd "$(set_sql_cmd "alter pluggable database $pdb close immediate instances=all;")"
+	LN
+
+	# 12.1 & 12.2
+	# BUG :	Lors d'un switchover le PDB sera ouvert RW malgrès le 'save state'.
+	#		Si la base est redémarré la PDB sera 'mounted' ave le Grid Infra, et
+	#		sera RW sans le Grid Infra.
+	#		Si on refait un switchover, le PDB est ouvert RO.
 	info "Open read only : $db[$pdb]"
 	sqlplus_cmd "$(sql_pdb_open_ro_and_save_state $pdb)"
 	LN
