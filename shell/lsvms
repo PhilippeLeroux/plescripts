@@ -144,6 +144,46 @@ function print_vm_database
 	LN
 }
 
+# print to stdout all dbid sorted.
+# Sort on release, storage (FS/ASM) and database type
+function get_ordored_dbid
+{
+	typeset		fullpath
+	typeset		dbid
+	while read fullpath
+	do
+		[ x"$fullpath" == x ] && continue || true
+		dbid=${fullpath##*/}
+		if cfg_exists $dbid use_return_code 1>/dev/null 2>&1
+		then
+			cfg_load_node_info $dbid 1
+			printf "$cfg_orarel "
+			case $cfg_db_type in
+				fs)
+					if [ $cfg_dataguard == no ]
+					then # FS
+						printf "1 $dbid\n"
+					else # FS Dataguard
+						printf "3 $dbid\n"
+					fi
+					;;
+				std)
+					if [ $cfg_dataguard == no ]
+					then # ASM
+						printf "2 $dbid\n"
+					else # ASM Dataguard
+						printf "4 $dbid\n"
+					fi
+					;;
+				rac)
+					printf "8 $dbid\n"
+					;;
+			esac
+		fi
+	done<<<"$(find ~/plescripts/database_servers/* -type d)"	\
+								| sort -k 1,2 | awk '{ print $3 }'
+}
+
 #ple_enable_log -params $PARAMS
 
 typeset	vm_printed_list="$infra_hostname"
@@ -179,10 +219,10 @@ line_separator
 info "Databases :"
 LN
 
-while read fullpath
+while read dbid
 do
-	[ x"$fullpath" != x ] && print_vm_database ${fullpath##*/} || true
-done<<<"$(find ~/plescripts/database_servers/* -type d)"
+	[ x"$dbid" == x ] && continue || print_vm_database $dbid
+done<<<"$(get_ordored_dbid)"
 
 # Recherche si d'autres VM exists.
 typeset	-i	count=0
