@@ -116,7 +116,7 @@ cfg_load_node_info $db 1
 typeset	-a	server_list=( $cfg_server_name )
 typeset	-r	log_name01=${PLELOG_ROOT}/$date/stats/uptime_${cfg_server_name}.log
 typeset	-a	boot_time_list=( $(head -1 "$log_name01"|awk '{print $3}') )
-if [[ $max_nodes -eq 2 || $db != none ]]
+if [[ $max_nodes -eq 2 || $db2 != none ]]
 then
 	if [ $db2 != none ]
 	then
