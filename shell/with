@@ -65,12 +65,14 @@ then
 	LN
 	exit 1
 else
-	info -f "[OK]"
+	info -f "[$OK]"
 	LN
 fi
 
 wait_server ${server_name}
-if [ $? -eq 0 ]
+ret=$?
+LN
+if [ $ret -eq 0 ]
 then
 	set_terminal_title "$account@${server_name}"
 	trap 'set_terminal_title default' EXIT
