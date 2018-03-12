@@ -6,19 +6,22 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
-typeset	-r device=/u02
-typeset -r str_usage=\
+typeset	-r	device=/$orcl_disk
+
+typeset	-r	str_usage=\
 "Usage : $ME
 	-db=name
 	[-kill_only] ne fait que tué les process et ne s'exécute pas sur les autres nœuds.
-	[-device=$device] par défaut $device
+	[-device=$device]
+
+Le Grid Infra et la base doivent être démarrés.
 "
 
-typeset	db=undef
-typeset	kill_only=no
+typeset		db=undef
+typeset		kill_only=no
 
 while [ $# -ne 0 ]
 do
@@ -76,6 +79,7 @@ then
 	line_separator
 	exec_cmd -c srvctl stop database -db $(to_upper $db)
 	LN
+	sleep 3
 fi
 
 line_separator
@@ -115,9 +119,14 @@ LN
 exec_cmd rm -rf $device/lost+found/*
 LN
 
+line_separator
 for srv in $gi_node_list
 do
 	info "$srv : mount $device"
 	exec_cmd ssh -t root@$srv mount $device
 	LN
 done
+
+line_separator
+exec_cmd -c srvctl start database -db $(to_upper $db)
+LN
