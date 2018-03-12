@@ -66,7 +66,13 @@ function adjust_memory_parameters
 		then
 			if [ $crs_used == yes ]
 			then
-				totalMemory=$(to_mb $shm_for_db)
+				if [ $gi_count_nodes -gt 1 ]
+				then
+					totalMemory=$(to_mb $shm_for_db)
+				else
+					typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
+					totalMemory=$(compute -i "$shm_max_mb - ($shm_max_mb*29)/100")
+				fi
 			else
 				typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
 				totalMemory=$(compute -i "$shm_max_mb - ($shm_max_mb*10)/100")
@@ -74,7 +80,13 @@ function adjust_memory_parameters
 		else # Bug Oracle 12.2 totalMemory est ignoré.
 			if [ $crs_used == yes ]
 			then
-				memoryMaxTarget=$(to_mb $shm_for_db)
+				if [ $gi_count_nodes -gt 1 ]
+				then
+					memoryMaxTarget=$(to_mb $shm_for_db)
+				else
+					typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
+					memoryMaxTarget=$(compute -i "$shm_max_mb - ($shm_max_mb*29)/100")
+				fi
 			else
 				typeset -ri shm_max_mb=$(df -m /dev/shm|tail -1|awk '{print $2}')
 				memoryMaxTarget=$(compute -i "$shm_max_mb - ($shm_max_mb*10)/100")
