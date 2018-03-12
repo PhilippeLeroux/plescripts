@@ -166,14 +166,11 @@ exit_if_param_undef pdb	"$str_usage"
 
 exit_if_param_invalid role "primary physical"	"$str_usage"
 
-if ! service_exists $db $(mk_oci_service $pdb)
+if [ "$force_flag" != "-c" ] && ! pdb_exists $pdb
 then
-	if [ "$role" != "physical" ]
-	then	# Le script étant lancé via ssh est un '</dev/null' la réponse ne
-			# peut être saisie.
-		warning "Service not exists for pdb $pdb."
-		confirm_or_exit "Continue"
-	fi
+	error "$db[$pdb] not exists. Use flag -force to bypass test."
+	LN
+	exit 1
 fi
 
 [ $log == yes ] && ple_enable_log -params $PARAMS || true
@@ -258,7 +255,7 @@ fi
 
 wait_if_high_load_average
 
-if [ $(is_refreshable_pdb $pdb) == no ]
+if ! refreshable_pdb $pdb
 then
 	line_separator
 	info "Delete credential for sys"

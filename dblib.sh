@@ -439,7 +439,7 @@ function is_oracle_enterprise_edition
 function is_application_seed
 {
 	typeset	-r	pdbseed_name=$(to_upper $1)
-typeset	-r	query=\
+	typeset	-r	query=\
 "select
 	application_pdb
 from
@@ -451,19 +451,32 @@ where
 	[ x"$val" == x ] && echo no || echo yes
 }
 
-# $1 pdb name
-# print to stdout yes or no
-function is_refreshable_pdb
+# return 0 if PDB $1 is refreshable, else return 1
+function refreshable_pdb
 {
-	typeset	-r	pdb=$(to_upper $1)
-typeset	-r	query=\
+	typeset	-r	lpdb=$(to_upper $1)
+	typeset	-r	query=\
 "select
 	refresh_mode
 from
 	cdb_pdbs
 where
-	name='$pdb'
+	pdb_name='$lpdb'
 ;"
-	typeset val=$(sqlplus_exec_query "$query")
-	[ "$val" == NONE ] && echo no || echo yes
+	[ "$(sqlplus_exec_query "$query"|tail -1)" == NONE ] && return 1 || return 0
+}
+
+# return 0 if PDB $1 exists, else return 1
+function pdb_exists
+{
+	typeset	-r	lpdb=$(to_upper $1)
+	typeset	-r	query=\
+"select
+	name
+from
+	v\$pdbs
+where
+	name='$lpdb'
+;"
+	[ "$(sqlplus_exec_query "$query"|tail -1)" == $lpdb ] && return 0 || return 1
 }
