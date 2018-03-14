@@ -4,7 +4,7 @@
 # return 0 if vm running, else 1
 function vm_running
 {
-	grep -q "$1"<<<"$(VBoxManage list runningvms)"
+	grep -qE "\<$1\>"<<<"$(VBoxManage list runningvms)"
 }
 
 # $1 vm name

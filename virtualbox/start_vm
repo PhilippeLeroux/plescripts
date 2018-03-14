@@ -119,8 +119,8 @@ function load_vm_list
 	typeset	-a	list
 	while read vm_name
 	do
-		[ x"$vm_name" != x ] && list+=( $vm_name )
-	done<<<"$(VBoxManage list vms | grep -E "$server" | cut -d\" -f2)"
+		[ x"$vm_name" != x ] && list+=( $vm_name ) || true
+	done<<<"$(VBoxManage list vms | grep -E "\<$server\>" | cut -d\" -f2)"
 
 	if [ $randomize_start == yes ]
 	then
