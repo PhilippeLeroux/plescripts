@@ -19,10 +19,11 @@ typeset	-r	str_usage=\
 "Usage :
 $ME
 	-db=id|-server=name
-	[-take=desc]    take snapshot with current timestamp and description 'desc'.
-	[-restore=name] restore snapshot named 'name', rollback all modifications.
-	[-delete=name]  delete snapshot named 'name', apply all modifications.
-	[-list]         list snapshot names.
+	[-take=desc]     take snapshot with current timestamp and description 'desc'.
+	[-rollback=name] rollback snapshot named 'name', all modifications are cancelled.
+	[-commit=name]   commit snapshot named 'name', apply all modifications.
+	[-restore=name]  restore snapshot ==> rollback all modifications, and there is no need to take a new snapshot.
+	[-list]          list snapshot names.
 "
 
 while [ $# -ne 0 ]
@@ -43,8 +44,8 @@ do
 			shift
 			;;
 
-		-restore=*)
-			action=restore
+		-rollback=*)
+			action=rollback
 			snapname=${1##*=}
 			shift
 			;;
@@ -56,8 +57,14 @@ do
 			shift
 			;;
 
-		-delete=*)
-			action=delete
+		-commit=*)
+			action=commit
+			snapname=${1##*=}
+			shift
+			;;
+
+		-restore=*)
+			action=restore
 			snapname=${1##*=}
 			shift
 			;;
@@ -82,6 +89,14 @@ do
 	esac
 done
 
+function delete_snapshot
+{
+	line_separator
+	info "VM $cfg_server_name delete snapshot $snapname"
+	exec_cmd VBoxManage snapshot $cfg_server_name delete \"$snapname\"
+	LN
+}
+
 function restore_snapshot
 {
 	line_separator
@@ -100,18 +115,17 @@ function take_snapshot
 	LN
 }
 
-function delete_snapshot
+function list_snapshots
 {
-	line_separator
-	info "VM $cfg_server_name delete snapshot $snapname"
-	exec_cmd VBoxManage snapshot $cfg_server_name delete \"$snapname\"
+	info "Snapshot for VM $cfg_server_name"
+	exec_cmd VBoxManage snapshot $cfg_server_name list --machinereadable
 	LN
 }
 
 #ple_enable_log -params $PARAMS
 
 case $action in
-	restore|take|delete)
+	rollback|take|commit|restore)
 		if [ x"$snapname" == x ]
 		then
 			error "Snapshot name missing."
@@ -152,7 +166,7 @@ fi
 
 typeset	restart_vm=no
 case $action in
-	restore|take)
+	rollback|take)
 		if [ $server == none ]
 		then
 			cfg_load_node_info $db 1
@@ -184,19 +198,21 @@ do
 
 	vm_list="$vm_list $cfg_server_name"
 	case $action in
-		restore)
+		rollback)
 			restore_snapshot
+			delete_snapshot
 			;;
 		take)
 			take_snapshot
 			;;
-		delete)
+		commit)
 			delete_snapshot
 			;;
+		restore)
+			restore_snapshot
+			;;
 		list)
-			info "Snapshot for VM $cfg_server_name"
-			exec_cmd VBoxManage snapshot $cfg_server_name list --machinereadable
-			LN
+			list_snapshots
 			;;
 	esac
 done
@@ -213,8 +229,17 @@ then
 fi
 
 case $action in
+	rollback)
+		info "VM :$vm_list rollback done, snapshot $snapname deleted."
+		LN
+		;;
+	commit)
+		info "VM :$vm_list commit done, all changes has been applied."
+		LN
+		;;
 	restore)
-		info "VM :$vm_list restored to snapshot $snapname"
+		info "VM :$vm_list restore done, all changes has been cancelled."
+		list_snapshots
 		LN
 		;;
 	take)
