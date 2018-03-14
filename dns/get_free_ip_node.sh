@@ -4,8 +4,8 @@
 . ~/plescripts/plelib.sh
 EXEC_CMD_ACTION=EXEC
 
-#	Toutes les IPs en dessous de 100 sont réservées.
-typeset	-ri	min_ip_node=100
+#	Toutes les IPs en dessous sont réservées.
+typeset	-ri	min_ip_node=dhcp_max_ip_node+1
 
 typeset -r ME=$0
 typeset -r PARAMS="$*"

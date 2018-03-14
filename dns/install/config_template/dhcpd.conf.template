@@ -1,0 +1,61 @@
+# dhcpd.conf
+#
+# Sample configuration file for ISC dhcpd
+#
+
+# option definitions common to all supported networks...
+option domain-name "DOMAIN_NAME";
+option domain-name-servers INFRA_HOSTNAME.DOMAIN_NAME;
+
+default-lease-time 86400;
+max-lease-time 604800;
+
+# Use this to enble / disable dynamic dns updates globally.
+ddns-update-style interim;
+
+# If this DHCP server is the official DHCP server for the local
+# network, the authoritative directive should be uncommented.
+authoritative;
+
+# Use this to send dhcp log messages to a different log file (you also
+# have to hack syslog.conf to complete the redirection).
+log-facility local7;
+
+# No service will be given on this subnet, but declaring it helps the 
+# DHCP server to understand the network topology.
+
+subnet ISCSI_NETWORK netmask ISCSI_NETWORK_MASK {
+}
+
+subnet NET_NETWORK netmask NET_NETWORK_MASK {
+}
+
+subnet MY_NETWORK netmask MY_NETWORK_MASK {
+    default-lease-time 86400;
+    max-lease-time 604800;
+
+    # Gateway
+    option routers                  INFRA_IP;
+    option broadcast-address        INFRA_IP_BROADCAST;
+
+    option domain-name              "DOMAIN_NAME";
+    option domain-name-servers      INFRA_IP;
+
+    range DHCP_MIN_IP DHCP_MAX_IP;
+}
+
+# Création du nom de la clef commune du serveur DHCP et DNS.
+key dhcp_updater {
+    algorithm hmac-md5;
+    secret DNSSEC_SECRET;
+}
+
+zone REVERSED_NETWORK.in-addr.arpa {
+    primary INFRA_IP;
+    key dhcp_updater;
+}
+
+zone orcl {
+    primary INFRA_IP;
+    key dhcp_updater;
+}

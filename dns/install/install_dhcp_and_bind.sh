@@ -1,0 +1,10 @@
+#!/bin/bash
+# vim: ts=4:sw=4
+
+. ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
+EXEC_CMD_ACTION=EXEC
+
+info "Install bind, bind libs, bind utils and dhcp."
+exec_cmd yum -y install bind bind-libs bind-utils dhcp
+LN

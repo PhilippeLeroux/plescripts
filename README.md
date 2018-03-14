@@ -6,6 +6,7 @@ dans les conditions proches de ce que l'on peut trouver en entreprise.
 
 Le serveur central se nomme K2 et a en charge :
 - la gestion du DNS via bind.
+- la gestion du DHCP, principallement pour intégrer facilement des VM de types 'desktop'.
 - la gateway qui centralise l'accès à internet des serveurs, par défaut aucun
 serveur de base de données ne peut accéder à internet. Le firewall et SELinux sont
 activés sur ce serveur.

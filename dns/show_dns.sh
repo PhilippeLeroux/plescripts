@@ -11,12 +11,14 @@ info "$(printf "%-18s | %s" "Server" "ip")"
 info $horizontal_separator
 
 #	Trié par rapport à l'ip node.
-cat /var/named/named.$domain	|\
-	grep "^[[:alpha:]].*"		|\
-	grep -v localhost			|\
-	sort -n -t "." -k 4			|\
-while read server_name f2 f3 server_ip
+cat /var/named/named.$domain		|\
+	grep -E "^[[:alpha:]].*\sA\s."	|\
+	grep -v localhost				|\
+	sort -n -t "." -k 4				|\
+while read server_name f1 f2 server_ip
 do
+	# Avec l'enregistrement DHCP il y a un champ de moins.
+	[ x"$server_ip" == x ] && server_ip=$f2 || true
 	info "$(printf "%-18s | %s" $server_name $server_ip)"
 done
 
