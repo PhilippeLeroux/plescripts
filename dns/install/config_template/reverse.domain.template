@@ -1,10 +1,13 @@
+; vim:ts=8:sw=8
 $ORIGIN REVERSED_NETWORK.in-addr.arpa.
 $TTL 1H
-@       IN      SOA     DNS_NAME.DOMAIN_NAME.     root.DNS_NAME.DOMAIN_NAME. (      2
-                                                3H
-                                                1H
-                                                1W
-                                                1H )
-REVERSED_NETWORK.in-addr.arpa.         IN NS      DNS_NAME.DOMAIN_NAME.
+@ IN SOA	DNS_NAME.DOMAIN_NAME.	root.DNS_NAME.DOMAIN_NAME. (
+				6
+				3H
+				1H
+				1W
+				1H 
+				)
+$ORIGIN  REVERSED_NETWORK.in-addr.arpa.
 
-DNS_IP_NODE	IN PTR	DNS_NAME.DOMAIN_NAME.
+DNS_IP_NODE			PTR	DNS_NAME.DOMAIN_NAME.

@@ -55,7 +55,7 @@ exit_if_param_undef name	$str_usage
 
 IFS='.' read server_name server_domain<<<$(echo $name)
 
-exec_cmd "sed -i '/${server_name} /d' $named_file"
+exec_cmd "sed -i '/^${server_name}\t/d' $named_file"
 LN
 
 exec_cmd "sed -i '/${server_name}.${DOMAIN_NAME}/d' $reverse_file"
@@ -63,7 +63,8 @@ LN
 
 if [ $restart = yes ]
 then
-	info "Restart named"
+	info "Restart named & dhcpd"
 	exec_cmd "systemctl restart named.service"
+	exec_cmd "systemctl restart dhcpd.service"
 	LN
 fi

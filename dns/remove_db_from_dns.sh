@@ -7,20 +7,12 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
 
-typeset -r str_usage="Usage : $ME -db=<>"
+typeset	-r	str_usage="Usage : $ME -db=<>"
 
-typeset -r DOMAIN_NAME=$(hostname -d)
-
-typeset -r named_file=/var/named/named.${DOMAIN_NAME}
-typeset -r reverse_file=/var/named/reverse.${DOMAIN_NAME}
-
-exit_if_file_not_exists $named_file
-exit_if_file_not_exists $reverse_file
-
-typeset db=undef
+typeset		db=undef
 
 while [ $# -ne 0 ]
 do
@@ -48,12 +40,7 @@ exit_if_param_undef db	$str_usage
 
 cfg_exists $db
 
-typeset -ri max_nodes=$(cfg_max_nodes $db)
-
-info "Backup DNS configuration :"
-exec_cmd cp $named_file ${named_file}.backup
-exec_cmd cp $reverse_file ${reverse_file}.backup
-LN
+typeset	-ri	max_nodes=$(cfg_max_nodes $db)
 
 for (( inode=1; inode <= max_nodes; ++inode ))
 do
@@ -65,10 +52,23 @@ done
 
 if [ -f $cfg_path_prefix/$db/scanvips ]
 then
-	scan_name=$(cat $cfg_path_prefix/$db/scanvips | cut -d: -f1)
+	typeset	-r	DOMAIN_NAME=$(hostname -d)
+	typeset	-r	named_file=/var/named/named.${DOMAIN_NAME}
+
+	IFS=':' read scan_name vip1 vip2 vip3<<<$(cat $cfg_path_prefix/$db/scanvips)
+
 	exec_cmd ~/plescripts/dns/remove_server.sh -name=$scan_name -no_restart
+	LN
+
+	# Depuis l'utilisation de DHCP le non de la SCAN n'est présent qu'une fois
+	# il y a donc 2 IP qui ne sont pas effacées par le script remove_server.sh.
+	exec_cmd "sed -i '/${vip1}/d' $named_file"
+	exec_cmd "sed -i '/${vip2}/d' $named_file"
+	exec_cmd "sed -i '/${vip3}/d' $named_file"
 	LN
 fi
 
+info "Restart named & dhcpd"
 exec_cmd "systemctl restart named.service"
+exec_cmd "systemctl restart dhcpd.service"
 LN
