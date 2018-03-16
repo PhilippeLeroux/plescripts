@@ -306,14 +306,12 @@ LN
 #	============================================================================
 #	oracle peut faire un sudo grid sans mot de passe
 #	grid peut faire un sudo oracle sans mot de passe.
-if [ $GRID_ROOT != undef ] && ! grep -qE "^oracle" /etc/sudoers
+if [ $GRID_ROOT != undef ]
 then
 	line_separator
-	info "Config sudo for user oracle"
-	exec_cmd "cp /etc/sudoers /tmp/suoracle"
-	exec_cmd "echo \"oracle  ALL=(grid)  NOPASSWD:ALL\" >> /tmp/suoracle"
-	exec_cmd "echo \"grid  ALL=(oracle)  NOPASSWD:ALL\" >> /tmp/suoracle"
-	exec_cmd "visudo -c -f /tmp/suoracle"
-	exec_cmd "mv /tmp/suoracle /etc/sudoers"
+	info "Config sudo for user oracle and grid"
+	exec_cmd "echo \"oracle  ALL=(grid)  NOPASSWD:ALL\" > /etc/sudoers.d/90-oracle"
+	exec_cmd "echo \"grid  ALL=(oracle)  NOPASSWD:ALL\" > /etc/sudoers.d/90-grid"
+	exec_cmd "visudo -c -f /etc/sudoers"
 	LN
 fi
