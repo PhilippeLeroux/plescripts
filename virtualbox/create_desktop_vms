@@ -103,6 +103,11 @@ LN
 line_separator
 info "Crée et attache le disque où sera installé l'OS."
 exec_cmd VBoxManage createhd --filename \"$vm_path/$vm_name/$vm_name.vdi\" --size 32768
-exec_cmd VBoxManage storagectl $vm_name --name SATA --add SATA --controller IntelAhci --portcount 1
+exec_cmd VBoxManage storagectl $vm_name --name SATA --add SATA --controller IntelAhci --portcount 10
 exec_cmd VBoxManage storageattach $vm_name --storagectl SATA --port 0 --device 0 --type hdd --medium \"$vm_path/$vm_name/$vm_name.vdi\"
+LN
+
+line_separator
+info "Permet d'attacher l'ISO."
+exec_cmd VBoxManage storagectl $vm_name --name IDE --add IDE --controller PIIX4 --portcount 2
 LN
