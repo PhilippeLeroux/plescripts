@@ -14,6 +14,7 @@ typeset	-r	device=/$orcl_disk
 typeset	-r	str_usage=\
 "Usage : $ME
 	-db=name
+	[-db_is_stopped]
 	[-kill_only] ne fait que tué les process et ne s'exécute pas sur les autres nœuds.
 	[-device=$device]
 
@@ -22,6 +23,7 @@ Le Grid Infra et la base doivent être démarrés.
 
 typeset		db=undef
 typeset		kill_only=no
+typeset		db_is_stopped=no
 
 while [ $# -ne 0 ]
 do
@@ -43,6 +45,11 @@ do
 
 		-kill_only)
 			kill_only=yes
+			shift
+			;;
+
+		-db_is_stopped)
+			db_is_stopped=yes
 			shift
 			;;
 
@@ -74,7 +81,7 @@ then
 	exit 1
 fi
 
-if [ $kill_only == no ]
+if [[ $kill_only == no && $db_is_stopped == no ]]
 then
 	line_separator
 	exec_cmd -c srvctl stop database -db $(to_upper $db)
@@ -127,6 +134,9 @@ do
 	LN
 done
 
-line_separator
-exec_cmd -c srvctl start database -db $(to_upper $db)
-LN
+if [ $db_is_stopped == no ]
+then
+	line_separator
+	exec_cmd -c srvctl start database -db $(to_upper $db)
+	LN
+fi
