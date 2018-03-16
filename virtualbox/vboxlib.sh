@@ -11,7 +11,7 @@ function vm_running
 # return 0 if vm exists, else 1
 function vm_exists
 {
-	grep -q "$1"<<<"$(VBoxManage list vms)"
+	grep -q "\<$1\>"<<<"$(VBoxManage list vms)"
 }
 
 # $1 vm name
