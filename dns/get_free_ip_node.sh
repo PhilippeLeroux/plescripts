@@ -2,6 +2,7 @@
 # vim: ts=4:sw=4
 
 . ~/plescripts/plelib.sh
+. ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
 #	Toutes les IPs en dessous sont réservées.
@@ -56,7 +57,7 @@ while read ip_node rem
 do
 	[[ x"$ip_node" == x || $ip_node -lt $min_ip_node ]] && continue
 
-	debug "IP used is $ip_node"
+	debug "Test IP : $ip_node"
 	if [ $prev_ip_node -eq 0 ]
 	then	# On vient de lire la première IP, vérifie si min_ip_node est utilisée.
 		debug "Case 1 : First IP found is ip_node($ip_node)"
