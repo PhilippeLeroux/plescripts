@@ -222,6 +222,16 @@ typeset confirm_detect=no
 if [ "$keymap" == detect ]
 then
 	keymap=$(LANC=C localectl | grep "VC Keymap" | awk '{ print $3 }')
+	if [ "$keymap" == "n/a" ]
+	then
+		keymap=$(LANC=C localectl | grep "X11 Layout" | awk '{ print $3 }')
+		if [ "$keymap" == "n/a" ]
+		then
+			error "Cannot read keymap with localectl, add parameter -keymap=<your keymap>"
+			LN
+			exit 1
+		fi
+	fi
 	confirm_detect=yes
 fi
 
