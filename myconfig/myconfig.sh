@@ -72,7 +72,6 @@ function apply_sudo_config
 
 	line_separator
 	info "Config sudo for user $USER"
-	[ -f $sudo_file ] && exec_cmd rm -f $sudo_file || true
 	exec_cmd "sudo sh -c \"echo '$sudo_config' > $sudo_file\""
 	LN
 	exec_cmd "sudo visudo -c -f $sudo_file"
