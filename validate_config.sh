@@ -278,20 +278,6 @@ function _in_path
 	fi
 }
 
-function current_user_in_group_users
-{
-	info -n "$USER in group vboxusers "
-	if  id|grep -q users
-	then
-		info -f "[$OK]"
-		LN
-	else
-		((++count_errors))
-		info -f "[$KO]"
-		LN
-	fi
-}
-
 function test_tools
 {
 	_shell_in_path
@@ -412,8 +398,6 @@ runInstaller_exists
 validate_NFS_exports
 
 [ $test_iso_ol7 == yes ] && ISO_OLinux7_exists || true
-
-current_user_in_group_users
 
 validate_gateway
 
