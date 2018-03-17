@@ -71,6 +71,9 @@ do
 				if [[ "${1:0:3}" == srv || "$1" == "$infra_hostname" || "$1" == "$master_hostname" ]]
 				then
 					server=$1
+				elif vm_exists $1
+				then
+					server=$1
 				else
 					server="srv$1[0-9][0-9]"
 				fi

@@ -86,6 +86,9 @@ do
 					# Recherche les serveurs sur le pattern srv ou une des 2
 					# VM d'infra.
 					server=$1
+				elif vm_exists $1
+				then
+					server=$1
 				else
 					# Toutes les VM qui correspondront au pattern ci dessous
 					# seront démarrées.
