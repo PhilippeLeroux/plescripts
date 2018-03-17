@@ -68,36 +68,15 @@ fi
 function apply_sudo_config
 {
 	typeset	-r	sudo_config="$USER ALL=(root) NOPASSWD: ALL"
+	typeset	-r	sudo_file=" /etc/sudoers.d/90_$USER"
 
 	line_separator
 	info "Config sudo for user $USER"
-	exec_cmd -f -c "sudo grep -q \"$sudo_config\" /etc/sudoers"
-	if [ $? -eq 0 ]
-	then
-		info "sudo is already configured."
-		LN
-	else
-		info "Backup /etc/sudoers"
-		exec_cmd sudo cp /etc/sudoers /etc/sudoers.backup
-		LN
-
-		exec_cmd "sudo sed -i \"/root ALL=(ALL) ALL/a $sudo_config\" /etc/sudoers"
-		LN
-
-		exec_cmd -c "sudo visudo -c -f /etc/sudoers"
-		if [ $? -ne 0 ]
-		then
-			info "Broken file copied to /tmp/sudoers.broken"
-			exec_cmd "sudo cp /etc/sudoers.backup /tmp/sudoers.broken"
-			LN
-
-			info "Restore /etc/sudoers from backup"
-			exec_cmd "sudo mv /etc/sudoers.backup /etc/sudoers"
-			LN
-		else
-			LN
-		fi
-	fi
+	[ -f $sudo_file ] && exec_cmd rm -f $sudo_file || true
+	exec_cmd "sudo sh -c \"echo '$sudo_config' > $sudo_file\""
+	LN
+	exec_cmd "sudo visudo -c -f $sudo_file"
+	LN
 }
 
 function restore
