@@ -39,15 +39,31 @@ do
 done
 
 # $1 vm name
+# $2 [-state] n'utiliser qu'avec les VM desktops.
 function print_vm_running_status
 {
+
 	if vm_running $1
 	then
 		info -n -f "${UNDERLINE}$1${NORM}"
 	else
 		info -n -f "$1"
 	fi
+
 	info -n -f " ($(vm_memory_size $1))"
+
+	if [ "$2" == "-state" ]
+	then
+		read f1 state f3 rem<<<"$(VBoxManage showvminfo $1 | grep -E "^State")"
+		case $state in
+			saved)
+				info -n -f " : saved."
+				;;
+			powered)
+				info -n -f " : powered off."
+				;;
+		esac
+	fi
 }
 
 # $1 Oracle Version like 12.2.0.1
@@ -88,7 +104,7 @@ function print_vm_database
 		info "$dbid ($cfg_master_name)"
 	fi
 
-	if [[ $max_nodes -eq 2 && $cfg_dataguard == no ]]
+	if [ $cfg_db_type == rac ]
 	then
 		vm_printed_list="$vm_printed_list $cfg_server_name"
 		if vm_exists $cfg_server_name
@@ -238,7 +254,7 @@ do
 			line_separator
 			info "Others VM :"
 		fi
-		info "$(print_vm_running_status $vm_name)"
+		info "$(print_vm_running_status $vm_name -state)"
 		LN
 	fi
 done<<<"$(VBoxManage list vms | cut -d\" -f2)"
