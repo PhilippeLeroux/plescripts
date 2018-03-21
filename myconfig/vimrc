@@ -199,22 +199,39 @@ nnoremap <silent> <C-h> :call Goto_home()<CR>
 "	============================================================================
 "	vim-session & vim-misc
 "	============================================================================
+function! LoadSession()
+	if exists( 'g:sessionLoaded' )
+		return
+	endif
+	let g:sessionLoaded='yes'
+	if has("gui_running")
+		" Si la session 'plescripts' n'existe pas elle est choisie par défaut.
+		let l:lock=expand( g:session_directory . '/plescripts.vim.lock' )
+		if ! filereadable( lock )
+			let g:session_default_name='plescripts'		"	Une session pour plescripts
+		else
+			let g:session_default_name='gui'			"	Une session générale pour gvim
+		endif
+	else
+		let g:session_default_name='terminal'			"	Une session générale pour vim
+	endif
+endfunction
+
+autocmd bufenter * call LoadSession()
+
 let g:session_autoload='yes'
 let g:session_autosave='yes'
-if has("gui_running")
-	let g:session_default_name='gui'		"	Une session pour gvim
-else
-	let g:session_default_name='terminal'	"	Une session pour vim
-endif
 
 "	Workaround bug vim ou commande NERDTree ?
 "	La commande autocmd bufenter * if (winnr("$") == 1 [skipped] | q | endif
 "	fait planter le plugin vim-session et certainnement tous les autres qui
 "	comme lui enregistre des fonctions devant s'exécuter quand vim se termine.
-function! RemoveSessionLock()
-	let l:lock=expand( g:session_directory . '/' . g:session_default_name . '.vim.lock' )
-	call delete(lock)
-endfunction
+"	La fonction n'est plus utilisée, je la garde pour mémoire du bug.
+"	Maintenant j'utilise 'qa' pour quitter.
+"function! RemoveSessionLock()
+"	let l:lock=expand( g:session_directory . '/' . g:session_default_name . '.vim.lock' )
+"	call delete(lock)
+"endfunction
 
 "	Commenter, avec cette version de vim fonctionne très mal.
 "	J'utilise 'qa' pour quitter et ma session est sauvée.
