@@ -159,8 +159,6 @@ fi
 
 [ $storage == FS ] && db_type=fs || true
 
-[ $OH_FS == default ] && OH_FS=$rdbms_fs_type || true
-
 if [[ $db_type == rac && $dataguard == yes ]]
 then
 	warning "-dataguard ignored for RAC"
@@ -409,10 +407,7 @@ do
 	normalyze_node $inode
 done
 
-if [ $dataguard == yes ]
-then
-	normalyze_node 2
-fi
+[ $dataguard == yes ] && normalyze_node 2 || true
 
 [ $db_type == rac ] && normalyze_scan || true
 
