@@ -55,10 +55,6 @@ case $action in
 		exec_cmd rm -f ~/plescripts/myconfig/vim.tar.gz
 		LN
 
-		info "Backup le fichier ~/.vimrc"
-		exec_cmd cp ~/.vimrc ~/plescripts/myconfig/vimrc
-		LN
-
 		info "Backup le répertoire des fonctions : ~/vimfunc"
 		exec_cmd "tar -cf - -C $HOME/ vimfunc | gzip -c > ~/plescripts/myconfig/vimfunc.tar.gz"
 		LN
@@ -74,9 +70,19 @@ case $action in
 		;;
 
 	restore)
-		info "Restaure le fichier ~/.vimrc"
-		exec_cmd cp ~/plescripts/myconfig/vimrc ~/.vimrc
-		LN
+		if [ ! -h  ~/.vimrc ]
+		then
+			if [ -f ~/.vimrc ]
+			then
+				info "Backup ~/.vimrc to ~/vimrc.backup"
+				exec_cmd "mv ~/.vimrc ~/vimrc.backup"
+				LN
+			fi
+
+			info "Create symlink"
+			exec_cmd "ln -s ~/plescripts/myconfig/vimrc ~/.vimrc"
+			LN
+		fi
 
 		info "Restaure le répertoire des fonctions"
 		exec_cmd "rm -rf $HOME/vimfunc"

@@ -324,4 +324,9 @@ nnoremap <leader>f :call SearchFunction()<CR>
 source $HOME/vimfunc/ToggleColorscheme.vim
 map <silent> <F6> :call ToggleColorscheme()<CR>
 
+
+"	============================================================================
+"	Touche leader : raccourcies sur des commandes.
+nnoremap <leader>h :noh<CR>
+
 endif "!has("compatible")

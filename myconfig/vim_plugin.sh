@@ -176,15 +176,6 @@ function install_pathogen
 	info "Init Pathogen"
 	exec_cmd "cd .vim && git init && git add  . && git commit -m \"Initial commit\""
 	LN
-
-	grep "pathogen#infect" ~/.vimrc >/dev/null 2>&1
-	if [ $? -ne 0 ]
-	then
-		info "Update ~/.vimrc"
-		exec_cmd "sed -i \"1i\\call pathogen#infect()\" ~/.vimrc"
-		exec_cmd "sed -i \"2i\\call pathogen#helptags()\" ~/.vimrc"
-		LN
-	fi
 }
 
 function install_all

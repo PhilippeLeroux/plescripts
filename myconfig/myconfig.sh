@@ -152,9 +152,12 @@ function restore
 			;;
 
 		*)
-			line_separator
-			exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
-			LN
+			if [ ! -h ~/plescripts ]
+			then
+				line_separator
+				exec_cmd -c "~/plescripts/shell/set_plescripts_acl.sh"
+				LN
+			fi
 			;;
 	esac
 }
