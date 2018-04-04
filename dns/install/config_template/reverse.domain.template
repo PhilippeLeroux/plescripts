@@ -2,11 +2,11 @@
 $ORIGIN REVERSED_NETWORK.in-addr.arpa.
 $TTL 1H
 @ IN SOA	DNS_NAME.DOMAIN_NAME.	root.DNS_NAME.DOMAIN_NAME. (
-				6
-				3H
-				1H
-				1W
-				1H 
+				103        ; serial
+				10800      ; refresh (3 hours)
+				900        ; retry (15 minutes)
+				604800     ; expire (1 week)
+				86400      ; minimum (1 day)
 				)
 $ORIGIN  REVERSED_NETWORK.in-addr.arpa.
 
