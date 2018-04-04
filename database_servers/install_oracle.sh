@@ -541,7 +541,7 @@ case $cfg_db_type in
 		info "Database on FS"
 		ORA_INVENTORY=/$orcl_sw_fs_disk/app/oraInventory
 		;;
-	std)  # Base sur ASM 
+	std)  # Base sur ASM
 		info "Database on ASM"
 		ORA_INVENTORY=/$orcl_disk/app/oraInventory
 		;;
@@ -604,11 +604,20 @@ empty_swap
 
 if [ $dg_node -eq 1 ]
 then
+	line_separator
 	add_dynamic_cmd_param "-user1=oracle"
 	add_dynamic_cmd_param "-server1=srv${db}01"
 	add_dynamic_cmd_param "-server2=srv${db}02"
 	exec_dynamic_cmd "~/plescripts/ssh/setup_ssh_equivalence.sh"
 	LN
+fi
+
+if [[ $cfg_db_type == rac && $cfg_oracle_home == ocfs2 ]]
+then
+	line_separator
+	info "Check Oracle software file system."
+	exec_cmd "ssh -t root@${node_names[0]}	\
+				'. .bash_profile && disk/ocfs2_fsck.sh -db=$db -db_is_stopped'"
 fi
 
 script_stop $ME $db
