@@ -137,8 +137,11 @@ function install_plugin
 	info "name : $name"
 	LN
 
-	exec_cmd "cd ~/.vim && git submodule add git:$url bundle/$name"
-	exec_cmd "cd ~/.vim && git submodule init && git submodule update"
+#	exec_cmd "cd ~/.vim && git submodule add git:$url bundle/$name"
+#	exec_cmd "cd ~/.vim && git submodule init && git submodule update"
+#	LN
+
+	exec_cmd "cd ~/.vim/bundle && git clone git:$url"
 	LN
 
 	# Particularité pour chaque plugin.
@@ -159,13 +162,11 @@ function uninstall_plugin
 {
 	typeset -r plugin_name=$1
 
-	exec_cmd "cd ~/.vim && git submodule deinit -f  bundle/$plugin_name"
-	exec_cmd "cd ~/.vim && git rm -f  bundle/$plugin_name"
-	exec_cmd "rm -rf ~/.vim/.git/modules/bundle/$plugin_name"
+	exec_cmd "rm -rf  ~/.vim/bundle/$plugin_name"
 	LN
 }
 
-function install_pathogen
+function install_pathogen_old
 {
 	info "Install Pathogen"
 	exec_cmd "cd ~/ && git clone git://github.com/tpope/vim-pathogen.git pathogen"
@@ -175,6 +176,14 @@ function install_pathogen
 
 	info "Init Pathogen"
 	exec_cmd "cd .vim && git init && git add  . && git commit -m \"Initial commit\""
+	LN
+}
+
+function install_pathogen
+{
+	info "Install Pathogen"
+	exec_cmd "mkdir -p ~/.vim/autoload ~/.vim/bundle \
+		&&	curl -LSso ~/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim"
 	LN
 }
 
@@ -217,8 +226,6 @@ function install_all
 case $action in
 	init)
 		install_all
-		exec_cmd "cd ~/.vim && git status"
-		LN
 
 		exec_cmd "mkdir ~/.vim/spell"
 		exec_cmd "cd ~/.vim/spell/; wget http://ftp.vim.org/vim/runtime/spell/fr.utf-8.spl"
@@ -227,21 +234,17 @@ case $action in
 		;;
 
 	show)
-		exec_cmd "cd ~/.vim && git submodule"
+		exec_cmd "ls --color=tty -rtl ~/.vim/bundle/"
 		LN
 		;;
 
 	install_plugin)
 		exit_if_pathogen_not_installed
 		install_plugin $url
-		exec_cmd "cd ~/.vim && git status"
-		LN
 		;;
 
 	uninstall_plugin)
 		uninstall_plugin $plugin_name
-		exec_cmd "cd ~/.vim && git status"
-		LN
 		;;
 
 	undef)
