@@ -81,9 +81,12 @@ info "Generate dnssec key"
 OPWD=$PWD
 fake_exec_cmd cd $HOME
 cd $HOME
+info "Remove olds .key & .private"
+exec_cmd "rm -f *.key *.private"
+LN
 typeset	-r	dnssec_prefix=$(dnssec-keygen -a hmac-md5 -b 128 -n USER dhcpupdate)
-exec_cmd "ls -1l ${dnssec_prefix}*"
 typeset	-r	dnssec_key="$(cat ${dnssec_prefix}.key | awk '{ print $7 }')"
+exec_cmd "ls -1l ${dnssec_prefix}*"
 info "dnssec key : '$dnssec_key'"
 LN
 fake_exec_cmd cd $OPWD
