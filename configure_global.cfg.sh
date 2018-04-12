@@ -5,12 +5,13 @@
 . ~/plescripts/global.cfg
 EXEC_CMD_ACTION=EXEC
 
-typeset -r ME=$0
-typeset -r PARAMS="$*"
-typeset -r str_usage=\
+typeset	-r	ME=$0
+typeset	-r	PARAMS="$*"
+
+typeset	-r	str_usage=\
 "Usage : $ME ...."
 
-typeset db=undef
+typeset		db=undef
 
 while [ $# -ne 0 ]
 do
@@ -35,7 +36,7 @@ do
 	esac
 done
 
-typeset -r hostvm_type=linux_virtualbox
+typeset	-r	hostvm_type=linux_virtualbox
 
 #	============================================================================
 
@@ -43,9 +44,9 @@ typeset -r hostvm_type=linux_virtualbox
 #	$2 Message à afficher
 function ask_for_variable
 {
-	typeset -r 	var_name=$1
-	typeset		var_value=$(eval echo \$$var_name)
-	typeset -r 	msg=$2
+	typeset	-r	var_name=$1
+	typeset		var_value=${!var_name}
+	typeset	-r	msg=$2
 
 	info "$msg"
 	if [ x"$var_value" != x ]
@@ -58,14 +59,14 @@ function ask_for_variable
 	fi
 	read -r keyboard
 
-	[ x"$keyboard" != x ] && var_value="$keyboard"
+	[ x"$keyboard" != x ] && var_value="$keyboard" || true
 
 	eval "$var_name=$(echo -E '$var_value')"
 }
 
 function read_gateway_ip
 {
-	typeset outp=$(cat /etc/resolv.conf|grep -E "^nameserver")
+	typeset		outp=$(cat /etc/resolv.conf|grep -E "^nameserver")
 	if [ $(wc -l<<<"$outp") -eq 1 ]
 	then
 		cut -d\  -f2<<<"$outp"
@@ -74,7 +75,7 @@ function read_gateway_ip
 		if [ $(wc -l<<<"$outp") -eq 1 ]
 		then
 			cut -d\  -f2<<<"$outp"
-		else # # Plus de 1 serveur, l'utilisateur corrigera au besoins.
+		else # Plus de 1 serveur, l'utilisateur corrigera au besoins.
 			echo $gateway	# Variable définie dans global.cfg
 		fi
 	fi
@@ -152,7 +153,7 @@ function yum_repository
 			return 0
 			;;
 		7.4)
-			typeset do_update=yes
+			typeset		do_update=yes
 			ask_for_variable do_update "Update Oracle Linux $OL7_LABEL_n from Oracle repository ? yes no"
 			do_update=$(to_lower $do_update)
 			LN
@@ -212,9 +213,13 @@ function LUNs_storage
 	else
 		san_disk_n=vdi
 	fi
-	ask_for_variable san_disk_n	\
-		"Use virtual disk (enter vdi) or physical disk (enter full device name) : "
-	LN
+
+	if [ $disks_stored_on == san ]
+	then
+		ask_for_variable san_disk_n	\
+			"Use virtual disk (enter vdi) or physical disk (enter full device name) : "
+		LN
+	fi
 
 	if [ "$san_disk_n" != "vdi" ]
 	then
@@ -231,7 +236,7 @@ function LUNs_storage
 			confirm_or_exit "Continue"
 			LN
 
-			typeset -r device_group=$(ls -l "$san_disk_n" | cut -d\  -f4)
+			typeset	-r	device_group=$(ls -l "$san_disk_n" | cut -d\  -f4)
 			info "$san_disk_n in group : $device_group"
 			info -n "$USER member of group : $device_group "
 			if id | grep -q $device_group
@@ -292,7 +297,7 @@ function update_local_cfg
 	fi
 }
 
-typeset -i count_errors=0
+typeset	-i	count_errors=0
 
 exec_cmd "touch $HOME/plescripts/local.cfg"
 LN
@@ -338,9 +343,6 @@ then
 fi
 
 update_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVER
-
-info "RAC : OCFS2 default FS for Oracle sofware"
-update_local_cfg "xfs" "ocfs2" RAC_ORCL_FS
 
 update_local_cfg "disks_hosted_by" "$disks_stored_on" "DISKS_HOSTED_BY"
 update_local_cfg "san_disk" "$san_disk_n" "SAN_DISK"

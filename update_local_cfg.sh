@@ -87,6 +87,10 @@ typeset	-r	str_usage=\
 $ME
 $parameters_usage
 
+To update parameter for a specific release, execute first :
+    - Oracle 12.1 : $ ./update_local_cfg.sh ORACLE_RELEASE=12.1.0.2
+    - Oracle 12.2 : $ ./update_local_cfg.sh ORACLE_RELEASE=12.2.0.1
+
 $main_params
 
 VM kernel parameters :
