@@ -55,7 +55,7 @@ zone REVERSED_NETWORK.in-addr.arpa {
     key dhcp_updater;
 }
 
-zone orcl {
+zone DOMAIN_NAME {
     primary INFRA_IP;
     key dhcp_updater;
 }
