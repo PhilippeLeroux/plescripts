@@ -57,11 +57,10 @@ do
 
 		-ip_node=*)
 			server_ip=${1##*=}
-			typeset	-i	count_char=$(wc -m <<< "$server_ip")
-			((++count_char))
+			typeset	-i	count_char=$(wc -m <<< "$server_ip")-1
 			if [ $count_char -lt 1 ] || [ $count_char -gt 3 ]
 			then
-				error "Bad ip node : $server_ip"
+				error "Bad ip node : $server_ip (digit $count_char)"
 				error "Format : xxx (1, 2 or 3 digits)"
 				LN
 				info "$str_usage"
