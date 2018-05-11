@@ -12,7 +12,7 @@ typeset -r str_usage=\
 Créé les dépôts locaux yum. Les dépôts sont hébergés par $infra_hostname.
 	-role=master sur le serveur $master_hostname, ou sur un serveur de BDD.
 	-role=infra sur le serveur $infra_hostname.
-" 
+"
 
 typeset role=undef
 
@@ -79,8 +79,8 @@ then
 	cat<<-EOC>>$repo_file
 
 	[ol7_UEKR4]
-	name=Latest Unbreakable Enterprise Kernel Release 4 for Oracle Linux \$releasever (\$basearch)
-	baseurl=http://public-yum.oracle.com/repo/OracleLinux/OL7/UEKR4/\$basearch/
+	name=Latest Unbreakable Enterprise Kernel Release 4 for Oracle Linux $releasever ($basearch)
+	baseurl=https://yum.oracle.com/repo/OracleLinux/OL7/UEKR4/$basearch/
 	gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 	gpgcheck=1
 	enabled=0
@@ -91,7 +91,31 @@ then
 	LN
 fi
 
-info "Add repositories local_ol7_latest, R3, R4 DVD_R2 && DVD_R3 && DVD_R4"
+if [ 0 -eq 1 ]; then
+# 2018/05/11 : le chemin du dépôt R5 et le même que celui du dépôt R4
+# Test si le dépôt R5 est renseigné.
+if ! grep -q ol7_UEKR5 $repo_file
+then
+	info "Add repository ol7_UEKR5"
+	cat<<-EOC>>$repo_file
+
+	[ol7_UEKR5]
+	name=Latest Unbreakable Enterprise Kernel Release 5 for Oracle Linux $releasever ($basearch)
+	baseurl=https://yum.oracle.com/repo/OracleLinux/OL7/UEKR5/$basearch/
+	gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+	gpgcheck=1
+	enabled=0
+
+	EOC
+	LN
+
+	info "Yum repository updated."
+	LN
+fi
+fi # [ 0 -eq 1 ]; then # 2018/05/07 : le dépôt R5 n'existe pas.
+
+info "Add repositories local_ol7_latest, R3, R4, R5 DVD_R2 && DVD_R3 && DVD_R4 && DVD_R5"
+
 cat <<EOC >>$repo_file
 
 [local_ol7_latest]
@@ -122,6 +146,13 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 gpgcheck=1
 enabled=0
 
+[ol7_DVD_R5]
+name=DVD Unbreakable Enterprise Kernel Release 4 for Oracle Linux \$releasever (\$basearch)
+baseurl=$url_is/DVD_R5/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=0
+
 [local_ol7_UEKR3]
 name=Latest Unbreakable Enterprise Kernel Release 3 for Oracle Linux \$releasever (\$basearch)
 baseurl=$url_is/ol7_UEKR3/
@@ -137,6 +168,13 @@ gpgcheck=1
 enabled=0
 EOC
 LN
+
+#[local_ol7_UEKR5]
+#name=Latest Unbreakable Enterprise Kernel Release 5 for Oracle Linux \$releasever (\$basearch)
+#baseurl=$url_is/ol7_UEKR5/
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+#gpgcheck=1
+#enabled=0
 
 info "Yum repository updated."
 LN

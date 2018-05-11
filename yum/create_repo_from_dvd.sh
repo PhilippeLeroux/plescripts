@@ -14,7 +14,7 @@ typeset enable_repo=yes
 typeset -r str_usage=\
 "Usage :
 $ME
-	-release=DVD_R2|DVD_R3|DVD_R4
+	-release=DVD_R2|DVD_R3|DVD_R4|DVD_R5
 	[-enable_repo=$enable_repo]	yes or no
 "
 
@@ -53,31 +53,19 @@ done
 
 #ple_enable_log -params $PARAMS
 
-exit_if_param_invalid release "DVD_R2 DVD_R3 DVD_R4" "$str_usage"
+exit_if_param_invalid release "DVD_R2 DVD_R3 DVD_R4 DVD_R5" "$str_usage"
 
 must_be_executed_on_server $client_hostname
 
-case $release in
-	DVD_R2)
-		iso_name="$iso_olinux_path/V100082-01.iso"
-		;;
-	DVD_R3)
-		iso_name="$iso_olinux_path/V834394-01.iso"
-		;;
-	DVD_R4)
-		iso_name="$iso_olinux_path/V921569-01.iso"
-		;;
-esac
-
 info "Create repository from DVD ${release:3}"
-info "DVD : $iso_name"
-exit_if_file_not_exists "$iso_name"
+info "DVD : $full_linux_iso_name"
+exit_if_file_not_exists "$full_linux_iso_name"
 LN
 
 info "Attach DVD"
-exec_cmd VBoxManage storageattach $infra_hostname		\
-				--storagectl IDE --port 0 --device 0	\
-				--medium "$iso_name"
+exec_cmd VBoxManage storageattach $infra_hostname							\
+					--storagectl IDE --port 0 --device 0 --type dvddrive	\
+					--medium "$full_linux_iso_name"
 LN
 
 exec_cmd "ssh -t root@${infra_ip} plescripts/yum/duplicate_dvd_for_repo.sh	\

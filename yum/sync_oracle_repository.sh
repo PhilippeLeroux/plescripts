@@ -17,7 +17,7 @@ typeset	release=all
 typeset -r str_usage=\
 "Usage : $ME
 \t[-use_tar=name] Initialise le dépôt avec \$use_tar
-\t[-release=$release]	latest|R3|R4|all
+\t[-release=$release]	latest|R3|R4|R5|all
 \t[-skip_latest]
 
 Sync local repository
@@ -43,6 +43,10 @@ do
 
 		-release=*)
 			release=${1##*=}
+			# Chemins identiques pour les dépôts R5 et R4
+			info "swap R5 to R4 (same repository)."
+			LN
+			[ $release == R5 ] && release=R4 || true
 			shift
 			;;
 
@@ -66,7 +70,7 @@ do
 	esac
 done
 
-exit_if_param_invalid	release	"latest R3 R4 all"	"$str_usage"
+exit_if_param_invalid	release	"latest R3 R4 R5 all"	"$str_usage"
 
 typeset	-r repo_config_path=/etc/yum.repos.d
 typeset	-r repo_config_name=public-yum-ol7.repo
@@ -176,7 +180,12 @@ else
 		all)
 			sync_repo ol7_UEKR3
 			sync_repo ol7_UEKR4
+			#sync_repo ol7_UEKR5
 			;;
+		*)
+			error "Release $release unknow."
+			LN
+			exit 1
 	esac
 fi
 
@@ -184,7 +193,7 @@ nfs_export_repo
 LN
 
 line_separator
-exec_cmd ~/plescripts/yum/add_local_repositories.sh -role=infra
+exec_cmd "$HOME/plescripts/yum/add_local_repositories.sh -role=infra"
 LN
 exec_cmd ~/plescripts/yum/switch_repo_to.sh -local -release=$infra_yum_repository_release
 LN

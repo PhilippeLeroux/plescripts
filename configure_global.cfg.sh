@@ -119,6 +119,11 @@ function select_oracle_linux_release
 {
 	if [ -f "$iso_olinux_path/V921569-01.iso" ]
 	then
+		info "ISO Oracle Linux 7.5 [$OK]"
+		LN
+		OL7_LABEL_n=7.5
+	elif [ -f "$iso_olinux_path/V975367-01.iso" ]
+	then
 		info "ISO Oracle Linux 7.4 [$OK]"
 		LN
 		OL7_LABEL_n=7.4
@@ -163,6 +168,20 @@ function yum_repository
 				ol7_repository_release=R4
 			else
 				ol7_repository_release=DVD_R4
+			fi
+			return 0
+			;;
+		7.5)
+			typeset		do_update=yes
+			ask_for_variable do_update "Update Oracle Linux $OL7_LABEL_n from Oracle repository ? yes no"
+			do_update=$(to_lower $do_update)
+			LN
+
+			if [ $do_update == yes ]
+			then
+				ol7_repository_release=R5
+			else
+				ol7_repository_release=DVD_R5
 			fi
 			return 0
 			;;
@@ -339,7 +358,7 @@ update_local_cfg "$if_net_bridgeadapter" "$if_net_bridgeadapter_n" IF_NET_BRIDGE
 if [ "$vm_p" != "No VMs folder" ]
 then
 	# Le premier paramètre permet de forcer la mise à jour de la variable.
-	update_local_cfg "forcer_maj" "'$vm_p'" "VM_PATH"
+	update_local_cfg "forcer_maj" "\"$vm_p\"" "VM_PATH"
 fi
 
 update_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVER
@@ -347,12 +366,13 @@ update_local_cfg "$master_time_server" "$master_time_server_n" MASTER_TIME_SERVE
 update_local_cfg "disks_hosted_by" "$disks_stored_on" "DISKS_HOSTED_BY"
 update_local_cfg "san_disk" "$san_disk_n" "SAN_DISK"
 
-update_local_cfg "$OL7_LABEL" "$OL7_LABEL_n" OL7_LABEL
+update_local_cfg "OL7_LABEL" "$OL7_LABEL_n" OL7_LABEL
 
 info "Configure repository OL7"
 if	[[ $ol7_repository_release != $orcl_yum_repository_release ||	\
 					$OL7_LABEL_n == 7.3 || $OL7_LABEL_n == 7.2  ]]
 then
+	# Je ne comprends plus la raison de ce code.
 	if [ x"$INFRA_YUM_REPOSITORY_RELEASE" != x ]
 	then
 		update_variable "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg

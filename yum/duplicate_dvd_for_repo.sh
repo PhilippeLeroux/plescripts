@@ -15,7 +15,7 @@ typeset enable_repo=yes
 typeset -r str_usage=\
 "Usage :
 $ME
-	-release=DVD_R2|DVD_R3|DVD_R4
+	-release=DVD_R2|DVD_R3|DVD_R4|DVD_R5
 	[-enable_repo=$enable_repo]	yes or no
 "
 
@@ -54,7 +54,7 @@ done
 
 #ple_enable_log -params $PARAMS
 
-exit_if_param_invalid release "DVD_R2 DVD_R3 DVD_R4" "$str_usage"
+exit_if_param_invalid release "DVD_R2 DVD_R3 DVD_R4 DVD_R5" "$str_usage"
 
 must_be_executed_on_server $infra_hostname
 
