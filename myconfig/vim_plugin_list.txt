@@ -40,11 +40,11 @@ https://github.com/xero/sourcerer.vim.git
 https://github.com/suan/vim-instant-markdown.git
 
 # Grammaire : remplacé par Grammalecte
-#//github.com/rhysd/vim-grammarous.git
+https://github.com/rhysd/vim-grammarous.git
 
-# Grammalecte :
+# Grammalecte : Version trop ancienne de vim.
 # Il faut également télécharger : http://www.dicollecte.org/grammalecte/oxt/Grammalecte-fr-v0.5.17.zip
-https://github.com/dpelle/vim-Grammalecte
+#https://github.com/dpelle/vim-Grammalecte
 
 #	Man
 https://github.com/vim-utils/vim-man.git
