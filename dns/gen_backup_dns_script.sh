@@ -14,11 +14,13 @@ cat /var/named/named.$domain	|\
 	grep "^[[:alpha:]].*"		|\
 	grep -v localhost			|\
 	sort -n -t "." -k 4			|\
-while read server_name f2 f3 server_ip
+while read server_name f1 server_ip
 do
 	echo "./add_server_2_dns.sh -name=$server_name -ip=$server_ip -not_restart_named"
 done >> ~/plescripts/tmp/restore_dns.sh
+
 echo "systemctl restart named.service" >> ~/plescripts/tmp/restore_dns.sh
+
 chmod ug+x ~/plescripts/tmp/restore_dns.sh
 
 info "Script : ~/plescripts/tmp/restore_dns.sh"
