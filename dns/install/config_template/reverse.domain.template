@@ -1,13 +1,13 @@
 ; vim:ts=8:sw=8
-$ORIGIN REVERSED_NETWORK.in-addr.arpa.
+$ORIGIN .
 $TTL 1H
-@ IN SOA	DNS_NAME.DOMAIN_NAME.	root.DNS_NAME.DOMAIN_NAME. (
+REVERSED_NETWORK.in-addr.arpa IN SOA	DNS_NAME.DOMAIN_NAME.	root.DNS_NAME.DOMAIN_NAME. (
 				103        ; serial
 				10800      ; refresh (3 hours)
 				900        ; retry (15 minutes)
 				604800     ; expire (1 week)
 				86400      ; minimum (1 day)
 				)
+			NS  DNS_NAME.DOMAIN_NAME.
 $ORIGIN  REVERSED_NETWORK.in-addr.arpa.
-
 DNS_IP_NODE			PTR	DNS_NAME.DOMAIN_NAME.

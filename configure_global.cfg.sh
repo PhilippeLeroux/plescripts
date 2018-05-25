@@ -117,12 +117,12 @@ function VMs_folder
 
 function select_oracle_linux_release
 {
-	if [ -f "$iso_olinux_path/V921569-01.iso" ]
+	if [ -f "$iso_olinux_path/V975367-01.iso" ]
 	then
 		info "ISO Oracle Linux 7.5 [$OK]"
 		LN
 		OL7_LABEL_n=7.5
-	elif [ -f "$iso_olinux_path/V975367-01.iso" ]
+	elif [ -f "$iso_olinux_path/V921569-01.iso" ]
 	then
 		info "ISO Oracle Linux 7.4 [$OK]"
 		LN
@@ -369,18 +369,10 @@ update_local_cfg "san_disk" "$san_disk_n" "SAN_DISK"
 update_local_cfg "OL7_LABEL" "$OL7_LABEL_n" OL7_LABEL
 
 info "Configure repository OL7"
-if	[[ $ol7_repository_release != $orcl_yum_repository_release ||	\
-					$OL7_LABEL_n == 7.3 || $OL7_LABEL_n == 7.2  ]]
+if	[[ $ol7_repository_release != $orcl_yum_repository_release ]]
 then
-	# Je ne comprends plus la raison de ce code.
-	if [ x"$INFRA_YUM_REPOSITORY_RELEASE" != x ]
-	then
-		update_variable "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
-	fi
-	if [ x"$INFRA_YUM_REPOSITORY_RELEASE" != x ]
-	then
-		update_variable "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
-	fi
+	update_variable "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
+	update_variable "INFRA_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
 fi
 
 if [ $count_errors -ne 0 ]

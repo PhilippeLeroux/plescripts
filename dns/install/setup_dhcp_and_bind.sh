@@ -55,6 +55,7 @@ case $fake in
 		var_named_path=var/named
 		[ ! -d $etc_path ] && exec_cmd mkdir $etc_path || true
 		[ ! -d $var_named_path ] && exec_cmd mkdir -p $var_named_path || true
+		[ ! -d $etc_path/dhcp ] && exec_cmd mkdir -p $etc_path/dhcp || true
 		;;
 
 	no)
@@ -77,20 +78,27 @@ typeset	-r	named_conf=$etc_path/named.conf
 typeset	-r	named_domain=$var_named_path/named.${infra_domain}
 typeset	-r	reverse_domain=$var_named_path/reverse.${infra_domain}
 
-info "Generate dnssec key"
-OPWD=$PWD
-fake_exec_cmd cd $HOME
-cd $HOME
-info "Remove olds .key & .private"
-exec_cmd "rm -f *.key *.private"
-LN
-typeset	-r	dnssec_prefix=$(dnssec-keygen -a hmac-md5 -b 128 -n USER dhcpupdate)
-typeset	-r	dnssec_key="$(cat ${dnssec_prefix}.key | awk '{ print $7 }')"
-exec_cmd "ls -1l ${dnssec_prefix}*"
-info "dnssec key : '$dnssec_key'"
-LN
-fake_exec_cmd cd $OPWD
-cd $OPWD
+if [ $fake == no ]
+then
+	info "Generate dnssec key"
+	OPWD=$PWD
+	fake_exec_cmd cd $HOME
+	cd $HOME
+	info "Remove olds .key & .private"
+	exec_cmd "rm -f *.key *.private"
+	LN
+
+	typeset	-r	dnssec_prefix=$(dnssec-keygen -a hmac-md5 -b 128 -n USER dhcpupdate)
+	typeset	-r	dnssec_key="$(cat ${dnssec_prefix}.key | awk '{ print $7 }')"
+	exec_cmd "ls -1l ${dnssec_prefix}*"
+	info "dnssec key : '$dnssec_key'"
+	LN
+
+	fake_exec_cmd cd $OPWD
+	cd $OPWD
+else
+	dnssec_key="dnssec_key_FAKE"
+fi
 
 line_separator
 info "DHCP :"
@@ -163,8 +171,13 @@ replace	INFRA_IP_REVERSED	$reversed_infra_ip	$named_conf
 replace	DNSSEC_SECRET		$dnssec_key			$named_conf
 LN
 
+exec_cmd "rm -f /var/named/named.${infra_domain}.jnl"
+exec_cmd "rm -f /var/named/reverse${infra_domain}.jnl"
+LN
+
 info "Configuration de $named_domain"
 copy $name_domain_template $named_domain
+replace	DOMAIN_NAME	$infra_domain	$named_domain
 replace	DNS_NAME	$infra_hostname	$named_domain
 replace	DNS_IP		$dns_ip			$named_domain
 LN
@@ -184,12 +197,8 @@ exec_cmd "sed -i '6i OPTIONS="-4"' /etc/sysconfig/named"
 LN
 
 line_separator
-info "named can create file in /var/named."
-exec_cmd "chmod g=rwx /var/named"
-LN
-
-line_separator
 info "Setup DHCP"
+exec_cmd "rm -f /var/lib/dhcpd/dhcpd.leases"
 exec_cmd "touch /var/lib/dhcpd/dhcpd.leases"
 LN
 
@@ -197,6 +206,12 @@ line_separator
 info "Setup selinux"
 exec_cmd "chcon -R -t named_zone_t '/var/named/'"
 exec_cmd "chcon -R -t dnssec_trigger_var_run_t '/var/named/'"
+LN
+
+line_separator
+info "Setup SELinux for named."
+exec_cmd "setsebool -P named_write_master_zones true"
+exec_cmd "chmod g=rwx /var/named"
 LN
 
 info "Setup dhcpd to listen on $if_pub_name"

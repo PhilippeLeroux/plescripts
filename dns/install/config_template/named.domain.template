@@ -1,12 +1,13 @@
 ; vim:ts=8:sw=8
 $TTL    86400
-@			IN SOA	localhost root.localhost (
+@			IN SOA	localhost.DOMAIN_NAME. root.localhost.DOMAIN_NAME. (
 			46         ; serial
 			10800      ; refresh (3 hours)
 			900        ; retry (15 minutes)
 			604800     ; expire (1 week)
 			86400      ; minimum (1 day)
 			)
-			NS	localhost
+			NS	localhost.DOMAIN_NAME.
+$ORIGIN DOMAIN_NAME.
 localhost		A	127.0.0.1
 DNS_NAME		A	DNS_IP

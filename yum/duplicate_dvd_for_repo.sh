@@ -56,7 +56,10 @@ done
 
 exit_if_param_invalid release "DVD_R2 DVD_R3 DVD_R4 DVD_R5" "$str_usage"
 
-must_be_executed_on_server $infra_hostname
+if [ $(hostname -s) != $master_hostname ]
+then # le serveur se nomme $master_hostname lors de la création du serveur d'infra.
+	must_be_executed_on_server $infra_hostname
+fi
 
 #	Function dupliquée de sync_oracle_repository.sh
 function nfs_export_repo

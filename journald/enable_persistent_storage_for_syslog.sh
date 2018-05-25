@@ -45,11 +45,18 @@ LN
 info "Enable persistent storage of log messages :"
 LN
 
+exec_cmd "systemctl stop systemd-journald"
+LN
+sleep 1
+
 exec_cmd "mkdir /var/log/journal"
 LN
+sleep 1
 
 exec_cmd "systemd-tmpfiles --create --prefix /var/log/journal"
 LN
+sleep 1
 
-exec_cmd "systemctl restart systemd-journald"
+exec_cmd "systemctl start systemd-journald"
 LN
+sleep 1
