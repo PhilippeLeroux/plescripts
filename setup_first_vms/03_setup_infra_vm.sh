@@ -89,40 +89,9 @@ line_separator
 exec_cmd "echo \"$client_hostname:/home/$common_user_name/plescripts /mnt/plescripts nfs rw,$rw_nfs_options,comment=systemd.automount\"  >> /etc/fstab"
 LN
 
-if [ $disks_hosted_by == san ]
-then
-	if [ 0 -eq 1 ]
-	then # Les tests ont montré plus d'erreurs avec cette préco appliquée.
-	line_separator
-	info "Update lvm conf (Datera preco)"
-	exec_cmd 'sed -i "s/write_cache_state =.*/write_cache_state = 0/" /etc/lvm/lvm.conf'
-	exec_cmd 'sed -i "s/readahead =.*/readahead = \"none\"/" /etc/lvm/lvm.conf'
-	LN
-	fi # [ 0 -eq 1 ]
+[ $disks_hosted_by == san ] && ~/plescripts/san/setup_targetcli.sh || true
 
-	line_separator
-	info "Create VG $infra_vg_name_for_db_luns on first unused disk :"
-	exec_cmd ~/plescripts/san/create_vg.sh					\
-							-device=auto					\
-							-vg=$infra_vg_name_for_db_luns	\
-							-add_partition=no				\
-							-io_scheduler=cfq
-	LN
-
-	line_separator
-	info "Setup SAN"
-	exec_cmd "~/plescripts/san/targetcli_default_cfg.sh"
-	LN
-
-	line_separator
-	info "Workaround target error"
-	exec_cmd cp ~/plescripts/setup_first_vms/check-target.service	\
-				/usr/lib/systemd/system/check-target.service
-	exec_cmd systemctl enable check-target.service
-	LN
-fi
-
-#	Le serveur d'infra doit utiliser chrony, ntp merde trop
+# Par défaut le serveur NTP est chrony, je le garde pour le serveur d'infra.
 exec_cmd ~/plescripts/ntp/configure_chrony.sh -role=infra
 LN
 
