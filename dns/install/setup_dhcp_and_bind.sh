@@ -78,6 +78,20 @@ typeset	-r	named_conf=$etc_path/named.conf
 typeset	-r	named_domain=$var_named_path/named.${infra_domain}
 typeset	-r	reverse_domain=$var_named_path/reverse.${infra_domain}
 
+#	============================================================================
+# Utile si le script est lancé plusieur fois.
+line_separator
+info "Disable and stop named."
+exec_cmd -c systemctl stop named
+exec_cmd -c systemctl disable named
+LN
+
+info "Disable and stop named."
+exec_cmd -c systemctl stop dhcpd
+exec_cmd -c systemctl disable dhcpd
+LN
+#	============================================================================
+
 if [ $fake == no ]
 then
 	info "Generate dnssec key"
