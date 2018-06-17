@@ -641,13 +641,12 @@ function test_if_other_nodes_up
 		if [ $other_node != $server_name ]
 		then
 			info -n "Test if $other_node is up : "
-			nc $other_node 22 </dev/null >/dev/null 2>&1
-			if [ $? -ne 0 ]
+			if port_open $other_node 22
 			then
+				info -f "[$OK]"
+			else
 				info -f "[$KO]"
 				check_ok=no
-			else
-				info -f "[$OK]"
 			fi
 			LN
 		fi
