@@ -99,6 +99,14 @@ function nfs_export_repo
 	LN
 }
 
+function empty_swap
+{
+	line_separator
+	info "Empty swap."
+	exec_cmd "swapoff -a && swapon -a"
+	LN
+}
+
 #	Le répertoire commun à tous les dépôts est : $infra_olinux_repository_path
 #	Chaque dépôt a un ss-répertoire dans : $infra_olinux_repository_path
 #	Le createrepo doit se faire sur chaque ss-répertoire et non pas sur le
@@ -144,6 +152,7 @@ function sync_repo
 	fi
 	exec_cmd createrepo --update $infra_olinux_repository_path/$repo_name
 	LN
+	empty_swap
 }
 
 [ $infra_install == no ] && must_be_executed_on_server "$infra_hostname" || true
