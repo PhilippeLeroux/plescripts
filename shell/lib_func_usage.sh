@@ -58,18 +58,29 @@ then
 fi
 
 typeset -r all_exec_files=/tmp/tempo.$$
-find ~/plescripts -perm /u=x -type f > $all_exec_files
+find ~/plescripts -perm /u=x -type f -or -name "*lib.sh" > $all_exec_files
 
-info "Nombre de scripts utilisant la fonction"
+info "Nombre de scripts utilisant une fonction de $libname :"
 while read keyword func_name rem
 do
-	typeset -i count_file=0
+	typeset -i nr_file=0
 	while read file_name
 	do
-		grep -q $func_name "$file_name" && count_file=count_file+1
+		if [ "$file_name" != "$libname" ]
+		then
+			grep -q "$func_name" "$file_name" && ((++nr_file)) || true
+		fi
 	done<$all_exec_files
 
-	printf "%3d %s\n" $count_file $func_name
+	if [ $nr_file -eq 0 ]
+	then
+		# Si la fonction est présente plus de 1 fois dans $libname, c'est
+		# qu'elle est utilisée par $libname mais pas par d'autre scripts.
+		typeset -i v=$(grep "$func_name" "$libname" | wc -l)
+		[ $v -gt 1 ] && nr_file=1 || true
+	fi
+
+	printf "%3d %s\n" $nr_file $func_name
 done<<<"$(grep "^function" "$libname")" | sort -rn
 
 rm -rf $all_exec_files >/dev/null 2>&1
