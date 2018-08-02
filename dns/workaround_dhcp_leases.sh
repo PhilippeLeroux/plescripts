@@ -65,7 +65,7 @@ fi
 
 info "stop dhcpd and named."
 exec_cmd systemctl stop dhcpd
-exec_cmd systemctl stop name
+exec_cmd systemctl stop named
 LN
 
 info "rm leases_file"
@@ -77,6 +77,6 @@ exec_cmd "touch $leases_file"
 LN
 
 info "start named and dhcpd."
-exec_cmd systemctl start name
+exec_cmd systemctl start named
 exec_cmd systemctl start dhcpd
 LN
