@@ -142,7 +142,7 @@ then
 else
 	#	Je considère que l'équivalence est faite et que je recommence un test de
 	#	création de la VM d'infra.
-	exec_cmd start_vm $master_hostname -wait_os=no -lsvms=no
+	exec_cmd start_vm $master_hostname -wait_os=no -lsvms=no -skip_test_infra
 	exec_cmd wait_server $master_ip
 	add_to_known_hosts $master_ip
 	exec_cmd stop_vm -server=$master_hostname
@@ -180,6 +180,20 @@ line_separator
 exec_cmd VBoxManage storagectl $infra_hostname --name SATA --hostiocache on
 LN
 fi # [ 0 -eq 1 ]; then
+
+line_separator
+typeset	-ri	yum_repo_nr_disks=4
+info "Add disk for yum repository"
+for (( i=1; i<=$yum_repo_nr_disks; ++i ))
+do
+	exec_cmd $vm_scripts_path/add_disk.sh					\
+					-vm_name=$infra_hostname				\
+					-disk_name=$(printf "yum_repo_%02d" $i)	\
+					-disk_mb=$((10*1024))					\
+					-mtype=auto								\
+					-fixed_size
+	LN
+done
 
 if [ $disks_hosted_by == san ]
 then
@@ -258,6 +272,8 @@ ssh_infra "~/plescripts/setup_first_vms/01_prepare_infra_vm.sh"
 
 line_separator
 info "Create yum repository"
+ssh_infra "~/plescripts/disk/create_fs.sh -mount_point=/repo -suffix_vglv=yum_repo -type_fs=xfs -disks=$yum_repo_nr_disks -noatime"
+ssh_infra "echo '/dev/mapper/vgyum_repo-lvyum_repo /repo xfs defaults 0 0' >> /etc/fstab"
 exec_cmd "~/plescripts/yum/init_infra_repository.sh -infra_install"
 LN
 

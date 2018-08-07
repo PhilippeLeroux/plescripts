@@ -75,7 +75,7 @@ then # Pas de backup de dépôt, la synchronisation sera longue.
 	LN
 else # Le dépôt sera initialisé avec $full_backup_name
 	line_separator
-	exec_cmd "ssh -t root@$infra_ip \"[ -d /repo ] && rm -rf /repo || true\""
+	exec_cmd "ssh -t root@$infra_ip \"[ -d /repo ] && rm -rf /repo/* || true\""
 	LN
 
 	info "Restore OL7 repository on $infra_hostname"

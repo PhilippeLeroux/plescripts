@@ -16,6 +16,7 @@ typeset		wait_os=yes
 typeset		lsvms=yes
 typeset	-i	gap_between_start_sec=${GAP_BETWEEN_START_SEC:-8}
 typeset		randomize_start=${RANDOMIZE_START:-yes}
+typeset		skip_test_infra=no
 
 if [[ x"$ID_DB" == x || "$ID_DB" == undef ]]
 then
@@ -27,6 +28,7 @@ add_usage "[-wait_os=$wait_os]"		"yes|no, yes : attend le démarrage complet de 
 add_usage "[-lsvms=$lsvms]"			"yes|no, yes : affiche l'état des VM."
 add_usage "[-gap_between_start_sec=$gap_between_start_sec]" "Pause in sec between starts of VMs."
 add_usage "[-randomize_start=$randomize_start]" "yes|no : yes randomize start order."
+add_usage "[-skip_test_infra"		"Ne test pas si $infra_hostname est démarré."
 
 typeset -r str_usage=\
 "Usage : $ME
@@ -64,6 +66,11 @@ do
 
 		-randomize_start=*)
 			randomize_start=$(to_lower ${1##*=})
+			shift
+			;;
+
+		-skip_test_infra)
+			skip_test_infra=yes
 			shift
 			;;
 
@@ -155,11 +162,16 @@ function load_vm_list
 typeset -a vm_list			# Nom de toutes les VMs.
 typeset	-a vm_started_list	# Nom des VMs démarrées.
 
-if [ $server != $infra_hostname ] && ! vm_running $infra_hostname
+# Lors de la création du serveur d'infra le master peut être redémarré, mais le
+# serveur d'infra n'existe pas. Script : 02_install_vm_infra.sh
+if [ $skip_test_infra == no ]
 then
-	info "Start infra server : $infra_hostname."
-	exec_cmd "start_vm $infra_hostname -lsvms=no"
-	LN
+	if [ $server != $infra_hostname ] && ! vm_running $infra_hostname
+	then
+		info "Start infra server : $infra_hostname."
+		exec_cmd "start_vm $infra_hostname -lsvms=no"
+		LN
+	fi
 fi
 
 #	============================================================================
