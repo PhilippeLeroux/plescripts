@@ -43,15 +43,24 @@ done
 
 #ple_enable_log -params $PARAMS
 
-typeset -r output=/tmp/dump_global_cfg.$$
+typeset	-r	output=/tmp/dump_global_cfg.$$
 
 while read varname
 do
-	info "$varname = ${!varname}"
-done<<<"$(grep typeset ~/plescripts/global.cfg	\
-	|sed "s/typeset\s\(-r\(i\)\{0,1\}\)\{0,1\}\s\(.*\)=.*/\3/g")" |sort|uniq > $output
+	info -n "$varname = ${!varname}"
+	if [ "${!varname}" == "" ]
+	then
+		info -f "${RED}${BLINK}ERROR${NORM}"
+	else
+		LN
+	fi
+done<<<"$(grep -E "^\s{0,}typeset" ~/plescripts/global.cfg	\
+	|	sed "s/typeset\s\(-r\(i\)\{0,1\}\)\{0,1\}\s\(.*\)=.*/\3/g")" \
+	|	sort|uniq > $output
+
 typeset -ri nr_var=$(cat $output|wc -l)
 cat $output
 LN
-info "Variables : $nr_var"
+
+info -n "Variables : $nr_var"
 LN
