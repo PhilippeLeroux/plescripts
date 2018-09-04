@@ -37,8 +37,8 @@ do
 	esac
 done
 
-typeset -i count_valids=0
-typeset -i count_bads=0
+typeset -i nr_valids=0
+typeset -i nr_bads=0
 
 function begin_with_number
 {
@@ -55,43 +55,43 @@ typeset -r named_file_name="/var/named/named.$(hostname -d)"
 
 while read name rem
 do
-	info "Read $name"
+	info "Readed $name"
 	if $(begin_with_number $name)
 	then
-		info "$name is an IP."
+		info "    IP : $name"
 		exec_cmd -f -ci "ssh $dns_conn \"grep \\\"\<$name\>$\\\" $named_file_name\" </dev/null >/dev/null 2>&1"
 		if [ $? -ne 0 ]
 		then
-			count_bads=count_bads+1
-			info "Remove $name from known_host"
+			((++nr_bads))
+			info "    Remove $name from known_host"
 			exec_cmd "sed -i '/$name/d' ~/.ssh/known_hosts"
 			LN
 		else
-			count_valids=count_valids+1
+			((++nr_valids))
 		fi
 	else
 		if grep -q "," <<<"$name"
 		then
-			info -n "Extract name : "
+			info -n "    Extracted name : "
 			name=$(cut -d, -f1<<<"$name")
 			info -f "$name"
 		else
-			info "$name is server name"
+			info "    Server : $name"
 		fi
-		exec_cmd -f -ci "ssh $dns_conn \"grep -i \\\"\<$name\> \\\" $named_file_name\" </dev/null >/dev/null 2>&1"
+		exec_cmd -f -ci "ssh $dns_conn \"grep -i \\\"\<$name\>\s\\\" $named_file_name\" </dev/null >/dev/null 2>&1"
 		if [ $? -ne 0 ]
 		then
-			count_bads=count_bads+1
-			info "Remove $name from known_host"
+			((++nr_bads))
+			info "    Remove $name from known_host"
 			exec_cmd "sed -i '/$name/d' ~/.ssh/known_hosts"
 			LN
 		else
-			count_valids=count_valids+1
+			((++nr_valids))
 		fi
 	fi
+	LN
 done<<<"$(cat ~/.ssh/known_hosts | sort)"
-LN
 
 info "known_host :"
-info "	valids  : $count_valids"
-info "	removed : $count_bads"
+info "	valids  : $nr_valids"
+info "	removed : $nr_bads"
