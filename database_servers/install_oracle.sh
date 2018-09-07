@@ -229,15 +229,15 @@ function create_response_file_12cR2
 
 	typeset	-r	O_HOME=$O_BASE/$cfg_orarel/dbhome_1
 
-	update_variable oracle.install.option					INSTALL_DB_SWONLY	$rsp_file
+	update_variable oracle.install.option				INSTALL_DB_SWONLY	$rsp_file
 	update_variable UNIX_GROUP_NAME						oinstall			$rsp_file
-	update_variable INVENTORY_LOCATION						$ORA_INVENTORY		$rsp_file
+	update_variable INVENTORY_LOCATION					$ORA_INVENTORY		$rsp_file
 	update_variable ORACLE_HOME							$O_HOME				$rsp_file
 	update_variable ORACLE_BASE							$O_BASE				$rsp_file
 	update_variable oracle.install.db.CLUSTER_NODES		empty				$rsp_file
-	update_variable oracle.install.db.InstallEdition		$edition			$rsp_file
-	update_variable oracle.install.db.OSDBA_GROUP			dba					$rsp_file
-	update_variable oracle.install.db.OSOPER_GROUP			oper				$rsp_file
+	update_variable oracle.install.db.InstallEdition	$edition			$rsp_file
+	update_variable oracle.install.db.OSDBA_GROUP		dba					$rsp_file
+	update_variable oracle.install.db.OSOPER_GROUP		oper				$rsp_file
 	update_variable oracle.install.db.OSBACKUPDBA_GROUP	dba					$rsp_file
 	update_variable oracle.install.db.OSDGDBA_GROUP		dba					$rsp_file
 	update_variable oracle.install.db.OSKMDBA_GROUP		dba					$rsp_file
