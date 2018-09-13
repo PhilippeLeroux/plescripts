@@ -17,7 +17,7 @@ typeset	-r	parameters_usage="$(print_usage)"
 reset_usage
 
 ORACLE_RELEASE=${ORACLE_RELEASE:-$oracle_release}
-add_usage "ORACLE_RELEASE=${ORACLE_RELEASE}"	"*12.1.0.2*|12.2.0.1"
+add_usage "ORACLE_RELEASE=${ORACLE_RELEASE}"	"18.0.0.0|*12.1.0.2*|12.2.0.1"
 
 add_usage new_line
 add_usage "OL7_KERNEL_VERSION=${OL7_KERNEL_VERSION:-$ol7_kernel_version}"	"latest|redhat or kernel version, only for BDD servers"

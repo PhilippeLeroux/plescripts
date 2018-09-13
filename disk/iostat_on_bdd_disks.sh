@@ -94,6 +94,9 @@ function load_afd_disks
 	fi
 }
 
+# Nécessaire en 18c, quand le script est lancé par root
+[ x"$ORACLE_BASE" == x ] && export ORACLE_BASE=$GRID_BASE || true
+
 typeset	disk_list
 
 info "Lecture des disques utilisés par la base :"

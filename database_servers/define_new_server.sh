@@ -26,7 +26,7 @@ typeset		luns_hosted_by=$disks_hosted_by
 # OH : ORACLE_HOME
 typeset		OH_FS=$rac_orcl_fs
 
-add_usage "-rel=12.1|12.2"			"Oracle release"
+add_usage "-rel=12.1|12.2|18.0"		"Oracle release"
 add_usage "-db=name"				"Database name."
 add_usage "[-dataguard]"			"Create dataguard (SINGLE database only)."
 add_usage "[-max_nodes=1]"			"RAC #nodes"
@@ -125,7 +125,7 @@ do
 	esac
 done
 
-exit_if_param_invalid rel "12.1 12.2" "$str_usage"
+exit_if_param_invalid rel "12.1 12.2 18.0" "$str_usage"
 
 exit_if_param_undef db	"$str_usage"
 
@@ -219,7 +219,7 @@ function normalyze_node
 		rac_network=undef
 	fi
 
-	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${oracle_release}:${dataguard}:${master_hostname}" > $cfg_path/node${num_node}
+	echo "${db_type}:${server_name}:${server_ip}:${server_vip}:${rac_network}:${server_private_ip}:${luns_hosted_by}:${OH_FS}:${oracle_release}:${dataguard}:${master_hostname}:${oracle_password}" > $cfg_path/node${num_node}
 }
 
 function normalyze_scan
@@ -364,6 +364,12 @@ function next_instructions
 		info "Execute : ./clone_master.sh -db=$db"
 		LN
 	fi
+
+	if [[ ${oracle_release%.*.*} == 18.0 && $db_type == rac ]]
+	then
+		warning "*** RAC 18c not tested ! ***"
+		LN
+	fi
 }
 
 if [ "$rel" != "${oracle_release%.*.*}" ]
@@ -371,6 +377,7 @@ then
 	case "$rel" in
 		12.1)	rel=12.1.0.2 ;;
 		12.2)	rel=12.2.0.1 ;;
+		18.0)	rel=18.0.0.0 ;;
 	esac
 	info "Update Oracle Release"
 	exec_cmd ~/plescripts/update_local_cfg.sh ORACLE_RELEASE=$rel

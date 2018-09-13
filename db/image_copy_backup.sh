@@ -124,13 +124,14 @@ line_separator
 info "Espace disque avant backup :"
 echo "$disk_space_before"
 
-info "Espace disque après backup :"
 if [ $crs_used == no ]
 then
 	LN
+	info "Espace disque après backup :"
 	exec_cmd "df -h /u0*"
 	LN
 else
+	info "Espace disque après backup :"
 	exec_cmd ~/plescripts/dg/dg_space.sh
 fi
 

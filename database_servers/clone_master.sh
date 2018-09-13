@@ -531,7 +531,12 @@ function configure_oracle_accounts
 			warning "github.com not available."
 			LN
 		else
-			typeset -r srvctl_script="srvctl_${oracle_release%.*.*}.bash"
+			if [ ${oracle_release%.*.*} == 12.1 ]
+			then
+				typeset -r srvctl_script="srvctl_${oracle_release%.*.*}.bash"
+			else
+				typeset -r srvctl_script="srvctl_12.2.bash"
+			fi
 			info "install bash completion for srvctl"
 			typeset -r BACKUP_PWD="$PWD"
 			fake_exec_cmd "cd ~/plescripts/tmp"
@@ -857,12 +862,13 @@ then	# C'est le dernier nœud
 			notify "Oracle RDBMS software can be installed."
 			info "./install_oracle.sh -db=$db"
 		else
-			if [ "${oracle_release}" == "12.2.0.1" ]
+			if [ "${oracle_release}" == "12.1.0.2" ]
 			then
-				script_name=install_grid12cR2.sh
-			else
 				script_name=install_grid12cR1.sh
+			else # 12cR2 et 18c même script, pour le moment.
+				script_name=install_grid12cR2.sh
 			fi
+
 			notify "Grid infrastructure can be installed."
 			info "./$script_name -db=$db"
 		fi

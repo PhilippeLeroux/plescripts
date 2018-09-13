@@ -21,9 +21,11 @@ Type de serveurs de base de données pouvant être créé :
 
 Versions logiciels :
 - VirtualBox version minimum 5.1
-- Oracle Linux 7.4 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
-- Oracle 12cR1 base SINGLE et RAC.
-- Oracle 12cR2 base SINGLE et RAC EE ou SE2.
+- Oracle Linux 7.5 est utilisé pour les serveurs base de données et le serveur d'infrastructure.
+- Oracle 12cR1 base SINGLE sur FS ou ASM et RAC.
+- Oracle 12cR2 base SINGLE sur FS ou ASM et RAC EE ou SE2.
+- Oracle 18c base SINGLE sur FS ou ASM et RAC EE ou SE2.
+	- Le RAC n'a pas été testé, pour le moment.
 
 La création des serveurs de base de données est 100% automatisée, il n'y a pas
 besoins de connaissances particulières sur la gestion d'un DNS ou d'un SAN.

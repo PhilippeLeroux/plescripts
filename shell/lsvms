@@ -78,6 +78,12 @@ function print_oracle_release
 		12.2)
 			echo "12cR2 ($v)"
 			;;
+		18*)
+			echo "18c   ($v)"
+			;;
+		*)
+			warning "$v check function print_oracle_release"
+			;;
 	esac
 }
 

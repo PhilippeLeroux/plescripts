@@ -168,6 +168,19 @@ function load_node_cfg
 	LN
 }
 
+# Print to stdout $ORACLE_HOME
+function get_ORACLE_HOME
+{
+	if [ $cfg_db_type == fs ]
+	then
+		typeset	-r	O_BASE=/$orcl_sw_fs_disk/app/oracle
+	else
+		typeset	-r	O_BASE=/$orcl_disk/app/oracle
+	fi
+
+	echo "$O_BASE/$cfg_orarel/dbhome_1"
+}
+
 function create_response_file_12cR1
 {
 	line_separator
@@ -176,14 +189,7 @@ function create_response_file_12cR1
 	exec_cmd cp -f template_oracle_${cfg_orarel%.*.*}.rsp $rsp_file
 	LN
 
-	if [ $cfg_db_type == fs ]
-	then
-		typeset	-r	O_BASE=/$orcl_sw_fs_disk/app/oracle
-	else
-		typeset	-r	O_BASE=/$orcl_disk/app/oracle
-	fi
-
-	typeset	-r	O_HOME=$O_BASE/$cfg_orarel/dbhome_1
+	typeset	-r	O_HOME=$(get_ORACLE_HOME)
 
 	update_variable oracle.install.option				INSTALL_DB_SWONLY	$rsp_file
 	update_variable ORACLE_HOSTNAME						${node_names[0]}	$rsp_file
@@ -213,6 +219,49 @@ function create_response_file_12cR1
 }
 
 function create_response_file_12cR2
+{
+	line_separator
+	info "Create response file for Oracle software."
+	exit_if_file_not_exists template_oracle_${cfg_orarel%.*.*}.rsp
+	exec_cmd cp -f template_oracle_${cfg_orarel%.*.*}.rsp $rsp_file
+	LN
+
+	if [ $cfg_db_type == fs ]
+	then
+		typeset	-r	O_BASE=/$orcl_sw_fs_disk/app/oracle
+	else
+		typeset	-r	O_BASE=/$orcl_disk/app/oracle
+	fi
+
+	typeset	-r	O_HOME=$O_BASE/$cfg_orarel/dbhome_1
+
+	update_variable oracle.install.option				INSTALL_DB_SWONLY	$rsp_file
+	update_variable UNIX_GROUP_NAME						oinstall			$rsp_file
+	update_variable INVENTORY_LOCATION					$ORA_INVENTORY		$rsp_file
+	update_variable ORACLE_HOME							$O_HOME				$rsp_file
+	update_variable ORACLE_BASE							$O_BASE				$rsp_file
+	update_variable oracle.install.db.CLUSTER_NODES		empty				$rsp_file
+	update_variable oracle.install.db.InstallEdition	$edition			$rsp_file
+	update_variable oracle.install.db.OSDBA_GROUP		dba					$rsp_file
+	update_variable oracle.install.db.OSOPER_GROUP		oper				$rsp_file
+	update_variable oracle.install.db.OSBACKUPDBA_GROUP	dba					$rsp_file
+	update_variable oracle.install.db.OSDGDBA_GROUP		dba					$rsp_file
+	update_variable oracle.install.db.OSKMDBA_GROUP		dba					$rsp_file
+
+	if [[ $cfg_db_type == rac ]]
+	then
+		server_list=${node_names[0]}
+		for (( inode=1; inode < max_nodes; ++inode ))
+		do
+			server_list=$server_list","${node_names[inode]}
+		done
+
+		update_variable oracle.install.db.CLUSTER_NODES "$server_list" $rsp_file
+	fi
+	LN
+}
+
+function create_response_file_18c
 {
 	line_separator
 	info "Create response file for Oracle software."
@@ -370,10 +419,25 @@ function start_oracle_installation
 			warning "Install Oracle $edition"
 			;;
 	esac
+
+	typeset	-r	release=${cfg_orarel%.*.*.*}
+	if [ $release == 12 ]
+	then
+		typeset	-r	runInstallerFullPath=/mnt/oracle_install/database/runInstaller
+	else # 18c et supérieur
+		typeset	-r	runInstallerFullPath=$(get_ORACLE_HOME)/runInstaller
+		info "Extract Oracle binaries."
+		exec_cmd "ssh oracle@${node_names[0]} '. .bash_profile && cd \$ORACLE_HOME && unzip -q /mnt/oracle_install/database/LINUX.X64_180000_db_home.zip'"
+		LN
+	fi
+
 	info "Logs : $ORA_INVENTORY/logs"
-	add_dynamic_cmd_param "\"LANG=C /mnt/oracle_install/database/runInstaller"
+	add_dynamic_cmd_param "\"LANG=C $runInstallerFullPath"
 	add_dynamic_cmd_param "      -silent"
-	add_dynamic_cmd_param "      -showProgress"
+	if [ $release == 12 ]
+	then
+		add_dynamic_cmd_param "      -showProgress"
+	fi
 	add_dynamic_cmd_param "      -waitforcompletion"
 	add_dynamic_cmd_param "      -responseFile /home/oracle/oracle_$db.rsp\""
 	exec_dynamic_cmd -c "ssh oracle@${node_names[0]}"
@@ -426,6 +490,21 @@ function exec_post_install_root_scripts_on_node
 	else
 		typeset -r script_root_sh="/$orcl_disk/app/oracle/$cfg_orarel/dbhome_1/root.sh"
 	fi
+
+	case  ${cfg_orarel%.*.*.*} in
+		12) :
+			;;
+		18)
+			if [ $cfg_db_type == fs ]
+			then
+				typeset	-r script_orainstRoot_sh="/$orcl_sw_fs_disk/app/oraInventory/orainstRoot.sh"
+				line_separator
+				exec_cmd -novar "ssh -t -t root@${node_name} \"LANG=C $script_orainstRoot_sh\" </dev/null"
+				LN
+			fi
+			;;
+	esac
+
 	typeset -r backup_script_root_sh="/home/oracle/root.sh.backup_install"
 	line_separator
 	exec_cmd -novar "ssh -t -t root@${node_name} \"LANG=C $script_root_sh\" </dev/null"
@@ -519,7 +598,7 @@ then
 	exit 0
 fi
 
-if [ "$cfg_orarel" == "12.2.0.1" ]
+if [ "$cfg_orarel" != "12.1.0.2" ]
 then
 	exit_if_param_invalid	edition "EE SE2"	"$str_usage"
 else
@@ -559,6 +638,9 @@ then
 			create_response_file_12cR2
 			;;
 
+		18.0.0.0)
+			create_response_file_18c
+			;;
 		*)
 			error "Oracle $cfg_orarel not supported."
 			exit 1

@@ -40,6 +40,7 @@ function cfg_max_nodes
 #*>		- cfg_orarel			Oracle Release 12.1.0.2 or 12.2.0.1
 #*>		- cfg_dataguard			yes|no
 #*>		- cfg_master_name		nom du master ayant servie à créer le serveur.
+#*>		- cfg_password			mot de passe utiliser par tous les comptes Oracle & Grid.
 #*>
 #*> La fonction test_if_other_nodes_up du script clone_master.sh lie le nom
 #*> des serveurs sans passer pas cette fonction : ne pas déplacer le champs
@@ -58,6 +59,7 @@ function cfg_load_node_info
 				cfg_orarel										\
 				cfg_dataguard									\
 				cfg_master_name									\
+				cfg_password									\
 		<$cfg_file
 }
 

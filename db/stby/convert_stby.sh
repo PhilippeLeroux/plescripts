@@ -16,6 +16,8 @@ $ME
 	-role=primary|physical Database role.
 
 Note -role=physical convert database to normal database.
+
+Msut be executed on each nodes to destroy the dataguard.
 "
 
 typeset db=undef

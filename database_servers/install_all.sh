@@ -38,7 +38,7 @@ do
 			;;
 
 		-h|-help|help)
-			exec_cmd "$str_usage"
+			info "$str_usage"
 			LN
 			exit 1
 			;;
@@ -46,7 +46,8 @@ do
 		*)
 			error "Arg '$1' invalid."
 			LN
-			exec_cmd "$str_usage"
+			info "$str_usage"
+			LN
 			exit 1
 			;;
 	esac
@@ -72,6 +73,7 @@ timing 20
 
 cfg_load_node_info $db 1
 
+# 12cR2 et 18c même script, pour le moment.
 [[ $cfg_orarel == 12.1* ]] && O_VER=12cR1 || O_VER=12cR2
 
 case $cfg_db_type in

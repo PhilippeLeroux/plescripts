@@ -71,7 +71,7 @@ function file_nr_extends_ok
 	count_total_ext=count_total_ext+nr_extents
 
 	typeset -r	file_size=$(fmt_bytes_2_better $(stat --printf="%s" "$vdi_file"))
-	typeset	-r	msg=$(printf "%-20s %8s : %2d extents " "${vdi_file##*/}" $file_size $nr_extents)
+	typeset	-r	msg=$(printf "%-21s %8s : %2d extents " "${vdi_file##*/}" $file_size $nr_extents)
 	if [ $nr_extents -le $max_ext ]
 	then
 		info "$msg [$OK]"

@@ -18,7 +18,7 @@ typeset		pdb=undef
 typeset		from_pdb=default
 typeset		no_data=no
 typeset		wallet=${WALLET:-$(enable_wallet $orcl_release)}
-typeset		sampleSchema=no
+typeset		sampleSchemas=no
 typeset		as_seed=no
 typeset		ro=no
 typeset		admin_user=pdbadmin
@@ -28,8 +28,8 @@ typeset		log=yes
 
 add_usage "-db=name"			"Database name."
 add_usage "-pdb=name"			"PDB name."
-add_usage "[-sampleSchema=$sampleSchema]"	"yes|no"
-add_usage "[-as_seed]"			"Create a seed pdb 12cR2."
+add_usage "[-sampleSchemas]"	"Install sample schemas"
+add_usage "[-as_seed]"			"Create a seed pdb 12cR2 or later."
 add_usage "[-ro]"				"Fake a seed pdb 12cR1."
 add_usage "[-from_pdb=name]"	"Clone from pdb 'name'"
 add_usage "[-no_data]"			"Clone without data."
@@ -64,8 +64,8 @@ do
 			shift
 			;;
 
-		-sampleSchema=*)
-			sampleSchema=$(to_lower ${1##*=})
+		-sampleSchemas)
+			sampleSchemas=yes
 			shift
 			;;
 
@@ -130,7 +130,7 @@ exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
 exit_if_param_invalid	wallet			"yes no"	"$str_usage"
-exit_if_param_invalid	sampleSchema	"yes no"	"$str_usage"
+exit_if_param_invalid	sampleSchemas	"yes no"	"$str_usage"
 
 [ $log == yes ] && script_start || true
 
@@ -475,7 +475,7 @@ function create_wallet
 		fi
 	fi
 
-	if [[ $orcl_release == 12.2 && $gi_count_nodes -eq 1 ]] && command_exists crsctl
+	if [[ $orcl_release != 12.1 && $gi_count_nodes -eq 1 ]] && command_exists crsctl
 	then
 		warning "Database cannot start with wallet enable."
 		LN
@@ -504,13 +504,13 @@ function stby_create_temporary_file
 	wait_if_high_load_average
 
 	line_separator
-	info "12c : temporary tablespace not created on standby."
+	info "$orcl_release : temporary tablespace not created on standby."
 	if [ $adg == no ]
 	then
 		warning "  Real Time Apply is OFF"
 		warning "  Temporary file cannot be created for standby $pdb."
 		LN
-		warning "  Create temp file after swichtover or failover manually."
+		warning "  Create temp file after swichtover or failover."
 		LN
 		return 0
 	fi
@@ -716,7 +716,7 @@ wait_if_high_load_average
 
 [ $wallet == yes ] && create_wallet || true
 
-if [ $sampleSchema == yes ]
+if [ $sampleSchemas == yes ]
 then
 	info "Create sample schemas on $db[$pdb]"
 	exec_cmd ~/plescripts/db/create_sample_schemas.sh -db=$db -pdb=$pdb

@@ -91,10 +91,14 @@ then
 						-alias_name=$tnsalias				\
 						-server_list=$host_name >> $tnsnames_file
 else
-	~/plescripts/shell/gen_tns_alias.sh						\
-				-service=$service							\
-				-alias_name=$tnsalias						\
-				-server_list=\"$host_name $dataguard_list\" >> $tnsnames_file
+	# BUG bizarre, le script a toujours bien fonctionner, mais maintenant
+	# les " du paramètre -server_list ne sont plus passées en paramètre.
+	# eval permet de résoudre le problème.
+	cmd="~/plescripts/shell/gen_tns_alias.sh						\
+				-service=$service									\
+				-alias_name=$tnsalias								\
+				-server_list=\"$host_name $dataguard_list\" >> $tnsnames_file"
+	eval $cmd
 fi
 
 info "$(printf "%${padding}s" ' ')   \$TNS_ADMIN/tnsnames.ora updated."

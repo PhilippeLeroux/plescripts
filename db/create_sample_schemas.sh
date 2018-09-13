@@ -74,9 +74,7 @@ exit_if_param_undef pdb	"$str_usage"
 exit_if_ORACLE_SID_not_defined
 
 exit_if_database_not_exists $db
-typeset	-r	orcl_release=$($ORACLE_HOME/OPatch/opatch lsinventory	|\
-									grep "Oracle Database 12c"		|\
-									awk '{ print $4 }' | cut -d. -f1-4)
+typeset	-r	orcl_version=$(read_orcl_version)
 
 case "$service" in
 	"localhost:1521")
@@ -93,7 +91,14 @@ case "$service" in
 		;;
 esac
 
-typeset -r sample_dir="$HOME/db-sample-schemas-$orcl_release"
+if [ ${orcl_version%.*.*.*} == 12 ]
+then
+	typeset	-r	fake_orcl_version=$orcl_version
+else
+	typeset	-r	fake_orcl_version=12.2.0.1
+fi
+
+typeset -r sample_dir="$HOME/db-sample-schemas-$fake_orcl_version"
 
 info -n "Exists '$sample_dir' "
 if [ ! -d "$sample_dir" ]

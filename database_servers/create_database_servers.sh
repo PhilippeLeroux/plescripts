@@ -74,11 +74,11 @@ done
 script_stop $ME $db
 LN
 
-if [ "${oracle_release}" == "12.2.0.1" ]
+if [ "${oracle_release}" == "12.1.0.2" ]
 then
-	script_name=install_grid12cR2.sh
-else
 	script_name=install_grid12cR1.sh
+else # 12cR2 et 18c même script, pour le moment.
+	script_name=install_grid12cR2.sh
 fi
 
 if [ $cfg_dataguard == no ]

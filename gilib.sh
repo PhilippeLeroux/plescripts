@@ -91,25 +91,21 @@ function execute_on_all_nodes_v2
 }
 
 # print to stdout Grid Version :
-#	12.1.0.2
-# or
-#	12.2.0.1
+#	12.1.0.2, 12.2.0.1, 18.0.0.0, ...
 function grid_version
 {
 	# Certains scripts root incluent la lib et la variable n'est pas définie.
 	# Les scripts root n'utilisent pas cette fonction.
 	[ x"$ORACLE_HOME" == x ] && return 0 || true
 
-	$ORACLE_HOME/OPatch/opatch lsinventory		|\
-		grep "Oracle Grid Infrastructure 12c"	|\
-		awk '{ print $5 }'						|\
+	$ORACLE_HOME/OPatch/opatch lsinventory					|\
+		grep -E "Oracle Grid Infrastructure [0-9][0-9]."	|\
+		awk '{ print $5 }'									|\
 		cut -d. -f1-4
 }
 
 # print to stdout Grid Version :
-#	12cR1
-# or
-#	12cR2
+#	12cR1, 12cR2, 18c, ...
 function grid_release
 {
 	typeset gv=$(grid_version)
@@ -120,12 +116,15 @@ function grid_release
 		12.2.*)
 			echo 12cR2
 			;;
+		18.0)
+			echo 18c
+			;;
 		*)
 			echo "Unknow release : '$gv'"
 	esac
 }
 
-# $1 12.1 or 12.2
+# $1 12.1, 12.2 or 18.0
 # print to stdout yes or no
 # Wallet don't work with standalone 12.2 with ASM
 function enable_wallet
@@ -135,7 +134,7 @@ function enable_wallet
 			echo yes
 			;;
 
-		12.2)
+		12.2|18.0)
 			if command_exists crsctl
 			then
 				if [ $gi_count_nodes -gt 1 ]

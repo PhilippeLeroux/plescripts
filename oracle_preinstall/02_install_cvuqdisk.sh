@@ -46,7 +46,7 @@ then
 	LN
 else
 	info "Extract cvuqdisk-1.0.10-1.rpm from zip archive to /tmp"
-	exec_cmd "unzip	-j	\"/mnt/oracle_install/grid/linuxx64_12201_grid_home.zip\"	\
+	exec_cmd "unzip	-j	\"/mnt/oracle_install/grid/$grid_zip_name\"	\
 							\"cv/rpm/cvuqdisk-1.0.10-1.rpm\"						\
 					-d \"/tmp\""
 	LN

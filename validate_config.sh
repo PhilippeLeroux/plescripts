@@ -42,9 +42,9 @@ do
 	esac
 done
 
-typeset -i count_errors=0
+typeset -i nr_errors=0
 
-function scripts_exists
+function test_if_scripts_exists
 {
 	line_separator
 	info -n "Directory exists \$HOME/plescripts "
@@ -52,53 +52,60 @@ function scripts_exists
 	then
 		info -f "[$KO]"
 		error "	must contains all scripts."
-		((++count_errors))
+		((++nr_errors))
 	else
 		info -f "[$OK]"
 	fi
 	LN
 }
 
-function runInstaller_exists
+# $1 zip name
+# Don't work with 12.1
+function _test_if_grip_zip_exists
 {
-	line_separator
-	info "Oracle $orarel extracted :"
-	info -n "Exist \$HOME/$oracle_install/database/runInstaller "
-	if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
+	typeset	-r	zip_name="$1"
+	info "Grid zip $orarel :"
+	info -n "Exist \$HOME/$oracle_install/grid/$zip_name "
+
+	if [ ! -f "$HOME/$oracle_install/grid/$zip_name" ]
 	then
 		info -f "[$KO]"
-		error " \$HOME/$oracle_install/database must contains Oracle installer."
+		error " \$HOME/$oracle_install/grid must contains $zip_name"
 		LN
-		((++count_errors))
+		((++nr_errors))
 	else
 		info -f "[$OK]"
 		LN
 	fi
+}
 
-	if [ "$orarel" == "12.2" ]
+function test_oracle_binaries_or_zip
+{
+	line_separator
+	if [[ $orarel =~ 18 ]]
 	then
-		info "Grid zip $orarel :"
-		info -n "Exist \$HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip "
-		if [ ! -f "$HOME/$oracle_install/grid/linuxx64_12201_grid_home.zip" ]
+		info "Oracle zip $orarel :"
+		info -n "Exist \$HOME/$oracle_install/database/LINUX.X64_180000_db_home.zip "
+		if [ ! -f "$HOME/$oracle_install/database/LINUX.X64_180000_db_home.zip" ]
 		then
 			info -f "[$KO]"
-			error " \$HOME/$oracle_install/grid must contains linuxx64_12201_grid_home.zip."
+			error " \$HOME/$oracle_install/database/LINUX.X64_180000_db_home.zip."
 			LN
-			((++count_errors))
+			((++nr_errors))
 		else
 			info -f "[$OK]"
 			LN
 		fi
-	elif [ "$orarel" == "12.1" ]
+	elif [[ $orarel =~ 12 ]]
 	then
-		info "Grid $orarel extracted :"
-		info -n "Exist \$HOME/$oracle_install/grid/runInstaller "
-		if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
+		info "Oracle $orarel extracted :"
+		info -n "Exist \$HOME/$oracle_install/database/runInstaller "
+		if [ ! -f "$HOME/$oracle_install/database/runInstaller" ]
 		then
 			info -f "[$KO]"
-			error " \$HOME/$oracle_install/grid must contains Grid installer."
+			error " \$HOME/$oracle_install/database must contains Oracle installer."
 			LN
-			((++count_errors))
+			((++nr_errors))
 		else
 			info -f "[$OK]"
 			LN
@@ -107,6 +114,36 @@ function runInstaller_exists
 		error "Release '$orarel' invalid."
 		exit 1
 	fi
+}
+
+function test_grid_binaries_or_zip
+{
+	line_separator
+	case "$orarel" in
+		12.2|18.0)
+			_test_if_grip_zip_exists $grid_zip_name
+			;;
+
+		12.1)
+			info "Grid $orarel extracted :"
+			info -n "Exist \$HOME/$oracle_install/grid/runInstaller "
+			if [ ! -f "$HOME/$oracle_install/grid/runInstaller" ]
+			then
+				info -f "[$KO]"
+				error " \$HOME/$oracle_install/grid must contains Grid installer."
+				LN
+				((++nr_errors))
+			else
+				info -f "[$OK]"
+				LN
+			fi
+			;;
+
+		*)
+			error "Release '$orarel' invalid."
+			exit 1
+			;;
+	esac
 }
 
 function _is_exported
@@ -120,7 +157,7 @@ function _is_exported
 		info -f "[$OK]"
 		return 0
 	else
-		((++count_errors))
+		((++nr_errors))
 		info -f "[$KO]"
 		return 1
 	fi
@@ -149,7 +186,7 @@ function ISO_OLinux7_exists
 	if [ ! -f "$full_linux_iso_name" ]
 	then
 		info -f "[$KO]"
-		((++count_errors))
+		((++nr_errors))
 	else
 		info -f "[$OK]"
 	fi
@@ -166,7 +203,7 @@ function validate_gateway
 		info -f "[$OK]"
 	else
 		info -f "[$KO]"
-		((++count_errors))
+		((++nr_errors))
 	fi
 	LN
 }
@@ -183,7 +220,7 @@ function validate_master_time_server
 		info -f "[$OK]"
 	else
 		info -f "[$KO]"
-		((++count_errors))
+		((++nr_errors))
 	fi
 	LN
 }
@@ -196,7 +233,7 @@ function validate_nic
 	if [ "$if_net_bridgeadapter" == "undef" ]
 	then
 		info -f "[$KO]"
-		((++count_errors))
+		((++nr_errors))
 	else
 		info -f "[$OK]"
 	fi
@@ -214,7 +251,7 @@ function validate_resolv_conf
 		info -f "[$OK]"
 	else
 		info -f "[$KO]"
-		((++count_errors))
+		((++nr_errors))
 	fi
 
 	info -n " - Test : nameserver $infra_ip "
@@ -223,7 +260,7 @@ function validate_resolv_conf
 		info -f "[$OK]"
 	else
 		info -f "[$KO]"
-		((++count_errors))
+		((++nr_errors))
 	fi
 	LN
 }
@@ -237,7 +274,7 @@ function _shell_in_path
 		info -f "[$OK]"
 	else
 		info -f "[$KO]"
-		((++count_errors))
+		((++nr_errors))
 	fi
 	LN
 }
@@ -263,7 +300,7 @@ function _in_path
 		then
 			info -f -n "[${BLUE}optional${NORM}]"
 		else
-			((++count_errors))
+			((++nr_errors))
 			info -f -n "[$KO]"
 		fi
 		info -f " $cmd_msg"
@@ -298,7 +335,7 @@ function test_tools
 			info -f "[$OK]"
 			LN
 		else
-			((++count_errors))
+			((++nr_errors))
 			if cat /etc/group|grep -qE "^vboxusers.*$USER*"
 			then
 				info -f "[$KO] : disconnect user $USER and connect again."
@@ -322,21 +359,21 @@ function test_if_configure_global_cfg_executed
 	typeset	hn=$(hostname -s)
 	if [ "$hn" != "$client_hostname" ]
 	then
-		((++count_errors))
+		((++nr_errors))
 		exec_global=1
 		errors_msg="\n\tclient_hostname=$client_hostname expected $hn"
 	fi
 
 	if [ "$USER" != "$common_user_name" ]
 	then
-		((++count_errors))
+		((++nr_errors))
 		exec_global=1
 		errors_msg="$errors_msg\n\tcommon_user_name=$common_user_name expected $USER"
 	fi
 
 	if [ x"$vm_path" == x ]
 	then
-		((++count_errors))
+		((++nr_errors))
 		exec_global=1
 		errors_msg="$errors_msg\n\tvm_path not set."
 	fi
@@ -372,7 +409,7 @@ function test_timer_hpet
 			error "Timer ${RED}kvm-clock${NORM} invalid."
 			error "$(hostname -s) must be a physical machine."
 			LN
-			((++count_errors))
+			((++nr_errors))
 			;;
 
 		*)
@@ -391,9 +428,11 @@ function test_timer_hpet
 
 typeset -r orarel=${oracle_release%.*.*}
 
-scripts_exists
+test_if_scripts_exists
 
-runInstaller_exists
+test_oracle_binaries_or_zip
+
+test_grid_binaries_or_zip
 
 validate_NFS_exports
 
@@ -420,9 +459,9 @@ fi
 test_timer_hpet
 
 line_separator
-if [ $count_errors -ne 0 ]
+if [ $nr_errors -ne 0 ]
 then
-	error "Configuration failed : $count_errors errors."
+	error "Configuration failed : $nr_errors errors."
 	LN
 	exit 1
 else

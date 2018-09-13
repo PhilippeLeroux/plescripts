@@ -108,7 +108,7 @@ case "$orcl_release" in
 		typeset	shared_pool_size="0"
 		typeset	java_pool_size="0" #8M
 		;;
-	12.2)
+	12.2|18.0)
 		if [ $crs_used == yes ]
 		then
 			typeset	shared_pool_size="350M"
@@ -761,7 +761,8 @@ wait_if_high_load_average 5
 
 [ $crs_used == no ] && fsdb_enable_autostart || true
 
-[ $orcl_release == 12.2 ] && rac12cR2_adjust_poolsize || true
+# 12cR2 et plus même config pour le momment.
+[ $orcl_release != 12.1 ] && rac12cR2_adjust_poolsize || true
 
 if [ $crs_used == yes ]
 then

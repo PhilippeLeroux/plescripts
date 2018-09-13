@@ -25,7 +25,6 @@ do
 	case $1 in
 		-emul)
 			EXEC_CMD_ACTION=NOP
-			first_args=-emul
 			shift
 			;;
 
@@ -104,21 +103,21 @@ else
 fi
 
 typeset	-r	cfg_disk=$cfg_path_prefix/$db/disks
-typeset	-i	ilun=1
+typeset	-i	ilun=1 # Indice pour tous les disks de tous les DG.
 while IFS=: read dg_name size_gb first_no last_no
 do
 	line_separator
-	typeset	-i	count=last_no-first_no+1
-	info "Add $count disks for DG $dg_name"
+	typeset	-i	nr_disks=last_no-first_no+1
+	info "Add $nr_disks disks for DG $dg_name"
 	typeset	-i	size_mb=size_gb*1024
-	for (( idisk=1; idisk <= count; ++idisk ))
+	for (( idisk=1; idisk <= nr_disks; ++idisk ))
 	do
-		exec_cmd ~/plescripts/virtualbox/add_disk.sh					\
-							-vm_name=$first_vm							\
-							-disk_name=$(printf "%s_lun%02d" $db $ilun)	\
-							-disk_mb=$size_mb							\
-							-attach_to="'$attach_to'"					\
-							-disk_path="$disk_path"						\
+		exec_cmd ~/plescripts/virtualbox/add_disk.sh						\
+							-vm_name=$first_vm								\
+							-disk_name=$(printf "%s_disk%02d" $db $ilun)	\
+							-disk_mb=$size_mb								\
+							-attach_to="'$attach_to'"						\
+							-disk_path="$disk_path"							\
 							-fixed_size
 		((++ilun))
 	done

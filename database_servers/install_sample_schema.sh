@@ -54,10 +54,19 @@ cfg_exists $db
 
 typeset -ri	max_nodes=$(cfg_max_nodes $db)
 
-typeset -r	url=https://github.com/oracle/db-sample-schemas/archive/v${oracle_release}.tar.gz
-
 typeset -r	archive_dir="$HOME/plescripts/tmp"
-typeset -r	archive="$archive_dir/v${oracle_release}.tar.gz"
+case ${oracle_release%.*.*.*} in
+	12)
+		typeset	-r	fake_oracle_release=$oracle_release
+		;;
+	18) # Pas de samples spécifiques pour la 18c, pour le moment.
+		typeset	-r	fake_oracle_release=12.2.0.1
+		;;
+esac
+
+typeset	-r	archive_name=v${fake_oracle_release}
+typeset -r	url=https://github.com/oracle/db-sample-schemas/archive/${archive_name}.tar.gz
+typeset -r	archive="$archive_dir/${archive_name}.tar.gz"
 
 if ! ping_test github.com
 then
@@ -72,20 +81,20 @@ then
 	cd $archive_dir || exit 1
 	LN
 
-	exec_cmd wget $url
+	exec_cmd wget --quiet $url
 	LN
 fi
 
 for (( inode=1; inode <= max_nodes; ++inode ))
 do
 	cfg_load_node_info $db $inode
-	exec_cmd "ssh oracle@${cfg_server_name} 'rm -rf db-sample-schemas-${oracle_release}'"
+	exec_cmd "ssh oracle@${cfg_server_name} 'rm -rf db-sample-schemas-${fake_oracle_release}'"
 	LN
-	exec_cmd "ssh oracle@${cfg_server_name} 'gzip -dc plescripts/tmp/v${oracle_release}.tar.gz | tar xf - '"
+	exec_cmd "ssh oracle@${cfg_server_name} 'gzip -dc plescripts/tmp/${archive_name}.tar.gz | tar xf - '"
 	LN
-	if [ $oracle_release == 12.1.0.2 ]
+	if [[ $fake_oracle_release == 12.1.0.2 ]]
 	then # Bug Oracle avec sqlloader
-		exec_cmd "ssh oracle@${cfg_server_name} 'mkdir db-sample-schemas-${oracle_release}/logs'"
+		exec_cmd "ssh oracle@${cfg_server_name} 'mkdir db-sample-schemas-${fake_oracle_release}/logs'"
 		LN
 	fi
 done

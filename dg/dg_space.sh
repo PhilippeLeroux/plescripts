@@ -48,23 +48,25 @@ else
 fi
 
 info "$(printf "%-8s %13s %13s %13s %13s" DG Total Free Usable %Usable)"
-if [ "$orcl_version" == 12.1 ]
-then
-	while read state type rebal sector block au total_mb free_mb req usable_file_mb offdisks voting name
-	do
-		[ "$state" == "State" ] && continue || true
-		x=$(compute -l1 "($usable_file_mb / $total_mb) * 100")
-		info "$(printf "%-8s %10s Mb %10s Mb %10s Mb %8s" $name $(fmt_number $total_mb) $(fmt_number $free_mb) $(fmt_number $usable_file_mb)) $x"
-	done<<<"$(eval $cmd)"
-elif [ "$orcl_version" == 12.2 ]
-then
-	while read state type rebal sector lsector block au total_mb free_mb req usable_file_mb offdisks voting name
-	do
-		[ "$state" == "State" ] && continue || true
-		x=$(compute -l1 "($usable_file_mb / $total_mb) * 100")
-		info "$(printf "%-8s %10s Mb %10s Mb %10s Mb %8s" $name $(fmt_number $total_mb) $(fmt_number $free_mb) $(fmt_number $usable_file_mb)) $x"
-	done<<<"$(eval $cmd)"
-else
-	error "$orcl_version not supported."
-fi
+case "$orcl_version" in
+	12.1)
+		while read state type rebal sector block au total_mb free_mb req usable_file_mb offdisks voting name
+		do
+			[ "$state" == "State" ] && continue || true
+			x=$(compute -l1 "($usable_file_mb / $total_mb) * 100")
+			info "$(printf "%-8s %10s Mb %10s Mb %10s Mb %8s" $name $(fmt_number $total_mb) $(fmt_number $free_mb) $(fmt_number $usable_file_mb)) $x"
+		done<<<"$(eval $cmd)"
+		;;
+	12.2|18.0)
+		while read state type rebal sector lsector block au total_mb free_mb req usable_file_mb offdisks voting name
+		do
+			[ "$state" == "State" ] && continue || true
+			x=$(compute -l1 "($usable_file_mb / $total_mb) * 100")
+			info "$(printf "%-8s %10s Mb %10s Mb %10s Mb %8s" $name $(fmt_number $total_mb) $(fmt_number $free_mb) $(fmt_number $usable_file_mb)) $x"
+		done<<<"$(eval $cmd)"
+		;;
+	*)
+		error "$orcl_version not supported."
+		;;
+esac
 LN

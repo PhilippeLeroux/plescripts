@@ -300,6 +300,11 @@ function create_response_file
 	update_variable oracle.install.asm.SYSASMPassword		$oracle_password	$rsp_file
 	update_variable oracle.install.asm.monitorPassword		$oracle_password	$rsp_file
 
+	if [ ${oracle_release%.*.*.*} != 12 ]
+	then # 18c et plus
+		update_variable oracle.install.crs.config.scanType LOCAL_SCAN $rsp_file
+	fi
+
 	if [ $cfg_db_type != rac ]
 	then
 		update_variable oracle.install.option							HA_CONFIG		$rsp_file
@@ -893,7 +898,7 @@ then
 	else
 		LN
 		info "Extract Grid Infra"
-		ssh_node0 grid "cd $ORACLE_HOME && unzip -q /mnt/oracle_install/grid/linuxx64_12201_grid_home.zip"
+		ssh_node0 grid "cd $ORACLE_HOME && unzip -q /mnt/oracle_install/grid/$grid_zip_name"
 		LN
 	fi
 fi
@@ -942,6 +947,12 @@ fi
 [ $cfg_db_type == rac ] && add_scan_to_local_known_hosts || true
 
 setup_ohasd_service
+
+if [[ $cfg_db_type != rac && ${cfg_orarel%.*.*.*} == 18 ]]
+then
+	ssh_node0 grid plescripts/database_servers/workaround_grid18c.sh
+	LN
+fi
 
 stats_tt stop grid_installation
 

@@ -25,6 +25,8 @@ typeset	-r	PARAMS="$*"
 #	plus être mis à jour, je n'ai pas trouvé de close de type 'configure archivelog
 #	deletion policy to applied on all standby;' et cette clause n'a aucun effet.
 
+typeset	-r	orcl_release="$(read_orcl_release)"
+
 typeset		db=undef
 typeset		pdb=undef
 typeset		remote_host=undef
@@ -32,7 +34,7 @@ typeset		remote_pdb=undef
 typeset		remote_srv=none
 typeset		admin_user=pdbadmin
 typeset		admin_pass=$oracle_password
-typeset		wallet=${WALLET:-$(enable_wallet 12.2)}
+typeset		wallet=${WALLET:-$(enable_wallet $orcl_release)}
 
 typeset	-i	refresh_mn=-1	# -1 no refresh, 0 refresh manual
 
@@ -192,13 +194,21 @@ must_be_user oracle
 
 exit_if_ORACLE_SID_not_defined
 
-[ $remote_srv == none ] && remote_srv=${remote_pdb}_oci || true
+case $orcl_release in
+	12.0|12.1)
+		error "Refresh PDB not implemented for $orcl_release"
+		LN
+		exit 1
+		;;
+	12.2)
+		: # OK
+		;;
+	*)
+		confirm_or_exit "Not tested on version $orcl_release"
+		;;
+esac
 
-if [[ $(read_orcl_release) == 12.1 ]]
-then
-	error "Work only for 12.2 and above."
-	LN
-fi
+[ $remote_srv == none ] && remote_srv=${remote_pdb}_oci || true
 
 info -n "ping $remote_host "
 if ! ping_test $remote_host
