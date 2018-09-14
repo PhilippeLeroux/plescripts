@@ -53,7 +53,7 @@ done
 if [ $server == undef ]
 then
 	exit_if_param_undef db "$str_usage"
-	server=srv${db}
+	server=srv${db}[0-9][0-9]
 fi
 
 exit_if_param_undef server "$str_usage"
@@ -95,7 +95,7 @@ typeset -a vm_list
 while read vm_name
 do
 	[ x"$vm_name" != x ] && vm_list+=( $vm_name )
-done<<<"$(VBoxManage list vms | grep "$server" | cut -d\" -f2)"
+done<<<"$(VBoxManage list vms | grep -E "$server" | cut -d\" -f2)"
 
 typeset -ri max_vms=${#vm_list[@]}
 info "$max_vms server(s) found for pattern $server : ${vm_list[@]}"
