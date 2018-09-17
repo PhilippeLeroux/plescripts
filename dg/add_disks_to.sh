@@ -63,22 +63,20 @@ fi
 typeset -a size_list
 typeset -a disk_list
 
-case "$(grid_release)" in
-	"12cR1")
-		while read size disk_name rem
-		do
-			size_list+=( $(( size / 1024 )) )
-			disk_list+=( $disk_name )
-		done<<<"$(kfod nohdr=true op=disks)"
-		;;
-	"12cR2")
-		while read size disk_name rem
-		do
-			size_list+=( $(( size / 1024 )) )
-			disk_list+=( $disk_name )
-		done<<<"$(kfod nohdr=true op=disks | grep AFD)"
-		;;
-esac
+if [ "$(grid_release)" == "12cR1" ]
+then
+	while read size disk_name rem
+	do
+		size_list+=( $(( size / 1024 )) )
+		disk_list+=( $disk_name )
+	done<<<"$(kfod nohdr=true op=disks)"
+else
+	while read size disk_name rem
+	do
+		size_list+=( $(( size / 1024 )) )
+		disk_list+=( $disk_name )
+	done<<<"$(kfod nohdr=true op=disks | grep AFD)"
+fi
 
 if [ $disks -gt ${#disk_list[@]} ]
 then
