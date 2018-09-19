@@ -216,17 +216,7 @@ exec_cmd "rm -f /var/lib/dhcpd/dhcpd.leases"
 exec_cmd "touch /var/lib/dhcpd/dhcpd.leases"
 LN
 
-line_separator
-info "Setup selinux"
-exec_cmd "chcon -R -t named_zone_t '/var/named/'"
-exec_cmd "chcon -R -t dnssec_trigger_var_run_t '/var/named/'"
-LN
-
-line_separator
-info "Setup SELinux for named."
-exec_cmd "setsebool -P named_write_master_zones true"
-exec_cmd "chmod g=rwx /var/named"
-LN
+exec_cmd ~/plescripts/dns/setup_SELinux.sh
 
 info "Setup dhcpd to listen on $if_pub_name"
 exec_cmd "cp /usr/lib/systemd/system/dhcpd.service /etc/systemd/system/"

@@ -66,5 +66,9 @@ else
 fi
 
 line_separator
+info "Workaround : SELinux settings can be lost after update."
+exec_cmd ~/plescripts/dns/setup_SELinux.sh
+
+line_separator
 warning "From $client_hostname execute : reboot_vm $infra_hostname"
 LN
