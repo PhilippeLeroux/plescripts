@@ -30,6 +30,7 @@ typeset	-r	orcl_release="$(read_orcl_release)"
 typeset		db=undef
 typeset		pdb=undef
 typeset		remote_host=undef
+typeset		remote_db=undef		# Obligatoire à partie de la 18c.
 typeset		remote_pdb=undef
 typeset		remote_srv=none
 typeset		admin_user=pdbadmin
@@ -41,6 +42,14 @@ typeset	-i	refresh_mn=-1	# -1 no refresh, 0 refresh manual
 add_usage "-db=name"					"DB name."
 add_usage "-pdb=name"					"Local PDB name."
 add_usage "-remote_host=name"			"Remote host name."
+case $orcl_release in
+	12*)
+		:
+		;;
+	*)
+		add_usage "-remote_db=name"	"Only for 18c and above."
+		;;
+esac
 add_usage "-remote_pdb=name"			"Remote PDB name."
 add_usage "[-remote_srv=name]"			"Service name for remote PDB, default is remote 'pdb name' + '_oci'."
 add_usage "[-refresh_mn=#]"				"Refresh frequency, or manual."
@@ -67,12 +76,12 @@ do
 			;;
 
 		-db=*)
-			db=${1##*=}
+			db=$(to_upper ${1##*=} )
 			shift
 			;;
 
 		-pdb=*)
-			pdb=${1##*=}
+			pdb=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -81,8 +90,13 @@ do
 			shift
 			;;
 
+		-remote_db=*)
+			remote_db=$(to_upper ${1##*=})
+			shift
+			;;
+
 		-remote_pdb=*)
-			remote_pdb=${1##*=}
+			remote_pdb=$(to_upper ${1##*=})
 			shift
 			;;
 
@@ -181,11 +195,43 @@ function create_wallet
 	exec_cmd "~/plescripts/db/add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb"
 }
 
+# $1 pdb name
+# return 0 if pdb exits, else 1.
+function pdb_exists
+{
+	typeset	-r	sql_query="select name from gv\$containers;"
+	sqlplus_exec_query "$sql_query" | grep $1
+}
+
+function grant_privilege_to_admin_user
+{
+	function privilege_cmds
+	{
+		set_sql_cmd "alter session set container=$remote_pdb;"
+		set_sql_cmd "grant create pluggable database to $admin_user container=current;"
+	}
+
+	info "Add tns alias for $remote_db"
+	exec_cmd "~/plescripts/db/add_tns_alias.sh -service=$remote_db -host_name=$remote_host"
+	LN
+
+	info "Grant privilege to $admin_user on $remote_pdb@[$remote_db]"
+	sqlplus_cmd_with "sys/$oracle_password@$remote_db as sysdba" "$(privilege_cmds)"
+	LN
+}
+
 ple_enable_log -params $PARAMS
 
 exit_if_param_undef db			"$str_usage"
 exit_if_param_undef pdb			"$str_usage"
 exit_if_param_undef remote_host	"$str_usage"
+case $orcl_release in
+	12*)
+		:
+		;;
+	*)
+		exit_if_param_undef remote_db	"$str_usage"
+esac
 exit_if_param_undef remote_pdb	"$str_usage"
 
 exit_if_param_invalid	wallet	"yes no"	"$str_usage"
@@ -200,7 +246,7 @@ case $orcl_release in
 		LN
 		exit 1
 		;;
-	12.2)
+	12.2|18.0)
 		: # OK
 		;;
 	*)
@@ -209,6 +255,13 @@ case $orcl_release in
 esac
 
 [ $remote_srv == none ] && remote_srv=${remote_pdb}_oci || true
+
+if pdb_exists $pdb
+then
+	error "PDB $pdb exists on server $HOSTNAME."
+	LN
+	exit 1
+fi
 
 info -n "ping $remote_host "
 if ! ping_test $remote_host
@@ -220,6 +273,15 @@ else
 	info -f "[$OK]"
 	LN
 fi
+
+case $orcl_release in
+	12*)
+		:
+		;;
+	*)
+		grant_privilege_to_admin_user
+		;;
+esac
 
 typeset	-r	tnsalias=${remote_host}_${remote_srv}
 typeset	-r	dblink_name=${remote_host}_${remote_srv}
