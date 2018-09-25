@@ -142,7 +142,7 @@ do
 done
 
 # Print to stdout all ddl statements to create PDB $pdb.
-function ddl_create_pdb
+function ddl_clone_pdb
 {
 	typeset		ddl_create="create pluggable database $pdb from $remote_pdb@$dblink_name"
 	case $refresh_mn in
@@ -312,7 +312,7 @@ exit_if_test_dblink_failed $dblink_name
 
 line_separator
 info "Create PDB $db[$pdb] from PDB $remote_db[$remote_pdb]."
-sqlplus_cmd "$(ddl_create_pdb)"
+sqlplus_cmd "$(ddl_clone_pdb)"
 if [ $? -ne 0 ]
 then
 	error "Failed."
