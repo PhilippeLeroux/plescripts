@@ -30,12 +30,12 @@ typeset	-r	orcl_release="$(read_orcl_release)"
 typeset		db=undef
 typeset		pdb=undef
 typeset		remote_host=undef
-typeset		remote_db=undef		# Obligatoire à partie de la 18c.
-typeset		remote_pdb=undef
-typeset		remote_srv=none
+typeset		remote_db=undef
+typeset		remote_pdb=none
 typeset		admin_user=pdbadmin
 typeset		admin_pass=$oracle_password
 typeset		wallet=${WALLET:-$(enable_wallet $orcl_release)}
+typeset	-r	hostname=$(hostname -s)
 
 typeset	-i	refresh_mn=-1	# -1 no refresh, 0 refresh manual
 
@@ -50,11 +50,11 @@ case $orcl_release in
 		add_usage "-remote_db=name"	"Only for 18c and above."
 		;;
 esac
-add_usage "-remote_pdb=name"			"Remote PDB name."
-add_usage "[-remote_srv=name]"			"Service name for remote PDB, default is remote 'pdb name' + '_oci'."
+add_usage "[-remote_pdb=name]"			"Remote PDB name. If missing use -pdb parameter."
 add_usage "[-refresh_mn=#]"				"Refresh frequency, or manual."
 add_usage "[-wallet=$wallet]"			"yes|no yes : Use Wallet Manager for pdb connection."
 add_usage "[-admin_user=$admin_user]"
+
 add_usage "[-admin_pass=$admin_pass]"
 
 typeset	-r	str_usage=\
@@ -63,6 +63,10 @@ $ME
 $(print_usage)
 
 Work only for 12.2 and above.
+
+NOTE :
+    Tous les droits sont donnés pour que le switchover entre PDB puisse être
+    effectué, mais le script pdb_switchover.sh échoue.
 
 Dataguard not tested.
 "
@@ -76,12 +80,12 @@ do
 			;;
 
 		-db=*)
-			db=$(to_upper ${1##*=} )
+			db=$(to_lower ${1##*=} )
 			shift
 			;;
 
 		-pdb=*)
-			pdb=$(to_upper ${1##*=})
+			pdb=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -91,17 +95,12 @@ do
 			;;
 
 		-remote_db=*)
-			remote_db=$(to_upper ${1##*=})
+			remote_db=$(to_lower ${1##*=})
 			shift
 			;;
 
 		-remote_pdb=*)
-			remote_pdb=$(to_upper ${1##*=})
-			shift
-			;;
-
-		-remote_srv=*)
-			remote_srv=${1##*=}
+			remote_pdb=$(to_lower ${1##*=})
 			shift
 			;;
 
@@ -142,14 +141,8 @@ do
 	esac
 done
 
-#	$1	dblink name
-function sql_test_dblink
-{
-	set_sql_cmd "whenever sqlerror exit 1;"
-	set_sql_cmd "select 1 from dual@$1;"
-}
-
-function sql_create_pdb
+# Print to stdout all ddl statements to create PDB $pdb.
+function ddl_create_pdb
 {
 	typeset		ddl_create="create pluggable database $pdb from $remote_pdb@$dblink_name"
 	case $refresh_mn in
@@ -174,7 +167,9 @@ function sql_create_pdb
 
 # Si un PDB est clonée depuis un PDB existant, il faut supprimer tous les
 # services du pdb existant qui sont dans le PDB cloné.
-function sql_remove_services_from_cloned_pdb
+#
+# Print to stdout all ddl statements to remove all services for PDB $pdb
+function ddl_remove_services_from_cloned_pdb
 {
 	set_sql_cmd "alter session set container=$pdb;"
 	echo "set serveroutput on"
@@ -196,28 +191,40 @@ function create_wallet
 }
 
 # $1 pdb name
-# return 0 if pdb exits, else 1.
+# return 0 if pdb exists, else 1.
 function pdb_exists
 {
 	typeset	-r	sql_query="select name from gv\$containers;"
 	sqlplus_exec_query "$sql_query" | grep $1
 }
 
-function grant_privilege_to_admin_user
+# Create user c##u1 on 2 databases.
+function create_common_users
 {
-	function privilege_cmds
+	function ddl_create_local_common_user
 	{
-		set_sql_cmd "alter session set container=$remote_pdb;"
-		set_sql_cmd "grant create pluggable database to $admin_user container=current;"
+		set_sql_cmd "create user $common_user identified by $oracle_password;"
+		set_sql_cmd "grant create session, resource, create any table, unlimited tablespace to $common_user container=all;"
+		set_sql_cmd "grant create pluggable database to $common_user container=all;"
+		set_sql_cmd "grant sysoper to $common_user container=all;"
 	}
 
-	info "Add tns alias for $remote_db"
-	exec_cmd "~/plescripts/db/add_tns_alias.sh -service=$remote_db -host_name=$remote_host"
-	LN
+	typeset	-r remote_connstr="sys/$oracle_password@$remote_db as sysdba"
+	if ! db_username_exists "$remote_connstr" $common_user 
+	then
+		line_separator
+		info "Create and grant privilege to $common_user on $remote_db"
+		sqlplus_cmd_with $remote_connstr "$(ddl_create_local_common_user)"
+		LN
+	fi
 
-	info "Grant privilege to $admin_user on $remote_pdb@[$remote_db]"
-	sqlplus_cmd_with "sys/$oracle_password@$remote_db as sysdba" "$(privilege_cmds)"
-	LN
+	if ! db_username_exists "sys/$oracle_password as sysdba" $common_user
+	then
+		line_separator
+		info "Create and grant privilege to $common_user on $db"
+		sqlplus_cmd "$(ddl_create_local_common_user)"
+		LN
+	fi
 }
 
 ple_enable_log -params $PARAMS
@@ -225,14 +232,7 @@ ple_enable_log -params $PARAMS
 exit_if_param_undef db			"$str_usage"
 exit_if_param_undef pdb			"$str_usage"
 exit_if_param_undef remote_host	"$str_usage"
-case $orcl_release in
-	12*)
-		:
-		;;
-	*)
-		exit_if_param_undef remote_db	"$str_usage"
-esac
-exit_if_param_undef remote_pdb	"$str_usage"
+exit_if_param_undef remote_db	"$str_usage"
 
 exit_if_param_invalid	wallet	"yes no"	"$str_usage"
 
@@ -240,21 +240,12 @@ must_be_user oracle
 
 exit_if_ORACLE_SID_not_defined
 
-case $orcl_release in
-	12.0|12.1)
-		error "Refresh PDB not implemented for $orcl_release"
-		LN
-		exit 1
-		;;
-	12.2|18.0)
-		: # OK
-		;;
-	*)
-		confirm_or_exit "Not tested on version $orcl_release"
-		;;
-esac
+# L'utilisateur est crée sur les 2 bases.
+typeset	-r	common_user="c##u1"
+typeset	-r	dblink_name=cdb_$remote_db
+typeset	-r	tnsalias=$remote_db
 
-[ $remote_srv == none ] && remote_srv=${remote_pdb}_oci || true
+[ $remote_pdb == none ] && remote_pdb=$pdb || true
 
 if pdb_exists $pdb
 then
@@ -275,63 +266,66 @@ else
 fi
 
 case $orcl_release in
-	12*)
-		:
+	12.1)
+		error "Refresh PDB not implemented for $orcl_release"
+		LN
+		exit 1
 		;;
+
+	12.2)
+		warning "not tested."
+		LN
+		;;
+
+	18.0)
+		: # OK
+		;;
+
 	*)
-		grant_privilege_to_admin_user
+		warning "not tested."
+		LN
 		;;
 esac
 
-typeset	-r	tnsalias=${remote_host}_${remote_srv}
-typeset	-r	dblink_name=${remote_host}_${remote_srv}
-
-info "Create TNS alias $tnsalias"
+line_separator
+# En 12cR2 l'alias était crée avec le service du PDB.
+# En 18c c'est le service du CDB qui est utilisé.
+info "Add tns alias for $remote_db on $hostname (for sqlplus connection & db link $dblink_name)"
 exec_cmd "~/plescripts/db/add_tns_alias.sh			\
-							-service=$remote_srv	\
+							-service=$remote_db		\
 							-host_name=$remote_host	\
 							-tnsalias=$tnsalias"
 
-info -n "tnsping $tnsalias "
-if ! tnsping $tnsalias >/dev/null 2>&1
+exit_if_tnsping_failed $tnsalias
+
+create_common_users
+
+if ! dblink_exists $dblink_name
 then
-	info -f "[$KO]"
-	LN
-	exit 1
-else
-	info -f "[$OK]"
+	line_separator
+	info "Create database link $dblink_name (For cloning and refresh PDB)"
+	sqlplus_cmd "$(ddl_create_dblink $dblink_name $common_user $admin_pass $tnsalias)"
 	LN
 fi
 
-info "Create database link $dblink_name"
-sqlplus_cmd "$(set_sql_cmd "create database link $dblink_name connect to $admin_user identified by $admin_pass using '$tnsalias';")"
-LN
-
-info "Test database link $dblink_name"
-sqlplus_cmd "$(sql_test_dblink $dblink_name)"
-if [ $? -ne 0 ]
-then
-	error "Failed."
-	LN
-	exit 1
-fi
-LN
-
-info "Create PDB $pdb from PDB ${remote_pdb}@${remote_host}."
-sqlplus_cmd "$(sql_create_pdb)"
-if [ $? -ne 0 ]
-then
-	error "Failed."
-	LN
-	exit 1
-fi
-LN
+exit_if_test_dblink_failed $dblink_name
 
 line_separator
+info "Create PDB $db[$pdb] from PDB $remote_db[$remote_pdb]."
+sqlplus_cmd "$(ddl_create_pdb)"
+if [ $? -ne 0 ]
+then
+	error "Failed."
+	LN
+	exit 1
+fi
+LN
+
 case $refresh_mn in
 	-1)	# No refresh
+		line_separator
 		info "Remove cloned services."
-		sqlplus_cmd "$(sql_remove_services_from_cloned_pdb)"
+		sqlplus_cmd "$(ddl_remove_services_from_cloned_pdb)"
 		LN
 
 		info "Delete alias used for cloning."
@@ -347,22 +341,20 @@ case $refresh_mn in
 
 		if [ $wallet == no ]
 		then
-			exec_cmd ~/plescripts/db/add_tns_alias.sh					\
-											-tnsalias=sys${pdb}			\
-											-service=$service			\
-											-host_name=$(hostname -s)
+			exec_cmd ~/plescripts/db/add_tns_alias.sh				\
+											-tnsalias=sys${pdb}		\
+											-service=$pdb			\
+											-host_name=${hostname}
 		else
 			create_wallet
 		fi
 
 		info "Services registered."
-		exec_cmd "lsnrctl status | grep -E '^Serv.*$pdb.*'"
-		LN
-		;;
-
-	*)	# refresh, nothing todo.
-		sqlplus_cmd "$(set_sql_cmd @lspdbs)"
+		exec_cmd "lsnrctl status | grep -Ei '^Serv.*$pdb.*'"
 		LN
 		;;
 esac
 
+line_separator
+sqlplus_cmd "$(set_sql_cmd @lspdbs)"
+LN

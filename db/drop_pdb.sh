@@ -135,32 +135,6 @@ function stop_and_remove_dbfs
 	exec_cmd "~/plescripts/db/dbfs/drop_dbfs.sh -db=$db -pdb=$pdb -skip_drop_user"
 }
 
-# $1 pdb name
-function drop_db_link_for_refresh_and_update_tnsnames
-{
-typeset	-r	query=\
-"select
-	db_link
-from
-	all_db_links
-where
-	db_link like '%$(to_upper $(mk_oci_service $1))'
-;"
-	typeset	-r	db_link_name="$(sqlplus_exec_query "$query" | tail -1)"
-	if [ x"$db_link_name" == x ]
-	then
-		warning "No db link found for pdb $1"
-		LN
-	else
-		info "Drop database link $db_link_name"
-		sqlplus_cmd "$(set_sql_cmd "drop database link $db_link_name;")"
-		LN
-		info "Delete $db_link_name from tnsnames.ora"
-		exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$db_link_name"
-		LN
-	fi
-}
-
 exit_if_param_undef db	"$str_usage"
 exit_if_param_undef pdb	"$str_usage"
 
@@ -272,11 +246,6 @@ then
 	fi
 
 	wait_if_high_load_average
-else
-	line_separator
-	info "Refreshable PDB no service to delete."
-	LN
-	drop_db_link_for_refresh_and_update_tnsnames $pdb
 fi
 
 if [[ $dataguard == no || $role == primary ]]

@@ -433,8 +433,8 @@ function is_oracle_enterprise_edition
 		|grep -q "Enterprise"
 }
 
-# $1 pdb name
-# print to stdout yes or no
+#*> $1 pdb name
+#*> Print to stdout yes or no
 function is_application_seed
 {
 	typeset	-r	pdbseed_name=$(to_upper $1)
@@ -450,7 +450,7 @@ where
 	[ x"$val" == x ] && echo no || echo yes
 }
 
-# return 0 if PDB $1 is refreshable, else return 1
+#*> return 0 if PDB $1 is refreshable, else return 1
 function refreshable_pdb
 {
 	typeset	-r	lpdb=$(to_upper $1)
@@ -465,17 +465,94 @@ where
 	[ "$(sqlplus_exec_query "$query"|tail -1)" == NONE ] && return 1 || return 0
 }
 
-# return 0 if PDB $1 exists, else return 1
+#*> return 0 if PDB $1 exists, else return 1
 function pdb_exists
 {
 	typeset	-r	lpdb=$(to_upper $1)
-	typeset	-r	query=\
-"select
-	name
-from
-	v\$pdbs
-where
-	name='$lpdb'
-;"
+	typeset	-r	query="select name from v\$pdbs where name='$lpdb';"
+
 	[ "$(sqlplus_exec_query "$query"|tail -1)" == $lpdb ] && return 0 || return 1
+}
+
+#*> $1 dblink name
+#*> return 0 if dblink $1 exists, else return 1.
+function dblink_exists
+{
+	typeset	-r query="select count(*) from cdb_db_links where db_link = upper( '$1' );"
+
+	[ "$(sqlplus_exec_query "$query"|tail -1|tr -d [:space:])" == "1" ] && return 0 || return 1
+}
+
+#*> $1 dblink_name
+#*> $2 user
+#*> $3 password
+#*> $4 tns alias
+#*>
+#*> Print to stdout ddl statement to create a db link.
+function ddl_create_dblink
+{
+	set_sql_cmd "create database link $1 connect to $2 identified by $3 using '$4';"
+}
+
+#*>	$1	db link name
+#*>	exit 1 if db link test failed. Test : select 1 from dual@$1;
+function exit_if_test_dblink_failed
+{
+	info -n "Test database link $1 : select 1 from dual@$1; "
+	if [ "$(sqlplus_exec_query "select 1 from dual@$1;" | tail -1 | tr -d [:space:])" == 1 ]
+	then
+		info -f "[$OK]"
+		LN
+	else
+		info -f "[$KO]"
+		exit 1
+	fi
+}
+
+#*> $1 tns alias
+#*> exit 1 if tnsping $1 failed.
+function exit_if_tnsping_failed
+{
+	info -n "tnsping $1 "
+	if ! tnsping $1 >/dev/null 2>&1
+	then
+		info -f "[$KO]"
+		LN
+		exit 1
+	else
+		info -f "[$OK]"
+		LN
+	fi
+}
+
+#*> $1 connect string
+#*> $2 username
+#*> return 0 if $1 exists, else return 1
+function db_username_exists
+{
+typeset connect_string="$1"
+shift
+if [ "$1" == as ]
+then
+	typeset -r connect_string="$connect_string as $2"
+	shift 2
+fi
+
+typeset	-r	username=$1
+
+typeset	-r	query=\
+"select
+	count(*)
+from
+    dba_users
+where
+	username=upper( '$username' )
+;"
+
+	if [ "$(sqlplus_exec_query_with "$connect_string" "$query" | tail -1 | tr -d [:space:])" == 1 ]
+	then
+		return 0
+	else
+		return 1
+	fi
 }
