@@ -190,14 +190,6 @@ function create_wallet
 	exec_cmd "~/plescripts/db/add_sysdba_credential_for_pdb.sh -db=$db -pdb=$pdb"
 }
 
-# $1 pdb name
-# return 0 if pdb exists, else 1.
-function pdb_exists
-{
-	typeset	-r	sql_query="select name from gv\$containers;"
-	sqlplus_exec_query "$sql_query" | grep -i $1
-}
-
 # Create user c##u1 on 2 databases.
 function create_common_users
 {
