@@ -195,7 +195,7 @@ function create_wallet
 function pdb_exists
 {
 	typeset	-r	sql_query="select name from gv\$containers;"
-	sqlplus_exec_query "$sql_query" | grep $1
+	sqlplus_exec_query "$sql_query" | grep -i $1
 }
 
 # Create user c##u1 on 2 databases.
