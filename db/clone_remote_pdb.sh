@@ -41,17 +41,18 @@ typeset	-i	refresh_mn=-1	# -1 no refresh, 0 refresh manual
 
 add_usage "-db=name"					"DB name."
 add_usage "-pdb=name"					"Local PDB name."
-add_usage "-remote_host=name"			"Remote host name."
 case $orcl_release in
 	12*)
+		add_usage "-remote_host=name"			"Remote host name."
 		:
 		;;
 	*)
-		add_usage "-remote_db=name"	"Only for 18c and above."
+		add_usage "-remote_db=name"			"Only for 18c and above."
+		add_usage "[-remote_host=name]"		"Remote host name, if missing use srv\$remote_dbname01"
 		;;
 esac
-add_usage "[-remote_pdb=name]"			"Remote PDB name. If missing use -pdb parameter."
 add_usage "[-refresh_mn=#]"				"Refresh frequency, or manual."
+add_usage "[-remote_pdb=name]"			"Remote PDB name. If missing use -pdb parameter."
 add_usage "[-wallet=$wallet]"			"yes|no yes : Use Wallet Manager for pdb connection."
 add_usage "[-admin_user=$admin_user]"
 
@@ -223,8 +224,16 @@ ple_enable_log -params $PARAMS
 
 exit_if_param_undef db			"$str_usage"
 exit_if_param_undef pdb			"$str_usage"
-exit_if_param_undef remote_host	"$str_usage"
 exit_if_param_undef remote_db	"$str_usage"
+case $orcl_release in
+	12*)
+		: # Nothing to do.
+		;;
+	*)
+		[ $remote_host == undef ] && remote_host=srv${remote_db}01 || true
+		;;
+esac
+exit_if_param_undef remote_host	"$str_usage"
 
 exit_if_param_invalid	wallet	"yes no"	"$str_usage"
 

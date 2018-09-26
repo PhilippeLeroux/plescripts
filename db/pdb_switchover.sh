@@ -16,10 +16,10 @@ typeset	-r	str_usage=\
 "Usage :
 $ME
     -db=name
-	-pdb=name
-	-remote_host=name 
-	-remote_db=name
-	[-remote_pdb=name]    if missing take value of parameter -pdb
+    -pdb=name
+    -remote_db=name
+    [-remote_host=name]   Remote host name, if missing use srv\$remote_dbname01
+    [-remote_pdb=name]    if missing take value of parameter -pdb
 
 For the moment only for refresh manual.
 
@@ -31,8 +31,8 @@ NOTE :
 
 typeset		db=undef
 typeset		pdb=undef
-typeset		remote_host=undef
 typeset		remote_db=undef
+typeset		remote_host=none
 typeset		remote_pdb=none
 
 while [ $# -ne 0 ]
@@ -143,6 +143,7 @@ esac
 typeset	-r	dblink_name=cdb_${remote_db}
 typeset	-r	common_user="c##u1"
 typeset	-r	tnsalias=$remote_db
+[ $remote_host == none ] && remote_host=srv${remote_db}01 || true
 [ $remote_pdb == none ] && remote_pdb=$pdb || true
 
 if ! dblink_exists $dblink_name
