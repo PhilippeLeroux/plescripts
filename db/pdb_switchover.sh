@@ -19,6 +19,7 @@ $ME
 	-pdb=name
 	-remote_host=name 
 	-remote_db=name
+	[-remote_pdb=name]    if missing take value of parameter -pdb
 
 For the moment only for refresh manual.
 
@@ -32,6 +33,7 @@ typeset		db=undef
 typeset		pdb=undef
 typeset		remote_host=undef
 typeset		remote_db=undef
+typeset		remote_pdb=none
 
 while [ $# -ne 0 ]
 do
@@ -61,6 +63,11 @@ do
 			shift
 			;;
 
+		-remote_pdb=*)
+			remote_pdb=${1##*=}
+			shift
+			;;
+
 		-h|-help|help)
 			info "$str_usage"
 			LN
@@ -84,14 +91,15 @@ exit_if_param_undef remote_host	"$str_usage"
 exit_if_param_undef remote_db	"$str_usage"
 
 # $1 pdb name
-# $2 dblink name
+# $2 remote pdb name
+# $3 dblink name
 #
 # Print to stdout all ddl statements to do a PDB switch over.
 function ddl_switchover_pdb
 {
 	set_sql_cmd "whenever sqlerror exit 1"
 	set_sql_cmd "alter session set container = $1;"
-	set_sql_cmd "alter pluggable database refresh mode manual from $2 switchover;"
+	set_sql_cmd "alter pluggable database refresh mode manual from $2@$3 switchover;"
 }
 
 # $1 pdb name
@@ -135,6 +143,7 @@ esac
 typeset	-r	dblink_name=cdb_${remote_db}
 typeset	-r	common_user="c##u1"
 typeset	-r	tnsalias=$remote_db
+[ $remote_pdb == none ] && remote_pdb=$pdb || true
 
 if ! dblink_exists $dblink_name
 then
@@ -175,9 +184,9 @@ then
 	LN
 else
 	line_separator
-	info "Refresh $remote_db[$pdb]"
+	info "Refresh $remote_db[$remote_pdb]"
 	typeset	-r remote_connstr="sys/$oracle_password@$remote_db as sysdba"
-	sqlplus_cmd_with "$remote_connstr" "$(ddl_refresh_pdb $pdb $dblink_name)"
+	sqlplus_cmd_with "$remote_connstr" "$(ddl_refresh_pdb $remote_pdb $dblink_name)"
 	LN
 fi
 
@@ -185,7 +194,7 @@ line_separator
 info "Start switch over."
 LN
 
-if sqlplus_cmd "$(ddl_switchover_pdb $pdb $dblink_name)"
+if sqlplus_cmd "$(ddl_switchover_pdb $pdb $remote_pdb $dblink_name)"
 then
 	info "switchover [$OK]"
 	LN
