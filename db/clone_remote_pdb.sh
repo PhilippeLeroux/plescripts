@@ -29,34 +29,23 @@ typeset	-r	orcl_release="$(read_orcl_release)"
 
 typeset		db=undef
 typeset		pdb=undef
-typeset		remote_host=undef
+typeset		remote_host=none
 typeset		remote_db=undef
 typeset		remote_pdb=none
-typeset		admin_user=pdbadmin
-typeset		admin_pass=$oracle_password
+typeset		common_user_pass=$oracle_password
 typeset		wallet=${WALLET:-$(enable_wallet $orcl_release)}
 typeset	-r	hostname=$(hostname -s)
 
-typeset	-i	refresh_mn=-1	# -1 no refresh, 0 refresh manual
+typeset	-i	refresh_mn=666	# -1 no refresh, 0 refresh manual
 
 add_usage "-db=name"					"DB name."
 add_usage "-pdb=name"					"Local PDB name."
-case $orcl_release in
-	12*)
-		add_usage "-remote_host=name"			"Remote host name."
-		:
-		;;
-	*)
-		add_usage "-remote_db=name"			"Only for 18c and above."
-		add_usage "[-remote_host=name]"		"Remote host name, if missing use srv\$remote_dbname01"
-		;;
-esac
-add_usage "[-refresh_mn=#]"				"Refresh frequency, or manual."
+add_usage "-remote_db=name"				"remote db name."
+add_usage "-refresh_mn=#"				"Refresh frequency, manual or clone."
+add_usage "[-remote_host=name]"			"Remote host name, if missing use srv\${remote_db}01"
 add_usage "[-remote_pdb=name]"			"Remote PDB name. If missing use -pdb parameter."
 add_usage "[-wallet=$wallet]"			"yes|no yes : Use Wallet Manager for pdb connection."
-add_usage "[-admin_user=$admin_user]"
-
-add_usage "[-admin_pass=$admin_pass]"
+add_usage "[-common_user_pass=$common_user_pass]"
 
 typeset	-r	str_usage=\
 "Usage :
@@ -107,7 +96,16 @@ do
 
 		-refresh_mn=*)
 			val=$(to_lower ${1##*=})
-			[ "$val" == manual ] && refresh_mn=0 || refresh_mn=$val
+			case "$val" in
+				manual)
+					refresh_mn=0
+					;;
+				clone)
+					refresh_mn=-1
+					;;
+				*)
+					refresh_mn=$val
+			esac
 			unset val
 			shift
 			;;
@@ -117,13 +115,8 @@ do
 			shift
 			;;
 
-		-admin_user=*)
-			admin_user=${1##*=}
-			shift
-			;;
-
-		-admin_pass=*)
-			admin_pass=${1##*=}
+		-common_user_pass=*)
+			common_user_pass=${1##*=}
 			shift
 			;;
 
@@ -196,7 +189,7 @@ function create_common_users
 {
 	function ddl_create_local_common_user
 	{
-		set_sql_cmd "create user $common_user identified by $oracle_password;"
+		set_sql_cmd "create user $common_user identified by $common_user_pass;"
 		set_sql_cmd "grant create session, resource, create any table, unlimited tablespace to $common_user container=all;"
 		set_sql_cmd "grant create pluggable database to $common_user container=all;"
 		set_sql_cmd "grant sysoper to $common_user container=all;"
@@ -225,15 +218,17 @@ ple_enable_log -params $PARAMS
 exit_if_param_undef db			"$str_usage"
 exit_if_param_undef pdb			"$str_usage"
 exit_if_param_undef remote_db	"$str_usage"
-case $orcl_release in
-	12*)
-		: # Nothing to do.
-		;;
-	*)
-		[ $remote_host == undef ] && remote_host=srv${remote_db}01 || true
-		;;
-esac
-exit_if_param_undef remote_host	"$str_usage"
+
+if [ $refresh_mn -eq 666 ]
+then
+	error "refresh_mn not defined."
+	LN
+
+	info "$str_usage"
+	LN
+
+	exit 1
+fi
 
 exit_if_param_invalid	wallet	"yes no"	"$str_usage"
 
@@ -246,6 +241,7 @@ typeset	-r	common_user="c##u1"
 typeset	-r	dblink_name=cdb_$remote_db
 typeset	-r	tnsalias=$remote_db
 
+[ $remote_host == none ] && remote_host=srv${remote_db}01 || true
 [ $remote_pdb == none ] && remote_pdb=$pdb || true
 
 if pdb_exists $pdb
@@ -273,12 +269,7 @@ case $orcl_release in
 		exit 1
 		;;
 
-	12.2)
-		warning "not tested."
-		LN
-		;;
-
-	18.0)
+	12.2|18.0)
 		: # OK
 		;;
 
@@ -289,8 +280,6 @@ case $orcl_release in
 esac
 
 line_separator
-# En 12cR2 l'alias était crée avec le service du PDB.
-# En 18c c'est le service du CDB qui est utilisé.
 info "Add tns alias for $remote_db on $hostname (for sqlplus connection & db link $dblink_name)"
 exec_cmd "~/plescripts/db/add_tns_alias.sh			\
 							-service=$remote_db		\
@@ -305,7 +294,7 @@ if ! dblink_exists $dblink_name
 then
 	line_separator
 	info "Create database link $dblink_name (For cloning and refresh PDB)"
-	sqlplus_cmd "$(ddl_create_dblink $dblink_name $common_user $admin_pass $tnsalias)"
+	sqlplus_cmd "$(ddl_create_dblink $dblink_name $common_user $common_user_pass $tnsalias)"
 	LN
 fi
 
@@ -324,10 +313,13 @@ LN
 
 case $refresh_mn in
 	-1)	# No refresh
-		line_separator
-		info "Remove cloned services."
-		sqlplus_cmd "$(ddl_remove_services_from_cloned_pdb)"
-		LN
+		if ! command_exists crsctl
+		then
+			line_separator
+			info "Remove cloned services."
+			sqlplus_cmd "$(ddl_remove_services_from_cloned_pdb)"
+			LN
+		fi
 
 		info "Delete alias used for cloning."
 		exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias"
