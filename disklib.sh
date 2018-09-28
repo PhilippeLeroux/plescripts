@@ -19,8 +19,8 @@ function get_uuid_disk
 	blkid $1 | sed 's/.*UUID="\(.*\)" T.*/\1/'
 }
 
-# $1 disk or partition name
-# print to stdout the label
+#*< $1 disk or partition name
+#*< print to stdout the label
 function label_of
 {
 	blkid $1|sed 's/.*LABEL="\(.*\)" TYPE.*/\1/'
