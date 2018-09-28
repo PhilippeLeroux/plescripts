@@ -162,17 +162,28 @@ function ddl_clone_pdb
 # Si un PDB est clonée depuis un PDB existant, il faut supprimer tous les
 # services du pdb existant qui sont dans le PDB cloné.
 #
-# Print to stdout all ddl statements to remove all services for PDB $pdb
-function ddl_remove_services_from_cloned_pdb
+# $1 pdb name
+# $2 name of remote pdb
+#
+# Print to stdout all ddl statements to delete all services for PDB $pdb
+function ddl_delete_services_from_cloned_pdb
 {
-	set_sql_cmd "alter session set container=$pdb;"
+	# Quand le CRS n'est pas utilisé les services sont parfois démarrés.
+	set_sql_cmd "alter session set container=$1;"
+	set_sql_prompt
 	echo "set serveroutput on"
 	echo "begin"
-	echo "    for s in ( select name from all_services where name != '$(to_lower $pdb)' )"
+	echo "    for s in ( select name from all_services where name like '${2}_%' )"
 	echo "    loop"
-	echo "        dbms_output.put_line( 'Stop and remove service : '||s.name );"
-	echo "        dbms_service.stop_service( s.name );"
+	echo "        begin"
+	echo "            dbms_output.put_line( 'Stop service : '||s.name );"
+	echo "            dbms_service.stop_service( s.name );"
+	echo "        exception"
+	echo "            when others then null;"
+	echo "        end;"
+	echo "        dbms_output.put_line( 'Delete service : '||s.name );"
 	echo "        dbms_service.delete_service( s.name );"
+	echo "        dbms_output.put_line( '.' );"
 	echo "    end loop;"
 	echo "end;"
 	echo "/"
@@ -185,7 +196,7 @@ function create_wallet
 }
 
 # Create user c##u1 on 2 databases.
-function create_common_users
+function create_common_users_on_2_databases
 {
 	function ddl_create_local_common_user
 	{
@@ -196,7 +207,7 @@ function create_common_users
 	}
 
 	typeset	-r remote_connstr="sys/$oracle_password@$remote_db as sysdba"
-	if ! db_username_exists "$remote_connstr" $common_user 
+	if ! db_username_exists "$remote_connstr" $common_user
 	then
 		line_separator
 		info "Create and grant privilege to $common_user on $remote_db"
@@ -246,7 +257,7 @@ typeset	-r	tnsalias=$remote_db
 
 if pdb_exists $pdb
 then
-	error "PDB $pdb exists on server $HOSTNAME."
+	error "PDB $pdb exists on database $db."
 	LN
 	exit 1
 fi
@@ -288,7 +299,7 @@ exec_cmd "~/plescripts/db/add_tns_alias.sh			\
 
 exit_if_tnsping_failed $tnsalias
 
-create_common_users
+create_common_users_on_2_databases
 
 if ! dblink_exists $dblink_name
 then
@@ -313,13 +324,14 @@ LN
 
 case $refresh_mn in
 	-1)	# No refresh
-		if ! command_exists crsctl
-		then
-			line_separator
-			info "Remove cloned services."
-			sqlplus_cmd "$(ddl_remove_services_from_cloned_pdb)"
-			LN
-		fi
+
+		# Même si le CRS n'est pas utilisé et que les PDB ont le même nom, ils
+		# sont détruit puis recrée. Lors de la création des services les alias
+		# TNS seront crées.
+		line_separator
+		info "Delete cloned services like ${remote_pdb}_%."
+		sqlplus_cmd "$(ddl_delete_services_from_cloned_pdb $pdb $remote_pdb)"
+		LN
 
 		info "Delete alias used for cloning."
 		exec_cmd "~/plescripts/db/delete_tns_alias.sh -tnsalias=$tnsalias"
@@ -342,8 +354,15 @@ case $refresh_mn in
 			create_wallet
 		fi
 
+		line_separator
 		info "Services registered."
 		exec_cmd "lsnrctl status | grep -Ei '^Serv.*$pdb.*'"
+		LN
+		;;
+
+	*)
+		line_separator
+		warning "Services ${remote_pdb}% exists, but cannot be deleted."
 		LN
 		;;
 esac

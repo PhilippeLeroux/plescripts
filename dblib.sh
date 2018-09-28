@@ -158,11 +158,11 @@ function sqlplus_cmd_with
 	fake_exec_cmd sqlplus -s "$connect_string"
 	if [ $? -eq 0 ]
 	then
-		printf "${SPOOL}set timin on\n$db_cmd\n" | \
+		echo -e "${SPOOL}set timin on\n$db_cmd\n" | \
 			sqlplus -s $connect_string
 		return $?
 	else
-		printf "${SPOOL}set timin on\n$db_cmd\n"
+		echo -e "${SPOOL}set timin on\n$db_cmd\n"
 		return 1
 	fi
 }
