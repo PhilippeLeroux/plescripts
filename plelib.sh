@@ -12,7 +12,7 @@ umask 0002
 typeset -ri	plelib_release=4
 typeset -r	plelib_banner=$(printf "plelib V%02d" $plelib_release)
 
-# $1 title or default
+#*> $1 title or default
 function set_terminal_title
 {
 	if [ "$1" == "default" ]
@@ -147,8 +147,8 @@ typeset -r PLELOG_PATH=$PLELOG_ROOT/$(date +"%Y-%m-%d")
 #	Lecture du nom du script appelant.
 typeset	-r PLESCRIPT_NAME=${0##*/}
 
-# Si le script est lancé par l'utilisateur oracle, la log, déclenchée par
-# ple_enable_log est copié dans ~/log
+#*> Si le script est lancé par l'utilisateur oracle, la log, déclenchée par
+#*> ple_enable_log est copié dans ~/log
 function move_log_to_server
 {
 	[ x"$PLELIB_LOG_FILE" == x ] && return 0 || true
@@ -166,9 +166,9 @@ function move_log_to_server
 	LN
 }
 
-# $1 nom de la log sans le chemin (facultatif), par défaut nom du script appelant
-# ou/et -params $*
-# Exemple : ple_enable_log -params $*
+#*> $1 nom de la log sans le chemin (facultatif), par défaut nom du script appelant
+#*> ou/et -params $*
+#*> Exemple : ple_enable_log -params $*
 function ple_enable_log
 {
 	if [[ "$#" -eq 0 || "$1" == "-params" ]]
@@ -368,7 +368,7 @@ function warning
 
 #*> Affiche les informations de debug.
 #*> Actif uniquement si la variable DEBUG_MODE==ENABLE est définie.
-#*> Fonction sur le même principe que info.
+#*> Fonctionne sur le même principe que info.
 function debug
 {
 	[ "$DEBUG_MODE" != ENABLE ] && return 0
@@ -551,11 +551,11 @@ function confirm_or_exit
 #	Fonctions permettant d'exécuter des commandes ou scripts.
 ################################################################################
 
-#	Modifie '$@' et affiche le résultat sur stdout.
-#		Remplace le chemin correspondand à HOME par $HOME
-#		Remplace le chemin correspondand à TNS_ADMIN par $TNS_ADMIN
-#		Remplace le chemin correspondand à ORACLE_HOME par $ORACLE_HOME
-#		Remplace le chemin correspondand à ORACLE_BASE par $ORACLE_BASE
+#*>	Modifie '$@' et affiche le résultat sur stdout.
+#*>		Remplace le chemin correspondand à HOME par $HOME
+#*>		Remplace le chemin correspondand à TNS_ADMIN par $TNS_ADMIN
+#*>		Remplace le chemin correspondand à ORACLE_HOME par $ORACLE_HOME
+#*>		Remplace le chemin correspondand à ORACLE_BASE par $ORACLE_BASE
 function replace_paths_by_shell_vars
 {
 	typeset s=$(sed "s,$HOME,\$HOME,"<<<"$@")
@@ -569,14 +569,15 @@ function replace_paths_by_shell_vars
 	echo "$s"
 }
 
+#*< Convertie les tabulations et supprime les espaces en trop de "$@"
 function simplify_cmd
 {
 	echo "$*" | tr -s '\t' ' ' | tr -s [:space:]
 }
 
-# Affiche sur stdout le timestamp à utiliser pour l'exécution d'une commande.
-# Si la longueur d'affichage change adapter la variable ple_param_margin
-function exec_tt
+#*< Affiche sur stdout le timestamp à utiliser pour l'exécution d'une commande.
+#*< Si la longueur d'affichage change adapter la variable ple_param_margin
+function get_tt
 {
 	date +"%H:%M:%S"
 }
@@ -596,7 +597,7 @@ function fake_exec_cmd
 			;;
 
 		EXEC)
-			my_echo "${YELLOW}" "${STRIKE}$(exec_tt)>${NORM} " "$simplified_cmd"
+			my_echo "${YELLOW}" "${STRIKE}$(get_tt)>${NORM} " "$simplified_cmd"
 			return 0
 	esac
 }
@@ -862,7 +863,7 @@ function exec_cmd
 
 		EXEC)
 			[ $force == YES ] && typeset -r COL=$RED || typeset -r COL=$YELLOW
-			[ $hide_command == NO ] && my_echo "$COL" "$(exec_tt)> " "$simplified_cmd" || true
+			[ $hide_command == NO ] && my_echo "$COL" "$(get_tt)> " "$simplified_cmd" || true
 
 			typeset -ri eval_start_at=$SECONDS
 			if [ x"$PLELIB_LOG_FILE" == x ]
@@ -881,7 +882,7 @@ function exec_cmd
 			if [ $eval_duration -gt $PLE_SHOW_EXECUTION_TIME_AFTER ]
 			then
 				typeset -r shortened_cmd=$(shorten_command "$simplified_cmd")
-				my_echo "${YELLOW}" "$(exec_tt)< " "$shortened_cmd running time : $(fmt_seconds $eval_duration)"
+				my_echo "${YELLOW}" "$(get_tt)< " "$shortened_cmd running time : $(fmt_seconds $eval_duration)"
 			fi
 
 			if [ $eval_return -ne 0 ]
@@ -891,7 +892,7 @@ function exec_cmd
 					# Si la commande a durée plus de PLE_SHOW_EXECUTION_TIME_AFTER
 					# la commande simplifiée a été affichée, sur une erreur affichage
 					# de la commande complète.
-					my_echo "$COL" "$(exec_tt)> " "$simplified_cmd" || true
+					my_echo "$COL" "$(get_tt)> " "$simplified_cmd" || true
 				fi
 
 				if [ x"$shortened_cmd" == x ]
@@ -1104,7 +1105,7 @@ function add_new_variable
 #*> If variable doesn't exist, it's added.
 #*> If value = empty reset value but not remove variable.
 #*>
-#*<	Format ^var\\s*=\\s*value
+#*<	Format ^var\\\s*=\\\s*value
 #*>
 #*> If file doesn't exist script aborted.
 function update_variable
@@ -1126,7 +1127,7 @@ function update_variable
 #*> remove_variable <var> <file>
 #*>
 #*> Remove variable <var> from file <file>
-#*>		Format ^war\s*=.*
+#*>		Format ^var\\\s*=.*
 #*>
 #*> If file doesn't exist script aborted.
 function remove_variable
@@ -1201,7 +1202,7 @@ function double_symbol_percent
 	echo "${@//\%/%%}"
 }
 
-# Escape \n from $@
+#*> Escape \\\n from $@
 function escape_symbol_nl
 {
 	sed "s/\\\n/\\\\\\\n/g"<<<"$@"
@@ -1219,7 +1220,7 @@ function escape_slash
 	echo ${@//\//\\/}
 }
 
-#*> Escape \ from $@
+#*> Escape \\\ from $@
 function escape_anti_slash
 {
 	echo ${@//\\/\\\\}
@@ -1604,8 +1605,8 @@ function fmt_bytes_2_better
 #	Fonctions inclassable
 ################################################################################
 
-# $1 variable value
-# return 0 if is a number, else return 1
+#*> $1 variable value
+#*> return 0 if is a number, else return 1
 function is_number
 {
 	[[ $1 =~ ^[0-9]+$ ]]
@@ -1686,7 +1687,7 @@ function rpm_update_available
 	esac
 }
 
-# print to stdout total os memory
+#*> print to stdout total os memory
 function get_os_memory_mb
 {
 	free -m|grep "Mem:"|awk '{ print $2 }'

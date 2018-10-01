@@ -5,15 +5,15 @@
 #[ -z plelib_release ] && error "~/plescripts/plelib.sh doit être incluse" && exit 1
 . ~/plescripts/disklib.sh
 
-# Ces variables sont initialisées
-# lv_first_no
-# lv_last_no
-# lv_size_gb
-# lv_nb
-# new_lv_number
-#
-#	$1 nom du vg
-#	$2 préfix du lv
+#*> Ces variables sont initialisées
+#*> lv_first_no
+#*> lv_last_no
+#*> lv_size_gb
+#*> lv_nb
+#*> new_lv_number
+#*>
+#*>	$1 nom du vg
+#*>	$2 préfix du lv
 function load_lv_info
 {
 	typeset -r vg_name=$1

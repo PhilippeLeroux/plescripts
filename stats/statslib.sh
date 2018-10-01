@@ -12,12 +12,12 @@ then
 	chmod -R ug=rwx,o=rx $PLELOG_PATH
 fi
 
-#	Permet d'indiquer les heures d'arrêt/démarrage d'un composant.
-#	$1	start|stop
-#	$2	nom du composant.
-#	Exemple
-#		stats_tt start grid
-#		stats_tt stop grid
+#*>	Permet d'indiquer les heures d'arrêt/démarrage d'un composant.
+#*<	$1	start|stop
+#*<	$2	nom du composant (ou nom d'un script).
+#*>	Exemple :
+#*>		stats_tt start grid
+#*>		stats_tt stop grid
 function stats_tt
 {
 	typeset -r action=$1

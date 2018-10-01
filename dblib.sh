@@ -10,8 +10,8 @@ fi
 
 typeset -r	SQL_PROMPT="prompt SQL>"
 
-# Si PLELIB_OUTPUT == FILE alors sqlplus log sa sortie dans $PLELIB_LOG_FILE
-# Initialise la variable SPOOL
+#*> Si PLELIB_OUTPUT == FILE alors sqlplus log sa sortie dans $PLELIB_LOG_FILE
+#*> Initialise la variable SPOOL
 function sqlplus_init_spool
 {
 	#	La variable SPOOL permet de loger la sortie de sqplus.
@@ -23,7 +23,7 @@ function sqlplus_init_spool
 	fi
 }
 
-#	Call oraenv with ORACLE_SID=$1
+#*>	Call oraenv with ORACLE_SID=$1
 function load_oraenv_for
 {
 	ORACLE_SID=$(to_upper $1)
@@ -52,6 +52,7 @@ function exit_if_database_not_exists
 	fi
 }
 
+#*> if variable ORACLE_SID not defined : exit 1
 function exit_if_ORACLE_SID_not_defined
 {
 	if [[ x"$ORACLE_SID" == x || "$ORACLE_SID" == NOSID ]]
@@ -62,7 +63,7 @@ function exit_if_ORACLE_SID_not_defined
 	fi
 }
 
-# print yes to stdout if dataguarg configutation available or no
+#*> print yes to stdout if dataguarg configutation available, else no.
 function dataguard_config_available
 {
 	dgmgrl -silent sys/$oracle_password 'show configuration' >/dev/null 2>&1
@@ -78,7 +79,7 @@ function read_database_role
 							grep $dbn | cut -d- -f2 | awk '{ print $1 }')
 }
 
-# arrays physical_list & stby_server_list must be declared
+#*> arrays physical_list & stby_server_list must be declared
 function load_stby_database
 {
 	typeset name
@@ -97,20 +98,22 @@ function load_stby_database
 
 }
 
-# $1 standby name
-# return 0 if stby is disabled, else return 1
+#*> $1 standby name
+#*> return 0 if stby is disabled, else return 1
 function stby_is_disabled
 {
 	dgmgrl sys/$oracle_password 'show configuration'|grep -i "$1" | grep -q "(disabled)"
 }
 
-# print to stdout primary database name
+#*> print to stdout primary database name
 function read_primary_name
 {
 	dgmgrl sys/$oracle_password 'show configuration'	|\
 				grep "Primary database" | awk '{ print $1 }'
 }
 
+#*> Utilisé avec sqlplus_cmd permet d'afficher un prompt avec le message "$@"
+#*> Voir set_sql_cmd pour un exemple.
 function set_sql_prompt
 {
 	cat<<-WT
@@ -124,9 +127,18 @@ function set_sql_prompt
 #*>		- affiche le prompt SQL> suivi de la commande.
 #*>		- affiche sur la seconde ligne la commande.
 #*>
-#*>	Le but étant de construire dans une fonction 'les_commandes' l'ensemble des
-#*>	commandes à exécuter à l'aide de set_sql_cmd.
-#*>	La fonction 'les_commandes' donnera la liste des commandes à la fonction sqlplus_cmd
+#*> Utilisé avec les fonctions sqlplus_cmd[_with]
+#*>
+#*> Ex 1 : sqlplus_cmd "$(set_sql_cmd "alter database open;")"
+#*>
+#*> Ex 2 :
+#*>		function open_pdb # $1 pdb name
+#*>		{
+#*>			set_sql_prompt "Open PDB $1"
+#*>			set_sql_cmd "alter session set container=$1;"
+#*>			set_sql_cmd "alter pluggable database open;"
+#*>		}
+#*>		sqlplus_cmd "$(open_pdb pdb01)"
 function set_sql_cmd
 {
 cat<<WT
@@ -204,6 +216,7 @@ function sqlplus_asm_cmd
 #*>	Objectif de la fonction :
 #*>	 Exécute une requête, seul son résultat est affiché, la sortie peut être 'parsée'
 #*>	 Par exemple obtenir la liste de tous les PDBs d'un CDB.
+#*>
 #*>	N'inscrit rien dans la log.
 function sqlplus_exec_query_with
 {
@@ -221,9 +234,9 @@ function sqlplus_exec_query
 	sqlplus_exec_query_with	"sys/$oracle_password as sysdba" "$1"
 }
 
-# Affiche tous les PDB RW de l'instance $1
-# Les bases en RO sont considérées comme des SEED.
-# $1 instance name
+#*> Affiche tous les PDB RW de l'instance $1
+#*> Les bases en RO sont considérées comme des SEED.
+#*> $1 instance name
 function get_rw_pdbs
 {
 typeset	-r	l_sql_read_pdb_rw=\
@@ -241,7 +254,7 @@ and c.open_mode = 'READ WRITE';
 	sqlplus_exec_query "$l_sql_read_pdb_rw"
 }
 
-# $1 database parameter
+#*> $1 database parameter
 function orcl_parameter_value
 {
 typeset opv_query=\

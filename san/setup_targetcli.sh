@@ -69,9 +69,12 @@ info "Setup SAN"
 exec_cmd "~/plescripts/san/targetcli_default_cfg.sh"
 LN
 
+if [ 0 -eq 1 ]; then
+# N'est plus nécessaire depuis que le nom du serveur est dans le hostname.
 line_separator
 info "Workaround target error"
 exec_cmd cp ~/plescripts/setup_first_vms/check-target.service	\
 			/usr/lib/systemd/system/check-target.service
 exec_cmd systemctl enable check-target.service
 LN
+fi # [ 0 -eq 1 ]; then

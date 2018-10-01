@@ -4,8 +4,8 @@
 #	plelib.sh doit être chargée.
 # vim: ts=4:sw=4
 
-#	Retourne tous les nœuds du cluster moins le nœud courant.
-#	Si le serveur courant n'appartient pas à un cluster la fonction ne retourne rien.
+#*>	Retourne tous les nœuds du cluster moins le nœud courant.
+#*>	Si le serveur courant n'appartient pas à un cluster la fonction ne retourne rien.
 function _get_other_nodes
 {
 	if command_exists olsnodes
@@ -30,9 +30,9 @@ typeset -r	gi_current_node=$(hostname -s)
 # Dans le cas d'un Dataguard gi_count_nodes vaudra 1.
 typeset	-ri	gi_count_nodes=$(( $(wc -w<<<"$gi_node_list") + 1 ))
 
-#	Exécute la commande "$@" sur tous les autres nœuds du cluster
-#	if $1 == -c script not interupted on error.
-#	Le profile n'est pas sourcé.
+#*>	Exécute la commande "$@" sur tous les autres nœuds du cluster
+#*>	if $1 == -c script not interupted on error.
+#*>	Le profile n'est pas sourcé.
 function execute_on_other_nodes
 {
 	[ $gi_count_nodes -eq 1 ] && return 0 || true
@@ -53,8 +53,8 @@ function execute_on_other_nodes
 	done
 }
 
-#	Exécute la commande "$@" sur tous les nœuds du cluster
-#	if $1 == -c script not interupted on error.
+#*>	Exécute la commande "$@" sur tous les nœuds du cluster
+#*>	if $1 == -c script not interupted on error.
 function execute_on_all_nodes
 {
 	if [ "$1" == "-c" ]
@@ -71,9 +71,9 @@ function execute_on_all_nodes
 	execute_on_other_nodes $first_arg "$cmd"
 }
 
-#	Exécute la commande "$@" sur tous les nœuds du cluster
-#	Source le fichier .bash_profile sur les autres nœuds.
-#	if $1 == -c script not interupted on error.
+#*>	Exécute la commande "$@" sur tous les nœuds du cluster
+#*>	Source le fichier .bash_profile sur les autres nœuds.
+#*>	if $1 == -c script not interupted on error.
 function execute_on_all_nodes_v2
 {
 	if [ "$1" == "-c" ]
@@ -90,8 +90,8 @@ function execute_on_all_nodes_v2
 	execute_on_other_nodes $first_arg ". .bash_profile; $cmd"
 }
 
-# print to stdout Grid Version :
-#	12.1.0.2, 12.2.0.1, 18.0.0.0, ...
+#*> print to stdout Grid Version :
+#*>	12.1.0.2, 12.2.0.1, 18.0.0.0, ...
 function grid_version
 {
 	# Certains scripts root incluent la lib et la variable n'est pas définie.
@@ -104,8 +104,8 @@ function grid_version
 		cut -d. -f1-4
 }
 
-# print to stdout Grid Version :
-#	12cR1, 12cR2, 18c, ...
+#*> print to stdout Grid Version :
+#*>	12cR1, 12cR2, 18c, ...
 function grid_release
 {
 	typeset gv=$(grid_version)
@@ -124,9 +124,9 @@ function grid_release
 	esac
 }
 
-# $1 12.1, 12.2 or 18.0
-# print to stdout yes or no
-# Wallet don't work with standalone 12.2 with ASM
+#*> $1 12.1, 12.2 or 18.0
+#*> print to stdout yes or no
+#*> Wallet don't work with standalone 12.2 with ASM
 function enable_wallet
 {
 	case "$1" in
@@ -151,17 +151,17 @@ function enable_wallet
 }
 
 
-# [$1] max load avg default value 3.
-# Si la mémoire de l'OS est inférieur aux pré requis alors il peut y avoir un
-# très fort Load Average (causé par le process gdb), donc dans ce cas la
-# fonction attend qu'il soit descendu.
-# Le problème survient surtout dans les 10 à 15mn après le démarrage de la base,
-# mais il peut se produire n'importe quand.
-#
-# Bug : http://www.usn-it.de/index.php/2017/06/20/oracle-rac-12-2-high-load-on-cpu-from-gdb-when-node-missing/
-# J'ai désactivé diagsnap, mais au cas ou je conserve la fonction.
-# Si la variable TEST_HIGH_LAVG vaut enable alort le test est fait.
-# Soit la définir dans local.cfg ou dans le profile des comptes grid et/ou oracle.
+#*> [$1] max load avg default value 3.
+#*> Si la mémoire de l'OS est inférieur aux pré requis alors il peut y avoir un
+#*> très fort Load Average (causé par le process gdb), donc dans ce cas la
+#*> fonction attend qu'il soit descendu.
+#*> Le problème survient surtout dans les 10 à 15mn après le démarrage de la base,
+#*> mais il peut se produire n'importe quand.
+#*>
+#*> Bug : http://www.usn-it.de/index.php/2017/06/20/oracle-rac-12-2-high-load-on-cpu-from-gdb-when-node-missing/
+#*> J'ai désactivé diagsnap, mais au cas ou je conserve la fonction.
+#*> Si la variable TEST_HIGH_LAVG vaut enable alort le test est fait.
+#*> Soit la définir dans local.cfg ou dans le profile des comptes grid et/ou oracle.
 function wait_if_high_load_average
 {
 	[ "$TEST_HIGH_LAVG" != enable ] && return || true

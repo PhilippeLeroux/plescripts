@@ -8,11 +8,14 @@
 
 	Établie une connexion ssh sans mot de passe entre le poste client et un serveur.
 
-- gen_docs.sh
+- gen_markdown_docs.sh
 
-	génération d'une doc pour mes scripts 'lib'
+	* Génération d'une doc au format markdown pour mes scripts `*lib.sh`.
+	* La documentation est accessible sur le wiki.
+	* Le script peut être utilisé sur n'importe quel script, si les conventions
+	pour les commentaires et déclaration de fonctions sont respectées.
 
-	N'est plus vraiment utilisé.
+	Aide : `gen_markdown_docs.sh -h`
 
 - grid_logs : standalone ou RAC 2 nœuds
 

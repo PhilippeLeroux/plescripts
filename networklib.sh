@@ -1,22 +1,22 @@
 # vim: ts=4:sw=4
 
-# $1 server to ping
-# return 0 if server is reachable, else other value.
+#*> $1 server to ping
+#*> return 0 if server is reachable, else other value.
 function ping_test
 {
 	ping -c 1 $1 1>/dev/null 2>&1
 }
 
-# $1 server name
-# $2 port
-# return 0 if port $2 open, else return 0
+#*> $1 server name
+#*> $2 port
+#*> return 0 if port $2 open, else return 0
 function port_open
 {
 	nc -z $1 $2
 }
 
-# $1 server name
-# exit 1 if ssh not available on port 22 or server unreachable.
+#*> $1 server name
+#*> exit 1 if ssh not available on port 22 or server unreachable.
 function exit_if_cannot_connect_to
 {
 	if ping_test $1

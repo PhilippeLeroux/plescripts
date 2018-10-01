@@ -16,6 +16,7 @@ typeset -r	backstore_type=${BACKSTORE_TYPE:-block}
 
 typeset		working_vg=no_vg_define
 
+#*> set default setting of targetclif
 function set_targetcli_default_settings
 {
 	info "false permet d'avoir des LUNs en lecture seul."
@@ -31,6 +32,7 @@ function set_targetcli_default_settings
 	LN
 }
 
+#*> Reset all config and call set_targetcli_default_settings
 function reset
 {
 	exec_cmd targetcli clearconfig confirm=true
@@ -39,11 +41,17 @@ function reset
 	set_targetcli_default_settings
 }
 
+#*> $1 name of VG to used.
 function set_working_vg
 {
 	working_vg=$1
 }
 
+#*> $1 function name
+#*> $2 number parameters required for function
+#*> $3 number of parameters for function
+#*>
+#*> exit 1 if $2 -ne $3
 function check_params
 {
 	typeset -r	function_name=$1
@@ -52,15 +60,17 @@ function check_params
 
 	if [ $function_param -ne $passed_param ]
 	then
-		error "$function_name wait $function_param, only $passed_param"
+		error "$function_name wait $function_param parameter(s), only $passed_param"
 		exit 1
 	fi
 }
 
-#	$1	initiator name
-#	$2	portal
-#	$3	userid
-#	$4	password
+#*> Create iSCSI initiator.
+#*>
+#*>	$1	initiator name
+#*>	$2	portal
+#*>	$3	userid
+#*>	$4	password
 function create_iscsi_initiator
 {
 	check_params create_iscsi 4 $#
@@ -92,7 +102,7 @@ function create_iscsi_initiator
 	exec_cmd targetcli /iscsi/$l_initiator_name/tpg1/acls/$l_initiator_name set auth password=$l_password
 }
 
-#	$1	initiator name
+#*>	delete initiator $1.
 function delete_iscsi_initiator
 {
 	typeset -r l_initiator_name=$1
@@ -100,26 +110,30 @@ function delete_iscsi_initiator
 	exec_cmd targetcli /iscsi/ delete $l_initiator_name
 }
 
-#	$1 #LUN
-#	$2 LV prefix
+#*>	Print to stdout LV name
+#*>
+#*>	$1 LUN number
+#*>	$2 LV prefix
 function get_lv_name
 {
 	printf "lv%s%02d" $2 $1
 }
 
-#	$1 #LUN
-#	$2 LV prefix
-#
-#	retourne le nom du lv pour éviter ces messages au démarrage du serveur d'infra :
-#	Backstore name 'asm01_lvtestsan05' is too long for INQUIRY_MODEL, truncating to 16 bytes
-#	La longueur maximale du nom sera 12.
+#*>	$1 LUN number
+#*>	$2 LV prefix
+#*>
+#*> Print to stdout disk name.
+#*>
+#*> Now just call get_lv_name else name is too long.
 function get_disk_name
 {
 	get_lv_name $1 $2
 }
 
-#	$1 #LUN
-#	$2 LV prefix
+#*> Create a LUN to the backstore.
+#*>
+#*>	$1 LUN number
+#*>	$2 LV prefix
 function create_backstore
 {
 	typeset -ri	lun_number=$1
@@ -137,8 +151,10 @@ function create_backstore
 	fi
 }
 
-#	$1 #LUN
-#	$2 LV prefix
+#*> Delete a LUN from the backstore.
+#*>
+#*>	$1 #LUN
+#*>	$2 LV prefix
 function delete_backstore
 {
 	typeset -r lv_name=$(get_lv_name $1 $2)
@@ -147,9 +163,11 @@ function delete_backstore
 	exec_cmd -cont targetcli /backstores/$backstore_type/ delete ${disk_name}
 }
 
-#	$1	#LUN
-#	$2	l_initiator_name
-#	$3	LV prefix
+#*>	Create a LUN
+#*>
+#*>	$1	LUN number
+#*>	$2	initiator name
+#*>	$3	LV prefix
 function create_lun
 {
 	typeset -r lv_name=$(get_lv_name $1 $3)
@@ -159,8 +177,10 @@ function create_lun
 	exec_cmd -c targetcli /iscsi/$l_initiator_name/tpg1/luns/ create /backstores/$backstore_type/${disk_name} $1 true
 }
 
-#	$1	from
-#	$2	to
+#*>	Delete from the backstore all LUN in range [$1,$2]
+#*>
+#*>	$1	First LUN number.
+#*>	$2	Last LUN number.
 function delete_backstore_range
 {
 	typeset -ri count=$(( $1 + $2 - 1 ))
@@ -170,9 +190,11 @@ function delete_backstore_range
 	done
 }
 
-#	$1	from
-#	$2	to
-#	$3	LV prefix
+#*> Create LUN in the backstore
+#*>
+#*>	$1	First LUN number.
+#*>	$2	Last LUN number.
+#*>	$3	LV prefix
 function create_backstore_range
 {
 	typeset -ri count=$(( $1 + $2 - 1 ))
@@ -182,10 +204,12 @@ function create_backstore_range
 	done
 }
 
-#	$1	from
-#	$2	to
-#	$3	l_initiator_name
-#	$4	LV prefix
+#*> Create LUNs
+#*>
+#*>	$1	First LUN number.
+#*>	$2	Last LUN number.
+#*>	$3	l_initiator_name
+#*>	$4	LV prefix
 function create_lun_range
 {
 	typeset -r l_initiator_name=$3
