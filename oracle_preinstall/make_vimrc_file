@@ -7,9 +7,8 @@ function make_vimrc_file
 
 	info "Copy vim config"
 	exec_cmd "cp ~/plescripts/myconfig/vimrc $in_path/.vimrc"
-	# Workaround bug vim on Readhat : remove space.
+	# Workaround bug vim on Redhat : remove space.
 	exec_cmd "sed -i 's/set listchars.*/set listchars=tab:→\\\ ,eol:$,trail:✗,nbsp:⋅/g' $in_path/.vimrc"
-	exec_cmd "gzip -dc ~/plescripts/myconfig/vimfunc.tar.gz | tar xf - -C $in_path"
 	exec_cmd "rm -rf $in_path/.vim"
 	exec_cmd "gzip -dc ~/plescripts/myconfig/vim.tar.gz | tar xf - -C $in_path"
 	exec_cmd "rm -rf $in_path/.vim/sessions"
