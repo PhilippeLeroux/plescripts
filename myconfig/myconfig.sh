@@ -165,11 +165,6 @@ function restore
 function backup
 {
 	line_separator
-	info "Backup bashrc extensions :"
-	exec_cmd cp ~/.bashrc_extensions ~/plescripts/myconfig/bashrc_extensions
-	LN
-
-	line_separator
 	info "Backup [G]vim configuration :"
 	exec_cmd "~/plescripts/myconfig/vim_config.sh -backup"
 	LN

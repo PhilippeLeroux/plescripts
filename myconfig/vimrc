@@ -164,25 +164,25 @@ if ! has("gui_running")
 endif
 
 "	============================================================================
-source $HOME/vimfunc/ApplyConfigOnFileType.vim
+source $HOME/plescripts/myconfig/vimfunc/ApplyConfigOnFileType.vim
 autocmd! BufRead * call ApplyConfigOnFileType()
 
 "	============================================================================
-source $HOME/vimfunc/Dictionnaires.vim
+source $HOME/plescripts/myconfig/vimfunc/Dictionnaires.vim
 nnoremap <F2> :call FrDictionnaire()<CR>
 nnoremap <F4> :call USDictionnaire()<CR>
 
 "	============================================================================
 if v:version > 704
-	source $HOME/vimfunc/FrGrammalecte.vim
+	source $HOME/plescripts/myconfig/vimfunc/FrGrammalecte.vim
 	nnoremap <C-g> :call FrGrammalecte()<CR>
 else
-	source $HOME/vimfunc/FrGrammaire.vim
+	source $HOME/plescripts/myconfig/vimfunc/FrGrammaire.vim
 	nnoremap <C-g> :call FrGrammaire()<CR>
 endif
 
 "	============================================================================
-source $HOME/vimfunc/folding.vim
+source $HOME/plescripts/myconfig/vimfunc/folding.vim
 "	Permet de (un)folder la fonction courante avec la touche space.
 nnoremap <silent> <Space> @=(foldlevel('.')?'za':"\<Space>")<CR>
 vnoremap <Space> zf
@@ -191,7 +191,7 @@ map <F3> :call ToggleAllFolders()<CR>
 autocmd BufRead * call EnableShellFoldBrace()
 
 "	============================================================================
-source $HOME/vimfunc/GotoDir.vim
+source $HOME/plescripts/myconfig/vimfunc/GotoDir.vim
 nnoremap <silent> <C-o> :call Goto_oracle_bash_completion()<CR>
 nnoremap <silent> <C-e> :call Goto_plescripts()<CR>
 nnoremap <silent> <C-h> :call Goto_home()<CR>
@@ -277,14 +277,14 @@ autocmd VimEnter * wincmd p
 "	============================================================================
 "	clean_log
 "	============================================================================
-source $HOME/vimfunc/CleanLog.vim
+source $HOME/plescripts/myconfig/vimfunc/CleanLog.vim
 autocmd BufRead * call CleanLog()
 nnoremap <silent> <F8> :call CleanLog()<CR>
 
 "	============================================================================
 "	Tips
 "	============================================================================
-source $HOME/vimfunc/ToggleVimTips.vim
+source $HOME/plescripts/myconfig/vimfunc/ToggleVimTips.vim
 nnoremap <silent> <F9> :call ToggleVimTips()<CR>
 
 "	============================================================================
@@ -301,7 +301,7 @@ nnoremap <silent> <C-n> :GitGutterNextHunk<CR>
 "	============================================================================
 "	Fait un man du mot sous le curseur.
 "	============================================================================
-source $HOME/vimfunc/ManWordUnderTheCursor.vim
+source $HOME/plescripts/myconfig/vimfunc/ManWordUnderTheCursor.vim
 nnoremap <silent> <C-m> :call ManWordUnderTheCursor()<CR>
 
 "	============================================================================
@@ -316,14 +316,13 @@ nnoremap <silent> <C-t> :call TocMarkdown()<CR>
 
 "	============================================================================
 "	Recherche de la fonction correspondante ou mot sous le curseur.
-source $HOME/vimfunc/SearchFunction.vim
+source $HOME/plescripts/myconfig/vimfunc/SearchFunction.vim
 nnoremap <leader>f :call SearchFunction()<CR>
 
 "	============================================================================
 "	Positionné après Pathogen pour que les pluggins 'colorscheme' soient chargés.
-source $HOME/vimfunc/ToggleColorscheme.vim
+source $HOME/plescripts/myconfig/vimfunc/ToggleColorscheme.vim
 map <silent> <F6> :call ToggleColorscheme()<CR>
-
 
 "	============================================================================
 "	Touche leader : raccourcies sur des commandes.

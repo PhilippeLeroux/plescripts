@@ -1,0 +1,5 @@
+F1 Help			F2 Fr dict			C-o ora complete		    C-t TOC md
+F3 (Un)Fold All	F4 US dict			C-e plescript				C-g Grammaire
+F5 Explorer		F6 Scheme			C-h ~
+F7 Undo tree	F8 Clean log		C-m man word under cursor
+F9 Tips			F10 Reload vimrc	F12 Toggle Mouse (vim)

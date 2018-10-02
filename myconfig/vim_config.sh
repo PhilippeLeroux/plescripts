@@ -51,12 +51,7 @@ exit_if_param_invalid action "backup restore" "$str_usage"
 case $action in
 	backup)
 		info "Supprime les anciens backups."
-		exec_cmd rm -f ~/plescripts/myconfig/vimfunc.tar.gz
 		exec_cmd rm -f ~/plescripts/myconfig/vim.tar.gz
-		LN
-
-		info "Backup le répertoire des fonctions : ~/vimfunc"
-		exec_cmd "tar -cf - -C $HOME/ vimfunc | gzip -c > ~/plescripts/myconfig/vimfunc.tar.gz"
 		LN
 
 		info "Backup ~/.vim/.gitmodules qui est exclue de vim.tar.gz"
@@ -83,11 +78,6 @@ case $action in
 			exec_cmd "ln -s ~/plescripts/myconfig/vimrc ~/.vimrc"
 			LN
 		fi
-
-		info "Restaure le répertoire des fonctions"
-		exec_cmd "rm -rf $HOME/vimfunc"
-		exec_cmd "gzip -dc ~/plescripts/myconfig/vimfunc.tar.gz | tar xf - -C $HOME/"
-		LN
 
 		info "Restaure les plugins"
 		exec_cmd "rm -rf $HOME/.vim"
