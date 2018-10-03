@@ -52,6 +52,20 @@ case "$ORACLE_RELEASE" in
 		add_usage "GRID_DISK_SIZE_GB_122=${GRID_DISK_SIZE_GB_122:-$grid_disk_size_gb}"								"Disk size for Grid Software"
 		add_usage "ORCL_DISK_SIZE_GB_122=${ORCL_DISK_SIZE_GB_122:-$orcl_disk_size_gb}"								"Disk size for Oracle software"
 		;;
+	18.0*)
+		add_usage "VM_MEMORY_MB_FOR_SINGLE_DB_180=${VM_MEMORY_MB_FOR_SINGLE_DB_180:-$vm_memory_mb_for_single_db}"	"VM memory for SINGLE DB 18.0"
+		add_usage "VM_NR_CPUS_FOR_SINGLE_DB_180=${VM_NR_CPUS_FOR_SINGLE_DB_180:-$vm_nr_cpus_for_single_db}"			"VM #cpu for SINGLE DB 18.0"
+		add_usage new_line
+		add_usage "VM_MEMORY_MB_FOR_RAC_DB_180=${VM_MEMORY_MB_FOR_RAC_DB_180:-$vm_memory_mb_for_rac_db}"			"VM memory for RAC DB 18.0"
+		add_usage "VM_NR_CPUS_FOR_RAC_DB_180=${VM_NR_CPUS_FOR_RAC_DB_180:-$vm_nr_cpus_for_rac_db}"					"VM #cpu for RAC DB 18.0"
+		add_usage new_line
+		add_usage "ORCL_YUM_REPOSITORY_RELEASE180=${ORCL_YUM_REPOSITORY_RELEASE180:-$orcl_yum_repository_release}"	"DVD_R2|DVD_R3|latest|R3|R4 Oracle Linux 7 repository"
+		add_usage new_line
+		add_usage "MGMTDB_AUTOSTART180=${MGMTDB_AUTOSTART180:-$mgmtdb_autostart}"									"*disable*|enable database mgmtdb"
+		add_usage new_line
+		add_usage "GRID_DISK_SIZE_GB_180=${GRID_DISK_SIZE_GB_180:-$grid_disk_size_gb}"								"Disk size for Grid Software"
+		add_usage "ORCL_DISK_SIZE_GB_180=${ORCL_DISK_SIZE_GB_180:-$orcl_disk_size_gb}"								"Disk size for Oracle software"
+		;;
 esac
 typeset	-t	main_params="$(print_usage)"
 reset_usage
@@ -90,6 +104,7 @@ $parameters_usage
 To update parameter for a specific release, execute first :
     - Oracle 12.1 : $ ./update_local_cfg.sh ORACLE_RELEASE=12.1.0.2
     - Oracle 12.2 : $ ./update_local_cfg.sh ORACLE_RELEASE=12.2.0.1
+    - Oracle 18.0 : $ ./update_local_cfg.sh ORACLE_RELEASE=18.0.0.0
 
 $main_params
 
