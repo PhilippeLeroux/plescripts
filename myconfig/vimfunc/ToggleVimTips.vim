@@ -9,6 +9,6 @@ function! ToggleVimTips()
 	else
 		let g:vimtips="on"
 		set previewheight=5
-		pedit! ~/vimfunc/vimtips
+		pedit! $HOME/plescripts/myconfig/vimfunc/vimtips
 	endif
 endfunction
