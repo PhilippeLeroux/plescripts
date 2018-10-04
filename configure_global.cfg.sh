@@ -147,7 +147,7 @@ function select_oracle_linux_release
 function yum_repository
 {
 	# Il n'est pas possible de rester sur une ancienne release. Donc pour
-	# avoir du R2 ou R3 dépôt depuis le DVD.
+	# utiliser une ancienne Release, utilisation du DVD comme repository.
 	case $OL7_LABEL_n in
 		7.2)
 			ol7_repository_release=DVD_R2
@@ -158,28 +158,17 @@ function yum_repository
 			return 0
 			;;
 		7.4)
-			typeset		do_update=yes
-			ask_for_variable do_update "Update Oracle Linux $OL7_LABEL_n from Oracle repository ? yes no"
-			do_update=$(to_lower $do_update)
-			LN
-
-			if [ $do_update == yes ]
-			then
-				ol7_repository_release=R4
-			else
-				ol7_repository_release=DVD_R4
-			fi
+			ol7_repository_release=DVD_R4
 			return 0
 			;;
 		7.5)
 			typeset		do_update=yes
 			ask_for_variable do_update "Update Oracle Linux $OL7_LABEL_n from Oracle repository ? yes no"
-			do_update=$(to_lower $do_update)
 			LN
 
-			if [ $do_update == yes ]
+			if [ "$(to_lower $do_update)" == yes ]
 			then
-				ol7_repository_release=R5
+				ol7_repository_release=R5 # Les dépôts R4 et R5 sont fusionnés.
 			else
 				ol7_repository_release=DVD_R5
 			fi
@@ -369,11 +358,23 @@ update_local_cfg "san_disk" "$san_disk_n" "SAN_DISK"
 update_local_cfg "OL7_LABEL" "$OL7_LABEL_n" OL7_LABEL
 
 info "Configure repository OL7"
-if	[[ $ol7_repository_release != $orcl_yum_repository_release ]]
-then
-	update_variable "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
-	update_variable "INFRA_YUM_REPOSITORY_RELEASE" "$ol7_repository_release" ~/plescripts/local.cfg
-fi
+case $ol7_repository_release in
+	R5) # Utilise le dépôt 'latest' avec le noyau de la release voulue.
+		# C'est le même dépôt pour la R4 et R5, donc je pense que la R6 sera
+		# automatiquement installé, s'il existe un jour.
+		update_local_cfg "INFRA_YUM_REPOSITORY_RELEASE" "$ol7_repository_release"
+		update_local_cfg "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release"
+		;;
+	DVD*)	# Utilisation du DVD.
+		update_local_cfg "INFRA_YUM_REPOSITORY_RELEASE" "$ol7_repository_release"
+		update_local_cfg "ORCL_YUM_REPOSITORY_RELEASE" "$ol7_repository_release"
+		;;
+	*)
+		error "Repository '$ol7_repository_release' invalid."
+		LN
+		exit 1
+		;;
+esac
 
 if [ $count_errors -ne 0 ]
 then
