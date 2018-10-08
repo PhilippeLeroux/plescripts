@@ -8,6 +8,10 @@
 
 	Établie une connexion ssh sans mot de passe entre le poste client et un serveur.
 
+- markdown_toc.sh
+
+	Permet de générer le TOC d'un fichier markdown.
+
 - gen_markdown_docs.sh
 
 	* Génération d'une doc au format markdown pour mes scripts `*lib.sh`.
@@ -44,19 +48,19 @@
 - monitor_server.sh [db]  ou base définie par set_db
 
 	Exécute le script tmux_monitor_server.sh avec le/les noms de serveur(s)	correspondant à une base dans un xterm en plein écran.
-	
+
 	Pour un RAC 2 nœuds lance vmstat et top dans 4 terminaux multiplexés.
 	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/tmux_monitor_server_rac.png)
-	
+
 	Pour un Single affiche les IOs puis vmstat et top.
 	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/tmux_monitor_server_single.png)
 
 - monitor_io_rac.sh ne prend pas de paramètre, se base uniquement sur set_db
-	
+
 	Exécute le script tmux_io_rac.sh qui affiche les IOs des 2 serveurs.
-	
+
 	![screen](https://github.com/PhilippeLeroux/plescripts/wiki/screens_scripts_shell/monitor_io_rac.png)
-	
+
 - lscrs -db=<str> ou base définie par set_db
 
 	Appel de crsclt stat res -t, dans le cas d'un RAC utilise l'adresse de SCAN.

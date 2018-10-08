@@ -13,9 +13,10 @@ function print_usage
 	echo
 	echo "Usage :"
 	echo "    ${ME##*/}"
+	echo "        [-no_TOC] do not generate TOC. Must be first parameter."
 	echo "        [file name] (*lib.sh work.)"
 	echo "        [-search=pattern]"
-	echo "        [-no_index] no index."
+	echo "        [-no_index] do not generate file index.md."
 	echo
 	echo "   Ex : $ ${ME##*/} *lib.sh"
 	echo "        $ ${ME##*/} -search=\"*lib.sh\""
@@ -47,7 +48,7 @@ function print_function_comments
 	for comm in "${comment_list[@]}"
 	do
 		# Passe le tag + l'espace donc 4 caractères.
-		echo "	${comm:4:120}"
+		echo "	${comm:4}"
 	done
 	echo ""
 
@@ -130,7 +131,7 @@ function gen_tmp_markdowns_for
 # Used variable : separator.
 function print_to_stdout
 {
-	[ -f $1 ] && cat $1 && echo -e "$separator\n" || true
+	[ -f "$1" ] && cat "$1" && echo -e "$separator\n" || true
 }
 
 # Print to stdout statistics about current function.
@@ -158,7 +159,7 @@ function print_markdown_for
 	typeset	-r	stats="$(print_stats_on_func)"
 	stats_libs_dic+=( [$(cut -d. -f1<<<"${libname##*/}")]="$stats" )
 
-	echo -e "\n## ${md_name##*/} : $(date +"%d/%m/%Y")\n"
+	echo -e "## ${md_name##*/} : $(date +"%d/%m/%Y")\n"
 	echo "$stats"
 	echo -e "\n$separator\n"
 
@@ -172,6 +173,7 @@ function print_markdown_for
 # $1 lib name
 function gen_markdown_doc_for
 {
+	typeset	-ri	start_at=$SECONDS
 	typeset	-r	libname=$1
 
 	typeset	-r	md_func_publics=/tmp/$$_func_publics.md
@@ -188,16 +190,29 @@ function gen_markdown_doc_for
 	typeset	-i	nr_priv=0
 	typeset	-i	nr_undoc=0
 
-	gen_tmp_markdowns_for $libname
+	# Sont créés les fichiers : md_func_publics, md_func_privates, md_func_undoc
+	gen_tmp_markdowns_for "$libname"
 
-	print_markdown_for $libname > $tmp_md
+	# Concaténation des stats et des fichiers md_func_*
+	print_markdown_for "$libname" > "$tmp_md"
 
-	gh-md-toc $tmp_md | head -n -2 | sed "s/^    //g" > $md_name
-	cat $tmp_md >> $md_name
+	if [ $TOC == yes ]
+	then
+		if [ $used_my_md_toc == yes ]
+		then
+			markdown_toc.sh -md="$tmp_md"
+			mv "$tmp_md" "$md_name"
+		else
+			gh-md-toc "$tmp_md" | head -n -2 | sed "s/^    //g" > "$md_name"
+			cat "$tmp_md" >> "$md_name"
+		fi
+	else
+		mv "$tmp_md" "$md_name"
+	fi
 
-	rm -f $md_func_publics $md_func_privates $md_func_undoc $tmp_md
+	rm -f $md_func_publics $md_func_privates $md_func_undoc "$tmp_md"
 
-	info "Documentation for $1 : $(replace_paths_by_shell_vars $md_name)"
+	info "Documentation for $1 : $(replace_paths_by_shell_vars $md_name) (~$(fmt_seconds $(( SECONDS-start_at ))))"
 	echo
 }
 
@@ -220,6 +235,8 @@ function print_markdown_index
 
 function main
 {
+	typeset	-ri	begin_script=$SECONDS
+
 	[ $# -eq 0 ] && print_usage && exit 1 || true
 
 	typeset	-r	root_wiki=~/plewiki
@@ -230,9 +247,13 @@ function main
 
 	[ ! -d $wiki_dir ] && mkdir $wiki_dir || true
 
+	typeset	-r	used_my_md_toc=${USED_MY_MD_TOC:-yes}
+
+	typeset	-i	nr_md=0		# Nombre de markdown générés.
 	typeset		index=yes
+	typeset		TOC=yes
 	# Dictionnaire mémorisant chaque fonction de la lib, son associés les stats
-	# sur les fonctions.
+	# sur les fonctions. Sera utilisé pour la génération de l'index.
 	typeset	-A	stats_libs_dic
 
 	echo
@@ -250,6 +271,11 @@ function main
 				shift
 				;;
 
+			-no_TOC)
+				TOC=no
+				shift
+				;;
+
 			-search=*)
 				typeset	-r	pattern="${1##*=}"
 				shift
@@ -258,6 +284,7 @@ function main
 				while read file
 				do
 					gen_markdown_doc_for $file
+					((++nr_md))
 				done<<<"$(find . -type f -name $pattern)"
 				set +f
 				;;
@@ -265,6 +292,7 @@ function main
 			*)
 				exit_if_file_not_exists $1
 				gen_markdown_doc_for $1
+				((++nr_md))
 				shift
 				;;
 		esac
@@ -276,6 +304,9 @@ function main
 		print_markdown_index > $wiki_dir/index.md
 		echo
 	fi
+
+	info "$nr_md markdowns, total times : ~$(fmt_seconds $(( SECONDS-begin_script )))"
+	LN
 }
 
 main "$@"

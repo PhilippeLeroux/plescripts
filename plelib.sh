@@ -1244,8 +1244,8 @@ function initcap
 	sed 's/\(.\)/\U\1/' <<< "$@"
 }
 
-#*> fill <car> <no#>
-#*> Return a buffer filled with no# characteres car
+#*> fill <car> <#>
+#*> Print to stdout a buffer filled with #characteres car
 function fill
 {
 	typeset -r	car="$1"
@@ -1256,7 +1256,7 @@ function fill
 	while [ $count -lt $nb ]
 	do
 		buffer=$buffer$car
-		count=count+1
+		((++count))
 	done
 
 	echo $buffer
@@ -1448,9 +1448,8 @@ function compute
 	[ $return_int == yes ] && echo ${val%%.*} || echo $val
 }
 
-#*> fmt_seconds <seconds>
-#*> <seconds> formate to the better format
-function fmt_seconds # $1 seconds
+#*> formate $1 seconds to the better format
+function fmt_seconds
 {
 	typeset -ri seconds=$1
 
@@ -1471,9 +1470,7 @@ function fmt_seconds # $1 seconds
 	fi
 }
 
-#*> fmt_number <number>
-#*> Format number english or french, use LANG to define the format.
-#*>
+#*> Format number $1 english or french, use LANG to define the format.
 function fmt_number
 {
 	typeset -r number=$1
@@ -1502,8 +1499,7 @@ function fmt_number
 	echo $formatted
 }
 
-#*> to_mb string_size
-#*> Convert string_size in Mb
+#*> Convert $1 in Mb
 #*>		Last digits is the unit : G, Gb, M, Mb, Kb or K, b or B
 function to_mb
 {

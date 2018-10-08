@@ -308,9 +308,12 @@ nnoremap <silent> <C-m> :call ManWordUnderTheCursor()<CR>
 "	TOC markdown
 "	============================================================================
 function! TocMarkdown()
-	call system('gh-md-toc ' . shellescape(bufname("%")) . " >/tmp/toc.md")
-	set previewheight=15
-	pedit! /tmp/toc.md
+	"call system('gh-md-toc ' . shellescape(bufname("%")) . " >/tmp/toc.md")
+	"set previewheight=15
+	"pedit! /tmp/toc.md
+	execute ":w!"
+	call system( 'markdown_toc.sh -md=' . shellescape(bufname("%")) )
+	execute ":edit! %"
 endfunction
 nnoremap <silent> <C-t> :call TocMarkdown()<CR>
 
