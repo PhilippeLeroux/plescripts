@@ -87,6 +87,18 @@ function remove_slashs
 	tr -d \/<<<"$@"
 }
 
+# Print to stdout "$@" with all colons removed.
+function remove_colones
+{
+	tr -d :<<<"$@"
+}
+
+# Print to stdout "$@" with all tods removed.
+function remove_tods
+{
+	tr -d .<<<"$@"
+}
+
 # $@ string
 # Simplify spaces and replace them by hyphens.
 # Trailing spaces are removed.
@@ -100,8 +112,13 @@ function tr_spaces_by_hyphens
 # Print to stdout markdown tags for title $@
 function print_markdown_tags_for_title
 {
-	typeset		anchor
-	anchor="$(to_lower $(remove_slashs $(remove_quotes $(tr_spaces_by_hyphens "$@"))))"
+	# Devrait être supprimer toutes les ponctuations.
+	typeset		anchor="$(to_lower					\
+							$(tr_spaces_by_hyphens	\
+								$(remove_colones	\
+								$(remove_tods		\
+								$(remove_slashs		\
+								$(remove_quotes	"$@"	))))))"
 
 	printf "* [%s](#%s)\n" "$@" "$anchor"
 }

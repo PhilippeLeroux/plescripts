@@ -13,17 +13,17 @@ function print_usage
 	echo
 	echo "Usage :"
 	echo "    ${ME##*/}"
-	echo "        [-no_TOC] do not generate TOC. Must be first parameter."
-	echo "        [file name] (*lib.sh work.)"
+	echo "        [-no_TOC] doit être le premier paramètre : pas de TOC."
+	echo "        [script name]"
 	echo "        [-search=pattern]"
-	echo "        [-no_index] do not generate file index.md."
+	echo "        [-no_index] ne pas créer le fichier d'indexe : index.md."
 	echo
 	echo "   Ex : $ ${ME##*/} *lib.sh"
 	echo "        $ ${ME##*/} -search=\"*lib.sh\""
 	echo
 	echo "L'indexe sera généré pour tous les scripts. Si un seul script est"
 	echo "passé utiliser -no_index, mais si le script est dans l'indexe les"
-	echo "information le concernant ne seront pas mises à jour."
+	echo "informations le concernant ne seront pas mises à jour."
 	echo
 	echo "Les commentaires pris en compte sont :"
 	echo "    #*> pour une fonction public."
@@ -47,8 +47,8 @@ function print_function_comments
 	typeset		comm
 	for comm in "${comment_list[@]}"
 	do
-		# Passe le tag + l'espace donc 4 caractères.
-		echo "	${comm:4}"
+		# Passe le tag + l'espace.
+		echo "	${comm:((size_tag+1))}"
 	done
 	echo ""
 
@@ -68,9 +68,9 @@ function gen_tmp_markdowns_for
 	typeset	-a	comment_list	# Contient tous les commentaires d'une fonction.
 	typeset		line
 
-	typeset		first_pub_found=no
-	typeset		first_priv_found=no
-	typeset		first_undoc_found=no
+	typeset		first_public_found=no
+	typeset		first_private_found=no
+	typeset		first_undocumented_found=no
 
 	typeset	-r	tag_public="#*>"
 	typeset	-r	tag_private="#*<"
@@ -79,22 +79,22 @@ function gen_tmp_markdowns_for
 	typeset		line
 	while IFS= read line
 	do
-		if [ "${line:0:${#tag_public}}" == "$tag_public" ]
+		if [ "${line:0:$size_tag}" == "$tag_public" ]
 		then
 			tag_found=public
-			if [ $first_pub_found == no ]
+			if [ $first_public_found == no ]
 			then
-				first_pub_found=yes
+				first_public_found=yes
 				echo "### Public functions" >> $md_func_publics
 				echo "" >> $md_func_publics
 			fi
 			comment_list+=( "$line" )
-		elif [ "${line:0:${#tag_private}}" == "$tag_private" ]
+		elif [ "${line:0:$size_tag}" == "$tag_private" ]
 		then
 			tag_found=private
-			if [ $first_priv_found == no ]
+			if [ $first_private_found == no ]
 			then
-				first_priv_found=yes
+				first_private_found=yes
 				echo "### Private functions" >> $md_func_privates
 				echo "" >> $md_func_privates
 			fi
@@ -113,9 +113,9 @@ function gen_tmp_markdowns_for
 			tag_found=no
 		elif [ "${line:0:8}" == "function" ]
 		then
-			if [ $first_undoc_found == no ]
+			if [ $first_undocumented_found == no ]
 			then
-				first_undoc_found=yes
+				first_undocumented_found=yes
 				echo "### Undocumented functions" >> $md_func_undoc
 				echo "" >> $md_func_undoc
 			fi
@@ -159,7 +159,7 @@ function print_markdown_for
 	typeset	-r	stats="$(print_stats_on_func)"
 	stats_libs_dic+=( [$(cut -d. -f1<<<"${libname##*/}")]="$stats" )
 
-	echo -e "## ${md_name##*/} : $(date +"%d/%m/%Y")\n"
+	echo -e "## ${libname##*/} last modified : $(date -r "$libname" +"%d/%m/%Y")\n"
 	echo "$stats"
 	echo -e "\n$separator\n"
 
@@ -190,7 +190,10 @@ function gen_markdown_doc_for
 	typeset	-i	nr_priv=0
 	typeset	-i	nr_undoc=0
 
+	typeset	-ri	size_tag=3	# Longueur des tags : '#*>' et '#*<'
+
 	# Sont créés les fichiers : md_func_publics, md_func_privates, md_func_undoc
+	# Les variables nr_* sont mises à jour.
 	gen_tmp_markdowns_for "$libname"
 
 	# Concaténation des stats et des fichiers md_func_*
