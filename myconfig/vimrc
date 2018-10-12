@@ -137,6 +137,7 @@ autocmd BufRead *.template,*.doc.sh let g:syntastic_check_on_open = 0
 "	'100,<50,s10,h
 "	============================================================================
 set viminfo='10,\"100,:20,%,n~/.viminfo
+
 function! RestoreCursor()
 	if line("'\"") <= line("$")
 		normal! g`"
@@ -188,7 +189,7 @@ nnoremap <silent> <Space> @=(foldlevel('.')?'za':"\<Space>")<CR>
 vnoremap <Space> zf
 
 map <F3> :call ToggleAllFolders()<CR>
-autocmd BufRead * call EnableShellFoldBrace()
+autocmd BufRead * call EnableScriptFolding()
 
 "	============================================================================
 source $HOME/plescripts/myconfig/vimfunc/GotoDir.vim
@@ -307,20 +308,20 @@ nnoremap <silent> <C-m> :call ManWordUnderTheCursor()<CR>
 "	============================================================================
 "	TOC markdown
 "	============================================================================
-function! TocMarkdown()
-	"call system('gh-md-toc ' . shellescape(bufname("%")) . " >/tmp/toc.md")
-	"set previewheight=15
-	"pedit! /tmp/toc.md
-	execute ":w!"
-	call system( 'markdown_toc.sh -md=' . shellescape(bufname("%")) )
-	execute ":edit! %"
-endfunction
+source $HOME/plescripts/myconfig/vimfunc/TocMarkdown.vim
 nnoremap <silent> <C-t> :call TocMarkdown()<CR>
 
 "	============================================================================
 "	Recherche de la fonction correspondante ou mot sous le curseur.
 source $HOME/plescripts/myconfig/vimfunc/SearchFunction.vim
 nnoremap <leader>f :call SearchFunction()<CR>
+
+"	============================================================================
+"	Si le mot sous le curseur et un fichier il est recherché dans ~/plescripts
+"	puis ouvert, si c'est bien un fichier.
+let g:SearchAndOpenFileUnderTheCursorDir='$HOME/plescripts'
+source $HOME/plescripts/myconfig/vimfunc/SearchAndOpenFileUnderTheCursor.vim
+nnoremap <leader>o :call SearchAndOpenFileUnderTheCursor()<CR>
 
 "	============================================================================
 "	Positionné après Pathogen pour que les pluggins 'colorscheme' soient chargés.
