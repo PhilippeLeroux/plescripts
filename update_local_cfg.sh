@@ -133,6 +133,8 @@ function variable_is_valid
 
 		ORCL_YUM_REPOSITORY_RELEASE121) return 0 ;;
 		ORCL_YUM_REPOSITORY_RELEASE122) return 0 ;;
+		ORCL_YUM_REPOSITORY_RELEASE180) return 0 ;;
+
 		OL7_KERNEL_VERSION) return 0 ;;
 
 		VM_MEMORY_MB_FOR_SINGLE_DB_121) return 0 ;;
@@ -148,6 +150,13 @@ function variable_is_valid
 		VM_NR_CPUS_FOR_RAC_DB_122) return 0 ;;
 		GRID_DISK_SIZE_GB_122) return 0 ;;
 		ORCL_DISK_SIZE_GB_122) return 0 ;;
+
+		VM_MEMORY_MB_FOR_SINGLE_DB_180) return 0 ;;
+		VM_MEMORY_MB_FOR_RAC_DB_180) return 0 ;;
+		VM_NR_CPUS_FOR_SINGLE_DB_180) return 0 ;;
+		VM_NR_CPUS_FOR_RAC_DB_180) return 0 ;;
+		GRID_DISK_SIZE_GB_180) return 0 ;;
+		ORCL_DISK_SIZE_GB_180) return 0 ;;
 
 		KERNEL_KPTI) return 0 ;;
 
