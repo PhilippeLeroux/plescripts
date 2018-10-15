@@ -75,9 +75,10 @@ function! SearchFullNamePathFor( fileName )
 endfunction
 
 "	return
-"		- Opened, if file is open.
-"		- Not opened, if file not found.
-"		- Cancelled, if user cancel.
+"		- Opened     : if file is open.
+"		- Not opened : if file not found.
+"		- Cancelled  : if user cancel.
+"		- NotVar      : not a variable.
 function! AssignmentBug( wordUnderCursor )
 	" vim 7.x bug ? :
 	" Affectation d'une variable, ex : var=~/fileName
@@ -88,6 +89,8 @@ function! AssignmentBug( wordUnderCursor )
 	if filereadable( fileName )
 		exe ':sp ' . fileName
 		return 'Opened'
+	elseif fileName == 'none'
+		return 'NotVar'
 	else
 		let l:fullNamePath = SearchFullNamePathFor( fileName )
 
