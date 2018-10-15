@@ -88,7 +88,7 @@ function remove_slashs
 }
 
 # Print to stdout "$@" with all colons removed.
-function remove_colones
+function remove_colons
 {
 	tr -d :<<<"$@"
 }
@@ -112,10 +112,10 @@ function tr_spaces_by_hyphens
 # Print to stdout markdown tags for title $@
 function print_markdown_tags_for_title
 {
-	# Devrait être supprimer toutes les ponctuations.
-	typeset		anchor="$(to_lower					\
+	# Devrait être supprimé toutes les ponctuations ? Je n'ai pas trouvé de doc...
+	typeset	-r	anchor="$(to_lower					\
 							$(tr_spaces_by_hyphens	\
-								$(remove_colones	\
+								$(remove_colons		\
 								$(remove_tods		\
 								$(remove_slashs		\
 								$(remove_quotes	"$@"	))))))"
@@ -126,25 +126,25 @@ function print_markdown_tags_for_title
 # Print TOC to stdout for markdown $1
 function print_TOC_for_markdown
 {
-	typeset	-i	size_first_marker=-1
 	typeset	-r	md_file="$1"
-	typeset	-i	backquote_open=0	# Triple back quotes.
+
+	typeset	-i	first_marker_size=-1
+	typeset	-i	backquoteX3_open=0		# Triple back quotes.
 	typeset		line marker title
 
 	while IFS= read line
 	do
-		if [[ $backquote_open -eq 0 && "${line:0:1}" == "#" ]]
+		if [[ $backquoteX3_open -eq 0 && "${line:0:1}" == "#" ]]
 		then
 			read marker title<<<"$(remove_backquotes $line)"
-			if [ $size_first_marker -eq -1 ]
+			if [ $first_marker_size -eq -1 ]
 			then
-				size_first_marker=${#marker}
+				first_marker_size=${#marker}
 				echo $TOC_title
 				fill = ${#TOC_title}
 				echo
-			else
-				typeset	-i	diff_maker_size=$(( ${#marker}-size_first_marker ))
-				for (( i=0; i<$diff_maker_size; ++i ))
+			else #	Print title indentation.
+				for (( i = 1; i <= $(( ${#marker} - first_marker_size )); ++i ))
 				do
 					printf "\t"
 				done
@@ -152,7 +152,8 @@ function print_TOC_for_markdown
 			print_markdown_tags_for_title "$title"
 		elif [ "${line:0:3}" == '```' ]
 		then
-			[ $backquote_open -eq 0 ] && ((++backquote_open)) || ((--backquote_open))
+			[ $backquoteX3_open -eq 0 ]	\
+						&& ((++backquoteX3_open)) || ((--backquoteX3_open))
 		fi
 	done<"$md_file"
 
@@ -161,29 +162,37 @@ function print_TOC_for_markdown
 	echo
 }
 
-# Remove TOC from markdown $1
+# Remove TOC from markdown $@
 function remove_TOC_from_markdown
 {
 	[ $verbose == yes ] && LN && line_separator || true
 
-	if grep -qi "$TOC_title" "$1"	# Vérifie si le fichier contient bien le titre.
+	if grep -qi "$TOC_title" "$@"	# Vérifie si le fichier contient bien le titre.
 	then
-		# Recherche le n° de ligne du premier séparateur $TOC_separator.
-		typeset	-i	nr_line=$(grep -nE "^${TOC_separator}" "$1" | head -1 | cut -d: -f1)
-		if [ x"$nr_line" != x ]
+		# Recherche le n° de ligne du séparateur $TOC_separator.
+		typeset	-i	nr_line=$(grep -nE "^${TOC_separator}" "$@" | head -1 | cut -d: -f1)
+		if [ $nr_line != 0 ]
 		then
-			# Si la ligne suivant le séparateur est vide, pn l'efface aussi.
-			[ x"$(head -$((nr_line+1)) "$1" | tail -1)" == x ] && ((++nr_line)) || true
+			# Si la ligne suivant le séparateur est vide, on l'efface aussi.
+			[ x"$(head -$((nr_line+1)) "$@" | tail -1)" == x ] && ((++nr_line)) || true
 			if [ $verbose == yes ]
 			then
 				info "Remove TOC from lines : #1 to #$nr_line."
 				LN
 			fi
-			sed -i "1,${nr_line}d" "$1"
+			sed -i "1,${nr_line}d" "$@"
+		else
+			error "TOC separator not found !"
+			LN
+
+			info "Remove existing TOC manually."
+			LN
+
+			exit 1
 		fi
 	elif [ $verbose == yes ]
 	then
-		info "No TOC found fo $(replace_paths_by_shell_vars $1)"
+		info "No TOC found for $(replace_paths_by_shell_vars "$@")"
 		LN
 	fi
 }
@@ -198,6 +207,7 @@ then
 		warning "Warning : stdout enable ==> disable verbose mode."
 		LN
 	fi
+
 	# Pour ne pas supprimer le TOC du md original, on travaille sur une copie.
 	cp "$md" "/tmp/${md##*/}"
 	md="/tmp/${md##*/}"
@@ -212,23 +222,15 @@ then
 	info "Gen TOC for $(replace_paths_by_shell_vars $md) to $(replace_paths_by_shell_vars $md_TOC)."
 	LN
 fi
-print_TOC_for_markdown "$md" > "$md_TOC"
 
-if [ $verbose == yes ]
-then
-	line_separator
-	info "Concat markdown with TOC."
-	info "cat '$md' >> '$(replace_paths_by_shell_vars $md_TOC)'"
-	info "mv '$md_TOC' '$(replace_paths_by_shell_vars $md)'"
-fi
+print_TOC_for_markdown "$md" > "$md_TOC"
 
 if [ $stdout != yes ]
 then
 	cat "$md" >> "$md_TOC"	# Concaténation du md original avec le TOC.
 	mv "$md_TOC" "$md"
-	LN
 else
 	cat "$md_TOC"
 	rm "$md_TOC"
-	rm "$md"			# C'est la copie qui est supprimée.
+	rm "$md"				# C'est la copie qui est supprimée.
 fi
