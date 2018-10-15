@@ -113,14 +113,14 @@ function tr_spaces_by_hyphens
 function print_markdown_tags_for_title
 {
 	# Devrait être supprimé toutes les ponctuations ? Je n'ai pas trouvé de doc...
-	typeset	-r	anchor="$(to_lower					\
+	typeset	-r	ref="$(to_lower						\
 							$(tr_spaces_by_hyphens	\
 								$(remove_colons		\
 								$(remove_tods		\
 								$(remove_slashs		\
 								$(remove_quotes	"$@"	))))))"
 
-	printf "* [%s](#%s)\n" "$@" "$anchor"
+	printf "* [%s](#%s)\n" "$@" "$ref"
 }
 
 # Print TOC to stdout for markdown $1
