@@ -180,12 +180,6 @@ function gen_markdown_doc_for
 	typeset	-r	md_func_privates=/tmp/$$_func_privates.md
 	typeset	-r	md_func_undoc=/tmp/$$_func_undoc.md
 
-	typeset		tmp_md=/tmp/$$_${libname##*/}
-	typeset	-r	tmp_md=${tmp_md%.*}.md
-
-	typeset		md_name=$wiki_dir/${libname##*/}
-	typeset	-r	md_name=${md_name%.*}.md
-
 	typeset	-i	nr_pub=0
 	typeset	-i	nr_priv=0
 	typeset	-i	nr_undoc=0
@@ -196,24 +190,30 @@ function gen_markdown_doc_for
 	# Les variables nr_* sont mises à jour.
 	gen_tmp_markdowns_for "$libname"
 
+	typeset		md_tmp=/tmp/$$_${libname##*/}
+	typeset	-r	md_tmp=${md_tmp%.*}.md
+
 	# Concaténation des stats et des fichiers md_func_*
-	print_markdown_for "$libname" > "$tmp_md"
+	print_markdown_for "$libname" > "$md_tmp"
+
+	typeset		md_name=$wiki_dir/${libname##*/}
+	typeset	-r	md_name=${md_name%.*}.md
 
 	if [ $TOC == yes ]
 	then
 		if [ $used_my_md_toc == yes ]
 		then
-			markdown_toc.sh -md="$tmp_md"
-			mv "$tmp_md" "$md_name"
+			markdown_toc.sh -md="$md_tmp"
+			mv "$md_tmp" "$md_name"
 		else
-			gh-md-toc "$tmp_md" | head -n -2 | sed "s/^    //g" > "$md_name"
-			cat "$tmp_md" >> "$md_name"
+			gh-md-toc "$md_tmp" | head -n -2 | sed "s/^    //g" > "$md_name"
+			cat "$md_tmp" >> "$md_name"
 		fi
 	else
-		mv "$tmp_md" "$md_name"
+		mv "$md_tmp" "$md_name"
 	fi
 
-	rm -f $md_func_publics $md_func_privates $md_func_undoc "$tmp_md"
+	rm -f $md_func_publics $md_func_privates $md_func_undoc "$md_tmp"
 
 	info "Documentation for $1 : $(replace_paths_by_shell_vars $md_name) (~$(fmt_seconds $(( SECONDS-start_at ))))"
 	echo

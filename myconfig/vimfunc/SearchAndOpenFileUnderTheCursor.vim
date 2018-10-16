@@ -78,7 +78,7 @@ endfunction
 "		- Opened     : if file is open.
 "		- Not opened : if file not found.
 "		- Cancelled  : if user cancel.
-"		- NotVar      : not a variable.
+"		- NotVar     : not a variable.
 function! AssignmentBug( wordUnderCursor )
 	" vim 7.x bug ? :
 	" Affectation d'une variable, ex : var=~/fileName
@@ -133,6 +133,8 @@ function! SearchAndOpenFileUnderTheCursor()
 			if AssignmentBug( wordUnderCursor ) == 'Not opened'
 				echo 'File ' . wordUnderCursor . ' not found in directory '
 						\	. g:SearchAndOpenFileUnderTheCursorDir . '.'
+			else
+				echo 'File not found.'
 			endif
 		else
 			exe ':sp ' . fullNamePath
