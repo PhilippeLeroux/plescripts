@@ -130,10 +130,11 @@ function! SearchAndOpenFileUnderTheCursor()
 		if fullNamePath == 'Cancelled'
 			return
 		elseif fullNamePath == ''
-			if AssignmentBug( wordUnderCursor ) == 'Not opened'
+			let l:status = AssignmentBug( wordUnderCursor )
+			if status == 'Not opened'
 				echo 'File ' . wordUnderCursor . ' not found in directory '
 						\	. g:SearchAndOpenFileUnderTheCursorDir . '.'
-			else
+			elseif status == 'NotVar'
 				echo 'File not found.'
 			endif
 		else
